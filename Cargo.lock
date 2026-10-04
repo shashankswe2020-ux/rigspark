@@ -2121,7 +2121,7 @@ dependencies = [
 
 [[package]]
 name = "rigspark-cli"
-version = "2.2.0"
+version = "2.3.0"
 dependencies = [
  "clap",
  "futures-util",
@@ -2143,7 +2143,7 @@ dependencies = [
 
 [[package]]
 name = "rigspark-core"
-version = "2.2.0"
+version = "2.3.0"
 dependencies = [
  "regex",
  "serde",
@@ -2172,7 +2172,7 @@ dependencies = [
 
 [[package]]
 name = "rigspark-gui"
-version = "2.2.0"
+version = "2.3.0"
 dependencies = [
  "async-trait",
  "axum",
@@ -2196,7 +2196,7 @@ dependencies = [
 
 [[package]]
 name = "rigspark-runtime"
-version = "2.2.0"
+version = "2.3.0"
 dependencies = [
  "async-trait",
  "bytes",

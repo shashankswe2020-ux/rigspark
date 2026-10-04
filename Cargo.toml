@@ -4,7 +4,7 @@ resolver = "3"
 exclude = ["apps/desktop/src-tauri", "vendor/crossterm"]
 
 [workspace.package]
-version = "2.2.0"
+version = "2.3.0"
 edition = "2024"
 rust-version = "1.98"
 license = "MIT"
