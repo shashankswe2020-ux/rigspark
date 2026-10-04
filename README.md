@@ -92,6 +92,34 @@ admission still requires reviewed evidence; a newer catalog date is not a promis
 of complete upstream coverage. See [catalog behavior, trust, and launch
 availability](docs/references/guide.md#independent-catalog-updates).
 
+## Image and Video Generation
+
+RigSpark can also run open-weight image and video models locally and for free
+through your own [ComfyUI](https://github.com/Comfy-Org/ComfyUI) install. Start
+ComfyUI on its default loopback address (`127.0.0.1:8188`), then:
+
+```bash
+rigspark catalog --generation                               # image/video models + memory fit
+rigspark generate image --prompt "a lighthouse at dusk" --comfyui-dir ~/ComfyUI
+rigspark generate video --prompt "a fox running in snow" --comfyui-dir ~/ComfyUI
+rigspark generate --tui                                      # interactive terminal form
+rigspark gui                                                 # browser: Create view, or chat with the Image/Video toggle
+```
+
+| Model | Kind | License | Weights |
+| --- | --- | --- | --- |
+| `flux1-schnell:fp8` | image (PNG) | Apache-2.0 | 16.1 GiB |
+| `wan2.1-t2v:1.3b` | video (animated WebP) | Apache-2.0 | 9.2 GiB |
+
+Weights are pinned to a Hugging Face commit, checked against their SHA-256 on every
+run, and placed under `ComfyUI/models/<folder>/rigspark/`. RigSpark submits only its
+own built-in workflows, which use core local nodes. It refuses ComfyUI's paid
+Partner (API) nodes, never sends account keys, and only connects over loopback.
+The fit verdict covers weight memory only. Generation speed is reported as
+`unknown`. Outputs are never overwritten. `--comfyui-dir` defaults to
+`RIGSPARK_COMFYUI_DIR`, then `~/ComfyUI`. Interrupted downloads resume and are still
+fully hash-verified. Details: [spec](docs/specs/image-video-generation.md).
+
 ## Browser Workspace
 
 Run **`rigspark gui`** to pick a model that fits and chat with it, with agents,
