@@ -1,0 +1,29 @@
+{
+  "type": "generation",
+  "result": {
+    "model": "flux1-schnell:fp8",
+    "kind": "image",
+    "path": "/home/user/rigspark-image-abc-123.png",
+    "bytes": 1482713,
+    "promptId": "abc-123",
+    "seed": 42,
+    "weights": [
+      {
+        "role": "checkpoint",
+        "name": "rigspark/comfyui/Comfy-Org/flux1-schnell@c2b683ea00713d6feadcd54b39e3725bbc78638b/flux1-schnell-fp8.safetensors",
+        "bytes": 17236328572,
+        "cached": true
+      }
+    ]
+  },
+  "fit": {
+    "verdict": "yes",
+    "reason": "all weights fit in memory together",
+    "memoryKind": "ram",
+    "usableBytes": 66571993088.0,
+    "budgetBytes": 56586194124.8,
+    "totalBytes": 17236328572,
+    "largestBytes": 17236328572,
+    "speed": "unknown"
+  }
+}

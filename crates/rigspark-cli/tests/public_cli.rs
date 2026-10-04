@@ -3,7 +3,7 @@ use std::process::{Command, Output, Stdio};
 use serde_json::{Value, json};
 
 const HARDWARE: &str = r#"{"arch":"x64","platform":"linux","totalRamBytes":68719476736,"freeRamBytes":64424509440,"freeDiskBytes":536870912000,"gpu":[{"vendor":"nvidia","vramBytes":25769803776}]}"#;
-const COMMANDS: [&str; 12] = [
+const COMMANDS: [&str; 13] = [
     "recommend",
     "can-run",
     "plan",
@@ -16,6 +16,7 @@ const COMMANDS: [&str; 12] = [
     "ls",
     "catalog",
     "doctor",
+    "generate",
 ];
 
 fn invoke(args: &[&str]) -> Output {
@@ -172,8 +173,8 @@ fn native_fixture_manifest_matches_public_commands_and_json_support() {
             json_commands.push(*command);
         }
     }
-    assert_eq!(commands.len(), 12);
-    assert_eq!(json_commands.len(), 11);
+    assert_eq!(commands.len(), 13);
+    assert_eq!(json_commands.len(), 12);
     assert!(!json_commands.contains(&"catalog"));
     for (mode, expected) in [("plain", commands), ("json", json_commands)] {
         let entries = manifest[mode].as_object().unwrap();
