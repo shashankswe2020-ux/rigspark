@@ -30,7 +30,16 @@ pub struct DownloadResponse {
 #[async_trait]
 pub trait DownloadTransport: Send + Sync {
     async fn get(&self, url: &str) -> Result<DownloadResponse, String>;
+    /// Continues a download at `offset`; transports without range support refuse.
+    async fn get_from(&self, url: &str, offset: u64) -> Result<DownloadResponse, String> {
+        if offset == 0 {
+            self.get(url).await
+        } else {
+            Err("download resume unsupported".into())
+        }
+    }
 }
+const MAX_RESUMES: u32 = 8;
 pub struct HfTransport {
     client: reqwest::Client,
 }
@@ -90,15 +99,35 @@ fn safe_url(raw: &str) -> Result<url::Url, String> {
     }
     Ok(url)
 }
+/// Accepts only `bytes <offset>-<end>/<total>` so a resume can never splice the wrong range.
+fn content_range_starts_at(value: Option<&str>, offset: u64) -> bool {
+    value
+        .and_then(|value| value.strip_prefix("bytes "))
+        .and_then(|range| range.split_once('-'))
+        .and_then(|(start, _)| start.parse::<u64>().ok())
+        == Some(offset)
+}
+#[test]
+fn resume_requires_matching_content_range() {
+    assert!(content_range_starts_at(Some("bytes 40-99/100"), 40));
+    assert!(!content_range_starts_at(Some("bytes 0-99/100"), 40));
+    assert!(!content_range_starts_at(Some("items 40-99/100"), 40));
+    assert!(!content_range_starts_at(None, 40));
+}
 #[async_trait]
 impl DownloadTransport for HfTransport {
     async fn get(&self, raw: &str) -> Result<DownloadResponse, String> {
+        self.get_from(raw, 0).await
+    }
+    async fn get_from(&self, raw: &str, offset: u64) -> Result<DownloadResponse, String> {
         let mut url = safe_url(raw)?;
         let mut commit = None;
         for redirect in 0..=5 {
-            let response = self
-                .client
-                .get(url.clone())
+            let mut request = self.client.get(url.clone());
+            if offset > 0 {
+                request = request.header("range", format!("bytes={offset}-"));
+            }
+            let response = request
                 .send()
                 .await
                 .map_err(|_| "download transport failed".to_owned())?;
@@ -132,6 +161,18 @@ impl DownloadTransport for HfTransport {
             }
             let length = response.content_length();
             let status = response.status().as_u16();
+            if offset > 0
+                && (status != 206
+                    || !content_range_starts_at(
+                        response
+                            .headers()
+                            .get("content-range")
+                            .and_then(|value| value.to_str().ok()),
+                        offset,
+                    ))
+            {
+                return Err("download resume was not honored".into());
+            }
             let stream = response.bytes_stream().map_err(std::io::Error::other);
             return Ok(DownloadResponse {
                 status,
@@ -223,6 +264,7 @@ impl SizePolicy {
 pub struct Acquisition {
     root: PathBuf,
     progress: Option<std::sync::Arc<Progress>>,
+    timeout: Duration,
 }
 type Progress = dyn Fn(u64, u64, &str) + Send + Sync;
 
@@ -335,7 +377,7 @@ fn digest(value: &str, length: usize) -> bool {
 impl Artifact {
     pub fn validate(&self) -> Result<(), String> {
         let coordinates: Vec<_> = self.repo.split('/').collect();
-        if !["llamacpp", "mlx"].contains(&self.backend.as_str())
+        if !["llamacpp", "mlx", "comfyui"].contains(&self.backend.as_str())
             || coordinates.len() != 2
             || !coordinates.iter().all(|part| segment(part))
             || !digest(&self.revision, 40)
@@ -453,6 +495,7 @@ impl Acquisition {
         Ok(Self {
             root: root.canonicalize().map_err(|error| error.to_string())?,
             progress: None,
+            timeout: Duration::from_secs(1800),
         })
     }
     pub fn with_progress(
@@ -460,6 +503,11 @@ impl Acquisition {
         progress: impl Fn(u64, u64, &str) + Send + Sync + 'static,
     ) -> Self {
         self.progress = Some(std::sync::Arc::new(progress));
+        self
+    }
+    /// Overrides the default 30 minute limit for multi-gigabyte artifacts.
+    pub fn with_timeout(mut self, timeout: Duration) -> Self {
+        self.timeout = timeout;
         self
     }
     fn emit(&self, completed: u64, artifact: &Artifact) {
@@ -496,7 +544,7 @@ impl Acquisition {
             lock.check()?;
             Ok(acquired)
         };
-        tokio::select! {biased;_=cancel.cancelled()=>Err("cancelled".into()),result=tokio::time::timeout(Duration::from_secs(1800),operation)=>result.map_err(|_|"acquisition timed out".to_owned())?}
+        tokio::select! {biased;_=cancel.cancelled()=>Err("cancelled".into()),result=tokio::time::timeout(self.timeout,operation)=>result.map_err(|_|"acquisition timed out".to_owned())?}
     }
     async fn acquire_inner(
         &self,
@@ -582,12 +630,33 @@ impl Acquisition {
             let mut total = 0u64;
             let mut reported = 0u64;
             let mut buffer = vec![0u8; 65536];
+            let mut resumes = 0u32;
             loop {
-                let count = response
-                    .body
-                    .read(&mut buffer)
-                    .await
-                    .map_err(|error| error.to_string())?;
+                let count = match response.body.read(&mut buffer).await {
+                    Ok(count) => count,
+                    Err(error) => {
+                        resumes += 1;
+                        if resumes > MAX_RESUMES {
+                            return Err(error.to_string());
+                        }
+                        tokio::time::sleep(Duration::from_secs(u64::from(resumes.min(5)))).await;
+                        response = transport
+                            .get_from(url.as_str(), total)
+                            .await
+                            .map_err(|resume| format!("{error}; {resume}"))?;
+                        if response.status != 206
+                            || response.commit.as_ref().is_none_or(|commit| {
+                                !commit.eq_ignore_ascii_case(&artifact.revision)
+                            })
+                            || response
+                                .length
+                                .is_some_and(|length| length > artifact.bytes - total)
+                        {
+                            return Err("download resume response mismatch".into());
+                        }
+                        continue;
+                    }
+                };
                 if count == 0 {
                     break;
                 }
@@ -628,7 +697,7 @@ impl Acquisition {
                 cached: false,
             })
         };
-        tokio::select! { _=cancel.cancelled()=>Err("cancelled".into()), result=tokio::time::timeout(Duration::from_secs(1800),operation)=>result.map_err(|_|"download timed out".to_owned())? }
+        tokio::select! { _=cancel.cancelled()=>Err("cancelled".into()), result=tokio::time::timeout(self.timeout,operation)=>result.map_err(|_|"download timed out".to_owned())? }
     }
     pub async fn repository(
         &self,

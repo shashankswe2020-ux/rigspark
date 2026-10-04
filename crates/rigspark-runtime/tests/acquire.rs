@@ -555,3 +555,127 @@ async fn mlx_repository_requires_complete_non_executable_manifest() {
         );
     }
 }
+
+/// Body that yields `bytes` and then fails like a dropped CDN connection.
+struct Interrupted {
+    bytes: Cursor<Vec<u8>>,
+}
+impl tokio::io::AsyncRead for Interrupted {
+    fn poll_read(
+        mut self: Pin<&mut Self>,
+        context: &mut std::task::Context<'_>,
+        buffer: &mut tokio::io::ReadBuf<'_>,
+    ) -> std::task::Poll<std::io::Result<()>> {
+        if self.bytes.position() as usize == self.bytes.get_ref().len() {
+            return std::task::Poll::Ready(Err(std::io::Error::other("connection reset")));
+        }
+        Pin::new(&mut self.bytes).poll_read(context, buffer)
+    }
+}
+/// Drops the connection after every `chunk` bytes; resumes from `offset` when allowed.
+struct Flaky {
+    bytes: Vec<u8>,
+    chunk: usize,
+    resumable: bool,
+    corrupt_resume: bool,
+    offsets: std::sync::Mutex<Vec<u64>>,
+}
+impl Flaky {
+    fn response(&self, offset: u64) -> DownloadResponse {
+        let start = offset as usize;
+        let end = (start + self.chunk).min(self.bytes.len());
+        let mut slice = self.bytes[start..end].to_vec();
+        if self.corrupt_resume && offset > 0 {
+            slice[0] ^= 1;
+        }
+        let body: Pin<Box<dyn tokio::io::AsyncRead + Send>> = if end == self.bytes.len() {
+            Box::pin(Cursor::new(slice))
+        } else {
+            Box::pin(Interrupted {
+                bytes: Cursor::new(slice),
+            })
+        };
+        DownloadResponse {
+            status: if offset == 0 { 200 } else { 206 },
+            commit: Some("a".repeat(40)),
+            length: Some((self.bytes.len() - start) as u64),
+            body,
+        }
+    }
+}
+#[async_trait::async_trait]
+impl DownloadTransport for Flaky {
+    async fn get(&self, _url: &str) -> Result<DownloadResponse, String> {
+        self.offsets.lock().unwrap().push(0);
+        Ok(self.response(0))
+    }
+    async fn get_from(&self, url: &str, offset: u64) -> Result<DownloadResponse, String> {
+        if offset == 0 {
+            return self.get(url).await;
+        }
+        if !self.resumable {
+            return Err("download resume unsupported".into());
+        }
+        self.offsets.lock().unwrap().push(offset);
+        Ok(self.response(offset))
+    }
+}
+fn flaky(bytes: &[u8], resumable: bool, corrupt_resume: bool) -> Flaky {
+    Flaky {
+        bytes: bytes.to_vec(),
+        chunk: 40_000,
+        resumable,
+        corrupt_resume,
+        offsets: Default::default(),
+    }
+}
+
+#[tokio::test]
+async fn interrupted_downloads_resume_from_the_verified_offset() {
+    let bytes: Vec<u8> = (0..100_000u32).map(|value| (value % 251) as u8).collect();
+    let root = tempfile::tempdir().unwrap();
+    let transport = flaky(&bytes, true, false);
+    let acquired = Acquisition::new(root.path())
+        .unwrap()
+        .acquire(&artifact(&bytes), &transport, &Default::default())
+        .await
+        .unwrap();
+    assert_eq!(std::fs::read(&acquired.path).unwrap(), bytes);
+    assert_eq!(*transport.offsets.lock().unwrap(), vec![0, 40_000, 80_000]);
+}
+
+#[tokio::test]
+async fn resumed_bytes_are_still_hash_verified_and_unresumable_drops_fail() {
+    let bytes: Vec<u8> = (0..100_000u32).map(|value| (value % 241) as u8).collect();
+    for (transport, needle) in [
+        (flaky(&bytes, true, true), "integrity mismatch"),
+        (flaky(&bytes, false, false), "connection reset"),
+    ] {
+        let root = tempfile::tempdir().unwrap();
+        let error = Acquisition::new(root.path())
+            .unwrap()
+            .acquire(&artifact(&bytes), &transport, &Default::default())
+            .await
+            .unwrap_err();
+        assert!(error.contains(needle), "{error}");
+        let leftovers = walk(root.path());
+        assert!(
+            leftovers
+                .iter()
+                .all(|path| !path.ends_with(".gguf") && !path.ends_with(".part")),
+            "{leftovers:?}"
+        );
+    }
+}
+fn walk(path: &std::path::Path) -> Vec<String> {
+    let mut found = Vec::new();
+    for entry in std::fs::read_dir(path).unwrap() {
+        let entry = entry.unwrap();
+        if entry.file_type().unwrap().is_dir() {
+            found.extend(walk(&entry.path()));
+        } else {
+            found.push(entry.path().display().to_string());
+        }
+    }
+    found
+}
