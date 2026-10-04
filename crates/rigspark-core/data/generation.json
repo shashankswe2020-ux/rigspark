@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-04T00:00:00Z",
+  "models": [
+    {
+      "id": "flux1-schnell:fp8",
+      "family": "flux1-schnell",
+      "kind": "image",
+      "params": "12B",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "releaseDate": "2024-08-01",
+      "default": true,
+      "source": "https://huggingface.co/black-forest-labs/FLUX.1-schnell",
+      "workflow": "flux-checkpoint",
+      "workflowSource": "https://comfyanonymous.github.io/ComfyUI_examples/flux/",
+      "files": [
+        {
+          "role": "checkpoint",
+          "folder": "checkpoints",
+          "repo": "Comfy-Org/flux1-schnell",
+          "revision": "c2b683ea00713d6feadcd54b39e3725bbc78638b",
+          "file": "flux1-schnell-fp8.safetensors",
+          "sha256": "ead426278b49030e9da5df862994f25ce94ab2ee4df38b556ddddb3db093bf72",
+          "bytes": 17236328572
+        }
+      ]
+    },
+    {
+      "id": "wan2.1-t2v:1.3b",
+      "family": "wan2.1-t2v",
+      "kind": "video",
+      "params": "1.3B",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "releaseDate": "2025-02-25",
+      "default": true,
+      "source": "https://huggingface.co/Wan-AI/Wan2.1-T2V-1.3B",
+      "workflow": "wan-t2v",
+      "workflowSource": "https://comfyanonymous.github.io/ComfyUI_examples/wan/",
+      "files": [
+        {
+          "role": "diffusion",
+          "folder": "diffusion_models",
+          "repo": "Comfy-Org/Wan_2.1_ComfyUI_repackaged",
+          "revision": "123acf1cc74bccbb9bfff8ac1ee72edc08c2341d",
+          "file": "split_files/diffusion_models/wan2.1_t2v_1.3B_fp16.safetensors",
+          "sha256": "be531024cd9018cb5b48c40cfbb6a6191645b1c792eb8bf4f8c1c6e10f924dc5",
+          "bytes": 2838303560
+        },
+        {
+          "role": "text-encoder",
+          "folder": "text_encoders",
+          "repo": "Comfy-Org/Wan_2.1_ComfyUI_repackaged",
+          "revision": "123acf1cc74bccbb9bfff8ac1ee72edc08c2341d",
+          "file": "split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+          "sha256": "c3355d30191f1f066b26d93fba017ae9809dce6c627dda5f6a66eaa651204f68",
+          "bytes": 6735906897
+        },
+        {
+          "role": "vae",
+          "folder": "vae",
+          "repo": "Comfy-Org/Wan_2.1_ComfyUI_repackaged",
+          "revision": "123acf1cc74bccbb9bfff8ac1ee72edc08c2341d",
+          "file": "split_files/vae/wan_2.1_vae.safetensors",
+          "sha256": "2fc39d31359a4b0a64f55876d8ff7fa8d780956ae2cb13463b0223e15148976b",
+          "bytes": 253815318
+        }
+      ]
+    }
+  ]
+}
