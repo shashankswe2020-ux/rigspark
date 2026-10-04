@@ -2,6 +2,7 @@ const BROWSER_SCRIPTS: &[&str] = &[
     "crates/rigspark-gui/static/calculator-runtime.js",
     "crates/rigspark-gui/static/calculator-template.js",
     "crates/rigspark-gui/static/chat.js",
+    "crates/rigspark-gui/static/generate.js",
     "crates/rigspark-gui/static/markdown.js",
     "crates/rigspark-gui/static/run-reducer.js",
     "crates/rigspark-gui/static/sse.js",

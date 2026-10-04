@@ -1252,7 +1252,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function switchView(view) {
-    const titles = { chat: "Chat", models: "Models", connectors: "Connectors", library: "Agents & Skills", tools: "Runtime" };
+    const titles = { chat: "Chat", models: "Models", create: "Create", connectors: "Connectors", library: "Agents & Skills", tools: "Runtime" };
     for (const item of navItems) {
       item.classList.toggle("active", item.dataset.view === view);
     }

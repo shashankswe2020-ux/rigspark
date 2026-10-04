@@ -9,6 +9,7 @@ use axum::{
 mod approval;
 mod chat;
 pub mod engine;
+mod generation;
 pub mod models;
 pub mod options;
 mod routes;
@@ -59,6 +60,8 @@ pub struct Host {
     pub admission: Arc<tokio::sync::Semaphore>,
     pub tasks: tokio_util::task::TaskTracker,
     pub runtimes: Mutex<runtime::RuntimeController>,
+    pub generation: generation::Jobs,
+    pub generator: Arc<dyn rigspark_runtime::generation::Generator>,
 }
 pub struct UiState {
     pub harness: String,
@@ -79,6 +82,20 @@ impl Host {
         port: u16,
         engine: Arc<dyn engine::Engine>,
     ) -> Result<Arc<Self>, Box<dyn std::error::Error>> {
+        Self::with_generator(
+            home,
+            port,
+            engine,
+            Arc::new(rigspark_runtime::generation::NativeGenerator),
+        )
+    }
+    /// Host with an injected image/video generator (tests use fakes instead of ComfyUI).
+    pub fn with_generator(
+        home: &Path,
+        port: u16,
+        engine: Arc<dyn engine::Engine>,
+        generator: Arc<dyn rigspark_runtime::generation::Generator>,
+    ) -> Result<Arc<Self>, Box<dyn std::error::Error>> {
         let config = rigspark_runtime::state::Config::from_home(home)?;
         let store = rigspark_runtime::state::StateStore::new(config.clone());
         store.lock(std::time::Duration::from_secs(10))?.release()?;
@@ -96,6 +113,8 @@ impl Host {
             port,
             engine,
             runtimes: Mutex::new(Default::default()),
+            generation: Default::default(),
+            generator,
             approvals: approval::Approvals::default(),
             grants: Mutex::new(Default::default()),
             admission: Arc::new(tokio::sync::Semaphore::new(1)),
