@@ -612,6 +612,7 @@ async fn wan_uses_euler_on_apple_mps_and_uni_pc_elsewhere() {
         let comfy = Comfy::new(move |call, polls| match call.path.as_str() {
             "/system_stats" => json_body(json!({"system": {}, "devices": reported.clone()})),
             "/prompt" => json_body(json!({"prompt_id": "abc-123", "node_errors": {}})),
+            "/history" => json_body(json!({})),
             "/history/abc-123" if polls == 0 => json_body(json!({})),
             "/history/abc-123" => json_body(json!({"abc-123": completed("28", "v.webp")})),
             "/view" => Ok((200, WEBP.to_vec())),
@@ -654,6 +655,7 @@ async fn flux_sampler_is_unchanged_on_mps() {
     let comfy = Comfy::new(move |call, polls| match call.path.as_str() {
         "/system_stats" => json_body(json!({"system": {}, "devices": [{"type": "mps"}]})),
         "/prompt" => json_body(json!({"prompt_id": "abc-123", "node_errors": {}})),
+        "/history" => json_body(json!({})),
         "/history/abc-123" if polls == 0 => json_body(json!({})),
         "/history/abc-123" => json_body(json!({"abc-123": completed("9", "i.png")})),
         "/view" => Ok((200, PNG.to_vec())),
@@ -672,4 +674,111 @@ async fn flux_sampler_is_unchanged_on_mps() {
         comfy.submitted().unwrap()["31"]["inputs"]["sampler_name"],
         "euler"
     );
+}
+
+/// ComfyUI with `free` bytes reported and a previous prompt that loaded `previous` weights.
+fn under_pressure(
+    model: &GenerationModel,
+    device: &'static str,
+    free: u64,
+    previous: Option<Value>,
+) -> Comfy {
+    let listings = listing(model, false);
+    Comfy::new(move |call, polls| match call.path.as_str() {
+        "/system_stats" => json_body(json!({"system": {"ram_free": free},
+            "devices": [{"type": device, "vram_free": free}]})),
+        "/history" => json_body(match &previous {
+            Some(graph) => json!({"old-1": {"prompt": [1, "old-1", graph, {}, []], "outputs": {}}}),
+            None => json!({}),
+        }),
+        "/free" => json_body(json!({})),
+        "/prompt" => json_body(json!({"prompt_id": "abc-123", "node_errors": {}})),
+        "/history/abc-123" if polls == 0 => json_body(json!({})),
+        "/history/abc-123" => json_body(json!({"abc-123": completed("28", "v.webp")})),
+        "/view" => Ok((200, WEBP.to_vec())),
+        path => json_body(listings[path].clone()),
+    })
+}
+
+/// Live testing on a 36 GB Apple M4 Max: Wan sampled ~4x slower (and swapped) beside a resident
+/// FLUX even though ComfyUI reported more free memory than Wan's weights. Unified memory therefore
+/// always unloads on a workflow switch; discrete GPUs only when free memory is below the weights.
+#[tokio::test]
+async fn previous_workflow_weights_are_unloaded_on_switch_when_memory_is_shared_or_short() {
+    let flux = json!({"30": {"class_type": "CheckpointLoaderSimple",
+        "inputs": {"ckpt_name": "rigspark/comfyui/Comfy-Org/flux1-schnell@x/flux1-schnell-fp8.safetensors"}}});
+    let (video, _) = fixture("video");
+    let ours = |model: &GenerationModel| {
+        let names: serde_json::Map<String, Value> = listing(model, false)
+            .values()
+            .enumerate()
+            .map(|(index, list)| {
+                (
+                    index.to_string(),
+                    json!({"class_type": "UNETLoader", "inputs": {"unet_name": list[1]}}),
+                )
+            })
+            .collect();
+        Value::Object(names)
+    };
+    let need = video.total_bytes();
+    for (device, free, previous, expect_free) in [
+        ("cuda", need / 2, Some(flux.clone()), true),
+        ("cuda", need * 4, Some(flux.clone()), false),
+        ("mps", need * 4, Some(flux.clone()), true),
+        ("mps", need / 2, Some(ours(&video)), false),
+        ("mps", need / 2, None, false),
+    ] {
+        let (model, hub) = fixture("video");
+        let comfy = under_pressure(&model, device, free, previous.clone());
+        let directory = comfy_dir();
+        let out = tempfile::tempdir().unwrap();
+        let messages = std::sync::Arc::new(Mutex::new(Vec::new()));
+        let sink = messages.clone();
+        let mut ui = client(&comfy, &hub);
+        ui.events = Some(std::sync::Arc::new(move |line: String| {
+            sink.lock().unwrap().push(line)
+        }));
+        ui.generate(
+            &request(&model, directory.path(), out.path(), None),
+            &CancellationToken::new(),
+        )
+        .await
+        .unwrap();
+        let calls = comfy.calls();
+        let freed = calls.iter().find(|call| call.path == "/free");
+        assert_eq!(
+            freed.is_some(),
+            expect_free,
+            "{device} free={free} previous={previous:?}"
+        );
+        if let Some(call) = freed {
+            assert_eq!(
+                call.body,
+                Some(json!({"unload_models": true, "free_memory": true}))
+            );
+            let free_index = calls.iter().position(|call| call.path == "/free").unwrap();
+            let prompt_index = calls
+                .iter()
+                .position(|call| call.path == "/prompt")
+                .unwrap();
+            assert!(free_index < prompt_index, "unload must precede submission");
+            assert!(
+                messages
+                    .lock()
+                    .unwrap()
+                    .iter()
+                    .any(|line| line.contains("Freeing ComfyUI memory"))
+            );
+        }
+        if device != "mps" && free >= need {
+            assert!(
+                calls.iter().all(|call| call.path != "/history"),
+                "discrete GPUs with room never read history"
+            );
+        } else {
+            let history = calls.iter().find(|call| call.path == "/history").unwrap();
+            assert_eq!(history.query.as_deref(), Some("max_items=1"));
+        }
+    }
 }

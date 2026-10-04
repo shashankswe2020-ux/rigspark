@@ -245,6 +245,28 @@ pub struct GenerationOutcome {
 
 pub type Events = Arc<dyn Fn(String) + Send + Sync>;
 
+/// What ComfyUI reports about itself before a run.
+#[derive(Debug, Clone, Default)]
+pub struct ComfyStatus {
+    pub devices: Vec<String>,
+    /// Smallest free device memory, falling back to free system RAM; `None` when unreported.
+    pub free_bytes: Option<u64>,
+}
+
+/// Weight file names a workflow graph loads, with `\` normalised to `/`.
+fn model_files(graph: &Value) -> std::collections::BTreeSet<String> {
+    graph
+        .as_object()
+        .into_iter()
+        .flat_map(|nodes| nodes.values())
+        .filter_map(|node| node.get("inputs").and_then(Value::as_object))
+        .flat_map(|inputs| inputs.values())
+        .filter_map(Value::as_str)
+        .filter(|value| value.ends_with(".safetensors"))
+        .map(|value| value.replace('\\', "/"))
+        .collect()
+}
+
 pub struct ComfyUi<'runtime> {
     pub http: &'runtime dyn Transport,
     pub download: &'runtime dyn DownloadTransport,
@@ -394,28 +416,42 @@ impl ComfyUi<'_> {
         }
     }
 
-    /// Confirms the listener is ComfyUI and returns its reported compute device types.
+    /// Confirms the listener is ComfyUI and returns its reported devices and free memory.
     pub async fn ready(
         &self,
         endpoint: &str,
         cancel: &CancellationToken,
-    ) -> Result<Vec<String>, GenerationError> {
+    ) -> Result<ComfyStatus, GenerationError> {
         match self
             .get_json(endpoint, "/system_stats", cancel, 1024 * 1024)
             .await
         {
-            Ok(stats) if stats.get("system").is_some_and(Value::is_object) => Ok(stats
-                .get("devices")
-                .and_then(Value::as_array)
-                .into_iter()
-                .flatten()
-                .take(16)
-                .filter_map(|device| device.get("type").and_then(Value::as_str))
-                .filter(|kind| {
-                    kind.len() <= 32 && kind.bytes().all(|byte| byte.is_ascii_alphanumeric())
+            Ok(stats) if stats.get("system").is_some_and(Value::is_object) => {
+                let devices: Vec<&Value> = stats
+                    .get("devices")
+                    .and_then(Value::as_array)
+                    .into_iter()
+                    .flatten()
+                    .take(16)
+                    .collect();
+                let free_bytes = devices
+                    .iter()
+                    .filter_map(|device| device.get("vram_free").and_then(Value::as_u64))
+                    .min()
+                    .or_else(|| stats.pointer("/system/ram_free").and_then(Value::as_u64));
+                Ok(ComfyStatus {
+                    devices: devices
+                        .iter()
+                        .filter_map(|device| device.get("type").and_then(Value::as_str))
+                        .filter(|kind| {
+                            kind.len() <= 32
+                                && kind.bytes().all(|byte| byte.is_ascii_alphanumeric())
+                        })
+                        .map(str::to_owned)
+                        .collect(),
+                    free_bytes,
                 })
-                .map(str::to_owned)
-                .collect()),
+            }
             Ok(_) => Err(GenerationError::Response("listener is not ComfyUI")),
             Err(GenerationError::Cancelled) => Err(GenerationError::Cancelled),
             Err(GenerationError::Http(HttpError::Invalid)) => Err(GenerationError::Invalid(
@@ -526,6 +562,76 @@ impl ComfyUi<'_> {
                 .find(|entry| entry.replace('\\', "/") == weight.name)
                 .ok_or_else(|| GenerationError::NotVisible(weight.name.clone()))?;
             weight.name = listed.to_owned();
+        }
+        Ok(())
+    }
+
+    /// Weight files of the most recent ComfyUI prompt, best effort.
+    async fn previous_files(
+        &self,
+        endpoint: &str,
+        cancel: &CancellationToken,
+    ) -> Option<std::collections::BTreeSet<String>> {
+        let request = Request::new(endpoint, "/history", None, None)
+            .ok()?
+            .with_query(&[("max_items", "1")])
+            .ok()?;
+        let history = read_json(self.http, request, cancel, 16 * 1024 * 1024)
+            .await
+            .ok()?;
+        let graph = history
+            .as_object()?
+            .values()
+            .next_back()?
+            .get("prompt")?
+            .get(2)?;
+        Some(model_files(graph)).filter(|files| !files.is_empty())
+    }
+
+    /// Unloads another workflow's weights before switching models when memory is shared (Apple
+    /// MPS) or free device memory is below this model's weights. Live testing on a 36 GB M4 Max:
+    /// Wan swapped and sampled ~4x slower beside a resident FLUX even with more free memory than
+    /// Wan's weights, because activations and upcast encoders need far more than the files.
+    async fn make_room(
+        &self,
+        endpoint: &str,
+        status: &ComfyStatus,
+        needed: u64,
+        graph: &Value,
+        cancel: &CancellationToken,
+    ) -> Result<(), GenerationError> {
+        let shared = apple_mps(&status.devices);
+        let short = status.free_bytes.is_some_and(|free| free < needed);
+        if !shared && !short {
+            return Ok(());
+        }
+        let Some(previous) = self.previous_files(endpoint, cancel).await else {
+            return Ok(());
+        };
+        if previous == model_files(graph) {
+            return Ok(());
+        }
+        let free = status.free_bytes.map_or_else(
+            || "unknown".to_owned(),
+            |free| format!("{:.1} GiB", free as f64 / 1073741824.0),
+        );
+        self.emit(format!(
+            "Freeing ComfyUI memory before switching models ({free} free, {:.1} GiB of weights needed{})",
+            needed as f64 / 1073741824.0,
+            if shared { ", shared Apple memory" } else { "" }
+        ));
+        let (code, _) = self
+            .post_json(
+                endpoint,
+                "/free",
+                json!({"unload_models": true, "free_memory": true}),
+                cancel,
+            )
+            .await?;
+        if !(200..300).contains(&code) {
+            self.emit(format!(
+                "ComfyUI declined to free memory (HTTP {code}); continuing"
+            ));
         }
         Ok(())
     }
@@ -728,8 +834,9 @@ impl ComfyUi<'_> {
                 return Err(GenerationError::Exists(output.to_path_buf()));
             }
         }
-        let devices = self.ready(request.endpoint, cancel).await?;
-        if model.workflow == Workflow::WanT2v && apple_mps(&devices) {
+        let status = self.ready(request.endpoint, cancel).await?;
+        let devices = &status.devices;
+        if model.workflow == Workflow::WanT2v && apple_mps(devices) {
             self.emit(
                 "ComfyUI reports Apple MPS: using the euler sampler (uni_pc diverges on MPS)"
                     .into(),
@@ -743,8 +850,16 @@ impl ComfyUi<'_> {
             .iter()
             .map(|weight| (weight.role, weight.name.clone()))
             .collect();
-        let graph = workflow(model, &names, request.prompt, request.seed, &devices)?;
+        let graph = workflow(model, &names, request.prompt, request.seed, devices)?;
         ensure_local_only(&graph)?;
+        self.make_room(
+            request.endpoint,
+            &status,
+            model.total_bytes(),
+            &graph,
+            cancel,
+        )
+        .await?;
         let (status, response) = self
             .post_json(
                 request.endpoint,

@@ -82,7 +82,14 @@ Dependency order: T1 → T2 → T3 → T4 → T5. T2 helpers are independent of 
 - [x] **T12 — Chat toggle**: Text · Image · Video radiogroup in the composer; capture-phase submit routing
   in `generate.js`; inline progress → media bubble; Stop cancels. Live: "create mount fuji" → inline
   FLUX image with 0 `/api/chat` requests.
-- [ ] **T13 — Live chat video**: "create video of running horse" via the Video toggle.
+- [ ] **T13 — Live chat video**: "create video of running horse" via the Video toggle. First attempt
+  sampled ~250 s/step (vs ~60–77) because FLUX stayed resident after a chat image: ComfyUI reported
+  4.9 GB free and 6 GB swap on 36 GB unified memory. Chat Stop verified live (`execution_interrupted`).
+- [x] **T14 — Make room between workflows**: before submitting a different workflow than ComfyUI's last
+  prompt (`/history?max_items=1`), call ComfyUI's core `/free`, always on Apple MPS (shared memory) and
+  on discrete GPUs only when reported free memory is below the model's weights. A first, weights-only
+  threshold did not trigger live (ComfyUI reported ≥ 9.2 GiB free) yet Wan still sampled at ~200 s/step
+  beside FLUX, so activations and upcast encoders dominate. Same-model repeats keep their warm cache.
 
 ## Risks
 
