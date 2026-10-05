@@ -14,7 +14,8 @@
 
 RigSpark scores your hardware and gives every model a `yes / slow / no` verdict,
 a memory-fit explanation, and an estimated tok/s range. Then it verifies, serves,
-and chats with the model you pick. It is an open-source, privacy-first Rust CLI
+and chats with the model you pick. It also generates images and short videos
+locally through your own ComfyUI. It is an open-source, privacy-first Rust CLI
 with a terminal UI and a browser workspace for macOS, Linux, and Windows.
 
 [![RigSpark demo: rigspark recommend ranks local LLMs with yes / slow / no verdicts, then the same verdicts in the browser GUI; click to watch with sound](assets/rigspark-preview.gif)](assets/rigspark.mp4)
@@ -34,6 +35,8 @@ the same verdicts and a local chat.
   to `127.0.0.1`.
 - **Bring your backend.** Works with **Ollama**, **llama.cpp**, **MLX** (Apple
   Silicon), and **LM Studio** (attach-only).
+- **Images and video, locally.** FLUX.1 schnell and Wan 2.1 through your own
+  ComfyUI, from chat, the CLI, or the terminal UI. No cloud nodes or paid credits.
 
 ## Install
 
@@ -95,30 +98,46 @@ availability](docs/references/guide.md#independent-catalog-updates).
 ## Image and Video Generation
 
 RigSpark can also run open-weight image and video models locally and for free
-through your own [ComfyUI](https://github.com/Comfy-Org/ComfyUI) install. Start
-ComfyUI on its default loopback address (`127.0.0.1:8188`), then:
+through your own [ComfyUI](https://github.com/Comfy-Org/ComfyUI) install.
+RigSpark doesn't install ComfyUI; start it on its default loopback address
+(`127.0.0.1:8188`) and RigSpark handles the weights and workflows.
+
+In `rigspark gui`, switch the chat composer from **Text** to **Image** or
+**Video** and describe what you want, for example "create mount fuji". The
+result renders inline and is never sent to the language model. A **Create** view
+offers the same with a seed field and an explicit ComfyUI directory.
+
+<img src="assets/chat-image-generation.jpg" alt="RigSpark chat with the Image toggle selected: the prompt create mount fuji returns a FLUX.1 schnell image of Mount Fuji inline" width="560">
+
+From the terminal:
 
 ```bash
 rigspark catalog --generation                               # image/video models + memory fit
 rigspark generate image --prompt "a lighthouse at dusk" --comfyui-dir ~/ComfyUI
 rigspark generate video --prompt "a fox running in snow" --comfyui-dir ~/ComfyUI
 rigspark generate --tui                                      # interactive terminal form
-rigspark gui                                                 # browser: Create view, or chat with the Image/Video toggle
 ```
 
-| Model | Kind | License | Weights |
-| --- | --- | --- | --- |
-| `flux1-schnell:fp8` | image (PNG) | Apache-2.0 | 16.1 GiB |
-| `wan2.1-t2v:1.3b` | video (animated WebP) | Apache-2.0 | 9.2 GiB |
+| Model | Kind | Output | License | Weights |
+| --- | --- | --- | --- | --- |
+| `flux1-schnell:fp8` | image | 1024×1024 PNG | Apache-2.0 | 16.1 GiB |
+| `wan2.1-t2v:1.3b` | video | 832×480, 33 frames at 16 fps (~2 s) animated WebP | Apache-2.0 | 9.2 GiB |
 
-Weights are pinned to a Hugging Face commit, checked against their SHA-256 on every
-run, and placed under `ComfyUI/models/<folder>/rigspark/`. RigSpark submits only its
-own built-in workflows, which use core local nodes. It refuses ComfyUI's paid
-Partner (API) nodes, never sends account keys, and only connects over loopback.
-The fit verdict covers weight memory only. Generation speed is reported as
-`unknown`. Outputs are never overwritten. `--comfyui-dir` defaults to
-`RIGSPARK_COMFYUI_DIR`, then `~/ComfyUI`. Interrupted downloads resume and are still
-fully hash-verified. Details: [spec](docs/specs/image-video-generation.md).
+- **Verified weights.** Pinned to a Hugging Face commit, checked against their
+  SHA-256 on every run, and placed under `ComfyUI/models/<folder>/rigspark/`.
+  Interrupted downloads resume and are still fully hash-verified.
+- **Local only.** RigSpark submits only its own built-in workflows of core local
+  nodes, refuses ComfyUI's paid Partner (API) nodes, never sends account keys,
+  and connects over loopback only.
+- **Honest numbers.** The fit verdict covers weight memory only, and generation
+  speed is reported as `unknown`. Video is slow on laptops: expect minutes per
+  clip, not seconds.
+- **Apple Silicon.** RigSpark uses the euler sampler for Wan on Apple GPUs (the
+  default sampler produced corrupt video there) and unloads the previous model
+  when you switch between image and video.
+
+Outputs are never overwritten. `--comfyui-dir` defaults to `RIGSPARK_COMFYUI_DIR`,
+then `~/ComfyUI`. Details: [spec](docs/specs/image-video-generation.md).
 
 ## Browser Workspace
 
