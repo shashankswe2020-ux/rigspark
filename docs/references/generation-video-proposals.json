@@ -1,0 +1,606 @@
+{
+  "schemaVersion": 1,
+  "kind": "video",
+  "generatedAt": "2026-10-05T19:07:54Z",
+  "requiresReview": true,
+  "knownCandidates": [
+    "wan2.1-t2v:1.3b",
+    "wan2.1-t2v:1.3b-bf16"
+  ],
+  "unknownCandidates": [
+    {
+      "repository": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "samuelchristlie/Wan2.1-T2V-1.3B-GGUF",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "Wan-AI/Wan2.1-T2V-14B",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "Efficient-Large-Model/LongLive-Plug-Wan2.1-T2V-14B-few-step",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "city96/Wan2.1-T2V-14B-gguf",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "Isi99999/Wan2.1-T2V-1.3B",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "sarthak247/Wan2.1-T2V-1.3B-nf4",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "Wan-AI/Wan2.1-T2V-14B-Diffusers",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "Isi99999/Wan2.1-T2V-14B",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "finetrainers/Wan2.1-T2V-1.3B-crush-smol-v0",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "finetrainers/Wan2.1-T2V-1.3B-3dgs-v0",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "mehmetkeremturkcan/Suturing-Wan2.1-1.3B-T2V",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "AlekseyCalvin/VladimirLENIN_Wan2.1_1.3B_T2V_LoRA",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "AlekseyCalvin/VladimirLENIN_Wan2.1_1.3B_ver2_rank128_T2V_LoRA",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "AlekseyCalvin/VladimirLENIN_Wan2.1_14B_T2V_LoRA_bySilverAgePoets",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "xilanhua12138/Wan2.1-T2V-1.3B-Reward",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "wavespeed/Wan2.1-T2V-14B-Diffusers-fp16",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "AdamLucek/Wan2.1-T2V-14B-OldBookIllustrations",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "wan-community/Wan2.1-T2V-1.3B-Diffusers",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "wan-community/Wan2.1-T2V-14B-Diffusers",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "wan-community/Wan2.1-T2V-14B",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "wan-community/Wan2.1-T2V-1.3B",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "lightx2v/Wan2.1-T2V-14B-CausVid",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "Njbx/Wan2.1-T2V-14B-CausVid-GGUF",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "strangerzonehf/Wan2.1-t2v-14B-Person-LoRA",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "QuantStack/Wan2.1_T2V_14B_FusionX-GGUF",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "lightx2v/Wan2.1-T2V-14B-StepDistill-CfgDistill",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "quarterturn/wan-2.1-14b-t2v-bbw",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "quarterturn/wan-2.1-t2v-14b-kuroki-tomoko",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "liuming9157/Wan2.1-T2V-1.3B-Diffusers-ov-int4",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "liuming9157/Wan2.1-T2V-1.3B-Diffusers-ov-fp16",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "wavespeed/Wan2.1-T2V-14B-Diffusers-fp16-nf4",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "quarterturn/wan-2.1-t2v-14b-blue-archive",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "artificialguybr/Wan-BalancingAct-Redmond-Wan2.1-T2V-14B",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "ai-forever/Wan2.1-T2V-14B-NABLA-0.7",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "artificialguybr/Wan-Bloom-Redmond-Wan2.1-T2V-14B",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "ai-forever/Wan2.1-T2V-14B-NABLA-0.6-STA-11-3-3",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "ai-forever/Wan2.1-T2V-14B-NABLA-0.5-STA-11-5-5",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "AniWanefrrr/wan-2.1-t2v-14b-blue-archive",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "AniWanefrrr/wan-2.1-t2v-14b-kuroki-tomoko",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "quarterturn/wan2.1-14b-t2v-flcl-progressive",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "AlekseyCalvin/UkraineWar1.3B_Wan2.1_t2v-LoRA",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "amanuelcm/Wan2.1-T2V-1.3B-OldIllustration",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "amanuelcm/Wan2.1-T2V-1.3B-HansCharacter",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "AaronHuangWei/Wan2.1-T2V-14B-MXFP4FakeQuant",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "AaronHuangWei/Wan2.1-T2V-14B-NVFP4FakeQuant",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "AaronHuangWei/Wan2.1-T2V-14B-INT8FakeQuant_pertensor",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "CodeGoat24/Wan2.1-T2V-14B-UnifiedReward-Flex-lora",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "AaronHuangWei/Wan2.1-T2V-1.3B-NVFP4RealQuant_weightnoly",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "lightx2v/Wan2.1-T2V-1.3B-longcat-step500",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "lightx2v/Wan2.1-T2V-1.3B-longcat-step1000",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "lightx2v/Wan2.1-T2V-1.3B-longcat-step1500",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "dailyfood/Wan2.1-T2V-1.3B",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "Ediez/Wan2.1-T2V-1.3B",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "leoedwards2178/Wan2.1-T2V-14B",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "sqwqw/Wan2.1-T2V-1.3B",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "AaronHuangWei/Wan2.1-T2V-14B-NVFP4Fake_layer_4o6_search_n100_s0.001_p2.4",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "tarek876543/Wan2.1-T2V-14B",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "plluha/Wan2.1-T2V-14B",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "Abhikie18/Wan2.1-T2V-14B",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "minaewrw/Wan2.1-T2V-1.3B-Light-Ready",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "tulsicode/Wan2.1-T2V-1.3B-Diffusers",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "ayoub1222/Wan2.1-T2V-14B",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "Getara/Wan2.1-T2V-14B",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "rwboss/Wan2.1-T2V-14B-Diffusers",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "Timemaster/Wan2.1-T2V-1.3B-ts",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "sharonSD/Wan2.1-T2V-14B",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "lhca521/Wan2.1-T2V-1.3B-Diffusers",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "AsadIsmail/Wan2.1-T2V-1.3B-ternary",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "taf5919/Wan2.1-T2V-1.3B-Diffusers",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "nomanpro/Wan2.1-T2V-14B",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "msads/Wan2.1-T2V-14B",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "steveludwig7/Wan2.1-T2V-1.3B-Diffusers",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "basem01/Wan2.1-T2V-14B",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "pharmacypractice16/Wan2.1-T2V-1.3B-Diffusers",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "zaitrarrio/Wan2.1-T2V-14B-CausVid",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "weiweiw01/Wan2.1-T2V-14B-gguf",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "Erland/tiny-wan2.1-t2v-debug",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "Erland/tiny-wan2.1-vsa-t2v-14b-720p-debug",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "nvidia/AnyFlow-Wan2.1-T2V-1.3B-Diffusers",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "nvidia/AnyFlow-Wan2.1-T2V-14B-Diffusers",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "techfreakworm/wan2.1-t2v-14b",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "Muapi/studio-ghibli-wan2.1-t2v-14b",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "Muapi/cartoonishly-eaten-ltx-2-wan2.1-14b-t2v",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "Muapi/middle_finger_wan2.1_i2v__t2v",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "Muapi/elastigirl-helen-parr-the-incredibles-wan2.1-14b-t2v",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "Muapi/redline-wan2.1-t2v-14b",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "Muapi/rapunzel-tangled-wan2.1-14b-t2v",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "Muapi/invisible-person-living-clothes-wan2.1-t2v-i2v-14b",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "Muapi/trampoline-diving-wan2.1-14b-t2v",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "Muapi/anime-denser-wan2.1-t2v-14b",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "Muapi/wan2.1-t2v-14b-zp92-of-huge-feet-style",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "Muapi/comicbook-wan2.1-t2v-14b",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "bghira/AnyFlow-Wan2.1-T2V-1.3B-LoRA",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "Muapi/amputee-wan2.1-t2v-14b",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "Muapi/claymation-transformation-wan2.1-14b-t2v",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "Muapi/animaldiving-wan2.1-t2v-14b",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "Muapi/ryuko-matoi-wan2.1-t2v-14b",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "Muapi/violetevergardenstyle-wan2.1-t2v-14b",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    }
+  ]
+}
