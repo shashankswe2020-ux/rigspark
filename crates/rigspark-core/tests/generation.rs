@@ -26,7 +26,7 @@ fn nvidia(vram_gib: f64, free_ram_gib: f64) -> Hardware {
 fn bundled_with_leading_non_default_variant() -> Value {
     let mut value: Value = serde_json::from_str(GENERATION_JSON).unwrap();
     let mut variant = model_mut(&mut value, "flux1-schnell:fp8").clone();
-    variant["id"] = json!("flux1-schnell:fp16");
+    variant["id"] = json!("flux1-schnell:test-variant");
     variant["default"] = json!(false);
     value["models"].as_array_mut().unwrap().insert(0, variant);
     value
