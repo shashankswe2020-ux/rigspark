@@ -42,7 +42,9 @@ jobs:
           [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::Invalid release tag: $TAG"; exit 1; }
           echo "VERSION=${TAG#v}" >> "$GITHUB_ENV"
           echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
-      - name: Fetch tagged revision without an action runtime
+      # The image recipe (Dockerfile) comes from this workflow's revision so older tags can be
+      # packaged; the tag only selects which verified release binaries go into the image.
+      - name: Fetch workflow revision without an action runtime
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -53,10 +55,18 @@ jobs:
           export GIT_CONFIG_COUNT=1
           export GIT_CONFIG_KEY_0="http.${GITHUB_SERVER_URL}/.extraheader"
           export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $AUTH"
-          git fetch --no-tags --depth=1 origin "refs/tags/$TAG:refs/tags/$TAG"
+          git fetch --no-tags --depth=1 origin "$GITHUB_SHA"
           unset AUTH GIT_CONFIG_COUNT GIT_CONFIG_KEY_0 GIT_CONFIG_VALUE_0 GH_TOKEN
-          git checkout --detach "refs/tags/$TAG"
-          grep -qx "version = \"$VERSION\"" Cargo.toml || { echo "::error::$TAG does not match the workspace version"; exit 1; }
+          git checkout --detach FETCH_HEAD
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+      - name: Resolve the release source revision
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json isDraft --jq '.isDraft' | grep -qx false \
+            || { echo "::error::$TAG is not a published release"; exit 1; }
+          echo "SOURCE_REVISION=$(gh api "repos/$GITHUB_REPOSITORY/commits/$TAG" --jq .sha)" >> "$GITHUB_ENV"
       - name: Download and verify the release archive
         env:
           GH_TOKEN: ${{ github.token }}
@@ -74,7 +84,7 @@ jobs:
           docker build --target release --platform "linux/${{ matrix.arch }}" \
             --label "org.opencontainers.image.source=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}" \
             --label "org.opencontainers.image.version=$VERSION" \
-            --label "org.opencontainers.image.revision=$(git rev-parse HEAD)" \
+            --label "org.opencontainers.image.revision=$SOURCE_REVISION" \
             --label "org.opencontainers.image.licenses=MIT" \
             --label "org.opencontainers.image.description=RigSpark: hardware-aware local model advice" \
             -t "$IMAGE:$VERSION-${{ matrix.arch }}" .

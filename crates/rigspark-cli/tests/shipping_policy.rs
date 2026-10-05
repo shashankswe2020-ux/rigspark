@@ -331,6 +331,10 @@ fn releases_publish_the_documented_container_image_from_verified_archives() {
     ] {
         assert!(container.contains(required), "{required}");
     }
+    // The recipe comes from the workflow revision, so tags cut before the release target existed still package.
+    assert!(container.contains("git fetch --no-tags --depth=1 origin \"$GITHUB_SHA\""));
+    assert!(!container.contains("refs/tags/$TAG"));
+    assert!(container.contains("org.opencontainers.image.revision=$SOURCE_REVISION"));
     // Release archives are built on Ubuntu 24.04 and need glibc 2.39 at runtime.
     assert!(dockerfile.contains("FROM debian:trixie-slim@sha256:"));
     assert!(dockerfile.contains("FROM base AS release"));
