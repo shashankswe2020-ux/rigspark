@@ -33,6 +33,7 @@ const LOG_LINES: usize = 200;
 pub struct ModelRow {
     pub id: String,
     pub kind: &'static str,
+    pub default: bool,
     pub params: String,
     pub weights_gib: f64,
     pub verdict: &'static str,
@@ -49,6 +50,7 @@ pub fn model_rows(catalog: &GenerationCatalog, hardware: &Hardware) -> Vec<Model
             ModelRow {
                 id: model.id.clone(),
                 kind: model.kind.name(),
+                default: model.default,
                 params: model.params.clone(),
                 weights_gib: model.total_bytes() as f64 / 1073741824.0,
                 verdict: memory.verdict.name(),
@@ -56,7 +58,12 @@ pub fn model_rows(catalog: &GenerationCatalog, hardware: &Hardware) -> Vec<Model
             }
         })
         .collect();
-    rows.sort_by(|left, right| left.kind.cmp(right.kind).then(left.id.cmp(&right.id)));
+    rows.sort_by(|left, right| {
+        left.kind
+            .cmp(right.kind)
+            .then(right.default.cmp(&left.default))
+            .then(left.id.cmp(&right.id))
+    });
     rows
 }
 
@@ -126,7 +133,11 @@ impl GenerateView {
             .rows
             .iter()
             .position(|row| row.id == query)
-            .or_else(|| self.rows.iter().position(|row| row.kind == query))
+            .or_else(|| {
+                self.rows
+                    .iter()
+                    .position(|row| row.kind == query && row.default)
+            })
         {
             self.selected = index;
         }

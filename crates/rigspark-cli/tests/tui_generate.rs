@@ -213,6 +213,8 @@ fn keys_navigate_models_and_ctrl_c_interrupts_when_idle() {
         KeyEvent::new(KeyCode::BackTab, KeyModifiers::NONE),
     );
     handle_key(&mut view, KeyEvent::new(KeyCode::Down, KeyModifiers::NONE));
+    assert_eq!(view.rows[view.selected].id, "flux1-schnell:fp16");
+    handle_key(&mut view, KeyEvent::new(KeyCode::Down, KeyModifiers::NONE));
     assert_eq!(view.rows[view.selected].id, "wan2.1-t2v:1.3b");
     handle_key(
         &mut view,
