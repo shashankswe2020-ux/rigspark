@@ -1,7 +1,31 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-05T19:07:54Z",
+  "generatedAt": "2026-10-05T21:23:19Z",
   "models": [
+    {
+      "id": "flux1-schnell:fp16",
+      "family": "flux1-schnell",
+      "kind": "image",
+      "params": "12B",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "releaseDate": "2024-08-01",
+      "default": false,
+      "source": "https://huggingface.co/black-forest-labs/FLUX.1-schnell",
+      "workflow": "flux-checkpoint",
+      "workflowSource": "https://comfyanonymous.github.io/ComfyUI_examples/flux/",
+      "files": [
+        {
+          "role": "checkpoint",
+          "folder": "checkpoints",
+          "repo": "Comfy-Org/flux1-schnell",
+          "revision": "c2b683ea00713d6feadcd54b39e3725bbc78638b",
+          "file": "flux1-schnell.safetensors",
+          "sha256": "9403429e0052277ac2a87ad800adece5481eecefd9ed334e1f348723621d2a0a",
+          "bytes": 23782506688
+        }
+      ]
+    },
     {
       "id": "flux1-schnell:fp8",
       "family": "flux1-schnell",

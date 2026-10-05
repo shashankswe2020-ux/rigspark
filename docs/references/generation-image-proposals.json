@@ -1,0 +1,606 @@
+{
+  "schemaVersion": 1,
+  "kind": "image",
+  "generatedAt": "2026-10-05T21:23:19Z",
+  "requiresReview": true,
+  "knownCandidates": [
+    "flux1-schnell:fp8",
+    "flux1-schnell:fp16"
+  ],
+  "unknownCandidates": [
+    {
+      "repository": "city96/FLUX.1-schnell-gguf",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "Niansuh/FLUX.1-schnell",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "martyn/FLUX.1-dev-schnell-dare-merge",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "drbaph/FLUX.1-schnell-dev-merged",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "drbaph/FLUX.1-schnell-dev-merged-fp8",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "drbaph/FLUX.1-schnell-dev-merged-fp8-4step",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "aifoundry-org/FLUX.1-schnell-Quantized",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "p1atdev/flux.1-schnell-pvc-style-lora",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "OlegSkutte/FLUX.1-schnell-GGUF",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "Niansuh/FLUX.1-schnell-gguf",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "second-state/FLUX.1-schnell-GGUF",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "lllyasviel/FLUX.1-schnell-gguf",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "madroid/flux.1-schnell-mflux-4bit",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "lzyvegetable/FLUX.1-schnell",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "alvarobartt/FLUX.1-schnell-vertex",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "John6666/flux1-schnell-fp8-flux",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "nick911/flux1-schnell-normal",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "belisarius/FLUX.1-schnell-RealFlux_1.0b-gguf",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "ttj/FLUX.1-schnell-float16",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "wordslab-org/FLUX.1-schnell-torchao-int8",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "takara-ai/Flux1-Schnell-Quantized",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "OlafCC/flux1-schnell.safetensors",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "magespace/FLUX.1-schnell-bnb-nf4",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "cozy-creator/Flux.1-schnell-8bit",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "gpustack/FLUX.1-schnell-GGUF",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "frankjoshua/FLUX.1-schnell",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "jokerbit/flux.1-schnell",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "moritz-august/FLUX.1-schnell-float8-e4m3fn",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "jokerbit/flux.1-schnell-city96",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "RobertML/FLUX.1-schnell-qf8",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "jokerbit/flux.1-schnell-Robert-int8wo",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "slobers/Flux.1.Schnella",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "manbeast3b/flux.1-schnell-full1",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "manbeast3b/flux.1-schnell-full2",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "manbeast3b/Flux.1.Schnell-full-quant1",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "manbeast3b/Flux.1.schnell-quant2",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "jade012/FLUX.1-schnell1",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "park234/flux.1-schnell",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "soft987/FLUX.1.schnell-quant2",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "soft987/FLUX1.schnell-full",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "black-forest-labs/FLUX.1-schnell-onnx",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "position025/FLUX.1-schnell1-update",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "plab654/FLUX.1-schnell-qf8-ch",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "escort321/FLUX.1-schnell1-up",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "pactive87/FLUX.1-schnell-full",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "pactive87/FLUX.1.schnell-quant",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "malicious546/flux.1-schnell-dat-q8",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "smart099/flux.1-schnell-int8wo",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "position025/FLUX.1-schnell-qf8",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "amd/FLUX.1-schnell_io32_amdgpu",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "amd/FLUX.1-schnell_io16_amdgpu",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "sharper740/Flux1-Schnell",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "director432/Flux1-Schnell",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "park234/Flux1-schnell-f8",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "amd/FLUX.1-schnell-onnx",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "winner632/flux1-schnell-int8wo",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "freaky231/flux.1-schnell-int8",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "smash3211/Flux.1.schnell",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "thorejaya/Flux.1.Schnella_2",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "OpenVINO/FLUX.1-schnell-fp16-ov",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "OpenVINO/FLUX.1-schnell-int8-ov",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "OpenVINO/FLUX.1-schnell-int4-ov",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "dhairyashil/FLUX.1-schnell-mflux-4bit",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "dhairyashil/FLUX.1-schnell-mflux-8bit",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "Keffisor21/flux1-schnell-bnb-nf4",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "smartguy0505/flux.1-schnell",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "blanchon/FLUX.1-schnell-4bit",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "DamianBoborzi/FLUX.1-schnell_meshleet",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "tripathiarpan20/FLUX.1-schnell",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "chutesai/FLUX.1-schnell",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "Mizewy/flux1_schnell_finetuned_512",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "DFloat11/FLUX.1-schnell-DF11",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "Futuremark/FLUX.1-schnell-onnx",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "AINovice2005/FLUX.1-schnell-smashed",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "unsloth/FLUX.1-schnell-GGUF",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "mzbac/flux1.schnell.4bit.mlx",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "mzbac/flux1.schnell.8bit.mlx",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "anyMODE/flux1.schnell-pruned",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "NikolaSigmoid/FLUX.1-schnell",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "frankjoshua/FLUX.1-schnell-bnb-nf4",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "prithivMLmods/Flux.1-Krea-Merged-Schnell",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "imgailab/flux1-schnell-bf16-ampere",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "manbeast3b/FLUX.1-schnell-3dgen-lora",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "Manojb/FLUX.1-schnell-3dgen-LORA",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "1G1/FLUX.1-schnell",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "mingyi456/FLUX.1-schnell-DF11-ComfyUI",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "Disty0/FLUX.1-schnell-SDNQ-uint4-svd-r32",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "aniketppanchal/flux.1-schnell-nf4-pkg",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "BlackSpac3s/Flux.1-schnell-Compressed",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "YuCollection/FLUX.1-schnell-Diffusers",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "YuCollection/FLUX.1-schnell-bf16",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "exolabs/FLUX.1-schnell-4bit",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "exolabs/FLUX.1-schnell-8bit",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "exolabs/FLUX.1-schnell",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "vava22684/FLUX.1-schnell-gguf",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "deAPI-ai/flux1-schnell-12b-nf4",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "illusion615/FLUX.1-schnell-MLX",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "sameernig/FLUX.1-schnell-gguf",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "Sky999lee/FLUX.1-schnell_io32_amdgpu",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    }
+  ]
+}
