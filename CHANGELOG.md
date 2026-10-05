@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.3.0 - 2026-10-04
+## 2.3.0 - 2026-10-05
 
 ### Local image and video generation
 

@@ -131,13 +131,12 @@ async fn form_submits_selected_model_prompt_seed_and_streams_progress() {
         "non-digits are ignored in the seed field"
     );
     assert_eq!(seen[0].comfyui_dir, PathBuf::from("/Users/me/ComfyUI"));
-    assert_eq!(
-        view.saved,
-        vec![PathBuf::from("/tmp/out/rigspark-video-abc-123.webp")]
-    );
+    let saved = PathBuf::from("/tmp/out").join("rigspark-video-abc-123.webp");
+    assert_eq!(view.saved, vec![saved.clone()]);
+    // Native separators: Windows renders the joined component with `\`.
     assert!(
         view.status_text()
-            .starts_with("Saved video: /tmp/out/rigspark-video-abc-123.webp")
+            .starts_with(&format!("Saved video: {}", saved.display()))
     );
     let log: Vec<_> = view.log_lines().cloned().collect();
     assert!(
