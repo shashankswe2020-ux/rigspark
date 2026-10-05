@@ -17,6 +17,30 @@ fn gui_uses_rigspark_branding() {
     assert_eq!(config["productName"], "RigSpark");
 }
 
+#[test]
+fn models_and_chat_are_the_only_generation_surfaces() {
+    let index = include_str!("../static/index.html");
+    let generation = include_str!("../static/generate.js");
+    let chat = include_str!("../static/chat.js");
+
+    for kind in ["text", "image", "video"] {
+        assert!(index.contains(&format!("data-model-kind=\"{kind}\"")));
+    }
+    assert!(index.contains("id=\"active-models-summary\""));
+    assert!(!index.contains("id=\"chat-generation-settings\""));
+    assert!(!index.contains("id=\"generation-dir\""));
+    assert!(!index.contains("id=\"generation-port\""));
+    assert!(!index.contains("id=\"generation-bypass\""));
+    assert!(!index.contains("data-view=\"create\""));
+    assert!(!index.contains("id=\"view-create\""));
+    assert!(generation.contains("rigspark.active.image"));
+    assert!(generation.contains("rigspark.active.video"));
+    assert!(generation.contains("activeSelections[model.kind] = model.id"));
+    assert!(generation.contains("rigspark:text-model-active"));
+    assert!(chat.contains("rigspark:text-model-active"));
+    assert!(generation.contains("model: model.id"));
+}
+
 #[tokio::test]
 async fn artifacts_are_sandboxed_and_vendor_assets_are_embedded() {
     let home = tempfile::tempdir().unwrap();

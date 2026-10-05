@@ -24,9 +24,6 @@
           <button class="rail-item" type="button" data-view="models">
             <span class="rail-dot"></span>Models
           </button>
-          <button class="rail-item" type="button" data-view="create">
-            <span class="rail-dot"></span>Create
-          </button>
           <button class="rail-item" type="button" data-view="connectors">
             <span class="rail-dot"></span>Connectors
           </button>
@@ -237,6 +234,7 @@
                 <button type="button" class="chat-mode-option" role="radio" aria-checked="false" tabindex="-1" data-mode="video">Video</button>
                 <span id="chat-mode-note" class="chat-mode-note" hidden></span>
               </div>
+              <div id="generation-error" class="banner banner-error" role="alert" hidden></div>
               <div class="composer-row">
                 <textarea
                   id="prompt"
@@ -250,6 +248,14 @@
           </section>
 
           <section id="view-models" class="view panel-view">
+            <div class="model-kind-tabs" role="tablist" aria-label="Model type">
+              <button type="button" role="tab" aria-selected="true" data-model-kind="text">Text</button>
+              <button type="button" role="tab" aria-selected="false" tabindex="-1" data-model-kind="image">Image</button>
+              <button type="button" role="tab" aria-selected="false" tabindex="-1" data-model-kind="video">Video</button>
+            </div>
+            <p id="active-models-summary" class="active-models-summary" role="status">
+              Text: not running · Image: loading · Video: loading
+            </p>
             <div id="model-catalog-panel" class="model-catalog-panel">
               <div class="section-head">
                 <div>
@@ -310,63 +316,24 @@
                 <div class="empty">Loading recommendations…</div>
               </div>
             </div>
+            <div id="generation-model-panel" class="model-catalog-panel" hidden>
+              <div class="section-head">
+                <div>
+                  <h2 id="generation-model-heading">Image models</h2>
+                  <p class="section-sub">Select the model Chat uses for local generation through ComfyUI.</p>
+                  <p class="section-note">Fit covers weight memory only; generation speed is unknown.</p>
+                </div>
+                <button id="refresh-generation" class="ghost-btn" type="button">Refresh</button>
+              </div>
+              <div id="generation-models" class="card-grid" role="radiogroup" aria-labelledby="generation-model-heading">
+                <div class="empty">Loading generation models…</div>
+              </div>
+            </div>
 
             <article id="model-detail" class="model-detail" aria-labelledby="model-detail-title" hidden>
               <button id="model-detail-back" class="model-detail-back" type="button" aria-label="Back to model catalog">← Model catalog</button>
               <div id="model-detail-content"></div>
             </article>
-          </section>
-
-          <section id="view-create" class="view panel-view" aria-labelledby="generation-heading">
-            <div class="section-head">
-              <div>
-                <h2 id="generation-heading">Create</h2>
-                <p class="section-sub">
-                  Generate images and videos locally through your ComfyUI install. Only rigspark's built-in
-                  workflows run: no paid Partner nodes, no cloud, loopback only.
-                </p>
-                <p class="section-note">Fit covers weight memory only; generation speed is unknown.</p>
-              </div>
-              <button id="refresh-generation" class="ghost-btn" type="button">Refresh</button>
-            </div>
-
-            <div id="generation-error" class="banner banner-error" role="alert" hidden></div>
-            <div id="generation-models" class="card-grid" role="radiogroup" aria-label="Generation model">
-              <div class="empty">Loading generation models…</div>
-            </div>
-
-            <form id="generation-form" class="glass-form">
-              <label class="field field-wide">
-                <span>Prompt</span>
-                <textarea id="generation-prompt" rows="3" maxlength="16384" required placeholder="A lighthouse at dusk, cinematic lighting"></textarea>
-              </label>
-              <div class="form-row">
-                <label class="field field-wide">
-                  <span>ComfyUI directory</span>
-                  <input id="generation-dir" type="text" maxlength="4096" placeholder="/Users/you/ComfyUI" required />
-                </label>
-                <label class="field">
-                  <span>Seed</span>
-                  <input id="generation-seed" type="number" min="0" max="9007199254740991" step="1" placeholder="random" />
-                </label>
-                <label class="field">
-                  <span>ComfyUI port</span>
-                  <input id="generation-port" type="number" min="1" max="65535" step="1" value="8188" required />
-                </label>
-              </div>
-              <div class="form-row generation-actions">
-                <label class="model-toggle"><input id="generation-bypass" type="checkbox" /> Bypass memory fit</label>
-                <button id="generation-start" class="accent-btn" type="submit">Generate</button>
-                <button id="generation-cancel" class="ghost-btn" type="button" hidden>Cancel</button>
-              </div>
-            </form>
-
-            <p id="generation-status" class="section-note" role="status">Idle</p>
-            <ol id="generation-log" class="generation-log" aria-label="Generation progress"></ol>
-            <figure id="generation-result" class="generation-result" hidden>
-              <img id="generation-preview" alt="" />
-              <figcaption id="generation-caption"></figcaption>
-            </figure>
           </section>
 
           <section id="view-connectors" class="view panel-view">

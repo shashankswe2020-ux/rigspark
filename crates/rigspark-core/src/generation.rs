@@ -78,7 +78,7 @@ impl FileRole {
     }
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct GenerationFile {
     pub role: FileRole,
@@ -90,7 +90,7 @@ pub struct GenerationFile {
     pub bytes: u64,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct GenerationModel {
     pub id: String,
@@ -108,7 +108,7 @@ pub struct GenerationModel {
     pub files: Vec<GenerationFile>,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct GenerationCatalog {
     pub schema_version: u8,
@@ -254,6 +254,97 @@ impl GenerationCatalog {
             )
         })
     }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RejectedGenerationCandidate {
+    pub id: String,
+    pub reason: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GenerationEnrichment {
+    pub catalog: GenerationCatalog,
+    pub updated: Vec<String>,
+    pub rejected: Vec<RejectedGenerationCandidate>,
+}
+
+fn built_in_family(model: &GenerationModel) -> bool {
+    matches!(
+        (model.kind, model.workflow, model.family.as_str()),
+        (
+            GenerationKind::Image,
+            Workflow::FluxCheckpoint,
+            "flux1-schnell"
+        ) | (GenerationKind::Video, Workflow::WanT2v, "wan2.1-t2v")
+    )
+}
+
+/// Applies already-collected, pinned metadata to the bundled generation catalog.
+///
+/// Collection is intentionally outside `rigspark-core`; this function remains pure and
+/// accepts only complete models for workflow families implemented by the runtime.
+pub fn enrich_generation_catalog(
+    catalog: &GenerationCatalog,
+    candidates: Vec<GenerationModel>,
+    kind: GenerationKind,
+    now: &str,
+) -> Result<GenerationEnrichment, ValidationError> {
+    timestamp(now)?;
+    let mut next = catalog.clone();
+    let mut updated = Vec::new();
+    let mut rejected = Vec::new();
+
+    for mut candidate in candidates {
+        let reason = if candidate.kind != kind {
+            Some("candidate does not match the requested kind".into())
+        } else if !built_in_family(&candidate) {
+            Some("candidate has no built-in workflow family".into())
+        } else {
+            candidate.validate().err().map(|error| error.to_string())
+        };
+        if let Some(reason) = reason {
+            rejected.push(RejectedGenerationCandidate {
+                id: strip_control(&candidate.id),
+                reason,
+            });
+            continue;
+        }
+
+        if let Some(existing) = next
+            .models
+            .iter_mut()
+            .find(|model| model.id == candidate.id)
+        {
+            candidate.default = existing.default;
+            if *existing != candidate {
+                updated.push(candidate.id.clone());
+                *existing = candidate;
+            }
+        } else {
+            updated.push(candidate.id.clone());
+            next.models.push(candidate);
+        }
+    }
+
+    updated.sort();
+    updated.dedup();
+    rejected.sort_by(|left, right| left.id.cmp(&right.id));
+    if !updated.is_empty() {
+        next.generated_at = now.into();
+        next.models.sort_by(|left, right| left.id.cmp(&right.id));
+        next = GenerationCatalog::parse(
+            &serde_json::to_string(&next)
+                .map_err(|_| ValidationError("invalid generation catalog".into()))?,
+        )?;
+    }
+    Ok(GenerationEnrichment {
+        catalog: next,
+        updated,
+        rejected,
+    })
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]

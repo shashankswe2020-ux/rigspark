@@ -76,6 +76,11 @@ path = "src/catalog_enrich.rs"
 required-features = ["maintainer-tools"]
 
 [[bin]]
+name = "llmup-generation-enrich"
+path = "src/generation_enrich.rs"
+required-features = ["maintainer-tools"]
+
+[[bin]]
 name = "llmup-catalog-sign"
 path = "src/catalog_sign.rs"
 required-features = ["maintainer-tools"]
