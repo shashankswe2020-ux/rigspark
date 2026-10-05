@@ -1,0 +1,128 @@
+name: Container Image
+
+# Dispatched by release.yml after publication (GITHUB_TOKEN events do not start
+# workflows), or run manually for an already published release.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Published release tag to package (for example v2.3.0)
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: container-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  image:
+    name: Image (${{ matrix.arch }})
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - { arch: amd64, os: ubuntu-24.04, target: x86_64-unknown-linux-gnu }
+          - { arch: arm64, os: ubuntu-24.04-arm, target: aarch64-unknown-linux-gnu }
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    defaults:
+      run:
+        shell: bash
+    env:
+      TAG: ${{ inputs.tag }}
+    steps:
+      - name: Resolve image coordinates
+        run: |
+          set -euo pipefail
+          [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::Invalid release tag: $TAG"; exit 1; }
+          echo "VERSION=${TAG#v}" >> "$GITHUB_ENV"
+          echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+      - name: Fetch tagged revision without an action runtime
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git init .
+          git remote add origin "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git"
+          AUTH=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\r\n')
+          export GIT_CONFIG_COUNT=1
+          export GIT_CONFIG_KEY_0="http.${GITHUB_SERVER_URL}/.extraheader"
+          export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $AUTH"
+          git fetch --no-tags --depth=1 origin "refs/tags/$TAG:refs/tags/$TAG"
+          unset AUTH GIT_CONFIG_COUNT GIT_CONFIG_KEY_0 GIT_CONFIG_VALUE_0 GH_TOKEN
+          git checkout --detach "refs/tags/$TAG"
+          grep -qx "version = \"$VERSION\"" Cargo.toml || { echo "::error::$TAG does not match the workspace version"; exit 1; }
+      - name: Download and verify the release archive
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          archive="rigspark-${{ matrix.target }}.tar.gz"
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --dir release-assets --pattern "$archive" --pattern SHA256SUMS
+          (cd release-assets && grep -E "  $archive\$" SHA256SUMS | sha256sum --check --strict -)
+          mkdir release-bin
+          tar -xzf "release-assets/$archive" -C release-bin --strip-components=1
+          test -x release-bin/llmup && test -x release-bin/rigspark && test -x release-bin/rigspark-gui
+      - name: Build and smoke-test the platform image
+        run: |
+          set -euo pipefail
+          docker build --target release --platform "linux/${{ matrix.arch }}" \
+            --label "org.opencontainers.image.source=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}" \
+            --label "org.opencontainers.image.version=$VERSION" \
+            --label "org.opencontainers.image.revision=$(git rev-parse HEAD)" \
+            --label "org.opencontainers.image.licenses=MIT" \
+            --label "org.opencontainers.image.description=RigSpark: hardware-aware local model advice" \
+            -t "$IMAGE:$VERSION-${{ matrix.arch }}" .
+          test "$(docker run --rm "$IMAGE:$VERSION-${{ matrix.arch }}" --version)" = "rigspark $VERSION"
+          docker run --rm "$IMAGE:$VERSION-${{ matrix.arch }}" | python3 -m json.tool > /dev/null
+      - name: Push the platform image
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$GH_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+          docker push "$IMAGE:$VERSION-${{ matrix.arch }}"
+          docker logout ghcr.io
+
+  manifest:
+    name: Multi-platform tags
+    needs: image
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: write
+    defaults:
+      run:
+        shell: bash
+    env:
+      TAG: ${{ inputs.tag }}
+    steps:
+      - name: Publish version and latest tags
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          VERSION="${TAG#v}"
+          IMAGE="ghcr.io/${GITHUB_REPOSITORY,,}"
+          tags=(-t "$IMAGE:$VERSION")
+          latest=$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName --jq .tagName)
+          if [ "$latest" = "$TAG" ]; then tags+=(-t "$IMAGE:latest"); fi
+          printf '%s' "$GH_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+          docker buildx imagetools create "${tags[@]}" "$IMAGE:$VERSION-amd64" "$IMAGE:$VERSION-arm64"
+          docker buildx imagetools inspect "$IMAGE:$VERSION"
+          docker logout ghcr.io
+      - name: Check anonymous pulls
+        run: |
+          set -euo pipefail
+          repository="${GITHUB_REPOSITORY,,}"
+          if curl -fsS "https://ghcr.io/token?scope=repository:${repository}:pull" > /dev/null; then
+            echo "Anonymous pulls work for ghcr.io/${repository}."
+          else
+            echo "::warning::ghcr.io/${repository} is not public yet. Set the package visibility to Public in its package settings once; later releases keep it."
+          fi

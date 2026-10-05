@@ -19,3 +19,6 @@ playwright-report/
 test-results/
 /blob-report/
 .last-run.json
+
+# Container builds stage verified release-archive binaries here.
+release-bin/

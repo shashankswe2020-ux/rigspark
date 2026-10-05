@@ -306,3 +306,36 @@ fn site_is_indexable_and_offers_only_native_installs() {
         assert!(!site.contains(retired), "{retired}");
     }
 }
+
+#[test]
+fn releases_publish_the_documented_container_image_from_verified_archives() {
+    let container = read(".github/workflows/container.yml");
+    let release = read(".github/workflows/release.yml");
+    let dockerfile = read("Dockerfile");
+    // GITHUB_TOKEN-published releases cannot start workflows, so release.yml dispatches.
+    assert!(release.contains("gh workflow run container.yml"));
+    assert!(container.contains("workflow_dispatch:"));
+    assert!(
+        !container.contains("uses:"),
+        "workflows avoid action runtimes"
+    );
+    for required in [
+        "ghcr.io/${GITHUB_REPOSITORY,,}",
+        "packages: write",
+        "sha256sum --check --strict",
+        "--target release",
+        "x86_64-unknown-linux-gnu",
+        "aarch64-unknown-linux-gnu",
+        "imagetools create",
+        "org.opencontainers.image.source",
+    ] {
+        assert!(container.contains(required), "{required}");
+    }
+    // Release archives are built on Ubuntu 24.04 and need glibc 2.39 at runtime.
+    assert!(dockerfile.contains("FROM debian:trixie-slim@sha256:"));
+    assert!(dockerfile.contains("FROM base AS release"));
+    assert!(dockerfile.contains("COPY release-bin/llmup"));
+    let documented = "docker pull ghcr.io/shashankswe2020-ux/rigspark";
+    assert!(read("site/index.html").contains(documented));
+    assert!(read("docs/references/guide.md").contains(documented));
+}
