@@ -33,10 +33,10 @@
         "@type": "SoftwareApplication",
         "name": "RigSpark",
         "alternateName": "llmup",
-        "description": "Hardware-aware CLI, terminal UI and browser workspace that tells you which local LLMs will run on your machine, with yes / slow / no verdicts and estimated tokens per second, then verifies, serves and chats with them.",
+        "description": "Hardware-aware CLI, terminal UI and browser workspace that tells you which local LLMs will run on your machine, with yes / slow / no verdicts and estimated tokens per second, then verifies, serves and chats with them. It also generates images and short videos locally through your own ComfyUI.",
         "applicationCategory": "DeveloperApplication",
         "operatingSystem": "macOS, Linux, Windows",
-        "softwareVersion": "2.2.0",
+        "softwareVersion": "2.3.0",
         "license": "https://opensource.org/licenses/MIT",
         "url": "https://www.rigspark.si/",
         "downloadUrl": "https://github.com/shashankswe2020-ux/rigspark/releases/latest",
@@ -68,6 +68,11 @@
             "@type": "Question",
             "name": "Can I run local LLMs on a Mac with Apple Silicon?",
             "acceptedAnswer": { "@type": "Answer", "text": "Yes. Apple Silicon GPUs share unified memory with the CPU, so RigSpark sizes models against system memory and auto-selects MLX for models with an MLX build, then Ollama, then llama.cpp." }
+          },
+          {
+            "@type": "Question",
+            "name": "Can RigSpark generate images and videos locally?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Yes. With your own ComfyUI running on 127.0.0.1, rigspark generate image or rigspark generate video installs pinned, SHA-256 verified FLUX.1 schnell or Wan 2.1 weights and runs a built-in workflow. You can also switch the chat composer to Image or Video in rigspark gui. Paid ComfyUI Partner nodes are refused and nothing is sent to the cloud." }
           },
           {
             "@type": "Question",
@@ -118,7 +123,7 @@
         <div class="frame hero-grid">
           <div class="hero-copy">
             <a class="pill-link" href="https://github.com/shashankswe2020-ux/rigspark/releases/latest">
-              <span class="pill-tag">v2.2.0</span> Signed catalog updates and richer chat &rarr;
+              <span class="pill-tag">v2.3.0</span> Local image &amp; video generation &rarr;
             </a>
             <p class="hero-kicker">Hardware-aware local inference</p>
             <h1>Run the right local model. <span>Before you download.</span></h1>
@@ -203,27 +208,28 @@
       <section class="section section-alt" id="latest">
         <div class="frame release-grid">
           <div class="release-copy">
-            <p class="eyebrow">New in 2.2.0</p>
-            <h2>Update the catalog without replacing RigSpark</h2>
+            <p class="eyebrow">New in 2.3.0</p>
+            <h2>Generate images and video on your own machine</h2>
             <p class="sub">
-              Catalog updates are explicit, signed and activated atomically. Normal startup and recommendations
-              stay offline, while failed or incompatible updates leave your current verified snapshot untouched.
+              RigSpark now drives your local ComfyUI to create images with FLUX.1 schnell and short clips with
+              Wan&nbsp;2.1. Weights are pinned and SHA-256 verified, workflows are built in, and nothing leaves
+              <code>127.0.0.1</code>: no cloud nodes, no paid credits, no account keys.
             </p>
             <ul class="release-points">
-              <li><b>Visible provenance.</b> Inspect the active source, revision, digest and model count in the CLI or Models view.</li>
-              <li><b>New model families.</b> Bonsai and Qwen3.5 join the curated catalog; unsourced throughput remains <code>unknown</code>.</li>
-              <li><b>Richer local chat.</b> Pinned KaTeX renders TeX offline behind the existing sanitized Markdown boundary.</li>
+              <li><b>Straight from chat.</b> Flip the composer to <b>Image</b> or <b>Video</b> and type &ldquo;create mount fuji&rdquo;. The result renders inline, never sent to the LLM.</li>
+              <li><b>Every surface.</b> <code>rigspark generate image|video</code>, an interactive terminal form, and a Create view in the browser workspace.</li>
+              <li><b>Honest fit.</b> <code>catalog --generation</code> gives a weight-memory verdict; generation speed stays <code>unknown</code> until it can be sourced.</li>
             </ul>
             <div class="release-actions">
-              <a class="btn btn-primary" href="#install">Install 2.2.0</a>
+              <a class="btn btn-primary" href="#install">Install 2.3.0</a>
               <a class="btn btn-ghost" href="https://github.com/shashankswe2020-ux/rigspark/blob/main/CHANGELOG.md">Read the changelog</a>
             </div>
           </div>
           <figure class="release-media">
             <div class="release-video-shell">
-              <video src="assets/catalog-update.mp4" muted loop playsinline controls preload="metadata" aria-label="RigSpark Models view updating and activating a signed model catalog"></video>
+              <video src="assets/generated-waves.mp4" poster="assets/generated-waves-poster.jpg" autoplay muted loop playsinline controls preload="metadata" aria-label="A two-second clip of ocean waves rolling onto a beach at sunset, generated locally by Wan 2.1 through the RigSpark workspace"></video>
             </div>
-            <figcaption>Update from the Models view, or run <code>rigspark catalog --update</code>.</figcaption>
+            <figcaption>&ldquo;Ocean waves rolling onto a sandy beach at sunset&rdquo;: a 2-second Wan&nbsp;2.1 clip made by <code>rigspark gui</code> on an Apple&nbsp;M4&nbsp;Max.</figcaption>
           </figure>
         </div>
       </section>
@@ -379,6 +385,11 @@ Run the top pick:  <span class="t-acc">rigspark up qwen3:30b-a3b</span>
               <p>Let an agent run code in your workspace; generated images and graphs render in the chat, served from a loopback-only artifacts endpoint.</p>
             </article>
             <article class="card">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M10 9l5 3-5 3z" /></svg>
+              <h3>Local image &amp; video <span class="pill-tag">New</span></h3>
+              <p>Generate with FLUX.1 schnell and Wan&nbsp;2.1 through your own ComfyUI, from chat, the CLI or the terminal UI. Pinned weights, built-in workflows, loopback only.</p>
+            </article>
+            <article class="card">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5" /><path d="M5 20h14" /></svg>
               <h3>Signed catalog updates</h3>
               <p>Explicitly download and atomically activate a verified catalog without replacing the app. Revision rollback and verified fallback protect advice.</p>
@@ -429,6 +440,7 @@ Run the top pick:  <span class="t-acc">rigspark up qwen3:30b-a3b</span>
             <div class="tab-list" role="tablist" aria-label="Workspace views">
               <button role="tab" id="tab-models" aria-controls="panel-models" aria-selected="true">Models</button>
               <button role="tab" id="tab-chat" aria-controls="panel-chat" aria-selected="false" tabindex="-1">Chat</button>
+              <button role="tab" id="tab-create" aria-controls="panel-create" aria-selected="false" tabindex="-1">Image &amp; video</button>
               <button role="tab" id="tab-details" aria-controls="panel-details" aria-selected="false" tabindex="-1">Model details</button>
               <button role="tab" id="tab-agents" aria-controls="panel-agents" aria-selected="false" tabindex="-1">Agents &amp; tools</button>
               <button role="tab" id="tab-mcp" aria-controls="panel-mcp" aria-selected="false" tabindex="-1">MCP connectors</button>
@@ -441,6 +453,10 @@ Run the top pick:  <span class="t-acc">rigspark up qwen3:30b-a3b</span>
               <figure role="tabpanel" id="panel-chat" aria-labelledby="tab-chat" hidden>
                 <img src="assets/screenshot-workspace.png" alt="Chat view with the RigSpark mascot and a Ready when you are prompt" width="1440" height="857" loading="lazy" />
                 <figcaption>Chat with a model running entirely on your machine, with sessions, file context and markdown rendering.</figcaption>
+              </figure>
+              <figure role="tabpanel" id="panel-create" class="tab-portrait" aria-labelledby="tab-create" hidden>
+                <img src="assets/chat-image-generation.jpg" alt="Chat with the Image toggle selected: the prompt create mount fuji returns a FLUX.1 schnell image of Mount Fuji inline, with its seed and a download link" width="1200" height="1908" loading="lazy" />
+                <figcaption>Switch the composer to <b>Image</b> or <b>Video</b> and describe what you want. RigSpark runs a built-in ComfyUI workflow locally and renders the result in the conversation.</figcaption>
               </figure>
               <figure role="tabpanel" id="panel-details" aria-labelledby="tab-details" hidden>
                 <img src="assets/model-performance.png" alt="Model details showing recommendation score, hardware fit, throughput evidence, memory and context sizing" width="1440" height="757" loading="lazy" />
@@ -644,6 +660,7 @@ Run the top pick:  <span class="t-acc">rigspark up qwen3:30b-a3b</span>
             <div><dt>up</dt><dd>Pull with SHA-256 verification, then serve on <code>127.0.0.1</code>.</dd></div>
             <div><dt>chat</dt><dd>Terminal chat with streaming, multi-line input (<kbd>Ctrl+J</kbd>) and session memory.</dd></div>
             <div><dt>gui</dt><dd>Open the loopback-only browser workspace.</dd></div>
+            <div><dt>generate</dt><dd>Create an image or short video locally through ComfyUI; add <code>--tui</code> for an interactive form.</dd></div>
             <div><dt>ls</dt><dd>Show the active model and server endpoint.</dd></div>
             <div><dt>switch</dt><dd>Change the active model without re-pulling, with a keyboard picker in the TUI.</dd></div>
             <div><dt>migrate</dt><dd>Move conversation memory to another model; preview with <code>--dry-run</code>.</dd></div>
@@ -672,6 +689,10 @@ Run the top pick:  <span class="t-acc">rigspark up qwen3:30b-a3b</span>
             <details>
               <summary>Can I run local LLMs on a Mac with Apple Silicon?</summary>
               <p>Yes. Apple Silicon GPUs share unified memory with the CPU, so RigSpark sizes models against system memory and auto-selects MLX for models with an MLX build, then Ollama, then llama.cpp.</p>
+            </details>
+            <details>
+              <summary>Can RigSpark generate images and videos locally?</summary>
+              <p>Yes. With your own ComfyUI running on <code>127.0.0.1</code>, <code>rigspark generate image</code> or <code>rigspark generate video</code> installs pinned, SHA-256 verified FLUX.1 schnell or Wan&nbsp;2.1 weights and runs a built-in workflow. You can also switch the chat composer to <b>Image</b> or <b>Video</b> in <code>rigspark gui</code>. Paid ComfyUI Partner nodes are refused and nothing is sent to the cloud.</p>
             </details>
             <details>
               <summary>Does RigSpark send my data anywhere?</summary>
@@ -704,7 +725,7 @@ Run the top pick:  <span class="t-acc">rigspark up qwen3:30b-a3b</span>
         <div class="brand">
           <img src="assets/mascot-avatar.jpg" alt="" width="24" height="24" loading="lazy" />
           <span>RigSpark</span>
-          <small>v2.2.0 &middot; MIT &middot; Native Rust</small>
+          <small>v2.3.0 &middot; MIT &middot; Native Rust</small>
         </div>
         <nav aria-label="Footer">
           <a href="https://github.com/shashankswe2020-ux/rigspark#readme">Docs</a>
@@ -716,6 +737,6 @@ Run the top pick:  <span class="t-acc">rigspark up qwen3:30b-a3b</span>
       </div>
     </footer>
 
-    <script src="main.js?v=2.2.0"></script>
+    <script src="main.js?v=2.3.0"></script>
   </body>
 </html>
