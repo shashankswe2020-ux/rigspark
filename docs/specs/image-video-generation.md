@@ -1,7 +1,7 @@
 # Spec: Local Image and Video Generation (ComfyUI)
 
-> Status: **Approved for implementation (v1.1: adds TUI + GUI surfaces and resumable downloads)**
-> Last updated: 2026-10-04
+> Status: **Approved for implementation (v1.2: multimodal model selection and catalog enrichment)**
+> Last updated: 2026-10-05
 > Plan: [task-37-image-video-generation.md](../plans/task-37-image-video-generation.md)
 > Related: [pluggable-inference-backends.md](./pluggable-inference-backends.md),
 > [hardware-advisor.md](./hardware-advisor.md)
@@ -26,6 +26,9 @@ Extend rigspark beyond text LLMs so a user can discover, verify, install, and ru
 | Install model | **Attach-only**: user installs and starts ComfyUI; rigspark manages workflows + weights |
 | CLI surface | New `generate image\|video` command |
 | Initial catalog | One image model + one video model, both Apache-2.0, with verified workflows |
+| Model views | Models has Text, Image, and Video views with one active model per kind |
+| GUI creation | Chat uses the active model for its selected Text, Image, or Video mode; the separate Create view is removed |
+| Enrichment | Dedicated image and video pipelines update the shared generation catalog |
 
 ### Free and local guarantees (non-negotiable)
 
@@ -44,13 +47,41 @@ rigspark must never use them:
    Apache-2.0). ComfyUI is driven over HTTP as a separate process; no ComfyUI code
    or example files are vendored (GPL-3.0 isolation; workflows are authored here).
 
-### Non-goals (v1)
+### Non-goals (v1.2)
 
 - Installing, spawning, or upgrading ComfyUI or its Python environment.
 - Image-to-video, inpainting, LoRAs, upscalers, or custom nodes.
 - Throughput estimates for generation (no sourced dataset → `unknown`).
-- Tauri-specific surfaces, `recommend`/`can-run` integration, signed remote updates of
-  the generation catalog (bundled dataset only).
+- Tauri-specific surfaces, `recommend`/`can-run` integration, or signed remote updates
+  of the generation catalog (the enrichment pipelines update the reviewed bundled dataset).
+- Adding metadata-only Hugging Face entries that cannot run through a built-in workflow.
+- Automatically adding a new workflow family or accepting downloaded workflow JSON.
+
+### v1.2 success criteria
+
+1. Models exposes keyboard-accessible Text, Image, and Video tabs. Text preserves the
+   existing runtime controls; Image and Video list only their matching generation entries.
+2. Starting a text model makes it the active Text model. Selecting an image or video
+   card makes it the active model for that kind without starting ComfyUI.
+3. The active-model summary always names the current Text, Image, and Video selections;
+   an unavailable text runtime is shown honestly as not running.
+4. Chat Text, Image, and Video modes use their matching active selection. Image/video
+   generation automatically uses the detected ComfyUI installation and default loopback
+   port; runtime configuration is not exposed in the minimalist composer.
+5. Create is absent from navigation and markup. Existing generation API and CLI
+   behavior remain supported.
+6. Two independently runnable GitHub Actions workflows enrich image and video entries
+   in the shared generation catalog. They open review PRs and never push catalog
+   changes directly to the protected branch.
+7. Enrichment accepts typed Hugging Face metadata only for an allowlisted built-in
+   workflow family, requires an allowlisted open-weight license, pins an immutable
+   revision, records exact byte sizes and SHA-256 digests, validates the complete
+   catalog, and reports every rejected/unknown candidate.
+8. Advice stays deterministic and offline. Network access exists only in the explicit
+   maintenance pipeline, never in Models, Chat, `recommend`, or `can-run`.
+9. A successful image/video reply exposes a direct Download action. If ComfyUI is not
+   detected or the selected model does not fit, Chat fails visibly and directs the user
+   to the CLI/environment configuration rather than silently bypassing safety checks.
 
 ## 2. Curated models (v1)
 

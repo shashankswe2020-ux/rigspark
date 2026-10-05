@@ -1631,6 +1631,9 @@ document.addEventListener("DOMContentLoaded", () => {
         modelSelect.value = active.modelId;
       }
     }
+    globalThis.dispatchEvent(new CustomEvent("rigspark:text-model-active", {
+      detail: { modelId: active?.modelId || null },
+    }));
   }
 
   function verdictLabel(verdict, throughput) {

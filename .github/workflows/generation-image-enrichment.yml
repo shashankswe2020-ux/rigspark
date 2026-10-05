@@ -1,0 +1,87 @@
+name: Image Model Enrichment
+
+on:
+  schedule:
+    - cron: "17 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: generation-image-enrichment
+  cancel-in-progress: false
+
+jobs:
+  enrich:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Preserve pending image-model review
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          PENDING=$(gh pr list --repo "$GITHUB_REPOSITORY" --base main --state open --limit 100 --json headRefName,url --jq '.[] | select(.headRefName | startswith("generation/image-enrichment-")) | .url')
+          if [ -n "$PENDING" ]; then
+            printf 'Review or close the existing image enrichment PR first:\n%s\n' "$PENDING"
+            exit 1
+          fi
+
+      - name: Fetch main without an action runtime
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git init .
+          git remote add origin "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git"
+          AUTH=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\r\n')
+          git -c "http.${GITHUB_SERVER_URL}/.extraheader=AUTHORIZATION: basic $AUTH" fetch --no-tags origin "$GITHUB_SHA"
+          git checkout --detach FETCH_HEAD
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+
+      - name: Collect pinned image metadata
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          set -euo pipefail
+          ruby scripts/generation-hf-enrich.rb --self-test
+          ruby scripts/generation-hf-enrich.rb image crates/rigspark-core/data/generation.json "$RUNNER_TEMP/image-candidates.json" docs/references/generation-image-proposals.json
+
+      - name: Apply allowlisted image families
+        run: |
+          set -euo pipefail
+          cargo generation-enrich image \
+            --candidates "$RUNNER_TEMP/image-candidates.json" \
+            --report docs/references/generation-image-enrichment.json \
+            --now "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+      - name: Validate generation catalog
+        run: |
+          cargo test --locked -p rigspark-core --test generation --test generation_enrich
+          cargo test --locked -p rigspark-cli --test generation_enrich_cli
+          cargo native-retirement
+
+      - name: Open image enrichment PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- crates/rigspark-core/data/generation.json docs/references/generation-image-proposals.json docs/references/generation-image-enrichment.json &&
+             [ -z "$(git ls-files --others --exclude-standard -- docs/references/generation-image-proposals.json docs/references/generation-image-enrichment.json)" ]; then
+            echo "Image generation catalog is current."
+            exit 0
+          fi
+          BRANCH="generation/image-enrichment-${GITHUB_RUN_ID}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add crates/rigspark-core/data/generation.json docs/references/generation-image-proposals.json docs/references/generation-image-enrichment.json
+          git commit -m "chore(catalog): enrich open image models"
+          AUTH=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\r\n')
+          git -c "http.${GITHUB_SERVER_URL}/.extraheader=AUTHORIZATION: basic $AUTH" push origin "$BRANCH"
+          gh pr create --base main --head "$BRANCH" \
+            --title "chore(catalog): enrich open image models" \
+            --body "Automated Hugging Face refresh for built-in image workflow families. Unknown candidates are report-only and require review."
