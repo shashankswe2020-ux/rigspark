@@ -139,20 +139,22 @@ carry over. Signed archives and desktop installers are not released yet.
 
 ### Docker
 
-Historical multi-platform CLI images remain available from GitHub Container Registry:
+Each release from 2.3.0 publishes a multi-platform image (`linux/amd64`,
+`linux/arm64`) to GitHub Container Registry:
 
 ```bash
 docker pull ghcr.io/shashankswe2020-ux/rigspark:latest
 docker run --rm ghcr.io/shashankswe2020-ux/rigspark:latest
 ```
 
-Those images target `linux/amd64` and `linux/arm64` and predate the native
-release. The current Dockerfile builds the native binaries; a native image has not
-been published yet. Its default command
-prints JSON recommendations and advice remains offline. Hardware detection sees
-the container's resources, not necessarily the complete host, so use the native
+Pin a release with its version tag, for example `ghcr.io/shashankswe2020-ux/rigspark:2.3.0`.
+The image packages the same checksum-verified binaries as that release's Linux
+archives on Debian 13, runs as a non-root user, and defaults to
+`recommend --json`; advice remains offline. Hardware detection sees the
+container's resources, not necessarily the complete host, so use the native
 installation for host-accurate recommendations. The browser GUI remains
-loopback-only and is not exposed from the container.
+loopback-only and is not exposed from the container. Images for the retired
+Node.js 0.11.x releases remain at `ghcr.io/shashankswe2020-ux/local-llmup`.
 
 For lifecycle commands (`up`, `down`, `chat`, `switch`, `migrate`), you need at
 least one backend installed:
