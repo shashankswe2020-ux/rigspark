@@ -91,6 +91,48 @@
           "bytes": 253815318
         }
       ]
+    },
+    {
+      "id": "wan2.1-t2v:1.3b-bf16",
+      "family": "wan2.1-t2v",
+      "kind": "video",
+      "params": "1.3B",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "releaseDate": "2025-02-25",
+      "default": false,
+      "source": "https://huggingface.co/Wan-AI/Wan2.1-T2V-1.3B",
+      "workflow": "wan-t2v",
+      "workflowSource": "https://comfyanonymous.github.io/ComfyUI_examples/wan/",
+      "files": [
+        {
+          "role": "diffusion",
+          "folder": "diffusion_models",
+          "repo": "Comfy-Org/Wan_2.1_ComfyUI_repackaged",
+          "revision": "123acf1cc74bccbb9bfff8ac1ee72edc08c2341d",
+          "file": "split_files/diffusion_models/wan2.1_t2v_1.3B_bf16.safetensors",
+          "sha256": "6f999b0d6cb9a72b3d98ac386ed96f57f8cecae13994a69232514ea4974ad5fd",
+          "bytes": 2838104528
+        },
+        {
+          "role": "text-encoder",
+          "folder": "text_encoders",
+          "repo": "Comfy-Org/Wan_2.1_ComfyUI_repackaged",
+          "revision": "123acf1cc74bccbb9bfff8ac1ee72edc08c2341d",
+          "file": "split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+          "sha256": "c3355d30191f1f066b26d93fba017ae9809dce6c627dda5f6a66eaa651204f68",
+          "bytes": 6735906897
+        },
+        {
+          "role": "vae",
+          "folder": "vae",
+          "repo": "Comfy-Org/Wan_2.1_ComfyUI_repackaged",
+          "revision": "123acf1cc74bccbb9bfff8ac1ee72edc08c2341d",
+          "file": "split_files/vae/wan_2.1_vae.safetensors",
+          "sha256": "2fc39d31359a4b0a64f55876d8ff7fa8d780956ae2cb13463b0223e15148976b",
+          "bytes": 253815318
+        }
+      ]
     }
   ]
 }
