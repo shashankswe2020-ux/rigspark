@@ -23,11 +23,24 @@ fn nvidia(vram_gib: f64, free_ram_gib: f64) -> Hardware {
         "gpu":[{"vendor":"nvidia","vramBytes":vram_gib*GIB}]}),
     )
 }
-fn bundled() -> Value {
-    serde_json::from_str(GENERATION_JSON).unwrap()
+fn bundled_with_leading_non_default_variant() -> Value {
+    let mut value: Value = serde_json::from_str(GENERATION_JSON).unwrap();
+    let mut variant = model_mut(&mut value, "flux1-schnell:fp8").clone();
+    variant["id"] = json!("flux1-schnell:fp16");
+    variant["default"] = json!(false);
+    value["models"].as_array_mut().unwrap().insert(0, variant);
+    value
+}
+fn model_mut<'a>(value: &'a mut Value, id: &str) -> &'a mut Value {
+    value["models"]
+        .as_array_mut()
+        .unwrap()
+        .iter_mut()
+        .find(|model| model["id"] == id)
+        .unwrap()
 }
 fn rejects(mutate: impl FnOnce(&mut Value), needle: &str) {
-    let mut value = bundled();
+    let mut value = bundled_with_leading_non_default_variant();
     mutate(&mut value);
     let error = GenerationCatalog::parse(&value.to_string()).unwrap_err();
     assert!(
@@ -67,48 +80,57 @@ fn bundled_catalog_has_pinned_apache_image_and_video_models() {
 fn validation_fails_closed_on_untrusted_dataset_fields() {
     rejects(|v| v["schemaVersion"] = json!(2), "unsupported");
     rejects(|v| v["models"] = json!([]), "unsupported");
-    rejects(|v| v["models"][0]["extra"] = json!(1), "unknown field");
     rejects(
-        |v| v["models"][0]["kind"] = json!("audio"),
+        |v| model_mut(v, "flux1-schnell:fp8")["extra"] = json!(1),
+        "unknown field",
+    );
+    rejects(
+        |v| model_mut(v, "flux1-schnell:fp8")["kind"] = json!("audio"),
         "unknown variant",
     );
     rejects(
-        |v| v["models"][0]["license"] = json!("flux-1-dev-non-commercial"),
+        |v| model_mut(v, "flux1-schnell:fp8")["license"] = json!("flux-1-dev-non-commercial"),
         "license",
     );
-    rejects(|v| v["models"][0]["openWeight"] = json!(false), "license");
     rejects(
-        |v| v["models"][0]["id"] = json!("Bad Id"),
+        |v| model_mut(v, "flux1-schnell:fp8")["openWeight"] = json!(false),
+        "license",
+    );
+    rejects(
+        |v| model_mut(v, "flux1-schnell:fp8")["id"] = json!("Bad Id"),
         "invalid generation model id",
     );
     rejects(
-        |v| v["models"][0]["id"] = json!("video"),
+        |v| model_mut(v, "flux1-schnell:fp8")["id"] = json!("video"),
         "invalid generation model id",
     );
     rejects(
-        |v| v["models"][1]["id"] = json!("flux1-schnell:fp8"),
+        |v| model_mut(v, "wan2.1-t2v:1.3b")["id"] = json!("flux1-schnell:fp8"),
         "duplicate",
     );
-    rejects(|v| v["models"][0]["params"] = json!("twelve"), "parameter");
     rejects(
-        |v| v["models"][0]["releaseDate"] = json!("2024-13-01"),
+        |v| model_mut(v, "flux1-schnell:fp8")["params"] = json!("twelve"),
+        "parameter",
+    );
+    rejects(
+        |v| model_mut(v, "flux1-schnell:fp8")["releaseDate"] = json!("2024-13-01"),
         "date",
     );
     rejects(
-        |v| v["models"][0]["source"] = json!("http://example.com"),
+        |v| model_mut(v, "flux1-schnell:fp8")["source"] = json!("http://example.com"),
         "HTTPS",
     );
     rejects(
-        |v| v["models"][0]["workflowSource"] = json!("file:///x"),
+        |v| model_mut(v, "flux1-schnell:fp8")["workflowSource"] = json!("file:///x"),
         "HTTPS",
     );
     rejects(
-        |v| v["models"][0]["workflow"] = json!("wan-t2v"),
+        |v| model_mut(v, "flux1-schnell:fp8")["workflow"] = json!("wan-t2v"),
         "workflow roles",
     );
     rejects(
         |v| {
-            v["models"][1]["files"]
+            model_mut(v, "wan2.1-t2v:1.3b")["files"]
                 .as_array_mut()
                 .unwrap()
                 .pop()
@@ -118,48 +140,57 @@ fn validation_fails_closed_on_untrusted_dataset_fields() {
         "workflow roles",
     );
     rejects(
-        |v| v["models"][0]["files"][0]["folder"] = json!("vae"),
+        |v| model_mut(v, "flux1-schnell:fp8")["files"][0]["folder"] = json!("vae"),
         "folder",
     );
     rejects(
-        |v| v["models"][0]["files"][0]["folder"] = json!("../custom_nodes"),
+        |v| model_mut(v, "flux1-schnell:fp8")["files"][0]["folder"] = json!("../custom_nodes"),
         "folder",
     );
     rejects(
-        |v| v["models"][0]["files"][0]["revision"] = json!("main"),
+        |v| model_mut(v, "flux1-schnell:fp8")["files"][0]["revision"] = json!("main"),
         "revision",
     );
     rejects(
-        |v| v["models"][0]["files"][0]["repo"] = json!("../x"),
+        |v| model_mut(v, "flux1-schnell:fp8")["files"][0]["repo"] = json!("../x"),
         "repository",
     );
     rejects(
-        |v| v["models"][0]["files"][0]["sha256"] = json!("00"),
+        |v| model_mut(v, "flux1-schnell:fp8")["files"][0]["sha256"] = json!("00"),
         "SHA-256",
     );
     rejects(
-        |v| v["models"][0]["files"][0]["file"] = json!("../evil.safetensors"),
+        |v| model_mut(v, "flux1-schnell:fp8")["files"][0]["file"] = json!("../evil.safetensors"),
         "unsafe",
     );
     rejects(
-        |v| v["models"][0]["files"][0]["file"] = json!("payload.py"),
+        |v| model_mut(v, "flux1-schnell:fp8")["files"][0]["file"] = json!("payload.py"),
         "safetensors",
     );
-    rejects(|v| v["models"][0]["files"][0]["bytes"] = json!(0), "size");
     rejects(
-        |v| v["models"][0]["default"] = json!(false),
+        |v| model_mut(v, "flux1-schnell:fp8")["files"][0]["bytes"] = json!(0),
+        "size",
+    );
+    rejects(
+        |v| model_mut(v, "flux1-schnell:fp8")["default"] = json!(false),
         "exactly one default",
     );
-    rejects(|v| v["models"][0]["kind"] = json!("video"), "workflow");
+    rejects(
+        |v| model_mut(v, "flux1-schnell:fp8")["kind"] = json!("video"),
+        "workflow",
+    );
     rejects(
         |v| {
-            let mut twin = v["models"][0].clone();
+            let mut twin = model_mut(v, "flux1-schnell:fp8").clone();
             twin["id"] = json!("flux1-schnell:twin");
             v["models"].as_array_mut().unwrap().push(twin);
         },
         "exactly one default",
     );
-    rejects(|v| v["models"][0]["id"] = json!(null), "null");
+    rejects(
+        |v| model_mut(v, "flux1-schnell:fp8")["id"] = json!(null),
+        "null",
+    );
 }
 
 #[test]
