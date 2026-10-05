@@ -147,7 +147,11 @@ async fn models_endpoint_reports_memory_fit_and_unknown_speed() {
     let (status, value) = json_call(&host, "GET", "/api/generation/models", None).await;
     assert_eq!(status, StatusCode::OK);
     let models = value["models"].as_array().unwrap();
-    assert_eq!(models.len(), 2);
+    let catalog = GenerationCatalog::bundled().unwrap();
+    assert_eq!(models.len(), catalog.models.len());
+    for catalog_model in &catalog.models {
+        assert!(models.iter().any(|model| model["id"] == catalog_model.id));
+    }
     for model in models {
         assert!(["yes", "slow", "no"].contains(&model["fit"]["verdict"].as_str().unwrap()));
         assert_eq!(model["fit"]["speed"], "unknown");
