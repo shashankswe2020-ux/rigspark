@@ -230,6 +230,8 @@ p { margin: 0; }
 .tab-panels figure { margin: 0; }
 .tab-panels img { width: 100%; height: auto; border-radius: var(--radius); border: 1px solid var(--line-strong); box-shadow: 0 40px 100px -50px rgba(0, 0, 0, 0.9); }
 .tab-panels figcaption { margin-top: 16px; color: var(--dim); max-width: 760px; }
+.tab-panels .tab-portrait img { display: block; max-width: 560px; margin-inline: auto; }
+.tab-panels .tab-portrait figcaption { margin-inline: auto; text-align: center; }
 .tui-panels figure { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 32px; align-items: start; }
 .tui-panels figcaption { margin-top: 0; }
 .tui-panels figcaption b { display: block; color: var(--text); font-size: 1.1rem; margin-bottom: 8px; }
