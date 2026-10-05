@@ -17,6 +17,7 @@ pub mod performance;
 pub mod retirement;
 pub mod terminal;
 pub mod tui_chat;
+pub mod tui_generate;
 pub mod tui_lifecycle;
 pub mod tui_mode;
 pub mod tui_models;

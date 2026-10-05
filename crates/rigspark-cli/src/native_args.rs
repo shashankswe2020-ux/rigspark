@@ -130,6 +130,7 @@ const COMMANDS: &[CommandSpec] = &[
         description: "Show the model catalog or preview a catalog refresh",
         flags: &[
             "all",
+            "generation",
             "refresh",
             "update",
             "status",
@@ -177,6 +178,13 @@ const COMMANDS: &[CommandSpec] = &[
         model: false,
         ui: false,
     },
+    CommandSpec {
+        name: "generate",
+        description: "Generate an image or video locally through ComfyUI",
+        flags: &["prompt", "output", "seed", "comfyui_dir", "port", "bypass"],
+        model: true,
+        ui: true,
+    },
 ];
 
 impl CommandSpec {
@@ -195,6 +203,14 @@ fn help_command(spec: &CommandSpec, flat: &Command) -> Command {
         if spec.accepts(id) {
             let mut argument = argument.clone().help(match id {
                 "model" if spec.name == "down" => "Guard shutdown against a different active model",
+                "model" if spec.name == "generate" => {
+                    "image, video, or a model id from `catalog --generation`"
+                }
+                "prompt" => "Text prompt describing the image or video",
+                "output" => "Output file (.png for images, .webp for videos); never overwritten",
+                "seed" => "Sampler seed for reproducible results (random when omitted)",
+                "comfyui_dir" => "ComfyUI installation directory (default: $RIGSPARK_COMFYUI_DIR)",
+                "generation" => "Show local image and video generation models",
                 "model" => "Model ID, alias, or search query (required outside interactive mode)",
                 "chat_model" => "Chat model (defaults to the active model for the local harness)",
                 "harness" => "Chat harness: local, claude, openai, openai-compatible, opencode",
@@ -231,10 +247,14 @@ fn help_command(spec: &CommandSpec, flat: &Command) -> Command {
                 }
                 "backend" => "Runtime: ollama, llamacpp, mlx, lmstudio",
                 "port" if spec.name == "gui" => "Loopback GUI port (default: 4000)",
+                "port" if spec.name == "generate" => "Loopback ComfyUI port (default: 8188)",
                 "port" if ["recommend", "can-run"].contains(&spec.name) => {
                     "Ollama port for --installed (default: 11434)"
                 }
                 "port" => "Backend server port (default: 11434)",
+                "bypass" if spec.name == "generate" => {
+                    "Generate even when weights do not fit memory; retain integrity checks"
+                }
                 "bypass" => "Override estimated fit; retain integrity checks",
                 "installed" if ["up", "switch"].contains(&spec.name) => {
                     "Use an installed Ollama tag (requires --bypass)"

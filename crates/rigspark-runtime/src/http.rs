@@ -62,6 +62,25 @@ impl Request {
     pub fn body(&self) -> Option<&Value> {
         self.body.as_ref()
     }
+    /// Adds percent-encoded query pairs; keys are ASCII identifiers, values bounded text.
+    pub fn with_query(mut self, pairs: &[(&str, &str)]) -> Result<Self, HttpError> {
+        if pairs.is_empty()
+            || pairs.len() > 16
+            || pairs.iter().any(|(key, value)| {
+                key.is_empty()
+                    || key.len() > 64
+                    || !key
+                        .bytes()
+                        .all(|byte| byte.is_ascii_alphanumeric() || byte == b'_')
+                    || value.len() > 1024
+                    || value.chars().any(char::is_control)
+            })
+        {
+            return Err(HttpError::Invalid);
+        }
+        self.url.query_pairs_mut().clear().extend_pairs(pairs);
+        Ok(self)
+    }
 }
 pub struct Response {
     pub status: u16,

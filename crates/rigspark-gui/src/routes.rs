@@ -109,6 +109,9 @@ pub async fn dispatch(host: Arc<Host>, request: Request) -> ApiResult {
             serde_json::to_value(&*usage.lock().map_err(|_| bad())?).map_err(|_| bad())?;
         return Ok(json_response(value));
     }
+    if request.uri().path().starts_with("/api/generation/") {
+        return crate::generation::dispatch(host, request).await;
+    }
     if request.uri().path().starts_with("/api/models/")
         || request.uri().path().starts_with("/api/catalog/")
         || request.uri().path().starts_with("/api/runtimes")

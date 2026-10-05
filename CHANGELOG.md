@@ -1,6 +1,26 @@
 # Changelog
 
-## Unreleased
+## 2.3.0 - 2026-10-04
+
+### Local image and video generation
+
+- Add a curated, offline generation catalog with FLUX.1 schnell (image) and
+  Wan 2.1 T2V 1.3B (video), both Apache-2.0, pinned to Hugging Face commits
+  with SHA-256 digests. `rigspark catalog --generation` shows a memory-only fit
+  verdict; generation speed is reported as `unknown`.
+- Add `rigspark generate image|video` for an existing local ComfyUI install:
+  verified weight install, built-in workflows from the official examples,
+  loopback-only, no credentials, and a fail-closed allowlist that keeps paid
+  Partner/API nodes unreachable. Outputs are never overwritten.
+- Generate from the terminal UI (`rigspark generate --tui`), from the GUI Create
+  view, or straight from chat with the new Text · Image · Video toggle.
+- Use the euler sampler for Wan on Apple MPS, where the official uni_pc sampler
+  produced corrupt video in live testing.
+- Unload the previous workflow's models through ComfyUI's `/free` when
+  switching between image and video on Apple Silicon (shared memory), or on
+  discrete GPUs when free memory is below the next model's weights.
+- Resume interrupted multi-gigabyte downloads with HTTP Range while keeping the
+  final SHA-256 and size checks fail-closed.
 
 ### Terminal UI
 

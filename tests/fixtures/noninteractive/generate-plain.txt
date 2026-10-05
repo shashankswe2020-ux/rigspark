@@ -1,0 +1,2 @@
+Saved image: /home/user/rigspark-image-abc-123.png (1482713 bytes)
+Model: flux1-schnell:fp8  Seed: 42  ComfyUI prompt: abc-123

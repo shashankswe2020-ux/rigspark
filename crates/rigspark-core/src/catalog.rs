@@ -49,7 +49,7 @@ fn integer(value: f64, minimum: f64) -> bool {
 fn nonempty(value: &str) -> Result<(), ValidationError> {
     require(!value.is_empty(), "empty text field")
 }
-fn timestamp(value: &str) -> Result<(), ValidationError> {
+pub(crate) fn timestamp(value: &str) -> Result<(), ValidationError> {
     require(
         value.ends_with('Z') && OffsetDateTime::parse(value, &Rfc3339).is_ok(),
         "invalid generatedAt timestamp",
@@ -141,7 +141,7 @@ pub struct Catalog {
     pub models: Vec<CatalogModel>,
 }
 
-fn coordinates(repo: &str, revision: &str) -> Result<(), ValidationError> {
+pub(crate) fn coordinates(repo: &str, revision: &str) -> Result<(), ValidationError> {
     require(
         repo.len() <= 200
             && matches(
@@ -155,7 +155,7 @@ fn coordinates(repo: &str, revision: &str) -> Result<(), ValidationError> {
         "invalid pinned source revision",
     )
 }
-fn model_file(file: &str, max: usize) -> Result<(), ValidationError> {
+pub(crate) fn model_file(file: &str, max: usize) -> Result<(), ValidationError> {
     require(
         !file.is_empty()
             && file.len() <= max
@@ -168,7 +168,7 @@ fn model_file(file: &str, max: usize) -> Result<(), ValidationError> {
         "unsafe model file path",
     )
 }
-fn digest(value: &str) -> Result<(), ValidationError> {
+pub(crate) fn digest(value: &str) -> Result<(), ValidationError> {
     require(
         matches(value, r"^[0-9a-fA-F]{64}$"),
         "invalid SHA-256 digest",

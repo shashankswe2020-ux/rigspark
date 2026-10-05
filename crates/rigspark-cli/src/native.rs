@@ -79,7 +79,7 @@ use std::{
     about = "Hardware-aware local model advice, runtime management, and chat"
 )]
 struct Args {
-    #[arg(default_value="recommend", value_parser=["recommend","can-run","plan","catalog","doctor","ls","up","switch","down","chat","migrate","gui"])]
+    #[arg(default_value="recommend", value_parser=["recommend","can-run","plan","catalog","doctor","ls","up","switch","down","chat","migrate","gui","generate"])]
     command: String,
     model: Option<String>,
     #[arg(short = 'm', long = "model")]
@@ -162,6 +162,16 @@ struct Args {
     update: bool,
     #[arg(long)]
     status: bool,
+    #[arg(long)]
+    generation: bool,
+    #[arg(long)]
+    prompt: Option<String>,
+    #[arg(long)]
+    output: Option<PathBuf>,
+    #[arg(long)]
+    seed: Option<u64>,
+    #[arg(long)]
+    comfyui_dir: Option<PathBuf>,
 }
 
 impl Args {
@@ -253,6 +263,149 @@ impl Args {
         options.validate()?;
         Ok(options)
     }
+}
+
+async fn run_generation(args: &Args) -> Result<u8, Box<dyn std::error::Error>> {
+    use rigspark_core::generation::{GenerationCatalog, catalog_text};
+    use rigspark_runtime::generation::{
+        MAX_SEED, NativeOptions, default_comfyui_dir, prepare, random_seed, run_native,
+        validate_prompt,
+    };
+    let catalog = GenerationCatalog::bundled()?;
+    if args.command == "catalog" {
+        if args.refresh
+            || args.all
+            || args.json
+            || args.tui
+            || args.accessible
+            || args.catalog_path.is_some()
+            || args.perf_path.is_some()
+            || args.model.is_some()
+            || args.parity
+        {
+            return Err("--generation only combines with --hardware".into());
+        }
+        let hardware = match (&args.hardware_json, &args.hardware) {
+            (Some(_), Some(_)) => return Err("use either --hardware or --hardware-json".into()),
+            (Some(raw), None) => parse_hardware_input(raw)?,
+            (None, Some(path)) => parse_hardware_input(&read_bounded(path, 65536)?)?,
+            (None, None) => detected_hardware().await?,
+        };
+        print!("{}", catalog_text(&catalog, &hardware));
+        return Ok(0);
+    }
+    if args.command != "generate" {
+        return Err("--generation is only supported by catalog".into());
+    }
+    if args.accessible {
+        return Err("--accessible is not supported by generate; use --tui or plain output".into());
+    }
+    let port = args
+        .runtime_port()?
+        .unwrap_or(rigspark_runtime::generation::DEFAULT_PORT);
+    if let Some(seed) = args.seed.filter(|seed| *seed > MAX_SEED) {
+        return Err(format!("invalid --seed {seed} (expected 0..={MAX_SEED})").into());
+    }
+    let selection = rigspark_cli::tui_mode::resolve(
+        &rigspark_cli::tui_mode::Options {
+            json: args.json,
+            tui: args.tui,
+            no_tui: args.no_tui,
+            no_color: args.no_color,
+            environment_no_color: std::env::var_os("NO_COLOR").is_some(),
+            ..Default::default()
+        },
+        &rigspark_cli::tui_mode::capture(),
+    )
+    .map_err(|reason| format!("interactive UI is incompatible with this invocation ({reason})"))?;
+    let interactive =
+        selection.mode == rigspark_cli::tui_mode::Mode::Tui && (args.tui || args.prompt.is_none());
+    let comfyui_dir = args.comfyui_dir.clone().or_else(default_comfyui_dir);
+    if interactive {
+        use rigspark_cli::tui_generate::{GenerateView, model_rows, run};
+        if let Some(query) = args.model.as_deref() {
+            catalog.resolve(query)?;
+        }
+        let hardware = detected_hardware().await?;
+        let mut view = GenerateView::new(model_rows(&catalog, &hardware), std::env::current_dir()?);
+        view.select(args.model.as_deref().unwrap_or("image"));
+        view.prompt = args.prompt.clone().unwrap_or_default();
+        view.directory = comfyui_dir
+            .map(|dir| dir.display().to_string())
+            .unwrap_or_default();
+        view.seed = args.seed.map(|seed| seed.to_string()).unwrap_or_default();
+        view.port = port;
+        view.bypass = args.bypass;
+        let code = run(
+            &mut view,
+            &rigspark_runtime::generation::NativeGenerator,
+            selection.color,
+        )
+        .await?;
+        for path in &view.saved {
+            println!("Saved: {}", strip_control(&path.display().to_string()));
+        }
+        return Ok(code);
+    }
+    let query = args
+        .model
+        .as_deref()
+        .ok_or("generate requires image, video, or a generation model id")?;
+    let prompt = args.prompt.as_deref().ok_or("--prompt is required")?;
+    validate_prompt(prompt)?;
+    let options = NativeOptions {
+        model: query.into(),
+        prompt: prompt.into(),
+        seed: Some(args.seed.unwrap_or_else(random_seed)),
+        comfyui_dir: comfyui_dir.ok_or(
+            "--comfyui-dir (or RIGSPARK_COMFYUI_DIR) must point at your ComfyUI installation",
+        )?,
+        port,
+        bypass: args.bypass,
+        output: args.output.clone(),
+        output_dir: std::env::current_dir()?,
+    };
+    prepare(&options)?;
+    let events: rigspark_runtime::generation::Events = std::sync::Arc::new(|message: String| {
+        eprintln!("{}", strip_control(&message));
+    });
+    let cancel = tokio_util::sync::CancellationToken::new();
+    let operation = run_native(&options, Some(events), &cancel);
+    tokio::pin!(operation);
+    let outcome = tokio::select! {
+        result = &mut operation => result?,
+        _ = tokio::signal::ctrl_c() => {
+            cancel.cancel();
+            operation.await?
+        }
+    };
+    if args.json {
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&sanitized(
+                &json!({"type": "generation", "result": outcome.result, "fit": outcome.fit})
+            ))?
+        );
+    } else {
+        println!(
+            "Saved {}: {} ({} bytes)\nModel: {}  Seed: {}  ComfyUI prompt: {}",
+            outcome.result.kind.name(),
+            strip_control(&outcome.result.path.display().to_string()),
+            outcome.result.bytes,
+            outcome.result.model,
+            outcome.result.seed,
+            outcome.result.prompt_id
+        );
+    }
+    Ok(0)
+}
+
+async fn detected_hardware() -> Result<Hardware, Box<dyn std::error::Error>> {
+    let (hardware, warnings) = detect().await?;
+    for warning in warnings {
+        eprintln!("{}", strip_control(&warning));
+    }
+    Ok(hardware)
 }
 
 fn read_file(path: &PathBuf) -> Result<String, Box<dyn std::error::Error>> {
@@ -438,6 +591,7 @@ async fn execute(mut args: Args) -> Result<u8, Box<dyn std::error::Error>> {
             || args.tui
             || args.accessible
             || args.model.is_some()
+            || args.generation
         {
             return Err("--update and --status require catalog without browse, refresh, fixture, or interactive options".into());
         }
@@ -548,6 +702,9 @@ async fn execute(mut args: Args) -> Result<u8, Box<dyn std::error::Error>> {
             .with_harness(args.harness.as_deref())?
             .with_json(args.json);
         return Ok(u8::try_from(run_gui(options).await?).unwrap_or(1));
+    }
+    if args.command == "generate" || args.generation {
+        return run_generation(&args).await;
     }
     let port = args.runtime_port()?;
     let presentation_title = args.command.clone();
