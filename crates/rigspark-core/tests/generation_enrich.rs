@@ -23,7 +23,7 @@ fn candidate(id: &str, kind: GenerationKind) -> GenerationModel {
 fn enriches_only_the_requested_allowlisted_workflow_family() {
     let mut replacement = candidate("flux1-schnell:fp8", GenerationKind::Image);
     replacement.files[0].bytes += 1;
-    let addition = candidate("flux1-schnell:fp16", GenerationKind::Image);
+    let addition = candidate("flux1-schnell:test-addition", GenerationKind::Image);
     let wrong_kind = candidate("wan2.1-t2v:test", GenerationKind::Video);
     let mut unknown_family = candidate("sdxl:test", GenerationKind::Image);
     unknown_family.family = "sdxl".into();
@@ -38,7 +38,7 @@ fn enriches_only_the_requested_allowlisted_workflow_family() {
 
     assert_eq!(
         result.updated,
-        vec!["flux1-schnell:fp16", "flux1-schnell:fp8"]
+        vec!["flux1-schnell:fp8", "flux1-schnell:test-addition"]
     );
     assert_eq!(result.rejected.len(), 2);
     assert!(
