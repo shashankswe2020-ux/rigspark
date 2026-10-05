@@ -1,7 +1,7 @@
 {
   "policyVersion": 1,
-  "evaluatedAt": "2026-10-01T19:32:26.435263Z",
-  "catalogSha256": "1d465423f9d6d64e4b761d0a4ad9750333a82f95a0a24b7ce3b22ed7b300156a",
+  "evaluatedAt": "2026-10-05T10:29:18.397461235Z",
+  "catalogSha256": "7bb6bfb51e53957da140994114f4921905ce23ed37964f6f3314f7a95106456d",
   "evidenceSha256": "25c688c41c5e7b0e078f248ab18d528f148e51ce27c4dc39e13307a512dc00e6",
   "minimumPercent": 90,
   "evidenceMaxAgeDays": 7,

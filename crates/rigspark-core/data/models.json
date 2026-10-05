@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-30T14:33:14.970Z",
+  "generatedAt": "2026-10-05T10:27:22.858Z",
   "models": [
     {
       "id": "qwen3.6:35b",
@@ -47,7 +47,11 @@
       "license": "apache-2.0",
       "openWeight": true,
       "contextLength": 65536.0,
-      "capabilities": ["chat", "code", "tools"],
+      "capabilities": [
+        "chat",
+        "code",
+        "tools"
+      ],
       "releaseDate": "2026-03-31",
       "source": {
         "hf": "prism-ml/Bonsai-8B-gguf",
@@ -58,13 +62,15 @@
           "sha256": "284a335aa3fb2ced3b1b01fcb40b08aa783e3b70832767f0dd2e3fdfa134bd54"
         }
       },
-      "quantizations": [{
-        "name": "Q1_0",
-        "diskBytes": 1158654496.0,
-        "minRamBytes": 1332452671.0,
-        "minVramBytes": 1332452671.0,
-        "sha256": "284a335aa3fb2ced3b1b01fcb40b08aa783e3b70832767f0dd2e3fdfa134bd54"
-      }]
+      "quantizations": [
+        {
+          "name": "Q1_0",
+          "diskBytes": 1158654496.0,
+          "minRamBytes": 1332452671.0,
+          "minVramBytes": 1332452671.0,
+          "sha256": "284a335aa3fb2ced3b1b01fcb40b08aa783e3b70832767f0dd2e3fdfa134bd54"
+        }
+      ]
     },
     {
       "id": "gemma4:e4b-it-qat",
@@ -126,10 +132,16 @@
       "quantizations": [
         {
           "name": "Q4_K_M",
-          "diskBytes": 3389971840.0,
-          "minRamBytes": 3898467616.0,
-          "minVramBytes": 3898467616.0,
-          "sha256": "81fb60c7daa80fc1123380b98970b320ae233409f0f71a72ed7b9b0d62f40490"
+          "diskBytes": 3324162336.0,
+          "minRamBytes": 3925316988.0,
+          "minVramBytes": 3925316988.0,
+          "sha256": "a9d0a3e1d8c91732a3812becd31f8d4a8ff57414903f226306069f0437e2ac50",
+          "projectors": [
+            {
+              "bytes": 675569120,
+              "sha256": "e56a899b1540860385465756dd308c84417410b94dbc1c380adffd20a921ca60"
+            }
+          ]
         }
       ]
     },
