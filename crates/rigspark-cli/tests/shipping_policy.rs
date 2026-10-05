@@ -315,7 +315,10 @@ fn releases_publish_the_documented_container_image_from_verified_archives() {
     // GITHUB_TOKEN-published releases cannot start workflows, so release.yml dispatches.
     assert!(release.contains("gh workflow run container.yml"));
     assert!(container.contains("workflow_dispatch:"));
-    assert!(!container.contains("uses:"), "workflows avoid action runtimes");
+    assert!(
+        !container.contains("uses:"),
+        "workflows avoid action runtimes"
+    );
     for required in [
         "ghcr.io/${GITHUB_REPOSITORY,,}",
         "packages: write",
