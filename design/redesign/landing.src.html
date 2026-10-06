@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RigSpark: meet Sparky. Know if it runs before you download.</title>
+<meta name="description" content="Sparky checks your hardware and gives every local model a yes, slow or no verdict with estimated tok/s before you download. Free, open source, offline.">
+<meta name="theme-color" content="#FFFFFF">
+<link rel="icon" href="../../site/brand/logo/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../site/brand/fonts/fonts.css">
+<link rel="stylesheet" href="../../site/brand/tokens/tokens.css">
+<style>
+*{box-sizing:border-box;margin:0}
+html{scroll-behavior:smooth}
+body{background:#fff;color:var(--ink-900);font:400 17px/1.47 var(--font-ui);letter-spacing:-.022em;-webkit-font-smoothing:antialiased;overflow-x:clip}
+img,video{display:block;max-width:100%;height:auto}
+a{color:inherit;text-decoration:none}
+code{font:500 .84em var(--font-mono);letter-spacing:0;background:var(--paper-100);padding:.15em .4em;border-radius:6px}
+.i{display:inline-flex;width:18px;height:18px;flex:none;vertical-align:-3px}.i svg{width:100%;height:100%}
+.wrap{max-width:1024px;margin:0 auto;padding:0 22px}
+.wide{max-width:1260px;margin:0 auto;padding:0 22px}
+.center{text-align:center}
+.eyebrow{font:600 21px/1.2 var(--font-display);letter-spacing:.011em;color:var(--ink-900)}
+.eyebrow.amber{color:var(--spark-700)}
+h1,h2,h3{font-family:var(--font-display);font-weight:600;letter-spacing:-.015em}
+.display{font-size:clamp(48px,8vw,96px);line-height:1.04;letter-spacing:-.035em;font-weight:700}
+.h2{font-size:clamp(36px,5.2vw,64px);line-height:1.06;letter-spacing:-.03em;font-weight:700}
+.h3{font-size:clamp(28px,3.4vw,40px);line-height:1.1;letter-spacing:-.025em}
+.lead{font-size:clamp(19px,2vw,24px);line-height:1.38;color:var(--ink-500);font-weight:500;letter-spacing:.005em}
+.lead b{color:var(--ink-900);font-weight:600}
+.muted{color:var(--ink-500)}
+.ctas{display:flex;gap:30px;align-items:center;justify-content:center;flex-wrap:wrap;margin-top:28px}
+.pill{display:inline-flex;align-items:center;gap:8px;background:var(--spark-500);color:var(--ink-900);font:500 17px var(--font-ui);padding:12px 24px;border-radius:var(--radius-pill);transition:background .2s,transform .2s var(--motion-spring)}
+.pill:hover{background:var(--spark-300);transform:scale(1.03)}
+.pill.dark{background:var(--ink-900);color:#fff}.pill.dark:hover{background:var(--ink-700)}
+.pill.sm{font-size:12px;padding:4px 11px}
+.more{color:var(--spark-700);font-size:17px;display:inline-flex;gap:2px;align-items:center}
+.more::after{content:"›";font-size:1.25em;line-height:1;margin-left:3px;transition:transform .2s}
+.more:hover{text-decoration:underline}.more:hover::after{transform:translateX(3px)}
+.night .more{color:var(--spark-300)}
+.reveal{opacity:0;transform:translateY(40px);transition:opacity 1s var(--motion-ease),transform 1s var(--motion-ease)}
+.reveal.in{opacity:1;transform:none}
+
+/* local nav (Apple product-page style) */
+.lnav{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.72);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid rgba(0,0,0,.08)}
+.lnav .wide{display:flex;align-items:center;height:52px;gap:24px}
+.lnav .brand{display:flex;align-items:center;gap:9px;font:600 21px var(--font-display);letter-spacing:-.01em}
+.lnav .brand img{width:26px;height:26px}
+.lnav nav{margin-left:auto;display:flex;gap:22px;align-items:center}
+.lnav nav a:not(.pill){font-size:12px;color:var(--ink-700);letter-spacing:-.01em}
+.lnav nav a:not(.pill):hover{color:var(--spark-700)}
+
+/* hero */
+.hero{padding:76px 0 0;text-align:center}
+.hero .display{margin-top:10px}
+.hero .lead{max-width:680px;margin:18px auto 0}
+.newchip{display:inline-flex;gap:8px;align-items:center;font-size:14px;color:var(--ink-500);margin-bottom:14px}
+.newchip b{color:var(--spark-700);font-weight:600}
+
+/* scroll-scrubbed turntable */
+.spin{height:260vh;position:relative}
+.spin .stick{position:sticky;top:52px;height:calc(100vh - 52px);display:grid;place-items:center;overflow:hidden}
+.spin .stage{position:relative;width:min(780px,92vw);aspect-ratio:799/629}
+.spin .stage img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.spin .cap{position:absolute;left:0;right:0;text-align:center;font:600 clamp(24px,3.2vw,40px)/1.15 var(--font-display);letter-spacing:-.025em;opacity:0;transform:translateY(16px);transition:opacity .5s,transform .5s var(--motion-ease);pointer-events:none;padding:0 22px}
+.spin .cap.on{opacity:1;transform:none}
+.spin .cap small{display:block;font:500 17px var(--font-ui);color:var(--ink-500);margin-top:8px;letter-spacing:-.01em}
+.spin .cap.top{top:6%}.spin .cap.bot{bottom:7%}
+
+/* lineup */
+.lineup{background:var(--paper-100);padding:120px 0 100px;overflow:hidden}
+.lineup .imgs{margin:56px auto 0;max-width:1100px}
+.moods{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;max-width:1000px;margin:12px auto 0;text-align:center}
+.moods b{display:block;font:600 24px var(--font-display);letter-spacing:-.02em}
+.moods .dot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:8px;vertical-align:2px}
+.moods p{color:var(--ink-500);font-size:15px;margin-top:6px;padding:0 10px}
+
+/* ask sparky configurator */
+.ask{padding:140px 0}
+.config{display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:center;margin-top:64px}
+.config .viewer{background:var(--paper-100);border-radius:var(--radius-lg);aspect-ratio:1/1;position:relative;display:grid;place-items:center;overflow:hidden}
+.config .viewer img{position:absolute;width:92%;left:4%;top:9%;opacity:0;transform:scale(.96);transition:opacity .45s var(--motion-ease),transform .6s var(--motion-spring)}
+.config .viewer img.on{opacity:1;transform:none}
+.verdict-tag{position:absolute;top:22px;left:22px;font:600 14px var(--font-ui);padding:6px 14px;border-radius:var(--radius-pill);background:#fff;box-shadow:var(--shadow-card);display:flex;gap:8px;align-items:center}
+.verdict-tag i{width:9px;height:9px;border-radius:50%;display:block}
+.step{padding:22px 0;border-bottom:1px solid var(--paper-200)}
+.step:first-child{padding-top:0}
+.step h3{font-size:24px;letter-spacing:-.02em;margin-bottom:4px}
+.step .muted{font-size:14px;margin-bottom:14px}
+.chips{display:flex;flex-wrap:wrap;gap:10px}
+.chips button{all:unset;cursor:pointer;font:500 15px var(--font-ui);padding:11px 16px;border:1.5px solid var(--paper-300);border-radius:12px;transition:border-color .15s,box-shadow .15s;letter-spacing:-.01em}
+.chips button:hover{border-color:var(--ink-400)}
+.chips button[aria-pressed=true]{border-color:var(--spark-600);box-shadow:0 0 0 1px var(--spark-600) inset}
+.result{margin-top:24px;background:var(--paper-100);border-radius:var(--radius-md);padding:22px 24px}
+.result .say{font:600 28px/1.15 var(--font-display);letter-spacing:-.025em}
+.result .why{color:var(--ink-500);font-size:15px;margin-top:6px}
+.gauge{height:6px;border-radius:6px;background:var(--paper-300);overflow:hidden;margin:18px 0 8px}
+.gauge i{display:block;height:100%;border-radius:6px;transition:width .7s var(--motion-ease),background .3s}
+.legend{display:flex;justify-content:space-between;font:500 12px var(--font-mono);color:var(--ink-500)}
+.cli{margin-top:14px;font:500 13px/1.7 var(--font-mono);color:var(--ink-700)}
+.cli b{color:var(--spark-700);font-weight:600}
+.fine{font-size:12px;color:var(--ink-400);margin-top:14px}
+
+/* numbers */
+.nums{padding:40px 0 140px}
+.nums .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:28px;margin-top:64px;text-align:center}
+.nums b{display:block;font:700 clamp(48px,6vw,80px)/1 var(--font-display);letter-spacing:-.04em;background:linear-gradient(180deg,var(--spark-500),var(--spark-700));-webkit-background-clip:text;background-clip:text;color:transparent}
+.nums span{display:block;margin-top:12px;color:var(--ink-500);font-size:17px}
+
+/* tiles */
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 12px 12px}
+.tile{border-radius:0;min-height:600px;padding:56px 32px 0;text-align:center;display:flex;flex-direction:column;align-items:center;overflow:hidden;background:var(--paper-100)}
+.tile.full{grid-column:span 2;min-height:640px}
+.tile h3{font-size:clamp(32px,3.6vw,48px);letter-spacing:-.03em;font-weight:700}
+.tile p{font-size:clamp(19px,1.8vw,24px);margin-top:6px;color:var(--ink-700);font-weight:500;letter-spacing:.005em}
+.tile .ctas{margin-top:18px;gap:22px}
+.tile .shot{margin-top:auto;width:min(92%,620px);max-height:400px;object-fit:cover;object-position:top;border-radius:18px 18px 0 0;box-shadow:0 -1px 0 rgba(0,0,0,.04),0 20px 60px rgba(0,0,0,.18);transform:translateY(24px);transition:transform 1s var(--motion-ease)}
+.tile:hover .shot{transform:translateY(8px)}
+.tile.night{background:#000;color:var(--night-text)}.tile.night p{color:var(--night-muted)}
+.tile.amber{background:linear-gradient(180deg,var(--spark-50),var(--peach-100))}
+.tile .art{margin-top:auto;width:min(70%,440px)}
+.badge-new{font:600 12px var(--font-ui);color:var(--spark-700);letter-spacing:.02em;text-transform:uppercase;margin-bottom:6px}
+.night .badge-new{color:var(--spark-300)}
+
+/* privacy (night) */
+.night{background:#000;color:var(--night-text)}
+.night .lead,.night .muted{color:var(--night-muted)}
+.night code{background:var(--night-800);color:var(--night-text)}
+.privacy{padding:140px 0 120px;overflow:hidden}
+.privacy .art{width:min(520px,80vw);margin:48px auto 0;filter:drop-shadow(0 30px 60px rgba(255,173,0,.18))}
+.pillars{display:grid;grid-template-columns:repeat(4,1fr);gap:40px;margin-top:72px}
+.pillars .i{width:34px;height:34px;color:var(--spark-300);margin-bottom:14px}
+.pillars h3{font-size:19px;letter-spacing:-.01em;margin-bottom:8px}
+.pillars p{font-size:15px;color:var(--night-muted)}
+
+/* card gallery */
+.gallery{padding:140px 0 120px;background:var(--paper-100);overflow:hidden}
+.gal-head{display:flex;justify-content:space-between;align-items:end;gap:20px}
+.scroller{display:flex;gap:20px;overflow-x:auto;scroll-snap-type:x mandatory;padding:48px max(22px,calc((100vw - 1216px)/2)) 30px;scrollbar-width:none}
+.scroller::-webkit-scrollbar{display:none}
+.card{flex:0 0 372px;min-height:500px;background:#fff;border-radius:var(--radius-lg);padding:32px;scroll-snap-align:center;display:flex;flex-direction:column;box-shadow:var(--shadow-card);transition:transform .4s var(--motion-ease),box-shadow .4s}
+.card:hover{transform:scale(1.015);box-shadow:var(--shadow-float)}
+.card .k{font:600 12px var(--font-ui);color:var(--ink-500);letter-spacing:.02em;text-transform:uppercase}
+.card h3{font-size:28px;line-height:1.14;letter-spacing:-.025em;margin-top:8px;font-weight:700}
+.card p{color:var(--ink-500);margin-top:10px;font-size:16px}
+.card .ico{margin-top:auto;width:76px;height:76px;border-radius:22px;background:var(--spark-50);display:grid;place-items:center;color:var(--spark-700)}
+.card .ico .i{width:38px;height:38px}
+.card.soon .k::after{content:" · Next";color:var(--spark-700)}
+.arrows{display:flex;gap:12px}
+.arrows button{all:unset;cursor:pointer;width:36px;height:36px;border-radius:50%;background:var(--paper-200);display:grid;place-items:center;font-size:20px;color:var(--ink-700);transition:background .2s}
+.arrows button:hover{background:var(--paper-300)}
+
+/* compare */
+.compare{padding:140px 0}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:64px}
+.cmp .col{border-radius:var(--radius-lg);padding:40px 36px;text-align:center}
+.cmp .col.us{background:var(--paper-100)}
+.cmp .col.them{border:1px solid var(--paper-300)}
+.cmp .col img{width:120px;margin:0 auto 18px}
+.cmp .col .ph{width:96px;height:96px;margin:12px auto 30px;border-radius:26px;background:var(--paper-100);display:grid;place-items:center;color:var(--ink-500)}.cmp .col .ph .i{width:44px;height:44px}
+.cmp h3{font-size:28px;letter-spacing:-.025em}
+.cmp ul{list-style:none;padding:0;margin-top:26px;text-align:left}
+.cmp li{display:flex;gap:12px;align-items:baseline;padding:12px 0;border-top:1px solid var(--paper-200);font-size:16px}
+.cmp li .m{flex:none;width:18px;text-align:center;font-weight:700}
+.cmp li .y{color:var(--verdict-yes)}.cmp li .n{color:var(--ink-400)}
+.cmp li.dim{color:var(--ink-400)}
+
+/* story photo */
+.story{position:relative;margin:0 12px;border-radius:var(--radius-lg);overflow:hidden;min-height:720px;display:flex;align-items:flex-start;color:#fff}
+.story img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 68%}
+.story::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.62),transparent 48%)}
+.story .txt{position:relative;z-index:1;padding:56px;max-width:760px}
+.story .txt p{color:rgba(255,255,255,.82);font-size:clamp(19px,1.8vw,24px);margin-top:10px;font-weight:500}
+
+/* install */
+.install{padding:140px 0 120px}
+.os{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:56px}
+.os a{background:var(--paper-100);border-radius:var(--radius-md);padding:26px 20px;text-align:center;transition:background .2s,transform .3s var(--motion-ease)}
+.os a:hover{background:var(--paper-200);transform:translateY(-3px)}
+.os .i{width:34px;height:34px;margin-bottom:12px}
+.os b{display:block;font:600 19px var(--font-display);letter-spacing:-.015em}
+.os span{font-size:14px;color:var(--ink-500)}
+.cmd{display:flex;align-items:center;gap:12px;background:var(--ink-900);color:#fff;border-radius:14px;padding:14px 14px 14px 20px;margin-top:12px}
+.cmd small{font:600 11px var(--font-ui);letter-spacing:.04em;text-transform:uppercase;color:var(--spark-300);white-space:nowrap;min-width:108px}
+.cmd code{background:none;color:#fff;font-size:14px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cmd button{all:unset;cursor:pointer;color:var(--ink-400);padding:6px;border-radius:8px}.cmd button:hover{color:#fff}
+.install .fine{text-align:center}
+
+/* faq */
+.faq{padding:40px 0 140px}
+.faq .list{max-width:820px;margin:48px auto 0}
+details{border-bottom:1px solid var(--paper-200)}
+summary{cursor:pointer;list-style:none;padding:24px 4px;font:600 21px/1.3 var(--font-display);letter-spacing:-.015em;display:flex;justify-content:space-between;gap:20px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";font:300 30px/1 var(--font-ui);color:var(--ink-500);transition:transform .3s var(--motion-ease)}
+details[open] summary::after{transform:rotate(45deg)}
+details p{padding:0 4px 26px;color:var(--ink-500);font-size:17px;max-width:700px}
+
+/* cta */
+.cta{padding:120px 0 0;text-align:center;background:linear-gradient(180deg,#fff,var(--paper-100));overflow:hidden}
+.cta .art{width:min(560px,86vw);margin:40px auto 0}
+
+/* footer */
+footer{background:var(--paper-100);color:var(--ink-500);font-size:12px;line-height:1.33;padding:24px 0 40px}
+footer .fine2{padding:16px 0;border-bottom:1px solid var(--paper-300)}
+footer .crumb{display:flex;align-items:center;gap:8px;padding:14px 0;border-bottom:1px solid var(--paper-300);color:var(--ink-900)}
+footer .crumb img{width:18px}
+.fcols{display:grid;grid-template-columns:repeat(5,1fr);gap:20px;padding:24px 0}
+.fcols b{display:block;color:var(--ink-900);font-weight:600;margin-bottom:10px}
+.fcols a{display:block;margin-bottom:9px}.fcols a:hover{text-decoration:underline;color:var(--ink-900)}
+.legal{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;padding-top:16px;border-top:1px solid var(--paper-300)}
+
+@media (max-width:900px){
+  .lnav nav a:not(.pill){display:none}
+  .config,.cmp{grid-template-columns:1fr}
+  .tiles{grid-template-columns:1fr}.tile.full{grid-column:auto}.tile{min-height:540px}
+  .pillars{grid-template-columns:1fr 1fr}
+  .nums .grid{grid-template-columns:1fr 1fr;gap:40px 20px}
+  .os{grid-template-columns:repeat(3,1fr)}
+  .fcols{grid-template-columns:1fr 1fr}
+  .story{min-height:560px}.story .txt{padding:32px}
+  .gal-head .arrows{display:none}
+  .card{flex-basis:300px;min-height:440px}
+  .moods p{font-size:13px}
+}
+@media (max-width:560px){
+  .pillars{grid-template-columns:1fr}
+  .os{grid-template-columns:1fr 1fr}
+  .moods b{font-size:19px}
+  .spin{height:200vh}
+  .cmd small{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}.reveal{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+
+<header class="lnav">
+  <div class="wide">
+    <a class="brand" href="#"><img src="../../site/brand/logo/mark.svg" alt="">RigSpark</a>
+    <nav>
+      <a href="#spin">Overview</a><a href="#ask">Ask Sparky</a><a href="#features">Features</a><a href="#privacy">Privacy</a><a href="#compare">Compare</a><a href="#faq">FAQ</a>
+      <a class="pill sm" href="#install">Download</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap">
+    <a class="newchip" href="https://github.com/shashankswe2020-ux/rigspark/releases/latest"><b>New</b> Local image &amp; video in RigSpark 2.3 ›</a>
+    <p class="eyebrow">Meet Sparky.</p>
+    <h1 class="display">Knows before<br>you download.</h1>
+    <p class="lead">Sparky reads your RAM, GPU and disk, then gives every local model a <b>yes</b>, <b>slow</b> or <b>no</b> with estimated tok/s. Fully offline.</p>
+    <div class="ctas">
+      <a class="pill" href="#install">Download</a>
+      <a class="more" href="#ask">Ask Sparky</a>
+    </div>
+  </div>
+</section>
+
+<section class="spin" id="spin" aria-label="Sparky, the RigSpark robot, turning around as you scroll">
+  <div class="stick">
+    <div class="cap top on" data-from="0" data-to=".3">Hi, I'm Sparky.<small>RigSpark's hardware-aware sidekick.</small></div>
+    <div class="cap top" data-from=".3" data-to=".62">Reads your rig.<small>RAM, VRAM, unified memory, bandwidth and free disk. Locally.</small></div>
+    <div class="cap top" data-from=".62" data-to="1.01">Ranks all 69 models.<small>A verdict and a binding reason, before a single byte downloads.</small></div>
+    <div class="stage"><img id="spinimg" src="../../site/brand/3d/turntable/sparky-00.webp" alt="Sparky, a graphite robot with an amber visor" width="799" height="629"></div>
+  </div>
+</section>
+
+<section class="lineup" id="moods">
+  <div class="wrap center reveal">
+    <p class="eyebrow amber">Three moods. One honest answer.</p>
+    <h2 class="h2" style="margin-top:8px">Yes. Slow. No.</h2>
+    <p class="lead" style="max-width:640px;margin:14px auto 0">Every model in the catalog gets a verdict sized to your machine, with the reason it was given.</p>
+  </div>
+  <img class="imgs reveal" src="../../site/brand/3d/sparky-lineup.webp" alt="Three Sparky robots: smiling amber visor, sleepy yellow visor, and a red visor with crossed-out eyes" width="1800" height="735">
+  <div class="moods reveal">
+    <div><b><span class="dot" style="background:var(--spark-500)"></span>yes</b><p>Fits and meets bandwidth. You get an estimated tok/s range.</p></div>
+    <div><b><span class="dot" style="background:var(--spark-300)"></span>slow</b><p>Fits, but bandwidth-bound. You see the estimate and decide.</p></div>
+    <div><b><span class="dot" style="background:#FF5A45"></span>no</b><p>Won't fit. You see why, and skip a 40 GB download.</p></div>
+  </div>
+</section>
+
+<section class="ask" id="ask">
+  <div class="wrap center reveal">
+    <p class="eyebrow amber">Try it here</p>
+    <h2 class="h2" style="margin-top:8px">Ask Sparky.</h2>
+    <p class="lead" style="max-width:640px;margin:14px auto 0">Pick your memory and a model. This preview uses RigSpark's published Q4_K_M estimates. The real CLI measures your hardware.</p>
+  </div>
+  <div class="wide">
+    <div class="config reveal">
+      <div class="viewer" aria-live="polite">
+        <span class="verdict-tag"><i id="tag-dot"></i><span id="tag-txt">yes</span></span>
+        <img data-v="yes" class="on" src="../../site/brand/3d/sparky-yes-3d.webp" alt="Sparky smiling: yes" width="1000" height="797">
+        <img data-v="slow" src="../../site/brand/3d/sparky-slow-3d.webp" alt="Sparky sleepy: slow" width="1000" height="797">
+        <img data-v="no" src="../../site/brand/3d/sparky-no-3d.webp" alt="Sparky with crossed-out eyes: no" width="1000" height="797">
+      </div>
+      <div>
+        <div class="step"><h3>Memory.</h3><p class="muted">Unified RAM on Apple Silicon, or GPU VRAM.</p><div class="chips" id="ram">{{ram}}</div></div>
+        <div class="step"><h3>Model.</h3><p class="muted">Quantized to Q4_K_M at default context.</p><div class="chips" id="model">{{models}}</div></div>
+        <div class="result">
+          <div class="say" id="t-verdict">Runs well.</div>
+          <div class="why" id="t-why">Fits in memory with headroom.</div>
+          <div class="gauge"><i id="g"></i></div>
+          <div class="legend"><span id="need">needs</span><span id="usable">usable</span></div>
+          <div class="cli"><b>$</b> rigspark can-run <span id="t-model">qwen3:14b</span>  →  <span id="t-pill">yes</span>, exit <span id="t-exit">0</span></div>
+        </div>
+        <p class="fine">Assumes about 75% of memory is usable for weights. Estimates, not benchmarks.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="nums">
+  <div class="wrap center reveal">
+    <h2 class="h2">Small robot. Big numbers.</h2>
+    <div class="grid">
+      <div><b>69</b><span>curated models</span></div>
+      <div><b>4</b><span>native runtimes</span></div>
+      <div><b>0</b><span>network calls for advice</span></div>
+      <div><b>MIT</b><span>native Rust, free forever</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="tiles" id="features">
+  <div class="tile reveal">
+    <h3>Terminal UI</h3>
+    <p>Every model, ranked for your machine.</p>
+    <div class="ctas"><a class="pill sm" style="font-size:14px;padding:8px 16px" href="#install">Download</a><a class="more" href="#faq">Learn more</a></div>
+    <img class="shot" src="../../site/brand/screens/tui-recommend.webp" alt="RigSpark terminal UI ranking models" loading="lazy">
+  </div>
+  <div class="tile night reveal">
+    <span class="badge-new">New in 2.3</span>
+    <h3>Local image &amp; video</h3>
+    <p>FLUX.1 schnell and Wan 2.1. Nothing leaves 127.0.0.1.</p>
+    <div class="ctas"><a class="more" href="#faq">Learn more</a></div>
+    <img class="shot" src="../../site/brand/screens/chat-image-generation.webp" alt="Generating an image of Mount Fuji in the RigSpark chat" loading="lazy">
+  </div>
+  <div class="tile night reveal">
+    <h3>Workspace</h3>
+    <p>Verify, serve and chat. On loopback only.</p>
+    <div class="ctas"><a class="more" href="#install">Get started</a></div>
+    <img class="shot" src="../../site/brand/screens/screenshot-workspace.webp" alt="RigSpark browser workspace" loading="lazy">
+  </div>
+  <div class="tile amber reveal">
+    <h3>AI Hardware Score</h3>
+    <p>0–100. Names your bottleneck.</p>
+    <div class="ctas"><a class="more" href="#ask">Ask Sparky</a></div>
+    <img class="art" src="../../site/brand/3d/sparky-chip.webp" alt="Sparky holding a processor chip" loading="lazy" width="1096" height="843">
+  </div>
+</section>
+
+<section class="privacy night" id="privacy">
+  <div class="wrap center reveal">
+    <p class="eyebrow" style="color:var(--spark-300)">Privacy</p>
+    <h2 class="h2" style="margin-top:8px">Your hardware.<br>Your data. Your call.</h2>
+    <p class="lead" style="max-width:660px;margin:16px auto 0">Most "can I run it" tools guess. Sparky refuses to. Every figure is sourced, or it says <code>unknown</code>.</p>
+  </div>
+  <img class="art reveal" src="../../site/brand/3d/sparky-studio.webp" alt="Sparky standing in a studio spotlight" width="1400" height="1115" loading="lazy">
+  <div class="wide">
+    <div class="pillars reveal">
+      <div>{{i:offline}}<h3>Offline advice.</h3><p><code>recommend</code>, <code>can-run</code> and <code>doctor</code> make zero network calls. Same catalog, same answer.</p></div>
+      <div>{{i:search}}<h3>Unknown stays unknown.</h3><p>Unsourced throughput is printed as <code>unknown</code>. Never invented, never dropped.</p></div>
+      <div>{{i:shield}}<h3>Fail-closed integrity.</h3><p>Pulled weights are checked against the catalog's SHA-256 digest. Mismatches are refused.</p></div>
+      <div>{{i:loopback}}<h3>Loopback only.</h3><p>Servers and the workspace bind to <code>127.0.0.1</code> with host-header checks.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="gallery">
+  <div class="wide gal-head reveal">
+    <h2 class="h2">Everything else.<br><span class="muted">Packed into one tool.</span></h2>
+    <div class="arrows"><button aria-label="Previous" data-dir="-1">‹</button><button aria-label="Next" data-dir="1">›</button></div>
+  </div>
+  <div class="scroller" id="scroller">
+    <div class="card"><span class="k">Sizing</span><h3>Context-window aware.</h3><p>KV-cache memory math with GQA-correct geometry. Re-rank at <code>--context N</code>.</p><span class="ico">{{i:context}}</span></div>
+    <div class="card"><span class="k">Memory</span><h3>Portable chat memory.</h3><p><code>rigspark migrate</code> carries memory to a bigger model. Preview with <code>--dry-run</code>.</p><span class="ico">{{i:memory}}</span></div>
+    <div class="card"><span class="k">Agents</span><h3>Agents &amp; skills.</h3><p>Reusable personas and instruction blocks, stored locally as markdown.</p><span class="ico">{{i:agent}}</span></div>
+    <div class="card"><span class="k">Tools</span><h3>MCP connectors.</h3><p>Attach stdio or loopback MCP servers. Tools run with your approval.</p><span class="ico">{{i:plug}}</span></div>
+    <div class="card"><span class="k">Chat</span><h3>Inline images &amp; graphs.</h3><p>Agent-run code renders charts and images right in the conversation.</p><span class="ico">{{i:image}}</span></div>
+    <div class="card"><span class="k">Catalog</span><h3>Signed updates.</h3><p>Activate a verified snapshot without replacing the app. Rollback included.</p><span class="ico">{{i:catalog}}</span></div>
+    <div class="card soon"><span class="k">Terminal</span><h3>Streaming terminal chat.</h3><p>Rendered markdown, scrollback and first-token timing in your shell.</p><span class="ico">{{i:chat}}</span></div>
+    <div class="card soon"><span class="k">Lifecycle</span><h3>A checklist you can trust.</h3><p><code>up</code>, <code>switch</code> and <code>down</code> show each stage as done, failed or unconfirmed.</p><span class="ico">{{i:check}}</span></div>
+  </div>
+</section>
+
+<section class="compare" id="compare">
+  <div class="wrap center reveal">
+    <h2 class="h2">Which is right for you?</h2>
+    <p class="lead" style="max-width:640px;margin:14px auto 0">Ollama is an excellent runtime. RigSpark sits on top of it and three others, and tells you what to run before you run it.</p>
+  </div>
+  <div class="wrap">
+    <div class="cmp reveal">
+      <div class="col them"><div class="ph">{{i:layers}}</div><h3>A runtime alone</h3><p class="muted" style="margin-top:6px">Ollama, llama.cpp, MLX or LM Studio</p>
+        <ul>{{cmp_them}}</ul></div>
+      <div class="col us"><img src="../../site/brand/3d/sparky-yes-3d.webp" alt="" width="1000" height="797"><h3>Runtime + RigSpark</h3><p class="muted" style="margin-top:6px">Sparky decides, your runtime runs</p>
+        <ul>{{cmp_us}}</ul></div>
+    </div>
+  </div>
+</section>
+
+<section class="story reveal">
+  <img src="../../site/brand/photo/desk-sparky.webp" alt="A Sparky toy on a desk next to a laptop showing a ranked model table" loading="lazy">
+  <div class="txt">
+    <h2 class="h2">Made for machines<br>you already own.</h2>
+    <p>One command ranks every model for your rig. One more serves it on 127.0.0.1.</p>
+  </div>
+</section>
+
+<section class="install" id="install">
+  <div class="wrap center reveal">
+    <h2 class="h2">Get RigSpark.</h2>
+    <p class="lead" style="max-width:600px;margin:14px auto 0">One archive. Three native binaries. No Node.js, Python or compiler needed.</p>
+  </div>
+  <div class="wrap">
+    <div class="os reveal">
+      <a href="https://github.com/shashankswe2020-ux/rigspark/releases/latest/download/rigspark-aarch64-apple-darwin.tar.gz">{{i:apple}}<b>macOS</b><span>Apple Silicon</span></a>
+      <a href="https://github.com/shashankswe2020-ux/rigspark/releases/latest/download/rigspark-x86_64-apple-darwin.tar.gz">{{i:apple}}<b>macOS</b><span>Intel</span></a>
+      <a href="https://github.com/shashankswe2020-ux/rigspark/releases/latest/download/rigspark-x86_64-unknown-linux-gnu.tar.gz">{{i:linux}}<b>Linux</b><span>x64</span></a>
+      <a href="https://github.com/shashankswe2020-ux/rigspark/releases/latest/download/rigspark-aarch64-unknown-linux-gnu.tar.gz">{{i:linux}}<b>Linux</b><span>ARM64</span></a>
+      <a href="https://github.com/shashankswe2020-ux/rigspark/releases/latest/download/rigspark-x86_64-pc-windows-msvc.tar.gz">{{i:windows}}<b>Windows</b><span>x64</span></a>
+    </div>
+    <div style="margin-top:20px" class="reveal">
+      <div class="cmd" data-cmd><small>Homebrew</small><code>brew install shashankswe2020-ux/tap/rigspark</code><button aria-label="Copy">{{i:copy}}</button></div>
+      <div class="cmd" data-cmd><small>cargo-binstall</small><code>cargo binstall rigspark-cli rigspark-gui</code><button aria-label="Copy">{{i:copy}}</button></div>
+    </div>
+    <p class="fine">Archives are unsigned. Verify against <a href="https://github.com/shashankswe2020-ux/rigspark/releases/latest/download/SHA256SUMS" style="text-decoration:underline">SHA256SUMS</a>. On macOS, clear quarantine with <code>xattr -dr com.apple.quarantine rigspark-*</code>.</p>
+  </div>
+</section>
+
+<section class="faq" id="faq">
+  <div class="wrap center reveal"><h2 class="h2">Questions? Sparky has answers.</h2></div>
+  <div class="wrap">
+    <div class="list reveal">
+      <details open><summary>How do I find out which LLMs my computer can run?</summary><p>Install RigSpark and run <code>rigspark recommend</code>. It detects your GPU, VRAM, RAM and free disk, ranks every catalog model with a yes, slow or no verdict and estimated tokens per second, and lists the models that won't fit with the reason. <code>rigspark can-run &lt;model&gt;</code> checks one model.</p></details>
+      <details><summary>How much VRAM do I need for an 8B, 14B, 32B or 70B model?</summary><p>At Q4_K_M and default context, RigSpark estimates about 5.3 GiB for Llama 3.1 8B, 9.9 GiB for Qwen3 14B, 21.6 GiB for Qwen3 32B and 45.5 GiB for Llama 3.3 70B. Longer contexts add KV cache on top.</p></details>
+      <details><summary>Can I run local LLMs on a Mac with Apple Silicon?</summary><p>Yes. Apple Silicon shares unified memory between CPU and GPU, so RigSpark sizes models against system memory and auto-selects MLX when a build exists, then Ollama, then llama.cpp.</p></details>
+      <details><summary>Can RigSpark generate images and videos locally?</summary><p>Yes. With your own ComfyUI on 127.0.0.1, <code>rigspark generate image</code> or <code>video</code> installs pinned, SHA-256 verified FLUX.1 schnell or Wan 2.1 weights and runs a built-in workflow. Nothing goes to the cloud.</p></details>
+      <details><summary>Does RigSpark send my data anywhere?</summary><p>Recommendations, <code>can-run</code> and <code>doctor</code> make no network calls. Only the explicit <code>catalog --update</code> downloads a signed snapshot. Servers and the workspace bind to 127.0.0.1.</p></details>
+      <details><summary>Is RigSpark the same project as llmup?</summary><p>Yes. RigSpark 2.0 renamed llmup. The <code>llmup</code> command remains as an alias and the crates moved from <code>llmup-*</code> to <code>rigspark-*</code>.</p></details>
+    </div>
+  </div>
+</section>
+
+<section class="cta">
+  <div class="wrap reveal">
+    <p class="eyebrow">RigSpark</p>
+    <h2 class="display" style="font-size:clamp(44px,6.4vw,80px)">Let Sparky check your rig.</h2>
+    <p class="lead" style="margin-top:14px">Free and open source. MIT licensed. Native Rust.</p>
+    <div class="ctas"><a class="pill" href="#install">Download</a><a class="more" href="https://github.com/shashankswe2020-ux/rigspark">Star on GitHub</a></div>
+  </div>
+  <img class="art reveal" src="../../site/brand/3d/sparky-cheer.webp" alt="Sparky with arms out, ta-da" width="1093" height="868" loading="lazy">
+</section>
+
+<footer>
+  <div class="wide">
+    <p class="fine2">Verdicts and tok/s are RigSpark's offline estimates from the curated catalog, not benchmarks. Sparky is RigSpark's mascot. Ollama, LM Studio, llama.cpp and MLX are trademarks of their respective owners.</p>
+    <div class="crumb"><img src="../../site/brand/logo/mark.svg" alt=""> › RigSpark</div>
+    <div class="fcols">
+      <div><b>Product</b><a href="#spin">Overview</a><a href="#ask">Ask Sparky</a><a href="#features">Features</a><a href="#install">Install</a></div>
+      <div><b>Resources</b><a href="https://github.com/shashankswe2020-ux/rigspark#readme">Docs</a><a href="https://github.com/shashankswe2020-ux/rigspark/blob/main/CHANGELOG.md">Changelog</a><a href="https://github.com/shashankswe2020-ux/rigspark/releases/latest">Releases</a><a href="https://crates.io/crates/rigspark-cli">crates.io</a></div>
+      <div><b>Guides</b><a href="#faq">VRAM for 8B–70B</a><a href="#faq">LLMs on Apple Silicon</a><a href="#faq">Local image &amp; video</a></div>
+      <div><b>Compare</b><a href="#compare">RigSpark vs Ollama</a><a href="#compare">RigSpark vs LM Studio</a><a href="#compare">RigSpark vs llama.cpp</a><a href="#compare">RigSpark vs MLX</a></div>
+      <div><b>Community</b><a href="https://github.com/shashankswe2020-ux/rigspark">GitHub</a><a href="https://github.com/shashankswe2020-ux/rigspark/issues">Issues</a><a href="https://github.com/shashankswe2020-ux/rigspark/blob/main/LICENSE">MIT License</a></div>
+    </div>
+    <div class="legal"><span>RigSpark v2.3.0 · MIT · Native Rust</span><span>Made for machines you already own.</span></div>
+  </div>
+</footer>
+
+<script>
+// copy buttons
+document.querySelectorAll('[data-cmd]').forEach(b=>b.querySelector('button').onclick=e=>{navigator.clipboard?.writeText(b.querySelector('code').textContent);e.currentTarget.style.color='#30D158';setTimeout(()=>e.currentTarget.style.color='',1200)});
+// reveal on scroll
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.15});
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+// scroll-scrubbed turntable (36 frames)
+const N=36, frames=[...Array(N)].map((_,i)=>`../../site/brand/3d/turntable/sparky-${String(i).padStart(2,'0')}.webp`);
+frames.forEach(src=>{const im=new Image();im.src=src});
+const spin=document.getElementById('spin'), img=document.getElementById('spinimg'), caps=[...spin.querySelectorAll('.cap')];
+let last=-1;
+function onScroll(){
+  const r=spin.getBoundingClientRect(), total=spin.offsetHeight-innerHeight, p=Math.min(1,Math.max(0,-r.top/total));
+  const f=Math.min(N-1,Math.floor(p*N)); if(f!==last){img.src=frames[f];last=f}
+  caps.forEach(c=>c.classList.toggle('on',p>=+c.dataset.from&&p<+c.dataset.to));
+}
+addEventListener('scroll',onScroll,{passive:true}); onScroll();
+// gallery arrows
+document.querySelectorAll('.arrows button').forEach(b=>b.onclick=()=>document.getElementById('scroller').scrollBy({left:+b.dataset.dir*392,behavior:'smooth'}));
+// Ask Sparky: Q4_K_M estimates published on rigspark.si; illustrative only.
+const MODELS={{model_json}};
+let ram=24,model='qwen3:14b';
+const $=id=>document.getElementById(id);
+function render(){
+  const m=MODELS.find(x=>x.id===model),usable=ram*0.75,ratio=m.mem/usable;
+  const v=ratio>1?'no':(m.dense&&m.params>=27?'slow':'yes');
+  const C={yes:['Runs well.','Fits in memory with headroom. Go for it.','var(--verdict-yes)','0','var(--spark-500)'],
+           slow:['Fits. Slowly.','Memory bandwidth limits a dense '+m.params+'B model. Your call.','var(--spark-600)','0','var(--spark-300)'],
+           no:["Won't fit.",'Needs '+m.mem+' GiB, only '+usable.toFixed(1)+' GiB usable. Skip this download.','var(--verdict-no)','1','#FF5A45']}[v];
+  $('g').style.width=Math.min(ratio*100,100)+'%';$('g').style.background=C[2];
+  $('need').textContent='needs '+m.mem+' GiB';$('usable').textContent=usable.toFixed(1)+' GiB usable';
+  $('t-model').textContent=m.id;$('t-pill').textContent=v;$('t-exit').textContent=C[3];
+  $('t-verdict').textContent=C[0];$('t-why').textContent=C[1];$('tag-txt').textContent=v;$('tag-dot').style.background=C[4];
+  document.querySelectorAll('.viewer img').forEach(i=>i.classList.toggle('on',i.dataset.v===v));
+  document.querySelectorAll('#ram button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.v===ram));
+  document.querySelectorAll('#model button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===model));
+}
+document.querySelectorAll('#ram button').forEach(b=>b.onclick=()=>{ram=+b.dataset.v;render()});
+document.querySelectorAll('#model button').forEach(b=>b.onclick=()=>{model=b.dataset.v;render()});
+render();
+</script>
+</body>
+</html>
