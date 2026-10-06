@@ -2,31 +2,32 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; connect-src 'none'; font-src 'self'; form-action 'none'; frame-src 'none'; img-src 'self'; manifest-src 'none'; media-src 'self'; object-src 'none'; script-src 'self' 'sha256-/M99adxMQypxJmY15YnvsMEcpUHQVZD9ZJBkMQJQ0Qw=' 'sha256-zwrHENMY0ooFRSztr7iApHSjbXqcWPoGf0dTuqbri58='; script-src-attr 'none'; style-src 'self'; style-src-attr 'none'; worker-src 'none'" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; connect-src 'none'; font-src 'self'; form-action 'none'; frame-src 'none'; img-src 'self'; manifest-src 'none'; media-src 'self'; object-src 'none'; script-src 'self'; script-src-attr 'none'; style-src 'self'; style-src-attr 'none'; worker-src 'none'" />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>RigSpark: which local LLMs can your computer run?</title>
     <meta name="description" content="Free, open-source tool that checks your RAM and GPU and gives every local LLM a yes, slow or no verdict with estimated tok/s, before you download the weights." />
     <link rel="canonical" href="https://www.rigspark.si/" />
     <meta name="robots" content="index, follow" />
-    <meta name="theme-color" content="#060608" />
-    <link rel="icon" type="image/jpeg" href="assets/mascot-avatar.jpg" />
-    <link rel="apple-touch-icon" href="assets/mascot-avatar.jpg" />
-    <link rel="preload" href="assets/fonts/schibsted-grotesk-latin.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href="assets/fonts/commit-mono-v143.woff2" as="font" type="font/woff2" crossorigin />
+    <meta name="theme-color" content="#FFFFFF" />
+    <link rel="icon" href="brand/logo/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="brand/logo/favicon-32.png" type="image/png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="brand/logo/app-icon-180.png" />
+    <link rel="preload" href="brand/fonts/inter-700.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="brand/fonts/inter-500.woff2" as="font" type="font/woff2" crossorigin />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="RigSpark" />
     <meta property="og:url" content="https://www.rigspark.si/" />
     <meta property="og:title" content="RigSpark: which local LLMs can your computer run?" />
     <meta property="og:description" content="yes / slow / no verdicts with estimated tok/s for every local LLM on your hardware, before you download. Then verify, serve and chat, locally." />
-    <meta property="og:image" content="https://www.rigspark.si/assets/og-image.jpg" />
+    <meta property="og:image" content="https://www.rigspark.si/assets/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="RigSpark mascot next to yes, slow and no verdict pills" />
+    <meta property="og:image:alt" content="Sparky, the RigSpark robot, standing in a white studio" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="RigSpark: which local LLMs can your computer run?" />
     <meta name="twitter:description" content="yes / slow / no verdicts with estimated tok/s for local LLMs on your hardware, before you download anything." />
-    <meta name="twitter:image" content="https://www.rigspark.si/assets/og-image.jpg" />
+    <meta name="twitter:image" content="https://www.rigspark.si/assets/og-image.png" />
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -87,173 +88,133 @@
         ]
       }
     </script>
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="brand/fonts/fonts.css" />
+    <link rel="stylesheet" href="brand/tokens/tokens.css" />
+    <link rel="stylesheet" href="styles.css?v=2.3.0-sparky" />
+    <script src="main.js?v=2.3.0-sparky" defer></script>
   </head>
   <body>
     <a class="skip" href="#main">Skip to content</a>
-    <div class="scroll-progress" aria-hidden="true"></div>
 
-    <header class="nav-wrap">
-      <nav class="nav frame" aria-label="Primary">
-        <a class="brand" href="./">
-          <img src="assets/mascot-avatar.jpg" alt="" width="32" height="32" />
-          <span>RigSpark</span>
-        </a>
-        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation">
-          <span></span><span></span>
-        </button>
+    <header class="lnav">
+      <nav class="wide lnav-inner" aria-label="Primary">
+        <a class="brand" href="./"><img src="brand/logo/mark.svg" alt="" width="26" height="26" />RigSpark</a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation"><span></span><span></span></button>
         <div class="nav-links" id="site-nav">
-          <a href="#latest">What&rsquo;s new</a>
+          <a href="#spin">Overview</a>
+          <a href="#ask">Ask Sparky</a>
           <a href="#how">How it works</a>
-          <a href="#tui">Terminal UI</a>
-          <a href="#workspace">Workspace</a>
-          <a href="#install">Install</a>
+          <a href="#features">Features</a>
+          <a href="#privacy">Privacy</a>
+          <a href="#compare">Compare</a>
           <a href="#faq">FAQ</a>
           <a href="https://github.com/shashankswe2020-ux/rigspark#readme">Docs</a>
-          <a class="nav-cta btn btn-ghost" href="https://github.com/shashankswe2020-ux/rigspark">
-            Star on GitHub
-          </a>
         </div>
+        <a class="pill sm nav-cta" href="#install">Download</a>
       </nav>
     </header>
 
     <main id="main">
-      <!-- Hero -->
       <section class="hero">
-        <div class="frame hero-grid">
-          <div class="hero-copy">
-            <a class="pill-link" href="https://github.com/shashankswe2020-ux/rigspark/releases/latest">
-              <span class="pill-tag">v2.3.0</span> Local image &amp; video generation &rarr;
-            </a>
-            <p class="hero-kicker">Hardware-aware local inference</p>
-            <h1>Run the right local model. <span>Before you download.</span></h1>
-            <p class="lede">
-              RigSpark scores your hardware and gives every model a
-              <b class="t-yes">yes</b>, <b class="t-slow">slow</b> or <b class="t-no">no</b> verdict
-              with estimated tok/s before you download. Then it verifies, serves and chats with your pick.
-            </p>
-            <div class="copy-line" data-copy="cargo binstall rigspark-cli rigspark-gui">
-              <span class="prompt" aria-hidden="true">$</span>
-              <code>cargo binstall rigspark-cli rigspark-gui</code>
-              <button class="copy-btn" type="button" aria-label="Copy install command">Copy</button>
-            </div>
-            <div class="hero-actions">
-              <a class="btn btn-primary" href="#install">Download for your OS</a>
-              <a class="btn btn-ghost" href="#demo" aria-label="Watch the 20-second demo">Watch demo</a>
-            </div>
-            <dl class="hero-stats" aria-label="RigSpark at a glance">
-              <div><dt>69</dt><dd>curated models</dd></div>
-              <div><dt>4</dt><dd>native runtimes</dd></div>
-              <div><dt>0</dt><dd>network calls for advice</dd></div>
-            </dl>
+        <div class="wrap">
+          <a class="newchip" href="https://github.com/shashankswe2020-ux/rigspark/releases/latest"><b>New</b> Local image &amp; video in RigSpark 2.3</a>
+          <p class="eyebrow">Meet Sparky.</p>
+          <h1 class="display">Knows before<br />you download.</h1>
+          <p class="lead">Sparky reads your RAM, GPU and disk, then gives every local model a <b>yes</b>, <b>slow</b> or <b>no</b> with estimated tok/s. Advice runs fully offline.</p>
+          <div class="ctas">
+            <a class="pill" href="#install">Download</a>
+            <a class="more" href="#ask">Ask Sparky</a>
+            <a class="more" href="#demo">Watch the demo</a>
           </div>
-
-          <figure class="hero-media" id="demo">
-            <img class="peek peek-b1" src="assets/mascot-b1.jpg" alt="" width="160" height="160" />
-            <div class="media-card">
-              <video class="demo-video" src="assets/rigspark-demo.mp4" poster="assets/demo-poster.jpg" autoplay muted loop playsinline controls preload="metadata" aria-label="RigSpark demo: rigspark recommend ranks local LLMs with yes, slow and no verdicts, then the same verdicts in the browser workspace"></video>
-            </div>
-            <figcaption>Real <code>rigspark recommend</code> output and the browser workspace. Unmute for sound.</figcaption>
-          </figure>
         </div>
       </section>
 
-      <!-- Verdicts -->
-      <section class="verdicts frame" aria-label="Verdicts">
-        <article class="verdict v-yes">
-          <span class="verdict-index" aria-hidden="true">01</span>
-          <span class="vpill"><span class="dot"></span>yes</span>
-          <p>Fits in memory and meets bandwidth. Shows an estimated tok/s range.</p>
-        </article>
-        <article class="verdict v-slow">
-          <span class="verdict-index" aria-hidden="true">02</span>
-          <span class="vpill"><span class="dot"></span>slow</span>
-          <p>Fits, but memory bandwidth limits speed. Still shows the estimate.</p>
-        </article>
-        <article class="verdict v-no">
-          <span class="verdict-index" aria-hidden="true">03</span>
-          <span class="vpill"><span class="dot"></span>no</span>
-          <p>Won&rsquo;t fit. You see the binding reason, so you can skip the download.</p>
-        </article>
+      <section class="spin" id="spin" aria-label="Sparky, the RigSpark robot, turning around as you scroll">
+        <div class="stick">
+          <p class="cap top on" data-from="0" data-to=".3">Hi, I&rsquo;m Sparky.<small>RigSpark&rsquo;s hardware-aware sidekick.</small></p>
+          <p class="cap top" data-from=".3" data-to=".62">Reads your rig.<small>RAM, VRAM, unified memory, bandwidth and free disk. Locally.</small></p>
+          <p class="cap top" data-from=".62" data-to="1.01">Ranks all 69 models.<small>A verdict and a binding reason, before a single byte downloads.</small></p>
+          <div class="stage"><img id="spinimg" src="brand/3d/turntable/sparky-00.webp" alt="Sparky, a graphite robot with an amber visor" width="799" height="629" fetchpriority="high" /></div>
+        </div>
       </section>
 
-      <!-- Product evidence -->
-      <section class="product-tour" id="product-tour" aria-labelledby="tour-title">
-        <div class="frame">
-          <header class="tour-head">
+      <section class="lineup" id="moods" aria-labelledby="moods-title">
+        <div class="wrap center reveal">
+          <p class="eyebrow amber">Three moods. One honest answer.</p>
+          <h2 class="h2" id="moods-title">Yes. Slow. No.</h2>
+          <p class="lead narrow">Every model in the catalog gets a verdict sized to your machine, with the reason it was given.</p>
+        </div>
+        <img class="imgs reveal" src="brand/3d/sparky-lineup.webp" alt="Three Sparky robots: a smiling amber visor, a sleepy yellow visor and a red visor with crossed-out eyes" width="1800" height="735" loading="lazy" />
+        <ul class="moods reveal">
+          <li><b><span class="dot dot-yes" aria-hidden="true"></span>yes</b><p>Fits in memory and meets bandwidth. You get an estimated tok/s range.</p></li>
+          <li><b><span class="dot dot-slow" aria-hidden="true"></span>slow</b><p>Fits, but memory bandwidth limits speed. You still see the estimate.</p></li>
+          <li><b><span class="dot dot-no" aria-hidden="true"></span>no</b><p>Won&rsquo;t fit. You see the binding reason and skip the download.</p></li>
+        </ul>
+      </section>
+
+      <section class="ask" id="ask" aria-labelledby="ask-title">
+        <div class="wrap center reveal">
+          <p class="eyebrow amber">Try it here</p>
+          <h2 class="h2" id="ask-title">Ask Sparky.</h2>
+          <p class="lead narrow">Pick your memory and a model. This preview uses RigSpark&rsquo;s published Q4_K_M sizes and its memory-fit rule. The real CLI measures your hardware.</p>
+        </div>
+        <div class="wide">
+          <div class="config reveal">
+            <div class="viewer">
+              <span class="verdict-tag"><i id="tag-dot" class="tag-yes"></i><span id="tag-txt">yes</span></span>
+              <img data-v="yes" class="on" src="brand/3d/sparky-yes-3d.webp" alt="" width="1000" height="797" loading="lazy" />
+              <img data-v="slow" src="brand/3d/sparky-slow-3d.webp" alt="" width="1000" height="797" loading="lazy" />
+              <img data-v="no" src="brand/3d/sparky-no-3d.webp" alt="" width="1000" height="797" loading="lazy" />
+            </div>
             <div>
-              <p class="eyebrow">One engine, three views</p>
-              <h2 id="tour-title">See the decision, not just the dashboard.</h2>
+              <div class="step">
+                <h3 id="ram-label">Memory.</h3>
+                <p class="muted">Unified memory on Apple Silicon.</p>
+                <div class="chips" id="ram" role="group" aria-labelledby="ram-label">
+                  <button type="button" data-v="8" aria-pressed="false">8 GB</button>
+                  <button type="button" data-v="16" aria-pressed="false">16 GB</button>
+                  <button type="button" data-v="24" aria-pressed="true">24 GB</button>
+                  <button type="button" data-v="32" aria-pressed="false">32 GB</button>
+                  <button type="button" data-v="48" aria-pressed="false">48 GB</button>
+                  <button type="button" data-v="64" aria-pressed="false">64 GB</button>
+                  <button type="button" data-v="96" aria-pressed="false">96 GB</button>
+                  <button type="button" data-v="128" aria-pressed="false">128 GB</button>
+                </div>
+              </div>
+              <div class="step">
+                <h3 id="model-label">Model.</h3>
+                <p class="muted">Quantized to Q4_K_M at default context.</p>
+                <div class="chips" id="model" role="group" aria-labelledby="model-label">
+                  <button type="button" data-v="llama3.1:8b" data-mem="5.3" data-params="8" data-dense="1" aria-pressed="false">Llama 3.1 8B</button>
+                  <button type="button" data-v="qwen3:14b" data-mem="9.9" data-params="14" data-dense="1" aria-pressed="true">Qwen3 14B</button>
+                  <button type="button" data-v="gemma3:27b" data-mem="18.6" data-params="27" data-dense="1" aria-pressed="false">Gemma 3 27B</button>
+                  <button type="button" data-v="qwen3:30b-a3b" data-mem="19.9" data-params="30" data-dense="0" aria-pressed="false">Qwen3 30B-A3B (MoE)</button>
+                  <button type="button" data-v="qwen3:32b" data-mem="21.6" data-params="32" data-dense="1" aria-pressed="false">Qwen3 32B</button>
+                  <button type="button" data-v="llama3.3:70b" data-mem="45.5" data-params="70" data-dense="1" aria-pressed="false">Llama 3.3 70B</button>
+                </div>
+              </div>
+              <div class="result" aria-live="polite">
+                <p class="say" id="t-verdict">Runs well.</p>
+                <p class="why" id="t-why">Fits in memory with headroom.</p>
+                <div class="gauge" aria-hidden="true"><i id="g"></i></div>
+                <div class="legend"><span id="need">needs 9.9 GiB</span><span id="usable">18.7 GiB budget</span></div>
+                <p class="cli"><b>$</b> rigspark can-run <span id="t-model">qwen3:14b</span> &rarr; <span id="t-pill">yes</span>, exit <span id="t-exit">0</span></p>
+              </div>
+              <p class="fine">Preview only. Fit uses RigSpark&rsquo;s rule: memory minus a 2&nbsp;GiB OS reserve, with 15% headroom. Speed depends on your memory bandwidth, so &ldquo;slow&rdquo; here is a rule of thumb for dense 27B+ models; <code>rigspark can-run</code> gives your real estimate.</p>
             </div>
-            <p>Real RigSpark screens, from hardware fit to verified local chat.</p>
-          </header>
-          <div class="tour-canvas" role="region" aria-label="RigSpark product screens" tabindex="0">
-            <figure class="tour-shot">
-              <div class="tour-meta"><span>01</span><b>Rank</b><code>rigspark recommend</code></div>
-              <img src="assets/tui-recommend.png" alt="RigSpark terminal UI ranking local models in a sortable table with memory need, verdict, tok/s and score beside a memory fit gauge" width="1400" height="900" loading="lazy" />
-            </figure>
-            <figure class="tour-shot tour-shot-featured">
-              <div class="tour-meta"><span>02</span><b>Inspect</b><code>model evidence</code></div>
-              <img src="assets/model-performance.png" alt="RigSpark model details with recommendation score, hardware fit, throughput evidence and memory sizing" width="1440" height="757" loading="lazy" />
-            </figure>
-            <figure class="tour-shot">
-              <div class="tour-meta"><span>03</span><b>Run</b><code>local workspace</code></div>
-              <img src="assets/screenshot-workspace.png" alt="RigSpark local browser workspace ready to chat with a selected model" width="1440" height="857" loading="lazy" />
-            </figure>
           </div>
         </div>
       </section>
 
-      <!-- Latest release -->
-      <section class="section section-alt" id="latest">
-        <div class="frame release-grid">
-          <div class="release-copy">
-            <p class="eyebrow">New in 2.3.0</p>
-            <h2>Generate images and video on your own machine</h2>
-            <p class="sub">
-              RigSpark now drives your local ComfyUI to create images with FLUX.1 schnell and short clips with
-              Wan&nbsp;2.1. Weights are pinned and SHA-256 verified, workflows are built in, and nothing leaves
-              <code>127.0.0.1</code>: no cloud nodes, no paid credits, no account keys.
-            </p>
-            <ul class="release-points">
-              <li><b>Straight from chat.</b> Flip the composer to <b>Image</b> or <b>Video</b> and type &ldquo;create mount fuji&rdquo;. The result renders inline, never sent to the LLM.</li>
-              <li><b>Every surface.</b> <code>rigspark generate image|video</code>, an interactive terminal form, and a Create view in the browser workspace.</li>
-              <li><b>Honest fit.</b> <code>catalog --generation</code> gives a weight-memory verdict; generation speed stays <code>unknown</code> until it can be sourced.</li>
-            </ul>
-            <div class="release-actions">
-              <a class="btn btn-primary" href="#install">Install 2.3.0</a>
-              <a class="btn btn-ghost" href="https://github.com/shashankswe2020-ux/rigspark/blob/main/CHANGELOG.md">Read the changelog</a>
-            </div>
-          </div>
-          <figure class="release-media">
-            <div class="release-video-shell">
-              <video src="assets/generated-waves.mp4" poster="assets/generated-waves-poster.jpg" autoplay muted loop playsinline controls preload="metadata" aria-label="A two-second clip of ocean waves rolling onto a beach at sunset, generated locally by Wan 2.1 through the RigSpark workspace"></video>
-            </div>
-            <figcaption>&ldquo;Ocean waves rolling onto a sandy beach at sunset&rdquo;: a 2-second Wan&nbsp;2.1 clip made by <code>rigspark gui</code> on an Apple&nbsp;M4&nbsp;Max.</figcaption>
-          </figure>
+      <section class="how night" id="how" aria-labelledby="how-title">
+        <div class="wrap center reveal">
+          <p class="eyebrow on-night">How it works</p>
+          <h2 class="h2" id="how-title">One command ranks<br />every model.</h2>
+          <p class="lead narrow"><code>rigspark recommend</code> sizes each model&rsquo;s weights and KV cache against your machine and ranks the offline catalog. Models that can&rsquo;t fit are listed with the reason.</p>
         </div>
-      </section>
-
-      <!-- How it works -->
-      <section class="section" id="how">
-        <div class="frame split">
-          <div class="split-copy">
-            <p class="eyebrow">How it works</p>
-            <h2>One command ranks every model for your machine</h2>
-            <p class="sub">
-              <code>rigspark recommend</code> detects your RAM, GPU and free disk, sizes each model&rsquo;s
-              weights and KV cache, and ranks the offline catalog. Models that can&rsquo;t fit are listed
-              separately with the reason, and the top pick is one command away.
-            </p>
-            <ol class="steps">
-              <li><span>1</span><div><b>Score</b> Hardware is detected locally. Unknown figures stay <code>unknown</code>; nothing is invented.</div></li>
-              <li><span>2</span><div><b>Check</b> <code>rigspark can-run qwen3:8b</code> gives one verdict and exits non-zero only on <em>no</em>, so it works as a CI gate.</div></li>
-              <li><span>3</span><div><b>Run</b> <code>rigspark up</code> pulls, verifies the weights and serves on <code>127.0.0.1</code>. Then <code>rigspark chat</code>.</div></li>
-            </ol>
-          </div>
-
-          <figure class="terminal" aria-label="Example rigspark recommend output">
-            <div class="term-bar"><i></i><i></i><i></i><span>rigspark &mdash; zsh</span></div>
+        <div class="wrap">
+          <figure class="terminal reveal" aria-label="Example rigspark recommend output">
+            <div class="term-bar" aria-hidden="true"><i></i><i></i><i></i><span>rigspark &mdash; zsh</span></div>
 <pre class="term-body"><span class="t-acc">$</span> rigspark recommend
 Ranked local LLMs for arm64/darwin (34.0 GiB ram usable):
 
@@ -272,412 +233,179 @@ Run the top pick:  <span class="t-acc">rigspark up qwen3:30b-a3b</span>
   ❌ llama3.3:70b      <span class="t-dim">(ram-bound)</span></pre>
             <figcaption>Real output on an arm64 Mac with 34.0 GiB of usable RAM (quant, backend and license columns trimmed).</figcaption>
           </figure>
+          <ol class="steps reveal">
+            <li><b>Score.</b> Hardware is detected locally. Unknown figures stay <code>unknown</code>; nothing is invented.</li>
+            <li><b>Check.</b> <code>rigspark can-run qwen3:8b</code> gives one verdict and exits non-zero only on <em>no</em>, so it works as a CI gate.</li>
+            <li><b>Run.</b> <code>rigspark up</code> pulls, verifies the weights and serves on <code>127.0.0.1</code>. Then <code>rigspark chat</code>.</li>
+          </ol>
+          <figure class="demo reveal" id="demo">
+            <video src="assets/rigspark-demo.mp4" poster="brand/screens/demo-poster.webp" autoplay muted loop playsinline controls preload="metadata" aria-label="RigSpark demo: rigspark recommend ranks local LLMs with yes, slow and no verdicts, then the same verdicts in the browser workspace"></video>
+            <figcaption>Real <code>rigspark recommend</code> output and the browser workspace. Unmute for sound.</figcaption>
+          </figure>
         </div>
       </section>
 
-      <!-- Terminal UI -->
-      <section class="section section-alt" id="tui">
-        <div class="frame">
-          <div class="section-head">
-            <p class="eyebrow">Terminal UI <span class="pill-tag">Next release</span></p>
-            <h2>A keyboard-first terminal UI, not just pretty text</h2>
-            <p class="sub">
-              Run <code>rigspark</code> with no arguments and a native terminal UI opens when your terminal is at least
-              60&times;16. Sort and filter a ranked table, read memory fit at a glance, and compare models side by side,
-              by keyboard or mouse. Accessible mode (<code>--accessible</code>) serves screen readers, and CI or piped
-              output falls back to plain text automatically.
-            </p>
-          </div>
-
-          <div class="tabs" data-tabs>
-            <div class="tab-list" role="tablist" aria-label="Terminal UI views">
-              <button role="tab" id="tab-recommend" aria-controls="panel-recommend" aria-selected="true">recommend</button>
-              <button role="tab" id="tab-search" aria-controls="panel-search" aria-selected="false" tabindex="-1">search</button>
-              <button role="tab" id="tab-compare" aria-controls="panel-compare" aria-selected="false" tabindex="-1">compare</button>
-              <button role="tab" id="tab-doctor" aria-controls="panel-doctor" aria-selected="false" tabindex="-1">doctor</button>
-              <button role="tab" id="tab-canrun" aria-controls="panel-canrun" aria-selected="false" tabindex="-1">can-run</button>
-            </div>
-            <div class="tab-panels tui-panels">
-              <figure role="tabpanel" id="panel-recommend" aria-labelledby="tab-recommend">
-                <img src="assets/tui-recommend.png" alt="rigspark recommend terminal UI: a sortable table of 55 ranked models with rank, memory need, verdict, tok/s and score columns beside an evidence panel with a memory fit gauge" width="1400" height="900" loading="lazy" />
-                <figcaption>
-                  <b>Sortable ranked table.</b> Every catalog model scored for your hardware, with rank, memory need,
-                  colour-coded verdict, est. tok/s and score. The evidence panel shows a memory gauge of need against
-                  usable memory; an unsourced need stays <code>unknown</code>.
-                  <span class="keys"><kbd>&uarr;&darr;</kbd> navigate <kbd>s</kbd> sort <kbd>v</kbd> verdict filter <kbd>Enter</kbd> evidence <kbd>y</kbd> copy id <kbd>q</kbd> quit</span>
-                </figcaption>
-              </figure>
-              <figure role="tabpanel" id="panel-search" aria-labelledby="tab-search" hidden>
-                <img src="assets/tui-search.png" alt="rigspark terminal UI filtering the model table to 18 qwen models with matched characters highlighted" width="1400" height="900" loading="lazy" />
-                <figcaption>
-                  <b>Fuzzy search with highlighted matches.</b> Type to narrow the table; matched characters are
-                  underlined, and verdict filters combine with search. Click a row to select it, click again to open it,
-                  or click a column header to sort.
-                  <span class="keys"><kbd>/</kbd> search <kbd>Ctrl+U</kbd> reset <kbd>S</kbd> reverse sort <kbd>Y</kbd> copy <code>rigspark up</code></span>
-                </figcaption>
-              </figure>
-              <figure role="tabpanel" id="panel-compare" aria-labelledby="tab-compare" hidden>
-                <img src="assets/tui-compare.png" alt="rigspark terminal UI comparing three marked models side by side, aligned by rank, verdict, throughput, backends, license, context and scores" width="1400" height="900" loading="lazy" />
-                <figcaption>
-                  <b>Side-by-side comparison.</b> Mark up to four models and compare their evidence in aligned columns:
-                  verdict, throughput, backends, license, context and scores. Copy a 72-column card to paste into an
-                  issue or chat.
-                  <span class="keys"><kbd>Space</kbd> mark <kbd>c</kbd> compare <kbd>e</kbd> copy card <kbd>?</kbd> help</span>
-                </figcaption>
-              </figure>
-              <figure role="tabpanel" id="panel-doctor" aria-labelledby="tab-doctor" hidden>
-                <img src="assets/screenshot-doctor.png" alt="rigspark doctor terminal UI showing hardware diagnostics" width="1200" height="700" loading="lazy" />
-                <figcaption>
-                  <b>Hardware diagnostics dashboard.</b> OK, WARN or FAIL for every check, an AI Hardware Score (0&ndash;100)
-                  with VRAM, RAM, compute and storage sub-scores that names your bottleneck, and a backend version table.
-                  <span class="keys"><kbd>q</kbd> quit <kbd>--json</kbd> output</span>
-                </figcaption>
-              </figure>
-              <figure role="tabpanel" id="panel-canrun" aria-labelledby="tab-canrun" hidden>
-                <img src="assets/screenshot-can-run.png" alt="rigspark can-run showing yes and no verdicts" width="1200" height="300" loading="lazy" />
-                <figcaption>
-                  <b>Instant single-model verdict.</b> Verdict, binding reason and est. tok/s for one model. It exits
-                  non-zero only on <em>no</em>, so it works as a CI gate without parsing.
-                  <span class="keys"><kbd>exit 0</kbd> yes / slow <kbd>exit 1</kbd> no <kbd>--json</kbd></span>
-                </figcaption>
-              </figure>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Features -->
-      <section class="section" id="features">
-        <div class="frame">
-          <div class="section-head">
-            <p class="eyebrow">Everything in one tool</p>
-            <h2>From hardware check to local chat</h2>
-          </div>
-          <div class="grid-3">
-            <article class="card">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14h4l2-6 4 12 2-6h4" /></svg>
-              <h3>AI Hardware Score</h3>
-              <p>A 0&ndash;100 score names your bottleneck, and every catalog model gets a <b>yes / slow / no</b> verdict with est. tok/s before any download.</p>
-            </article>
-            <article class="card">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2" /><path d="M7 10h4M7 14h10" /></svg>
-              <h3>Context-window sizing</h3>
-              <p>KV-cache-aware memory math with GQA-correct attention geometry. Re-rank at <code>--context N</code>, find each model&rsquo;s ceiling with <code>--max-context</code>, or size a quantized cache with <code>--kv-cache</code>.</p>
-            </article>
-            <article class="card">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-              <h3>Portable memory</h3>
-              <p>Chats are recorded to local memory. <code>rigspark migrate --from qwen3:8b --to qwen3:14b</code> carries it to a bigger model; preview with <code>--dry-run</code>.</p>
-            </article>
-            <article class="card">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 4-6 8-6s8 2 8 6" /></svg>
-              <h3>Agents &amp; skills</h3>
-              <p>Reusable personas and instruction blocks, stored locally as markdown. Bundle skills into an agent or toggle them per message.</p>
-            </article>
-            <article class="card">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7H6a3 3 0 0 0 0 6h3M15 7h3a3 3 0 0 1 0 6h-3M8 10h8M12 13v7" /></svg>
-              <h3>MCP connectors &amp; tools</h3>
-              <p>Attach Model Context Protocol servers, local <code>stdio</code> or loopback HTTP/SSE. The model calls enabled tools in an agentic loop, with your approval.</p>
-            </article>
-            <article class="card">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M3 16l5-5 4 4 3-3 6 6" /></svg>
-              <h3>Inline images &amp; graphs</h3>
-              <p>Let an agent run code in your workspace; generated images and graphs render in the chat, served from a loopback-only artifacts endpoint.</p>
-            </article>
-            <article class="card">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M10 9l5 3-5 3z" /></svg>
-              <h3>Local image &amp; video <span class="pill-tag">New</span></h3>
-              <p>Generate with FLUX.1 schnell and Wan&nbsp;2.1 through your own ComfyUI, from chat, the CLI or the terminal UI. Pinned weights, built-in workflows, loopback only.</p>
-            </article>
-            <article class="card">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5" /><path d="M5 20h14" /></svg>
-              <h3>Signed catalog updates</h3>
-              <p>Explicitly download and atomically activate a verified catalog without replacing the app. Revision rollback and verified fallback protect advice.</p>
-            </article>
-            <article class="card">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14M8 10l4 8 4-8" /><path d="M6 18h12" /></svg>
-              <h3>Offline TeX rendering</h3>
-              <p>Pinned KaTeX assets render equations locally while malformed or unsafe rich responses stay behind the sanitized Markdown boundary.</p>
-            </article>
-            <article class="card">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h10M4 17h13" /><circle cx="18" cy="12" r="2" /></svg>
-              <h3>Evidence-backed models</h3>
-              <p>Bonsai, Qwen3.5 and Qwen3.6 carry pinned provenance. Unsourced throughput and attention geometry remain visibly <code>unknown</code>.</p>
-            </article>
-            <article class="card">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M7 9l3 3-3 3M12 15h5" /></svg>
-              <h3>Keyboard-first TUI <span class="pill-tag">Next</span></h3>
-              <p>Sort any column, filter by verdict, fuzzy-search names and compare up to four models side by side. Mouse, light and high-contrast themes (<code>RIGSPARK_THEME</code>) included.</p>
-            </article>
-            <article class="card">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z" /><path d="M8 9h8M8 12h5" /></svg>
-              <h3>Streaming terminal chat <span class="pill-tag">Next</span></h3>
-              <p>Replies stream as they arrive with headings, lists and code rendered. Scroll back with <kbd>PgUp</kbd>, copy the last reply with <kbd>Ctrl+Y</kbd>, and see first-output and total time.</p>
-            </article>
-            <article class="card">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7l2 2 4-4M5 14l2 2 4-4" /><path d="M14 8h6M14 15h6" /></svg>
-              <h3>Live lifecycle checklist <span class="pill-tag">Next</span></h3>
-              <p><code>up</code>, <code>switch</code> and <code>down</code> show each observed stage as done, failed or unconfirmed, with elapsed time. Stage completion never claims overall success.</p>
-            </article>
-          </div>
-        </div>
-      </section>
-
-      <!-- Workspace -->
-      <section class="section section-alt" id="workspace">
-        <div class="frame">
-          <div class="section-head">
-            <p class="eyebrow">Browser workspace</p>
-            <h2>Pick a model that fits, start it, chat with it</h2>
-            <p class="sub">
-              <code>rigspark gui</code> opens a local-first workspace on <code>127.0.0.1</code> that uses the same
-              engine as the CLI: the same verdicts, the same verified <code>up</code> lifecycle. Local chat stays on
-              your machine; cloud harnesses and external tools send data only to their own providers.
-            </p>
-          </div>
-
-          <div class="tabs" data-tabs>
-            <div class="tab-list" role="tablist" aria-label="Workspace views">
-              <button role="tab" id="tab-models" aria-controls="panel-models" aria-selected="true">Models</button>
-              <button role="tab" id="tab-chat" aria-controls="panel-chat" aria-selected="false" tabindex="-1">Chat</button>
-              <button role="tab" id="tab-create" aria-controls="panel-create" aria-selected="false" tabindex="-1">Image &amp; video</button>
-              <button role="tab" id="tab-details" aria-controls="panel-details" aria-selected="false" tabindex="-1">Model details</button>
-              <button role="tab" id="tab-agents" aria-controls="panel-agents" aria-selected="false" tabindex="-1">Agents &amp; tools</button>
-              <button role="tab" id="tab-mcp" aria-controls="panel-mcp" aria-selected="false" tabindex="-1">MCP connectors</button>
-            </div>
-            <div class="tab-panels">
-              <figure role="tabpanel" id="panel-models" aria-labelledby="tab-models">
-                <img src="assets/screenshot-gui.png" alt="Models view ranking recommended models with Runs well and Runs slowly verdicts" width="1440" height="757" loading="lazy" />
-                <figcaption>Recommended models ranked for your hardware, with the same verdicts and est. tok/s as the CLI. <b>Start</b> brings one online through the verified lifecycle.</figcaption>
-              </figure>
-              <figure role="tabpanel" id="panel-chat" aria-labelledby="tab-chat" hidden>
-                <img src="assets/screenshot-workspace.png" alt="Chat view with the RigSpark mascot and a Ready when you are prompt" width="1440" height="857" loading="lazy" />
-                <figcaption>Chat with a model running entirely on your machine, with sessions, file context and markdown rendering.</figcaption>
-              </figure>
-              <figure role="tabpanel" id="panel-create" class="tab-portrait" aria-labelledby="tab-create" hidden>
-                <img src="assets/chat-image-generation.jpg" alt="Chat with the Image toggle selected: the prompt create mount fuji returns a FLUX.1 schnell image of Mount Fuji inline, with its seed and a download link" width="1200" height="1908" loading="lazy" />
-                <figcaption>Switch the composer to <b>Image</b> or <b>Video</b> and describe what you want. RigSpark runs a built-in ComfyUI workflow locally and renders the result in the conversation.</figcaption>
-              </figure>
-              <figure role="tabpanel" id="panel-details" aria-labelledby="tab-details" hidden>
-                <img src="assets/model-performance.png" alt="Model details showing recommendation score, hardware fit, throughput evidence, memory and context sizing" width="1440" height="757" loading="lazy" />
-                <figcaption>Open any model to inspect its score, fit and throughput evidence, context cost, quantizations and sources before starting it.</figcaption>
-              </figure>
-              <figure role="tabpanel" id="panel-agents" aria-labelledby="tab-agents" hidden>
-                <img src="assets/equation-solver-graph.gif" alt="An Equation Solver agent solving x squared minus 5x plus 6 equals 0 with a code tool and rendering the graph inline" width="900" loading="lazy" />
-                <figcaption>An Equation Solver agent solves a quadratic with SymPy, plots it with Matplotlib and renders the graph in the chat. Agents and skills are local markdown with YAML frontmatter, the same convention Claude Code and Codex use, with full create, edit, enable and delete.</figcaption>
-              </figure>
-              <figure role="tabpanel" id="panel-mcp" aria-labelledby="tab-mcp" hidden>
-                <img src="assets/connectors.gif" alt="Approving a read-only MCP tool call and rendering the result in chat" width="900" loading="lazy" />
-                <figcaption>Two read-only WHOOP tools are proposed, explicitly approved, and used to build a live health briefing. Connectors are local <code>stdio</code> commands or loopback HTTP/SSE; enable, disable and inspect each one&rsquo;s tools.</figcaption>
-              </figure>
-            </div>
-          </div>
-          <ul class="chips" aria-label="Workspace guarantees">
-            <li>loopback-only</li>
-            <li>host-header checked</li>
-            <li>same engine as the CLI</li>
-            <li>pluggable harnesses</li>
-          </ul>
-        </div>
-      </section>
-
-      <!-- Principles -->
-      <section class="section" id="principles">
-        <div class="frame">
-          <div class="section-head">
-            <p class="eyebrow">Built to be trusted</p>
-            <h2>Honest numbers, local by default</h2>
-          </div>
-          <div class="grid-4">
-            <article class="card">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M3 12h18" /><circle cx="12" cy="12" r="9" /></svg>
-              <h3>Offline advice</h3>
-              <p><code>recommend</code>, <code>can-run</code> and <code>doctor</code> make no network calls. Advice comes from a curated, cited catalog, so it is reproducible.</p>
-            </article>
-            <article class="card">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h4l2-6 4 12 2-6h4" /></svg>
-              <h3>Unknown stays unknown</h3>
-              <p>When a figure can&rsquo;t be sourced, RigSpark prints <code>unknown</code>. Models are still ranked by weights, never silently dropped. Estimates are not benchmarks.</p>
-            </article>
-            <article class="card">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
-              <h3>Fail-closed integrity</h3>
-              <p><code>up</code> and <code>switch</code> verify pulled weights against the catalog digest and refuse to serve anything that doesn&rsquo;t match.</p>
-            </article>
-            <article class="card">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2" /><path d="M8 20h8M12 16v4" /></svg>
-              <h3>Loopback only</h3>
-              <p>Model servers and the browser workspace bind to <code>127.0.0.1</code>. Nothing is exposed to your network.</p>
-            </article>
-          </div>
-        </div>
-      </section>
-
-      <!-- Catalog + backends -->
-      <section class="section section-alt" id="catalog">
-        <div class="frame split split-even">
-          <div>
-            <p class="eyebrow">Curated catalog</p>
-            <h2>69 models. Evidence attached.</h2>
-            <p class="sub">
-              The catalog is an offline, reviewable dataset, not a scrape. Each entry ties a model to its
-              architecture, context, quantizations, artifact size, integrity digest and official sources.
-              Activate independently published snapshots with <code>catalog --update</code>, or use
-              <code>--kv-cache q8_0</code> or <code>q4_0</code> to re-size advice for quantized KV caches.
-            </p>
-            <dl class="stats">
-              <div><dt>69</dt><dd>curated models</dd></div>
-              <div><dt>4</dt><dd>runtimes</dd></div>
-              <div><dt>SHA-256</dt><dd>artifact integrity</dd></div>
-              <div><dt>Weekly</dt><dd>coverage audit</dd></div>
-            </dl>
-            <ol class="pipeline" aria-label="How the catalog is maintained">
-              <li><b>Curate</b> Architecture, license, capabilities, context, quantization and official sources are reviewed and pinned.</li>
-              <li><b>Bootstrap</b> The snapshot deterministically generates the same offline advice dataset on every machine.</li>
-              <li><b>Enrich</b> Known Ollama artifacts gain exact model-layer bytes and content digests without rewriting curated facts.</li>
-              <li><b>Audit</b> Freshness and upstream coverage produce review candidates, never automatic admissions.</li>
-            </ol>
-            <p class="note"><b>Honesty gate:</b> missing attention geometry stays <code>unknown</code>. Coverage checks can&rsquo;t enumerate missing tags inside a model already in the catalog.</p>
-          </div>
-          <div>
-            <p class="eyebrow">Backends</p>
-            <h2>Four runtimes, one workflow</h2>
-            <ul class="backends">
-              <li><b>Ollama</b><span>macOS, Linux, Windows &middot; recommended default</span><em>Full lifecycle</em></li>
-              <li><b>llama.cpp</b><span>macOS, Linux, Windows &middot; GGUF from Hugging Face</span><em>Full lifecycle</em></li>
-              <li><b>MLX</b><span>Apple Silicon &middot; preferred when installed</span><em>Full lifecycle</em></li>
-              <li><b>LM Studio</b><span>macOS, Linux, Windows &middot; you run the server</span><em class="muted">Attach-only</em></li>
-            </ul>
-            <p class="note">Auto-selected for your platform and installed runtimes; override with <code>--backend</code>. All bind <code>127.0.0.1</code> only.</p>
-          </div>
-        </div>
-
-        <div class="frame gallery-wrap">
-          <h3>Chat with any runtime from the workspace</h3>
-          <p class="sub">A backend picker reaches every runtime directly: the same model chatting locally through each one.</p>
-          <div class="gallery">
-            <figure><img src="assets/ollama.gif" alt="Chatting with a model served by Ollama" loading="lazy" /><figcaption>Ollama &middot; 127.0.0.1:11434</figcaption></figure>
-            <figure><img src="assets/llamacpp.gif" alt="Chatting with a model served by llama.cpp" loading="lazy" /><figcaption>llama.cpp &middot; owned server</figcaption></figure>
-            <figure><img src="assets/mlx.gif" alt="Chatting with a model served by MLX on Apple Silicon" loading="lazy" /><figcaption>MLX &middot; Apple Silicon</figcaption></figure>
-            <figure><img src="assets/lmstudio.gif" alt="Chatting with a model served by LM Studio" loading="lazy" /><figcaption>LM Studio &middot; attach-only</figcaption></figure>
-          </div>
-        </div>
-      </section>
-
-      <!-- Comparison -->
-      <section class="section" id="compare">
-        <div class="frame narrow">
-          <div class="section-head">
-            <p class="eyebrow">Comparison</p>
-            <h2>RigSpark vs. Ollama</h2>
-            <p class="sub">Ollama is an excellent runtime. RigSpark adds a hardware-aware layer on top of it, and of three other runtimes.</p>
-          </div>
-          <div class="table-scroll" role="region" aria-label="Feature comparison" tabindex="0">
-            <table class="compare">
-              <thead><tr><th scope="col">Feature</th><th scope="col">Ollama</th><th scope="col">RigSpark</th></tr></thead>
-              <tbody>
-                <tr><th scope="row">Run inference</th><td class="y">&#10003;</td><td class="y">&#10003;</td></tr>
-                <tr><th scope="row">Hardware-aware model recommendations</th><td class="n">&ndash;</td><td class="y">&#10003;</td></tr>
-                <tr><th scope="row">yes / slow / no verdicts + est. tok/s</th><td class="n">&ndash;</td><td class="y">&#10003;</td></tr>
-                <tr><th scope="row">AI Hardware Score (0&ndash;100)</th><td class="n">&ndash;</td><td class="y">&#10003;</td></tr>
-                <tr><th scope="row">Context-window sizing (KV-cache aware)</th><td class="n">&ndash;</td><td class="y">&#10003;</td></tr>
-                <tr><th scope="row">Interactive terminal UI</th><td class="n">&ndash;</td><td class="y">&#10003;</td></tr>
-                <tr><th scope="row">Browser workspace (loopback-only)</th><td class="n">&ndash;</td><td class="y">&#10003;</td></tr>
-                <tr><th scope="row">Agents &amp; skills library</th><td class="n">&ndash;</td><td class="y">&#10003;</td></tr>
-                <tr><th scope="row">MCP connectors &amp; tools</th><td class="n">&ndash;</td><td class="y">&#10003;</td></tr>
-                <tr><th scope="row">Inline images &amp; graphs in chat</th><td class="n">&ndash;</td><td class="y">&#10003;</td></tr>
-                <tr><th scope="row">Accessible mode (screen readers)</th><td class="n">&ndash;</td><td class="y">&#10003;</td></tr>
-                <tr><th scope="row">Multi-backend (4 runtimes)</th><td class="n">&ndash;</td><td class="y">&#10003;</td></tr>
-                <tr><th scope="row">SHA-256 integrity verification</th><td class="n">&ndash;</td><td class="y">&#10003;</td></tr>
-                <tr><th scope="row">Portable memory migration</th><td class="n">&ndash;</td><td class="y">&#10003;</td></tr>
-                <tr><th scope="row">Offline deterministic advice</th><td class="n">&ndash;</td><td class="y">&#10003;</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <!-- Install -->
-      <section class="section install" id="install">
-        <img class="peek peek-b2" src="assets/mascot-b2.jpg" alt="" width="220" height="220" loading="lazy" />
-        <div class="frame">
-          <div class="section-head">
-            <p class="eyebrow">Install</p>
-            <h2>One archive, three native binaries</h2>
-            <p class="sub">
-              Each release ships <code>rigspark</code>, the <code>llmup</code> alias and the <code>rigspark-gui</code>
-              workspace. No Node.js, Python or compiler needed: unpack, add the folder to your <code>PATH</code>, run.
-            </p>
-          </div>
-
-          <div class="downloads" role="list">
-            <a role="listitem" class="dl" data-os="mac-arm" href="https://github.com/shashankswe2020-ux/rigspark/releases/latest/download/rigspark-aarch64-apple-darwin.tar.gz"><b>macOS</b><span>Apple Silicon</span></a>
-            <a role="listitem" class="dl" data-os="mac-intel" href="https://github.com/shashankswe2020-ux/rigspark/releases/latest/download/rigspark-x86_64-apple-darwin.tar.gz"><b>macOS</b><span>Intel</span></a>
-            <a role="listitem" class="dl" data-os="linux-x64" href="https://github.com/shashankswe2020-ux/rigspark/releases/latest/download/rigspark-x86_64-unknown-linux-gnu.tar.gz"><b>Linux</b><span>x64</span></a>
-            <a role="listitem" class="dl" data-os="linux-arm" href="https://github.com/shashankswe2020-ux/rigspark/releases/latest/download/rigspark-aarch64-unknown-linux-gnu.tar.gz"><b>Linux</b><span>ARM64</span></a>
-            <a role="listitem" class="dl" data-os="win" href="https://github.com/shashankswe2020-ux/rigspark/releases/latest/download/rigspark-x86_64-pc-windows-msvc.tar.gz"><b>Windows</b><span>x64</span></a>
-          </div>
-          <p class="note">
-            Archives are unsigned. Verify them against
-            <a href="https://github.com/shashankswe2020-ux/rigspark/releases/latest/download/SHA256SUMS"><code>SHA256SUMS</code></a>.
-            On macOS, clear quarantine after unpacking with <code>xattr -dr com.apple.quarantine rigspark-*</code>.
-          </p>
-
-          <div class="install-grid">
-            <div class="copy-block" data-copy="brew install shashankswe2020-ux/tap/rigspark">
-              <p>Homebrew, on macOS or Linux</p>
-              <div class="copy-line"><span class="prompt" aria-hidden="true">$</span><code>brew install shashankswe2020-ux/tap/rigspark</code><button class="copy-btn" type="button" aria-label="Copy Homebrew install command">Copy</button></div>
-            </div>
-            <div class="copy-block" data-copy="cargo binstall rigspark-cli rigspark-gui">
-              <p>Prebuilt, with cargo-binstall</p>
-              <div class="copy-line"><span class="prompt" aria-hidden="true">$</span><code>cargo binstall rigspark-cli rigspark-gui</code><button class="copy-btn" type="button" aria-label="Copy cargo binstall command">Copy</button></div>
-            </div>
-            <div class="copy-block" data-copy="cargo install rigspark-cli --locked --bin llmup --bin rigspark && cargo install rigspark-gui --locked">
-              <p>From source, with Cargo</p>
-              <div class="copy-line"><span class="prompt" aria-hidden="true">$</span><code>cargo install rigspark-cli --locked --bin llmup --bin rigspark &amp;&amp; cargo install rigspark-gui --locked</code><button class="copy-btn" type="button" aria-label="Copy cargo install command">Copy</button></div>
-            </div>
-            <div class="copy-block" data-copy="docker pull ghcr.io/shashankswe2020-ux/rigspark:latest">
-              <p>Container: an older CLI image that sees only the container&rsquo;s resources</p>
-              <div class="copy-line"><span class="prompt" aria-hidden="true">$</span><code>docker pull ghcr.io/shashankswe2020-ux/rigspark:latest</code><button class="copy-btn" type="button" aria-label="Copy docker pull command">Copy</button></div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Commands -->
-      <section class="section" id="commands">
-        <div class="frame">
-          <div class="section-head">
-            <p class="eyebrow">Commands</p>
-            <h2>The full local-LLM lifecycle</h2>
-            <p class="sub">Every command supports <code>--json</code> and <code>--help</code>. Use <code>--accessible</code> for screen readers.</p>
-          </div>
-          <dl class="commands">
-            <div><dt>recommend</dt><dd>Default. Ranks the catalog for this machine; filter with <code>--task</code>, size context with <code>--context N</code>.</dd></div>
-            <div><dt>can-run</dt><dd>One verdict with the binding reason and est. tok/s. Exits non-zero only on <em>no</em>.</dd></div>
-            <div><dt>doctor</dt><dd>AI Hardware Score, bottleneck diagnosis, backend status and environment checks.</dd></div>
-            <div><dt>catalog</dt><dd>Browse models, inspect provenance with <code>--status</code>, or explicitly activate a signed snapshot with <code>--update</code>.</dd></div>
-            <div><dt>up</dt><dd>Pull with SHA-256 verification, then serve on <code>127.0.0.1</code>.</dd></div>
-            <div><dt>chat</dt><dd>Terminal chat with streaming, multi-line input (<kbd>Ctrl+J</kbd>) and session memory.</dd></div>
-            <div><dt>gui</dt><dd>Open the loopback-only browser workspace.</dd></div>
-            <div><dt>generate</dt><dd>Create an image or short video locally through ComfyUI; add <code>--tui</code> for an interactive form.</dd></div>
-            <div><dt>ls</dt><dd>Show the active model and server endpoint.</dd></div>
-            <div><dt>switch</dt><dd>Change the active model without re-pulling, with a keyboard picker in the TUI.</dd></div>
-            <div><dt>migrate</dt><dd>Move conversation memory to another model; preview with <code>--dry-run</code>.</dd></div>
-            <div><dt>down</dt><dd>Stop the local server cleanly.</dd></div>
+      <section class="nums" aria-labelledby="nums-title">
+        <div class="wrap center reveal">
+          <h2 class="h2" id="nums-title">Small robot. Big numbers.</h2>
+          <dl class="grid">
+            <div><dt>69</dt><dd>curated models</dd></div>
+            <div><dt>4</dt><dd>native runtimes</dd></div>
+            <div><dt>0</dt><dd>network calls for advice</dd></div>
+            <div><dt>MIT</dt><dd>native Rust, free forever</dd></div>
           </dl>
         </div>
       </section>
 
-      <!-- FAQ -->
-      <section class="section section-alt" id="faq">
-        <div class="frame narrow">
-          <div class="section-head">
-            <p class="eyebrow">FAQ</p>
-            <h2>Questions before you run models locally</h2>
-            <p class="sub">Figures are RigSpark&rsquo;s offline estimates, not benchmarks.</p>
+      <section class="tiles" id="features" aria-label="Features">
+        <article class="tile reveal">
+          <span class="badge-new">Next release</span>
+          <h3>Terminal UI</h3>
+          <p>Every model, ranked for your machine.</p>
+          <div class="ctas"><a class="more" href="https://github.com/shashankswe2020-ux/rigspark/releases">Follow releases</a></div>
+          <img class="shot" src="brand/screens/tui-recommend.webp" alt="RigSpark terminal UI ranking models in a sortable table with a memory fit gauge" width="1400" height="900" loading="lazy" />
+        </article>
+        <article class="tile night reveal">
+          <span class="badge-new">New in 2.3</span>
+          <h3>Local image &amp; video</h3>
+          <p>FLUX.1 schnell and Wan&nbsp;2.1 through your own ComfyUI. Nothing leaves 127.0.0.1.</p>
+          <div class="ctas"><a class="more" href="https://github.com/shashankswe2020-ux/rigspark/blob/main/CHANGELOG.md">Read the changelog</a></div>
+          <img class="shot" src="brand/screens/chat-image-generation.webp" alt="The prompt create mount fuji returning a locally generated image of Mount Fuji in the RigSpark chat" width="1200" height="1908" loading="lazy" />
+        </article>
+        <article class="tile night reveal">
+          <h3>Workspace</h3>
+          <p>Verify, serve and chat. On loopback only.</p>
+          <div class="ctas"><a class="more" href="#install">Get started</a></div>
+          <img class="shot" src="brand/screens/screenshot-workspace.webp" alt="RigSpark browser workspace ready to chat with a selected model" width="1440" height="857" loading="lazy" />
+        </article>
+        <article class="tile amber reveal">
+          <h3>AI Hardware Score</h3>
+          <p>0&ndash;100. <code>rigspark doctor</code> names your bottleneck.</p>
+          <div class="ctas"><a class="more" href="#ask">Ask Sparky</a></div>
+          <img class="art" src="brand/3d/sparky-chip.webp" alt="Sparky holding a processor chip" width="1096" height="843" loading="lazy" />
+        </article>
+      </section>
+
+      <section class="privacy night" id="privacy" aria-labelledby="privacy-title">
+        <div class="wrap center reveal">
+          <p class="eyebrow on-night">Privacy</p>
+          <h2 class="h2" id="privacy-title">Your hardware.<br />Your data. Your call.</h2>
+          <p class="lead narrow">Most &ldquo;can I run it&rdquo; tools guess. Sparky refuses to. Every figure is sourced, or it says <code>unknown</code>.</p>
+        </div>
+        <img class="art reveal" src="brand/3d/sparky-studio.webp" alt="Sparky standing in a studio spotlight" width="1400" height="1115" loading="lazy" />
+        <div class="wide">
+          <ul class="pillars reveal">
+            <li><span class="i"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8.8a14 14 0 0 1 4.3-2.6M10.6 5.6A14 14 0 0 1 21.5 8.8M5.5 12.2a9.5 9.5 0 0 1 3.4-1.9M14.6 10.5a9.5 9.5 0 0 1 3.9 1.7M8.6 15.6a5 5 0 0 1 6.8 0"/><path d="M3 3l18 18"/><circle cx="12" cy="19" r=".6"/></svg></span><h3>Offline advice.</h3><p><code>recommend</code>, <code>can-run</code> and <code>doctor</code> make zero network calls. Same catalog, same answer.</p></li>
+            <li><span class="i"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.75"/><path d="m15.5 15.5 5 5"/></svg></span><h3>Unknown stays unknown.</h3><p>Unsourced throughput is printed as <code>unknown</code>. Models are still ranked by weights, never dropped.</p></li>
+            <li><span class="i"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.8 4.5 5.6v6.1c0 4.6 3.1 8.3 7.5 9.5 4.4-1.2 7.5-4.9 7.5-9.5V5.6L12 2.8Z"/><path d="m8.8 12 2.2 2.2 4.2-4.4"/></svg></span><h3>Fail-closed integrity.</h3><p><code>up</code> and <code>switch</code> check pulled weights against the catalog digest and refuse anything that doesn&rsquo;t match.</p></li>
+            <li><span class="i"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.35-5.65"/><path d="M20 3.5V7h-3.5"/><circle cx="12" cy="12" r="2"/></svg></span><h3>Loopback only.</h3><p>Model servers and the workspace bind to <code>127.0.0.1</code> with host-header checks.</p></li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="gallery" aria-labelledby="gallery-title">
+        <div class="wide gal-head reveal">
+          <h2 class="h2" id="gallery-title">Everything else.<br /><span class="muted">Packed into one tool.</span></h2>
+          <div class="arrows"><button type="button" aria-label="Scroll features left" aria-controls="scroller" data-dir="-1">&lsaquo;</button><button type="button" aria-label="Scroll features right" aria-controls="scroller" data-dir="1">&rsaquo;</button></div>
+        </div>
+        <ul class="scroller" id="scroller" tabindex="0" aria-label="More features">
+          <li class="card"><span class="k">Sizing</span><h3>Context-window aware.</h3><p>KV-cache memory math with GQA-correct geometry. Re-rank at <code>--context N</code> or size a quantized cache with <code>--kv-cache</code>.</p><span class="ico"><span class="i"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h10M4 18h6"/><path d="m17 15 3 3-3 3"/></svg></span></span></li>
+          <li class="card"><span class="k">Memory</span><h3>Portable chat memory.</h3><p><code>rigspark migrate</code> carries memory to a bigger model. Preview with <code>--dry-run</code>.</p><span class="ico"><span class="i"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="10" rx="1.5"/><path d="M6 9.5v3M10 9.5v3M14 9.5v3M18 9.5v3M5 16v2.5M9 16v2.5M15 16v2.5M19 16v2.5"/></svg></span></span></li>
+          <li class="card"><span class="k">Agents</span><h3>Agents &amp; skills.</h3><p>Reusable personas and instruction blocks, stored locally as markdown.</p><span class="ico"><span class="i"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="7.5" width="15" height="12" rx="3"/><path d="M12 7.5V4M9.5 13v1M14.5 13v1M2 13v2M22 13v2"/><circle cx="12" cy="3.5" r="1"/></svg></span></span></li>
+          <li class="card"><span class="k">Tools</span><h3>MCP connectors.</h3><p>Attach local <code>stdio</code> or loopback MCP servers. Tools run with your approval.</p><span class="ico"><span class="i"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2.5v5M15 2.5v5M6 7.5h12v3a6 6 0 0 1-12 0v-3ZM12 16.5v5"/></svg></span></span></li>
+          <li class="card"><span class="k">Chat</span><h3>Inline images &amp; graphs.</h3><p>Agent-run code renders charts and images right in the conversation.</p><span class="ico"><span class="i"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="9" cy="9.5" r="1.75"/><path d="m21 15.5-5-5L5.5 20"/></svg></span></span></li>
+          <li class="card"><span class="k">Catalog</span><h3>Signed updates.</h3><p>Activate a verified catalog snapshot without replacing the app. Rollback included.</p><span class="ico"><span class="i"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5.5" rx="7.5" ry="2.75"/><path d="M4.5 5.5v13c0 1.5 3.4 2.75 7.5 2.75s7.5-1.25 7.5-2.75v-13M4.5 12c0 1.5 3.4 2.75 7.5 2.75s7.5-1.25 7.5-2.75"/></svg></span></span></li>
+          <li class="card"><span class="k">Runtimes</span><h3>Four runtimes, one workflow.</h3><p>Ollama, llama.cpp and MLX with full lifecycle. LM Studio attach-only.</p><span class="ico"><span class="i"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 9 4.8-9 4.8-9-4.8L12 3Z"/><path d="m3 12.2 9 4.8 9-4.8M3 16.4l9 4.8 9-4.8"/></svg></span></span></li>
+          <li class="card soon"><span class="k">Terminal</span><h3>Streaming terminal chat.</h3><p>Rendered markdown, scrollback and first-token timing in your shell.</p><span class="ico"><span class="i"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12a8 8 0 0 1-11.7 7.1L3.5 20.5l1.4-5A8 8 0 1 1 20.5 12Z"/><path d="M8.5 11h7M8.5 14h4"/></svg></span></span></li>
+          <li class="card soon"><span class="k">Lifecycle</span><h3>A checklist you can trust.</h3><p><code>up</code>, <code>switch</code> and <code>down</code> show each stage as done, failed or unconfirmed.</p><span class="ico"><span class="i"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span></span></li>
+        </ul>
+      </section>
+
+      <section class="compare" id="compare" aria-labelledby="compare-title">
+        <div class="wrap center reveal">
+          <h2 class="h2" id="compare-title">Which is right for you?</h2>
+          <p class="lead narrow">Ollama is an excellent runtime. RigSpark sits on top of it and three others, and tells you what to run before you run it.</p>
+        </div>
+        <div class="wrap">
+          <div class="cmp reveal">
+            <div class="col them">
+              <div class="ph"><span class="i"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 9 4.8-9 4.8-9-4.8L12 3Z"/><path d="m3 12.2 9 4.8 9-4.8M3 16.4l9 4.8 9-4.8"/></svg></span></div>
+              <h3>A runtime alone</h3>
+              <p class="muted">Ollama, llama.cpp, MLX or LM Studio</p>
+              <ul>
+                <li><span class="m y" aria-hidden="true">&#10003;</span>Run inference</li>
+                <li class="dim"><span class="m n" aria-hidden="true">&ndash;</span><span class="sr">Not included: </span>Hardware-aware recommendations</li>
+                <li class="dim"><span class="m n" aria-hidden="true">&ndash;</span><span class="sr">Not included: </span>yes / slow / no verdicts + est. tok/s</li>
+                <li class="dim"><span class="m n" aria-hidden="true">&ndash;</span><span class="sr">Not included: </span>AI Hardware Score (0&ndash;100)</li>
+                <li class="dim"><span class="m n" aria-hidden="true">&ndash;</span><span class="sr">Not included: </span>KV-cache-aware context sizing</li>
+                <li class="dim"><span class="m n" aria-hidden="true">&ndash;</span><span class="sr">Not included: </span>Loopback-only browser workspace</li>
+                <li class="dim"><span class="m n" aria-hidden="true">&ndash;</span><span class="sr">Not included: </span>Agents, skills &amp; MCP tools</li>
+                <li class="dim"><span class="m n" aria-hidden="true">&ndash;</span><span class="sr">Not included: </span>Multi-backend (4 runtimes)</li>
+                <li class="dim"><span class="m n" aria-hidden="true">&ndash;</span><span class="sr">Not included: </span>SHA-256 integrity verification</li>
+                <li class="dim"><span class="m n" aria-hidden="true">&ndash;</span><span class="sr">Not included: </span>Portable memory migration</li>
+                <li class="dim"><span class="m n" aria-hidden="true">&ndash;</span><span class="sr">Not included: </span>Offline, deterministic advice</li>
+              </ul>
+            </div>
+            <div class="col us">
+              <img src="brand/3d/sparky-yes-3d.webp" alt="" width="1000" height="797" loading="lazy" />
+              <h3>Runtime + RigSpark</h3>
+              <p class="muted">Sparky decides, your runtime runs</p>
+              <ul>
+                <li><span class="m y" aria-hidden="true">&#10003;</span>Run inference</li>
+                <li><span class="m y" aria-hidden="true">&#10003;</span>Hardware-aware recommendations</li>
+                <li><span class="m y" aria-hidden="true">&#10003;</span>yes / slow / no verdicts + est. tok/s</li>
+                <li><span class="m y" aria-hidden="true">&#10003;</span>AI Hardware Score (0&ndash;100)</li>
+                <li><span class="m y" aria-hidden="true">&#10003;</span>KV-cache-aware context sizing</li>
+                <li><span class="m y" aria-hidden="true">&#10003;</span>Loopback-only browser workspace</li>
+                <li><span class="m y" aria-hidden="true">&#10003;</span>Agents, skills &amp; MCP tools</li>
+                <li><span class="m y" aria-hidden="true">&#10003;</span>Multi-backend (4 runtimes)</li>
+                <li><span class="m y" aria-hidden="true">&#10003;</span>SHA-256 integrity verification</li>
+                <li><span class="m y" aria-hidden="true">&#10003;</span>Portable memory migration</li>
+                <li><span class="m y" aria-hidden="true">&#10003;</span>Offline, deterministic advice</li>
+              </ul>
+            </div>
           </div>
-          <div class="faq">
+        </div>
+      </section>
+
+      <section class="story reveal" aria-labelledby="story-title">
+        <img src="brand/photo/desk-sparky.webp" alt="A Sparky toy on a desk next to a laptop showing a ranked model table" width="896" height="1200" loading="lazy" />
+        <div class="txt">
+          <h2 class="h2" id="story-title">Made for machines<br />you already own.</h2>
+          <p>One command ranks every model for your rig. One more serves it on 127.0.0.1.</p>
+        </div>
+      </section>
+
+      <section class="install" id="install" aria-labelledby="install-title">
+        <div class="wrap center reveal">
+          <h2 class="h2" id="install-title">Get RigSpark.</h2>
+          <p class="lead narrow">One archive. Three native binaries: <code>rigspark</code>, the <code>llmup</code> alias and <code>rigspark-gui</code>. No Node.js, Python or compiler needed.</p>
+        </div>
+        <div class="wrap">
+          <ul class="os reveal" aria-label="Download a release archive">
+            <li><a class="dl" data-os="mac-arm" href="https://github.com/shashankswe2020-ux/rigspark/releases/latest/download/rigspark-aarch64-apple-darwin.tar.gz"><span class="i"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7.5c0-2 1.5-4 3.5-4 0 2-1.5 4-3.5 4Z"/><path d="M16.8 12.6c0-2 1.6-3 1.7-3.1-1-1.4-2.4-1.6-2.9-1.6-1.2-.1-2.4.7-3 .7-.7 0-1.6-.7-2.7-.7-1.4 0-2.7.8-3.4 2.1-1.5 2.5-.4 6.3 1 8.4.7 1 1.5 2.1 2.6 2.1 1 0 1.4-.7 2.7-.7 1.2 0 1.6.7 2.7.7 1.1 0 1.8-1 2.5-2 .8-1.2 1.1-2.3 1.1-2.4 0 0-2.3-.9-2.3-3.5Z"/></svg></span><b>macOS</b><span>Apple Silicon</span></a></li>
+            <li><a class="dl" data-os="mac-intel" href="https://github.com/shashankswe2020-ux/rigspark/releases/latest/download/rigspark-x86_64-apple-darwin.tar.gz"><span class="i"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7.5c0-2 1.5-4 3.5-4 0 2-1.5 4-3.5 4Z"/><path d="M16.8 12.6c0-2 1.6-3 1.7-3.1-1-1.4-2.4-1.6-2.9-1.6-1.2-.1-2.4.7-3 .7-.7 0-1.6-.7-2.7-.7-1.4 0-2.7.8-3.4 2.1-1.5 2.5-.4 6.3 1 8.4.7 1 1.5 2.1 2.6 2.1 1 0 1.4-.7 2.7-.7 1.2 0 1.6.7 2.7.7 1.1 0 1.8-1 2.5-2 .8-1.2 1.1-2.3 1.1-2.4 0 0-2.3-.9-2.3-3.5Z"/></svg></span><b>macOS</b><span>Intel</span></a></li>
+            <li><a class="dl" data-os="linux-x64" href="https://github.com/shashankswe2020-ux/rigspark/releases/latest/download/rigspark-x86_64-unknown-linux-gnu.tar.gz"><span class="i"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c-2 0-3.2 1.7-3.2 4 0 1.4.3 2.4-.6 3.9C7 13 5.5 15 6.2 18c.4 1.7 2.5 2.9 5.8 2.9s5.4-1.2 5.8-2.9c.7-3-.8-5-2-7.1-.9-1.5-.6-2.5-.6-3.9C15.2 4.7 14 3 12 3Z"/><circle cx="10.5" cy="7.5" r=".5"/><circle cx="13.5" cy="7.5" r=".5"/><path d="M10.8 9.6h2.4l-1.2 1.2-1.2-1.2Z"/></svg></span><b>Linux</b><span>x64</span></a></li>
+            <li><a class="dl" data-os="linux-arm" href="https://github.com/shashankswe2020-ux/rigspark/releases/latest/download/rigspark-aarch64-unknown-linux-gnu.tar.gz"><span class="i"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c-2 0-3.2 1.7-3.2 4 0 1.4.3 2.4-.6 3.9C7 13 5.5 15 6.2 18c.4 1.7 2.5 2.9 5.8 2.9s5.4-1.2 5.8-2.9c.7-3-.8-5-2-7.1-.9-1.5-.6-2.5-.6-3.9C15.2 4.7 14 3 12 3Z"/><circle cx="10.5" cy="7.5" r=".5"/><circle cx="13.5" cy="7.5" r=".5"/><path d="M10.8 9.6h2.4l-1.2 1.2-1.2-1.2Z"/></svg></span><b>Linux</b><span>ARM64</span></a></li>
+            <li><a class="dl" data-os="win" href="https://github.com/shashankswe2020-ux/rigspark/releases/latest/download/rigspark-x86_64-pc-windows-msvc.tar.gz"><span class="i"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5.5 10.5 4.5v7h-7v-6ZM13 4.2 20.5 3v8.5H13V4.2ZM3.5 12.5h7v7l-7-1v-6ZM13 12.5h7.5V21L13 19.8v-7.3Z"/></svg></span><b>Windows</b><span>x64</span></a></li>
+          </ul>
+          <div class="cmds reveal">
+            <div class="cmd" data-copy="brew install shashankswe2020-ux/tap/rigspark"><small>Homebrew</small><code>brew install shashankswe2020-ux/tap/rigspark</code><button class="copy-btn" type="button" aria-label="Copy Homebrew install command"><span class="i"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="8.5" y="8.5" width="12" height="12" rx="2.5"/><path d="M15.5 8.5V6A2.5 2.5 0 0 0 13 3.5H6A2.5 2.5 0 0 0 3.5 6v7A2.5 2.5 0 0 0 6 15.5h2.5"/></svg></span></button></div>
+            <div class="cmd" data-copy="cargo binstall rigspark-cli rigspark-gui"><small>cargo-binstall</small><code>cargo binstall rigspark-cli rigspark-gui</code><button class="copy-btn" type="button" aria-label="Copy cargo binstall command"><span class="i"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="8.5" y="8.5" width="12" height="12" rx="2.5"/><path d="M15.5 8.5V6A2.5 2.5 0 0 0 13 3.5H6A2.5 2.5 0 0 0 3.5 6v7A2.5 2.5 0 0 0 6 15.5h2.5"/></svg></span></button></div>
+            <div class="cmd" data-copy="cargo install rigspark-cli --locked --bin llmup --bin rigspark &amp;&amp; cargo install rigspark-gui --locked"><small>From source</small><code>cargo install rigspark-cli --locked --bin llmup --bin rigspark &amp;&amp; cargo install rigspark-gui --locked</code><button class="copy-btn" type="button" aria-label="Copy cargo install command"><span class="i"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="8.5" y="8.5" width="12" height="12" rx="2.5"/><path d="M15.5 8.5V6A2.5 2.5 0 0 0 13 3.5H6A2.5 2.5 0 0 0 3.5 6v7A2.5 2.5 0 0 0 6 15.5h2.5"/></svg></span></button></div>
+            <div class="cmd" data-copy="docker pull ghcr.io/shashankswe2020-ux/rigspark:latest"><small>Container</small><code>docker pull ghcr.io/shashankswe2020-ux/rigspark:latest</code><button class="copy-btn" type="button" aria-label="Copy docker pull command"><span class="i"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="8.5" y="8.5" width="12" height="12" rx="2.5"/><path d="M15.5 8.5V6A2.5 2.5 0 0 0 13 3.5H6A2.5 2.5 0 0 0 3.5 6v7A2.5 2.5 0 0 0 6 15.5h2.5"/></svg></span></button></div>
+          </div>
+          <p class="fine center">Archives are unsigned. Verify them against <a href="https://github.com/shashankswe2020-ux/rigspark/releases/latest/download/SHA256SUMS">SHA256SUMS</a>. On macOS, clear quarantine with <code>xattr -dr com.apple.quarantine rigspark-*</code>. The container is an older CLI image that sees only the container&rsquo;s resources.</p>
+        </div>
+      </section>
+
+      <section class="faq" id="faq" aria-labelledby="faq-title">
+        <div class="wrap center reveal">
+          <h2 class="h2" id="faq-title">Questions? Sparky has answers.</h2>
+          <p class="lead narrow">Figures are RigSpark&rsquo;s offline estimates, not benchmarks.</p>
+        </div>
+        <div class="wrap">
+          <div class="list reveal">
             <details open>
               <summary>How do I find out which LLMs my computer can run?</summary>
               <p>Install RigSpark and run <code>rigspark recommend</code>. It detects your GPU, VRAM, RAM and free disk, ranks every catalog model with a <b>yes</b>, <b>slow</b> or <b>no</b> verdict and estimated tokens per second, and lists the models that won&rsquo;t fit with the reason. <code>rigspark can-run &lt;model&gt;</code> checks a single model.</p>
@@ -706,37 +434,30 @@ Run the top pick:  <span class="t-acc">rigspark up qwen3:30b-a3b</span>
         </div>
       </section>
 
-      <!-- CTA -->
-      <section class="cta frame">
-        <img src="assets/mascot-b1.jpg" alt="" width="120" height="120" loading="lazy" />
-        <div>
-          <h2>Know before you download.</h2>
-          <p>Free and open source under the MIT license.</p>
+      <section class="cta" aria-labelledby="cta-title">
+        <div class="wrap reveal">
+          <p class="eyebrow">RigSpark</p>
+          <h2 class="display cta-title" id="cta-title">Let Sparky check your rig.</h2>
+          <p class="lead">Free and open source. MIT licensed. Native Rust.</p>
+          <div class="ctas"><a class="pill" href="#install">Download</a><a class="more" href="https://github.com/shashankswe2020-ux/rigspark">Star on GitHub</a></div>
         </div>
-        <div class="cta-actions">
-          <a class="btn btn-primary" href="#install">Install RigSpark</a>
-          <a class="btn btn-ghost" href="https://github.com/shashankswe2020-ux/rigspark">Star on GitHub</a>
-        </div>
+        <img class="art reveal" src="brand/3d/sparky-cheer.webp" alt="Sparky with arms out, ta-da" width="1093" height="868" loading="lazy" />
       </section>
     </main>
 
     <footer class="footer">
-      <div class="frame footer-inner">
-        <div class="brand">
-          <img src="assets/mascot-avatar.jpg" alt="" width="24" height="24" loading="lazy" />
-          <span>RigSpark</span>
-          <small>v2.3.0 &middot; MIT &middot; Native Rust</small>
-        </div>
-        <nav aria-label="Footer">
-          <a href="https://github.com/shashankswe2020-ux/rigspark#readme">Docs</a>
-          <a href="https://github.com/shashankswe2020-ux/rigspark/releases/latest">Releases</a>
-          <a href="https://crates.io/crates/rigspark-cli">crates.io</a>
-          <a href="https://github.com/shashankswe2020-ux/rigspark/blob/main/CHANGELOG.md">Changelog</a>
-          <a href="https://github.com/shashankswe2020-ux/rigspark">GitHub</a>
+      <div class="wide">
+        <p class="fine2">Verdicts and tok/s are RigSpark&rsquo;s offline estimates from the curated catalog, not benchmarks. Sparky is RigSpark&rsquo;s mascot. Ollama, LM Studio, llama.cpp and MLX are trademarks of their respective owners.</p>
+        <div class="crumb"><img src="brand/logo/mark.svg" alt="" width="18" height="18" /><span aria-hidden="true">&rsaquo;</span> RigSpark</div>
+        <nav class="fcols" aria-label="Footer">
+          <div><b>Product</b><a href="#spin">Overview</a><a href="#ask">Ask Sparky</a><a href="#how">How it works</a><a href="#features">Features</a><a href="#install">Install</a></div>
+          <div><b>Resources</b><a href="https://github.com/shashankswe2020-ux/rigspark#readme">Docs</a><a href="https://github.com/shashankswe2020-ux/rigspark/blob/main/CHANGELOG.md">Changelog</a><a href="https://github.com/shashankswe2020-ux/rigspark/releases/latest">Releases</a><a href="https://crates.io/crates/rigspark-cli">crates.io</a></div>
+          <div><b>Guides</b><a href="#faq">VRAM for 8B&ndash;70B</a><a href="#faq">LLMs on Apple Silicon</a><a href="#faq">Local image &amp; video</a></div>
+          <div><b>Compare</b><a href="#compare">RigSpark vs a runtime alone</a></div>
+          <div><b>Community</b><a href="https://github.com/shashankswe2020-ux/rigspark">GitHub</a><a href="https://github.com/shashankswe2020-ux/rigspark/issues">Issues</a><a href="https://github.com/shashankswe2020-ux/rigspark/blob/main/LICENSE">MIT License</a></div>
         </nav>
+        <div class="legal"><span>RigSpark v2.3.0 &middot; MIT &middot; Native Rust</span><span>Made for machines you already own.</span></div>
       </div>
     </footer>
-
-    <script src="main.js?v=2.3.0"></script>
   </body>
 </html>
