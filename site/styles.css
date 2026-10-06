@@ -332,12 +332,16 @@ h3 {
   top: 52px;
   height: calc(100vh - 52px);
   display: grid;
-  place-items: center;
+  grid-template-rows: auto auto;
+  align-content: center;
+  justify-items: center;
+  gap: 24px;
   overflow: hidden;
 }
+/* Captions share one grid cell above the stage; Sparky is sized to the height that remains. */
 .spin .stage {
   position: relative;
-  width: min(780px, 92vw);
+  width: min(780px, 92vw, calc((100vh - 52px - 200px) * 799 / 629));
   aspect-ratio: 799 / 629;
 }
 .spin .stage img {
@@ -348,9 +352,7 @@ h3 {
   object-fit: contain;
 }
 .spin .cap {
-  position: absolute;
-  left: 0;
-  right: 0;
+  grid-area: 1 / 1;
   text-align: center;
   font: 600 clamp(24px, 3.2vw, 40px) / 1.15 var(--font-display);
   letter-spacing: -0.025em;
@@ -373,8 +375,8 @@ h3 {
   margin-top: 8px;
   letter-spacing: -0.01em;
 }
-.spin .cap.top {
-  top: 6%;
+.spin .stage {
+  grid-row: 2;
 }
 /* Without JS or with reduced motion, the turntable is a still image with all captions. */
 html:not(.js) .spin,
