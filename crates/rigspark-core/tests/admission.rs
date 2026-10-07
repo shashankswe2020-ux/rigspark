@@ -439,3 +439,43 @@ fn rejects_variants_whose_facts_cannot_be_sourced_or_disagree() {
     .unwrap();
     assert_eq!(embedding.capabilities, ["embedding"]);
 }
+
+#[test]
+fn rounded_registry_sizes_are_allowed_their_rounding_and_mxfp4_is_sized() {
+    let record = registry()["granite4.2:30b"].clone();
+    let layer = parse_layer(&record["manifest"].to_string()).unwrap().unwrap();
+    let build = |model_type: &str, file_type: &str, gguf: Gguf| {
+        let config = RegistryConfig::parse(
+            &json!({"model_family":"llama","model_type":model_type,"file_type":file_type}).to_string(),
+        )
+        .unwrap();
+        let parsed = parse_gguf(&gguf.bytes()).unwrap();
+        build_entry(&AdmissionInput {
+            repository: "llama2",
+            tag: "7b",
+            capabilities: &[],
+            layer: &layer,
+            config: &config,
+            gguf: &parsed,
+            license_head: record["licenseHead"].as_str(),
+            today: "2026-10-07",
+        })
+        .map_err(|rejection| rejection.reason())
+    };
+    // Older registry configs print "7B" for a 6.74B tensor table: within the label's rounding.
+    assert_eq!(build("7B", "Q4_0", dense("llama").total(6.74e9)).unwrap().params, "7B");
+    // A precise label must agree precisely.
+    assert_eq!(
+        build("7.0B", "Q4_0", dense("llama").total(6.74e9)).unwrap_err(),
+        "parameter count disagrees with tensor table"
+    );
+    // MXFP4 (OCP MX: 4-bit elements + one 8-bit scale per 32) sizes MoE weights.
+    let moe = dense("gptoss")
+        .kv("gptoss.expert_count", json!(32))
+        .kv("gptoss.expert_used_count", json!(4))
+        .tensor("blk.0.ffn_up_exps.weight", &[1000, 1000, 32])
+        .total(20.9e9);
+    let entry = build("20.9B", "MXFP4", moe).unwrap();
+    assert_eq!(entry.quantizations[0].name, "MXFP4");
+    assert_eq!(rigspark_core::sizing::quant_bits("MXFP4"), Some(4.25));
+}

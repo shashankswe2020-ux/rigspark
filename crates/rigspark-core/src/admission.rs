@@ -565,7 +565,13 @@ pub fn build_entry(input: &AdmissionInput) -> Result<CatalogModel, Rejection> {
     }
     let count = parse_param_count(params).map_err(|_| Rejection("parameter count not sourced"))?;
     let tensors = gguf.total_elements() as f64;
-    if (tensors - count).abs() > count * PARAMETER_TOLERANCE {
+    // Registry labels are rounded ("7B" for 6.74B): allow half of the last printed digit.
+    let decimals = params[..params.len() - 1]
+        .split_once('.')
+        .map_or(0, |(_, fraction)| fraction.len());
+    let unit = count / params[..params.len() - 1].parse::<f64>().unwrap_or(1.0);
+    let rounding = 0.5 * unit / 10f64.powi(decimals as i32);
+    if (tensors - count).abs() > (count * PARAMETER_TOLERANCE).max(rounding) {
         return Err(Rejection("parameter count disagrees with tensor table"));
     }
     let license = license_id(
