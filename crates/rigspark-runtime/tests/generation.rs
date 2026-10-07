@@ -112,9 +112,12 @@ impl DownloadTransport for Hub {
 
 /// Bundled model with tiny, correctly pinned stand-in weights.
 fn fixture(kind: &str) -> (GenerationModel, Hub) {
+    fixture_query(kind)
+}
+fn fixture_query(query: &str) -> (GenerationModel, Hub) {
     let mut model = GenerationCatalog::bundled()
         .unwrap()
-        .resolve(kind)
+        .resolve(query)
         .unwrap()
         .clone();
     let mut files = HashMap::new();
@@ -133,23 +136,24 @@ fn fixture(kind: &str) -> (GenerationModel, Hub) {
     )
 }
 fn listing(model: &GenerationModel, windows: bool) -> HashMap<String, Value> {
-    model
-        .files
-        .iter()
-        .map(|file| {
-            let (owner, repo) = file.repo.split_once('/').unwrap();
-            let mut name = format!(
-                "rigspark/comfyui/{owner}/{repo}@{}/{}",
-                file.revision, file.file
-            );
-            if windows {
-                name = name.replace('/', "\\");
-            }
-            (
-                format!("/models/{}", file.folder),
-                json!(["other.safetensors", name]),
-            )
-        })
+    let mut listings: HashMap<String, Vec<String>> = HashMap::new();
+    for file in &model.files {
+        let (owner, repo) = file.repo.split_once('/').unwrap();
+        let mut name = format!(
+            "rigspark/comfyui/{owner}/{repo}@{}/{}",
+            file.revision, file.file
+        );
+        if windows {
+            name = name.replace('/', "\\");
+        }
+        listings
+            .entry(format!("/models/{}", file.folder))
+            .or_insert_with(|| vec!["other.safetensors".into()])
+            .push(name);
+    }
+    listings
+        .into_iter()
+        .map(|(path, files)| (path, json!(files)))
         .collect()
 }
 fn completed(save: &str, filename: &str) -> Value {
@@ -316,8 +320,45 @@ async fn video_generation_uses_comfyui_spelling_of_weight_names() {
                 .any(|w| w.role == role && w.name == name)
         );
     }
-    assert_eq!(graph["40"]["inputs"]["length"], 33);
+    assert_eq!(graph["40"]["inputs"]["length"], 49);
     assert_eq!(graph["28"]["class_type"], "SaveAnimatedWEBP");
+}
+
+#[tokio::test]
+async fn split_flux_generation_loads_unet_dual_clip_and_vae_files() {
+    let (model, hub) = fixture_query("flux1-schnell:fp16");
+    let comfy = healthy(&model, true, completed("9", "rigspark_00001_.png"), PNG);
+    let directory = comfy_dir();
+    let out = tempfile::tempdir().unwrap();
+    let outcome = client(&comfy, &hub)
+        .generate(
+            &request(&model, directory.path(), out.path(), None),
+            &CancellationToken::new(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(outcome.weights.len(), 4);
+    let graph = comfy.submitted().unwrap();
+    ensure_local_only(&graph).unwrap();
+    assert_eq!(graph["12"]["class_type"], "UNETLoader");
+    assert_eq!(graph["11"]["class_type"], "DualCLIPLoader");
+    assert_eq!(graph["10"]["class_type"], "VAELoader");
+    assert_eq!(graph["13"]["class_type"], "SamplerCustomAdvanced");
+    assert_eq!(graph["17"]["inputs"]["steps"], 4);
+    for (node, input) in [
+        ("12", "unet_name"),
+        ("11", "clip_name1"),
+        ("11", "clip_name2"),
+        ("10", "vae_name"),
+    ] {
+        assert!(
+            graph[node]["inputs"][input]
+                .as_str()
+                .is_some_and(|name| name.contains('\\')),
+            "{node}.{input}"
+        );
+    }
 }
 
 #[test]
@@ -636,8 +677,8 @@ async fn wan_uses_euler_on_apple_mps_and_uni_pc_elsewhere() {
         assert_eq!(graph["3"]["inputs"]["sampler_name"], sampler, "{devices}");
         assert_eq!(graph["3"]["inputs"]["steps"], 30);
         assert_eq!(
-            graph["40"]["inputs"]["length"], 33,
-            "size and length stay official"
+            graph["40"]["inputs"]["length"], 49,
+            "size stays official and duration is approximately three seconds"
         );
         let noted = messages
             .lock()

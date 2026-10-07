@@ -12,7 +12,27 @@ VARIANTS = {
   'image' => [{
     'base' => 'flux1-schnell:fp8',
     'id' => 'flux1-schnell:fp16',
-    'files' => { 'checkpoint' => 'flux1-schnell.safetensors' }
+    'workflow' => 'flux-split',
+    'files' => [
+      {
+        'role' => 'diffusion', 'folder' => 'diffusion_models',
+        'repo' => 'Comfy-Org/flux1-schnell', 'file' => 'flux1-schnell.safetensors'
+      },
+      {
+        'role' => 'text-encoder', 'folder' => 'text_encoders',
+        'repo' => 'comfyanonymous/flux_text_encoders',
+        'file' => 't5xxl_fp8_e4m3fn_scaled.safetensors'
+      },
+      {
+        'role' => 'clip', 'folder' => 'text_encoders',
+        'repo' => 'comfyanonymous/flux_text_encoders', 'file' => 'clip_l.safetensors'
+      },
+      {
+        'role' => 'vae', 'folder' => 'vae',
+        'repo' => 'Comfy-Org/Lumina_Image_2.0_Repackaged',
+        'file' => 'split_files/vae/ae.safetensors'
+      }
+    ]
   }],
   'video' => [{
     'base' => 'wan2.1-t2v:1.3b',
@@ -103,10 +123,17 @@ def curated_variants(kind, models)
     copy = Marshal.load(Marshal.dump(base))
     copy['id'] = variant.fetch('id')
     copy['default'] = false
-    variant.fetch('files').each do |role, file|
-      target = copy.fetch('files').find { |entry| entry['role'] == role }
-      raise "missing curated variant role: #{role}" unless target
-      target['file'] = file
+    if variant['workflow']
+      copy['workflow'] = variant.fetch('workflow')
+      copy['files'] = variant.fetch('files').map do |file|
+        file.merge('revision' => '0' * 40, 'sha256' => '0' * 64, 'bytes' => 1)
+      end
+    else
+      variant.fetch('files').each do |role, file|
+        target = copy.fetch('files').find { |entry| entry['role'] == role }
+        raise "missing curated variant role: #{role}" unless target
+        target['file'] = file
+      end
     end
     variants << copy
   end
@@ -125,7 +152,9 @@ if ARGV == ['--self-test']
   variant = curated_variants('image', [image]).first
   raise 'curated image variant missing' unless variant['id'] == 'flux1-schnell:fp16'
   raise 'curated variant changed default' unless variant['default'] == false
-  raise 'curated variant file missing' unless variant['files'][0]['file'] == 'flux1-schnell.safetensors'
+  raise 'curated image workflow missing' unless variant['workflow'] == 'flux-split'
+  raise 'curated variant files missing' unless variant['files'].map { |file| file['role'] } ==
+                                                %w[diffusion text-encoder clip vae]
   puts 'PASS: generation Hugging Face collector bounds'
   exit
 end

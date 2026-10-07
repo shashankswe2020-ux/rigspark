@@ -88,11 +88,13 @@ rigspark must never use them:
 | id | kind | weights (pinned) | license | workflow source |
 | --- | --- | --- | --- | --- |
 | `flux1-schnell:fp8` | image | `Comfy-Org/flux1-schnell@c2b683e…` `flux1-schnell-fp8.safetensors` → `checkpoints` (17.2 GB) | apache-2.0 | [ComfyUI Flux examples](https://comfyanonymous.github.io/ComfyUI_examples/flux/) |
+| `flux1-schnell:fp16` | image | `flux1-schnell.safetensors` → `diffusion_models` (23.8 GB), T5 fp8 + CLIP-L → `text_encoders` (5.4 GB), AE → `vae` (0.34 GB) | apache-2.0 | [ComfyUI Flux examples](https://comfyanonymous.github.io/ComfyUI_examples/flux/) |
 | `wan2.1-t2v:1.3b` | video | `Comfy-Org/Wan_2.1_ComfyUI_repackaged@123acf1…` diffusion model → `diffusion_models` (2.8 GB), umt5 fp8 → `text_encoders` (6.7 GB), VAE → `vae` (0.25 GB) | apache-2.0 | [ComfyUI Wan examples](https://comfyanonymous.github.io/ComfyUI_examples/wan/) |
+| `wan2.1-t2v:1.3b-bf16` | video | BF16 diffusion model → `diffusion_models` (2.8 GB), shared umt5 fp8 + VAE | apache-2.0 | [ComfyUI Wan examples](https://comfyanonymous.github.io/ComfyUI_examples/wan/) |
 
 Revisions, sizes, and SHA-256 digests come from the Hugging Face API at the pinned
 commit. Workflow node graphs and parameters (FLUX: 1024², 4 steps, cfg 1.0, euler/simple;
-Wan: 832×480, 33 frames, shift 8, 30 steps, cfg 6, uni_pc/simple, 16 fps animated WebP)
+Wan: 832×480, 49 frames, shift 8, 30 steps, cfg 6, uni_pc/simple, 16 fps animated WebP)
 are taken from the API-format graphs embedded in the official example outputs.
 
 ## 3. Data model
@@ -121,7 +123,7 @@ ranking, signing, refresh, and parity goldens are untouched.
 
 Validation (typed serde, `deny_unknown_fields`, no nulls): unique ids; `kind ∈ {image, video}`;
 licence on the existing allowlist and `openWeight: true`; `workflow ∈ {flux-checkpoint,
-wan-t2v}` with **exactly** the roles that workflow needs; `folder` fixed by role;
+flux-split, wan-t2v}` with **exactly** the roles that workflow needs; `folder` fixed by role;
 pinned 40-hex revision, 64-hex digest, safe relative file path, positive byte size;
 `source`/`workflowSource` are HTTPS; exactly one `default: true` per kind present.
 
