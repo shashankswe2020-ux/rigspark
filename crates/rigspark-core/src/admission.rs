@@ -176,6 +176,8 @@ pub enum GgufValue {
     Text(String),
     /// Arrays keep only their length; no admission fact needs their items.
     Array(u64),
+    /// Text longer than 4 KiB (chat templates and similar), skipped unread.
+    Omitted,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -195,6 +197,13 @@ pub struct Tensor {
 pub struct Gguf {
     metadata: BTreeMap<String, GgufValue>,
     tensors: Vec<Tensor>,
+}
+
+#[derive(Clone, Copy)]
+enum Text {
+    Name,
+    Value,
+    Skip,
 }
 
 struct Cursor<'a> {
@@ -226,17 +235,23 @@ impl Cursor<'_> {
     fn u64(&mut self) -> Result<u64, GgufError> {
         Ok(u64::from_le_bytes(self.array()?))
     }
-    fn text(&mut self, keep: bool) -> Result<Option<String>, GgufError> {
+    /// Reads a GGUF string: names are capped at 1 KiB, values over 4 KiB are skipped.
+    fn text(&mut self, kind: Text) -> Result<Option<String>, GgufError> {
         let length = self.u64()?;
         if length > 16 * 1024 * 1024 {
             return Err(GgufError::Invalid("GGUF string too long"));
         }
         let bytes = self.take(length as usize)?;
+        let keep = match kind {
+            Text::Name if bytes.len() > 1024 => {
+                return Err(GgufError::Invalid("GGUF name too long"));
+            }
+            Text::Name => true,
+            Text::Value => bytes.len() <= 4096,
+            Text::Skip => false,
+        };
         if !keep {
             return Ok(None);
-        }
-        if bytes.len() > 4096 {
-            return Err(GgufError::Invalid("GGUF metadata text too long"));
         }
         String::from_utf8(bytes.to_vec())
             .map(Some)
@@ -260,7 +275,9 @@ impl Cursor<'_> {
     }
     fn value(&mut self, kind: u32, depth: u8) -> Result<GgufValue, GgufError> {
         match kind {
-            8 => Ok(GgufValue::Text(self.text(true)?.expect("kept"))),
+            8 => Ok(self
+                .text(Text::Value)?
+                .map_or(GgufValue::Omitted, GgufValue::Text)),
             9 => {
                 if depth > 1 {
                     return Err(GgufError::Invalid("nested GGUF arrays are too deep"));
@@ -273,7 +290,7 @@ impl Cursor<'_> {
                 for _ in 0..length {
                     match item {
                         8 => {
-                            self.text(false)?;
+                            self.text(Text::Skip)?;
                         }
                         9 => {
                             self.value(9, depth + 1)?;
@@ -306,7 +323,7 @@ pub fn parse_gguf(bytes: &[u8]) -> Result<Gguf, GgufError> {
     }
     let mut metadata = BTreeMap::new();
     for _ in 0..metadata_count {
-        let key = cursor.text(true)?.expect("kept");
+        let key = cursor.text(Text::Name)?.expect("names are kept");
         let kind = cursor.u32()?;
         let value = cursor.value(kind, 0)?;
         if metadata.insert(key, value).is_some() {
@@ -315,7 +332,7 @@ pub fn parse_gguf(bytes: &[u8]) -> Result<Gguf, GgufError> {
     }
     let mut tensors = Vec::new();
     for _ in 0..tensor_count {
-        let name = cursor.text(true)?.expect("kept");
+        let name = cursor.text(Text::Name)?.expect("names are kept");
         let dimensions = cursor.u32()?;
         if !(1..=8).contains(&dimensions) {
             return Err(GgufError::Invalid("invalid tensor rank"));

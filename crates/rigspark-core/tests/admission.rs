@@ -211,6 +211,16 @@ fn gguf_metadata_streams_past_tokenizer_arrays_and_reports_truncation() {
         matches!(parse_gguf(&huge), Err(GgufError::Invalid(_))),
         "absurd counts are rejected"
     );
+    // Real files carry multi-KB chat templates; long values are skipped, not fatal.
+    let templated = dense("granite").kv("tokenizer.chat_template", json!("x".repeat(64 * 1024)));
+    let parsed_template = parse_gguf(&templated.bytes()).unwrap();
+    assert_eq!(parsed_template.text("tokenizer.chat_template"), None);
+    assert_eq!(parsed_template.u64("granite.context_length"), Some(131072));
+    let long_key = Gguf::default().kv(&"k".repeat(2048), json!(1));
+    assert!(
+        matches!(parse_gguf(&long_key.bytes()), Err(GgufError::Invalid(_))),
+        "keys stay capped"
+    );
 }
 
 #[test]
