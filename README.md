@@ -1,165 +1,293 @@
-# <img src="crates/rigspark-gui/static/mascot-avatar.jpg" alt="" width="44" height="44"> RigSpark: Check Which Local LLMs Your Computer Can Run
+<h1 align="center">
+  RigSpark
+</h1>
 
-[![CI](https://github.com/shashankswe2020-ux/rigspark/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/shashankswe2020-ux/rigspark/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/shashankswe2020-ux/rigspark?sort=semver&label=release)](https://github.com/shashankswe2020-ux/rigspark/releases/latest)
-[![crates.io](https://img.shields.io/crates/v/rigspark-cli.svg?label=crates.io)](https://crates.io/crates/rigspark-cli)
-[![Downloads](https://img.shields.io/crates/d/rigspark-cli.svg?label=downloads)](https://crates.io/crates/rigspark-cli)
-[![docs.rs](https://img.shields.io/docsrs/rigspark-core?label=docs.rs)](https://docs.rs/rigspark-core)
-[![Rust 1.98+](https://img.shields.io/badge/rust-1.98%2B-orange.svg?logo=rust)](rust-toolchain.toml)
-[![Platforms](https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-blue.svg)](https://github.com/shashankswe2020-ux/rigspark/releases/latest)
-[![Website](https://img.shields.io/badge/website-rigspark-72dca0.svg)](https://shashankswe2020-ux.github.io/rigspark/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+<p align="center">
+  <img src="site/brand/3d/sparky-hero.webp" alt="Sparky, the RigSpark robot" width="420">
+</p>
 
-**Which local LLMs can your computer run? Find out before downloading the weights.**
+<h2 align="center">Know what your computer can run before you download it.</h2>
 
-RigSpark scores your hardware and gives every model a `yes / slow / no` verdict,
-a memory-fit explanation, and an estimated tok/s range. Then it verifies, serves,
-and chats with the model you pick. It also generates images and short videos
-locally through your own ComfyUI. It is an open-source, privacy-first Rust CLI
-with a terminal UI and a browser workspace for macOS, Linux, and Windows.
+<p align="center">
+  RigSpark is a hardware-aware native Rust CLI that gives local AI models a
+  <strong>yes / slow / no</strong> verdict, explains the fit, and estimates
+  tokens per second before you commit to the weights.
+</p>
 
-[![RigSpark demo: rigspark recommend ranks local LLMs with yes / slow / no verdicts, then the same verdicts in the browser GUI; click to watch with sound](assets/rigspark-preview.gif)](assets/rigspark.mp4)
+<p align="center">
+  <a href="https://shashankswe2020-ux.github.io/rigspark/">Website</a> ·
+  <a href="#install-rigspark">Install</a> ·
+  <a href="docs/references/guide.md">Guide</a> ·
+  <a href="https://github.com/shashankswe2020-ux/rigspark/releases/latest">Latest release</a>
+</p>
 
-*20-second tour:* `rigspark recommend` ranks the offline catalog on an arm64 Mac with
-34 GiB of usable RAM and lists the models that won't fit; `rigspark gui` then shows
-the same verdicts and a local chat.
-[Watch in 1080p with sound](assets/rigspark.mp4) · [Earlier demo on YouTube](https://youtu.be/MI2wfI1eeCM?si=QA2teeDmeT_fNIqf)
+<p align="center">
+  <a href="https://github.com/shashankswe2020-ux/rigspark/actions/workflows/ci.yml"><img src="https://github.com/shashankswe2020-ux/rigspark/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
+  <a href="https://github.com/shashankswe2020-ux/rigspark/releases/latest"><img src="https://img.shields.io/github/v/release/shashankswe2020-ux/rigspark?sort=semver&label=release" alt="Release"></a>
+  <a href="https://crates.io/crates/rigspark-cli"><img src="https://img.shields.io/crates/v/rigspark-cli.svg?label=crates.io" alt="crates.io"></a>
+  <a href="https://docs.rs/rigspark-core"><img src="https://img.shields.io/docsrs/rigspark-core?label=docs.rs" alt="docs.rs"></a>
+  <a href="rust-toolchain.toml"><img src="https://img.shields.io/badge/rust-1.98%2B-orange.svg?logo=rust" alt="Rust 1.98 or newer"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg" alt="MIT License"></a>
+</p>
 
-## Why RigSpark
+---
 
-- **Know before you download.** Estimates RAM and GPU/VRAM fit for models such as
-  Llama, Qwen, Mistral, and Gemma.
-- **Honest numbers.** Advice uses a bundled offline catalog. Unknown figures stay
-  `unknown`; estimates are not benchmarks.
-- **Safe by default.** Managed downloads are integrity-checked, and servers bind
-  to `127.0.0.1`.
-- **Bring your backend.** Works with **Ollama**, **llama.cpp**, **MLX** (Apple
-  Silicon), and **LM Studio** (attach-only).
-- **Images and video, locally.** FLUX.1 schnell and Wan 2.1 through your own
-  ComfyUI, from chat, the CLI, or the terminal UI. No cloud nodes or paid credits.
+## Let Sparky check your rig
 
-## Install
+RigSpark keeps the first question simple: **will this model actually run here?**
+The answer comes from a curated offline catalog and your detected hardware, not
+from a download you have already waited for.
 
-Homebrew (macOS and Linux):
+### 1. Install RigSpark
+
+<p align="center">
+  <img src="site/brand/3d/sparky-wave.webp" alt="Sparky waving hello" width="250">
+</p>
+
+Homebrew on macOS or Linux:
 
 ```bash
 brew install shashankswe2020-ux/tap/rigspark
 ```
 
-Windows and other platforms: download a
+On Windows and other platforms, download a
 [prebuilt archive](https://github.com/shashankswe2020-ux/rigspark/releases/latest),
 extract it, and add the folder to `PATH`. Keep `rigspark`, `llmup`, and
-`rigspark-gui` together. The binaries need no Node.js, Python, or compiler;
-inference backends have their own requirements.
+`rigspark-gui` together.
 
-More: [Cargo, checksums, unsigned macOS archives, and upgrades](docs/references/guide.md#install)
-· [Docker caveats](docs/references/guide.md#docker)
+The RigSpark binaries need no Node.js, Python, or compiler. Inference backends
+have their own requirements.
 
-## Quick Start
+[Cargo, checksums, unsigned macOS archives, upgrades, and Docker caveats →](docs/references/guide.md#install)
+
+### 2. Sparky sizes up your hardware
+
+<p align="center">
+  <img src="site/brand/3d/sparky-chip.webp" alt="Sparky presenting a processor chip" width="300">
+</p>
+
+Start with advice. It is deterministic, works offline, and does not require an
+inference backend:
 
 ```bash
-rigspark recommend              # rank models for your hardware
-rigspark can-run llama3.1:8b    # check one model before downloading
-rigspark catalog --all          # browse the offline catalog
-rigspark up llama3.1:8b         # pull, verify, and serve
-rigspark chat                   # chat with the active model
-rigspark down                   # stop when done
+rigspark recommend
+rigspark can-run llama3.1:8b
+rigspark catalog --all
 ```
 
-Advice works without a backend. To serve and chat, install
-[Ollama](https://ollama.com) or another [supported backend](docs/references/guide.md#supported-backends).
-Use `rigspark --help` for all commands, `--json` for scripting, and
-`--accessible` for screen readers. `llmup` remains a compatibility alias.
+- `recommend` ranks the catalog for this machine.
+- `can-run` checks one model before you download it.
+- `catalog --all` lets you browse the bundled model data.
 
-## Catalog Updates
+Use `--json` for automation and `--accessible` for screen-reader-friendly
+output. `llmup` remains a compatibility alias.
 
-RigSpark can activate a signed model catalog independently of an application
-release. Updating is always explicit; recommendations and normal startup remain
-offline.
+### 3. Read the face: yes, slow, or no
 
-[Watch the catalog update flow](assets/catalog-update.mp4)
+<p align="center">
+  <img src="site/brand/3d/sparky-lineup.webp" alt="Three Sparky robots showing the yes, slow, and no verdicts" width="760">
+</p>
+
+| Verdict | What Sparky means |
+| --- | --- |
+| **yes** | The model fits with the required headroom. |
+| **slow** | It fits, but the expected experience may be constrained. |
+| **no** | It does not safely fit the detected memory budget. |
+
+Every verdict includes the reason. When RigSpark cannot source a figure, it says
+`unknown` rather than inventing one. Throughput ranges are estimates, not
+benchmarks.
+
+### 4. Pick a model, verify it, and start
+
+Once you have a fit, move from advice to a running model:
 
 ```bash
-rigspark catalog --status  # show the active source, revision, digest, and model count offline
-rigspark catalog --update  # download, verify, and atomically activate the official catalog
+rigspark up llama3.1:8b    # pull, verify, and serve
+rigspark chat              # chat with the active model
+rigspark ls                # inspect managed models
+rigspark switch            # change the active model
+rigspark down              # stop when done
 ```
 
-The Models view exposes the same provenance and an **Update catalog** action.
-Invalid signatures, incompatible catalogs, and network failures leave the current
-snapshot unchanged. RigSpark can recover through the previous verified snapshot
-and then its bundled catalog, with visible warnings.
+RigSpark supports:
 
-`rigspark catalog --refresh` is different: it previews maintainer enrichment from
-the bundled registry snapshot and does not install a published catalog. New model
-admission still requires reviewed evidence; a newer catalog date is not a promise
-of complete upstream coverage. See [catalog behavior, trust, and launch
-availability](docs/references/guide.md#independent-catalog-updates).
+- **Ollama** — recommended default and managed child process
+- **llama.cpp** — native local serving
+- **MLX** — Apple Silicon
+- **LM Studio** — attach to an already running server
 
-## Image and Video Generation
+Managed weights pass an integrity check before serving. Servers bind to
+`127.0.0.1` by default.
 
-RigSpark can also run open-weight image and video models locally and for free
-through your own [ComfyUI](https://github.com/Comfy-Org/ComfyUI) install.
-RigSpark doesn't install ComfyUI; start it on its default loopback address
-(`127.0.0.1:8188`) and RigSpark handles the weights and workflows.
+[Backend setup and lifecycle details →](docs/references/guide.md#supported-backends)
 
-In `rigspark gui`, switch the chat composer from **Text** to **Image** or
-**Video** and describe what you want, for example "create mount fuji". The
-result renders inline and is never sent to the language model. A **Create** view
-offers the same with a seed field and an explicit ComfyUI directory.
-
-<img src="assets/chat-image-generation.jpg" alt="RigSpark chat with the Image toggle selected: the prompt create mount fuji returns a FLUX.1 schnell image of Mount Fuji inline" width="560">
-
-From the terminal:
+### 5. Continue in the browser workspace
 
 ```bash
-rigspark catalog --generation                               # image/video models + memory fit
+rigspark gui
+```
+
+Choose a model, inspect the same hardware verdicts, chat, and use agents, skills,
+and MCP tools from the loopback-only browser workspace.
+
+<p align="center">
+  <img src="site/brand/screens/screenshot-gui.webp" alt="RigSpark browser workspace showing local model fit verdicts" width="820">
+</p>
+
+Local chat stays on your machine. Cloud harnesses and external tools can send
+data to their own providers, so RigSpark keeps those boundaries visible.
+
+[Browser workspace, agents, and tools →](docs/references/guide.md#browser-gui)
+
+### 6. Let Sparky create images and short videos
+
+<p align="center">
+  <img src="site/brand/3d/sparky-studio.webp" alt="Sparky in a studio spotlight" width="320">
+</p>
+
+RigSpark can orchestrate open-weight image and video models through your own
+[ComfyUI](https://github.com/Comfy-Org/ComfyUI) installation.
+
+```bash
+rigspark catalog --generation
 rigspark generate image --prompt "a lighthouse at dusk" --comfyui-dir ~/ComfyUI
 rigspark generate video --prompt "a fox running in snow" --comfyui-dir ~/ComfyUI
-rigspark generate --tui                                      # interactive terminal form
+rigspark generate --tui
 ```
 
-| Model | Kind | Output | License | Weights |
-| --- | --- | --- | --- | --- |
-| `flux1-schnell:fp8` | image | 1024×1024 PNG | Apache-2.0 | 16.1 GiB |
-| `wan2.1-t2v:1.3b` | video | 832×480, 33 frames at 16 fps (~2 s) animated WebP | Apache-2.0 | 9.2 GiB |
+Start ComfyUI on its default loopback address, `127.0.0.1:8188`. RigSpark
+downloads pinned weights, verifies their SHA-256 digest, installs only its
+built-in local workflows, and refuses paid Partner API nodes. Generation speed
+stays `unknown` when no defensible measurement is available.
 
-- **Verified weights.** Pinned to a Hugging Face commit, checked against their
-  SHA-256 on every run, and placed under `ComfyUI/models/<folder>/rigspark/`.
-  Interrupted downloads resume and are still fully hash-verified.
-- **Local only.** RigSpark submits only its own built-in workflows of core local
-  nodes, refuses ComfyUI's paid Partner (API) nodes, never sends account keys,
-  and connects over loopback only.
-- **Honest numbers.** The fit verdict covers weight memory only, and generation
-  speed is reported as `unknown`. Video is slow on laptops: expect minutes per
-  clip, not seconds.
-- **Apple Silicon.** RigSpark uses the euler sampler for Wan on Apple GPUs (the
-  default sampler produced corrupt video there) and unloads the previous model
-  when you switch between image and video.
+In `rigspark gui`, switch the composer from **Text** to **Image** or **Video**.
+Generated media renders inline and is never sent to the language model.
 
-Outputs are never overwritten. `--comfyui-dir` defaults to `RIGSPARK_COMFYUI_DIR`,
-then `~/ComfyUI`. Details: [spec](docs/specs/image-video-generation.md).
+<p align="center">
+  <img src="site/brand/screens/chat-image-generation.webp" alt="A locally generated image rendered inline in RigSpark chat" width="720">
+</p>
 
-## Browser Workspace
+[Image and video generation specification →](docs/specs/image-video-generation.md)
 
-Run **`rigspark gui`** to pick a model that fits and chat with it, with agents,
-skills, and MCP tools. Local chat stays on your machine; cloud harnesses and
-external tools can send data to their providers.
+---
 
-![RigSpark browser GUI Models view with Runs well and Runs slowly verdicts](assets/screenshot-gui.png)
+## Why the answers are trustworthy
 
-## Star History
+<p align="center">
+  <img src="site/brand/3d/sparky-peek.webp" alt="Sparky keeping watch" width="250">
+</p>
 
-[![RigSpark GitHub star history](https://api.star-history.com/svg?repos=shashankswe2020-ux/rigspark&type=Date)](https://www.star-history.com/#shashankswe2020-ux/rigspark&Date)
+- **Offline advice.** Recommendation commands use a bundled, curated catalog and
+  make no network calls.
+- **Honest unknowns.** Missing bandwidth, model geometry, or measurements stay
+  visibly `unknown`.
+- **Fail-closed integrity.** Managed weights must match their catalog digest, or
+  a documented size-floor fallback, before RigSpark serves them.
+- **Loopback by default.** Local servers listen on `127.0.0.1`, not the public
+  network.
+- **Reproducible decisions.** The same hardware and catalog produce the same
+  recommendation.
+- **One adapter boundary.** Ollama, llama.cpp, MLX, and LM Studio sit behind the
+  same runtime lifecycle and safety gates.
 
-## References
+## Update the catalog when you choose
 
-- [Commands, installed Ollama models, and custom context](docs/references/guide.md#commands)
-- [Terminal UI](docs/references/guide.md#terminal-ui) · [Browser workspace, agents, and tools](docs/references/guide.md#browser-gui)
-- [Catalog and maintenance](docs/references/guide.md#model-catalog) · [How advice works](docs/references/guide.md#how-advice-works)
-- [Scripting and exit codes](docs/references/guide.md#scripting--exit-codes) · [Performance measurements](docs/references/guide.md#performance-10-native-vs-0114-node)
-- [FAQ](docs/references/guide.md#faq) · [Troubleshooting](docs/references/guide.md#troubleshooting) · [Tool comparisons](docs/references/guide.md#rigspark-vs-ollama)
-- [Development and testing](docs/references/guide.md#development) · [Specification](docs/specs/rigspark.md) · [Changelog](CHANGELOG.md)
+Normal recommendations and startup remain offline. A catalog update is always
+explicit:
+
+```bash
+rigspark catalog --status
+rigspark catalog --update
+```
+
+RigSpark verifies the signed catalog before activating it atomically. An invalid
+signature, incompatible schema, or network failure leaves the current snapshot
+unchanged. Recovery falls back through the previous verified snapshot and then
+the bundled catalog, with visible warnings.
+
+`rigspark catalog --refresh` is a maintainer preview of enrichment against the
+bundled registry snapshot; it does not install a published catalog.
+
+[Catalog provenance, trust, and recovery →](docs/references/guide.md#independent-catalog-updates)
+
+## A 20-second tour
+
+[![RigSpark demo showing terminal recommendations and the browser workspace](assets/rigspark-preview.gif)](assets/rigspark.mp4)
+
+The tour runs `rigspark recommend`, shows models that do and do not fit, then
+opens the same verdicts and a local chat in `rigspark gui`.
+
+[Watch in 1080p with sound](assets/rigspark.mp4) ·
+[Earlier demo on YouTube](https://youtu.be/MI2wfI1eeCM?si=QA2teeDmeT_fNIqf)
+
+## Find your next command
+
+| Goal | Command |
+| --- | --- |
+| Rank models for this machine | `rigspark recommend` |
+| Check one model | `rigspark can-run <model>` |
+| Diagnose hardware and runtimes | `rigspark doctor` |
+| Browse text models | `rigspark catalog --all` |
+| Browse image and video models | `rigspark catalog --generation` |
+| Start a verified model | `rigspark up <model>` |
+| Open the terminal UI | `rigspark` |
+| Open the browser workspace | `rigspark gui` |
+| Generate local media | `rigspark generate` |
+| Stop the active model | `rigspark down` |
+
+Run `rigspark --help` for the complete CLI.
+
+## Project map
+
+- [`crates/rigspark-core/`](crates/rigspark-core/) — catalog, memory sizing,
+  ranking, advice, and reports
+- [`crates/rigspark-runtime/`](crates/rigspark-runtime/) — hardware detection,
+  backend adapters, lifecycle, state, and harnesses
+- [`crates/rigspark-gui/`](crates/rigspark-gui/) — loopback HTTP/SSE host and
+  embedded browser client
+- [`crates/rigspark-cli/`](crates/rigspark-cli/) — native CLI, terminal UI, and
+  catalog maintenance
+- [`apps/desktop/src-tauri/`](apps/desktop/src-tauri/) — native desktop shell
+
+## Build from source
+
+RigSpark is a Rust workspace pinned to Rust 1.98.1:
+
+```bash
+cargo build --workspace --locked
+cargo test --workspace --locked -- --test-threads=2
+cargo clippy --workspace --all-targets --locked -- -D warnings
+cargo fmt --all -- --check
+cargo native-retirement
+```
+
+No Node.js or TypeScript tooling is part of the project.
+
+## Keep exploring
+
+- [Commands, custom context, and installed models](docs/references/guide.md#commands)
+- [Terminal UI](docs/references/guide.md#terminal-ui)
+- [How hardware advice works](docs/references/guide.md#how-advice-works)
+- [Scripting and exit codes](docs/references/guide.md#scripting--exit-codes)
+- [FAQ](docs/references/guide.md#faq) and [troubleshooting](docs/references/guide.md#troubleshooting)
+- [Development guide](docs/references/guide.md#development)
+- [Project specification](docs/specs/rigspark.md)
+- [Changelog](CHANGELOG.md)
+
+<p align="center">
+  <img src="site/brand/3d/sparky-cheer.webp" alt="Sparky celebrating" width="320">
+</p>
+
+<p align="center">
+  <strong>Let Sparky check your rig.</strong><br>
+  <a href="https://github.com/shashankswe2020-ux/rigspark/releases/latest">Download RigSpark</a> ·
+  <a href="https://github.com/shashankswe2020-ux/rigspark">Star on GitHub</a>
+</p>
+
+---
 
 [MIT License](LICENSE)
 
-**Keywords:** local LLM, run LLM locally, LLM hardware requirements, VRAM calculator, tokens per second, Ollama, llama.cpp, MLX, LM Studio, Rust CLI.
+**Keywords:** local LLM, run LLM locally, LLM hardware requirements, VRAM
+calculator, tokens per second, Ollama, llama.cpp, MLX, LM Studio, Rust CLI.
