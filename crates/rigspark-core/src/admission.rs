@@ -538,7 +538,7 @@ pub struct AdmissionInput<'a> {
     pub today: &'a str,
 }
 
-fn parameter_label(count: f64) -> String {
+pub(crate) fn parameter_label(count: f64) -> String {
     let (value, unit) = if count >= 1e12 {
         (count / 1e12, "T")
     } else if count >= 1e9 {

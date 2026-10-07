@@ -7,6 +7,7 @@ pub mod coverage;
 pub mod enrich;
 pub mod freshness;
 pub mod generation;
+pub mod generation_admission;
 pub mod plan;
 pub mod ranking;
 pub mod registry_collector;

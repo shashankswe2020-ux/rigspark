@@ -152,7 +152,7 @@ fn model_id(value: &str) -> bool {
         && value.len() <= 128
         && value.as_bytes()[0].is_ascii_alphanumeric()
         && value.bytes().all(|byte| {
-            byte.is_ascii_lowercase() || byte.is_ascii_digit() || b"._:-".contains(&byte)
+            byte.is_ascii_lowercase() || byte.is_ascii_digit() || b"._-:".contains(&byte)
         })
         && GenerationKind::parse(value).is_none()
 }
