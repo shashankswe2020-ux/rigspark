@@ -7,6 +7,7 @@ catalog-bootstrap = "run --quiet --locked -p rigspark-cli --bin llmup-catalog-bo
 catalog-refresh = "run --quiet --locked -p rigspark-cli --bin llmup-catalog-refresh --"
 catalog-enrich = "run --quiet --locked -p rigspark-cli --bin llmup-catalog-enrich --"
 catalog-admit = "run --quiet --locked -p rigspark-cli --bin llmup-catalog-admit --"
+generation-admit = "run --quiet --locked -p rigspark-cli --bin llmup-generation-admit --"
 generation-enrich = "run --quiet --locked -p rigspark-cli --bin llmup-generation-enrich --"
 catalog-coverage = "run --quiet --locked -p rigspark-cli --bin llmup-catalog-coverage --"
 catalog-notice = "run --quiet --locked -p rigspark-cli --bin llmup-catalog-notice --"

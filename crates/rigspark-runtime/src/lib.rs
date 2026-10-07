@@ -13,6 +13,7 @@ pub mod context;
 pub mod coverage;
 pub mod diagnostics;
 pub mod generation;
+pub mod generation_admission;
 pub mod hardware;
 pub mod harness;
 pub mod harness_registry;

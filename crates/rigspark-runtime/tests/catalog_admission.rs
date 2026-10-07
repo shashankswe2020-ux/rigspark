@@ -494,9 +494,32 @@ fn only_official_listing_tags_manifests_and_blobs_are_allow_listed() {
         "https://registry.ollama.ai/v2/library/qwen/blobs/sha256:short",
         "https://evil.example/library?sort=newest",
         "https://user@registry.ollama.ai/v2/library/qwen/manifests/latest",
+        "https://huggingface.co/api/models?author=someone",
+        "https://huggingface.co/Other-Org/x/resolve/82fe29a5cd056f8b1deebc50570f125bcd4f4bea/a.safetensors",
+        "https://huggingface.co/Comfy-Org/x/resolve/main/a.safetensors",
+        "https://huggingface.co/Comfy-Org/x/resolve/82fe29a5cd056f8b1deebc50570f125bcd4f4bea/run.py",
+        "https://huggingface.co/Comfy-Org/x/resolve/82fe29a5cd056f8b1deebc50570f125bcd4f4bea/../a.safetensors",
     ] {
         assert!(!allowed(refused), "{refused}");
     }
+    assert!(allowed(rigspark_runtime::admission::GENERATION_LISTING_URL));
+    assert!(allowed(
+        "https://huggingface.co/api/models/Comfy-Org/Ming-Image?blobs=true"
+    ));
+    assert!(allowed(
+        "https://huggingface.co/api/models/inclusionAI/Ming-Image-0.1-Design"
+    ));
+    assert!(allowed(
+        "https://huggingface.co/Comfy-Org/Ming-Image/resolve/82fe29a5cd056f8b1deebc50570f125bcd4f4bea/split_files/diffusion_models/a_b.safetensors"
+    ));
+    let hub =
+        |raw: &str| rigspark_runtime::admission::allowed_hub_redirect(&Url::parse(raw).unwrap());
+    assert!(hub("https://us.aws.cdn.hf.co/x"));
+    assert!(
+        !hub("https://evil-hf.co/x")
+            && !hub("http://cdn.hf.co/x")
+            && !hub("https://hf.co.evil.example/x")
+    );
 }
 
 /// Publishes the curated mistral:7b artifact upstream with the given GGUF context length.

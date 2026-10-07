@@ -186,6 +186,24 @@ pub struct FitOnlyInput<'a> {
     pub today: &'a str,
 }
 
+/// The model family from a Comfy-Org repository name, without packaging suffixes.
+pub fn family(repository: &str) -> String {
+    let mut name = repository
+        .rsplit('/')
+        .next()
+        .unwrap_or_default()
+        .to_ascii_lowercase();
+    loop {
+        let trimmed = ["_repackaged", "-repackaged", "_comfyui", "-comfyui"]
+            .iter()
+            .find_map(|suffix| name.strip_suffix(suffix).map(str::to_string));
+        match trimmed {
+            Some(shorter) if !shorter.is_empty() => name = shorter,
+            _ => return name,
+        }
+    }
+}
+
 fn folder(path: &str) -> Option<FileRole> {
     let segments: Vec<&str> = path.split('/').collect();
     let parent = segments.get(segments.len().checked_sub(2)?)?;
@@ -235,17 +253,26 @@ fn generation_file(model: &HfModel, sibling: &Sibling, role: FileRole) -> Option
         })
 }
 
+/// Text-prompted diffusion files whose parameter count an entry needs.
+pub fn diffusion_files(model: &HfModel) -> Vec<&Sibling> {
+    model
+        .siblings
+        .iter()
+        .filter(|sibling| {
+            sibling.rfilename.ends_with(".safetensors")
+                && folder(&sibling.rfilename) == Some(FileRole::Diffusion)
+                && text_prompted(&sibling.rfilename)
+                && sibling.lfs.is_some()
+        })
+        .collect()
+}
+
 /// One fit-only entry per text-prompted diffusion file, paired with the smallest published
 /// text encoder and VAE (the least memory the release can run with).
 pub fn fit_only_entries(input: &FitOnlyInput) -> Result<Vec<GenerationModel>, ValidationError> {
     let model = input.model;
     require(model.pinned(), "repository is not a public pinned revision")?;
-    let family = model
-        .id
-        .rsplit('/')
-        .next()
-        .unwrap_or_default()
-        .to_ascii_lowercase();
+    let family = family(&model.id);
     let files: Vec<(&Sibling, FileRole)> = model
         .siblings
         .iter()

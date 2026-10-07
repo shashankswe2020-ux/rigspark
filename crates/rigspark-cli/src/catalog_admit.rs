@@ -1,26 +1,16 @@
 use clap::Parser;
+use rigspark_cli::maintenance_file::File;
 use rigspark_core::{
     catalog::{Catalog, EntryProvenance},
     reports::strip_control,
 };
-use rigspark_runtime::{
-    admission::{
-        AdmissionOptions, AdmissionState, AdmissionTransport, NativeAdmissionTransport,
-        RecordedAdmissionTransport, SCOPE_NAME, admit,
-    },
-    secure_fs::Directory,
+use rigspark_runtime::admission::{
+    AdmissionOptions, AdmissionState, AdmissionTransport, NativeAdmissionTransport,
+    RecordedAdmissionTransport, SCOPE_NAME, admit,
 };
 use serde_json::Value;
-use std::{
-    collections::BTreeSet,
-    error::Error,
-    io,
-    path::{Path, PathBuf},
-    process::ExitCode,
-};
+use std::{collections::BTreeSet, error::Error, io, path::PathBuf, process::ExitCode};
 use tokio_util::sync::CancellationToken;
-
-const MAX_FILE_BYTES: u64 = 16 * 1024 * 1024;
 
 #[derive(Parser)]
 #[command(
@@ -48,47 +38,6 @@ struct Args {
     correct_curated: bool,
     #[arg(long, default_value = "docs/references/catalog-corrections.json")]
     corrections_path: PathBuf,
-}
-
-struct File {
-    directory: Directory,
-    name: PathBuf,
-}
-impl File {
-    fn open(path: &Path) -> io::Result<Self> {
-        let path = std::path::absolute(path)?;
-        let parent = path
-            .parent()
-            .ok_or_else(|| io::Error::other("file parent required"))?
-            .canonicalize()?;
-        let name = PathBuf::from(
-            path.file_name()
-                .ok_or_else(|| io::Error::other("filename required"))?,
-        );
-        Ok(Self {
-            directory: Directory::open(&parent)?,
-            name,
-        })
-    }
-    fn read(&self) -> io::Result<Vec<u8>> {
-        self.directory.read(&self.name, MAX_FILE_BYTES, false)
-    }
-    fn read_optional(&self) -> io::Result<Option<Vec<u8>>> {
-        match self.read() {
-            Ok(bytes) => Ok(Some(bytes)),
-            Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(None),
-            Err(error) => Err(error),
-        }
-    }
-    /// Replaces the file in place, or creates it on the first run.
-    fn write_json(&self, value: &impl serde::Serialize, exists: bool) -> io::Result<()> {
-        let encoded = format!(
-            "{}\n",
-            serde_json::to_string_pretty(value).map_err(io::Error::other)?
-        );
-        self.directory
-            .write(&self.name, encoded.as_bytes(), !exists, exists)
-    }
 }
 
 fn utf8(bytes: &[u8]) -> io::Result<&str> {

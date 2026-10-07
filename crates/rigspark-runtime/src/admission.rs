@@ -27,6 +27,8 @@ use tokio_util::sync::CancellationToken;
 use url::Url;
 
 pub const LIBRARY_URL: &str = "https://ollama.com/library?sort=newest";
+pub const GENERATION_LISTING_URL: &str =
+    "https://huggingface.co/api/models?author=Comfy-Org&sort=createdAt&direction=-1&limit=500";
 pub const SCOPE_NAME: &str = "ollama-local-variants";
 const GGUF_STEPS: [usize; 3] = [8 * 1024 * 1024, 32 * 1024 * 1024, MAX_GGUF_HEADER_BYTES];
 
@@ -62,8 +64,39 @@ pub fn allowed_request(url: &Url) -> bool {
                     hex.len() == 64 && hex.bytes().all(|byte| byte.is_ascii_hexdigit())
                 })
         }
+        (Some("huggingface.co"), Some(query), ["api", "models"]) => {
+            Some(query)
+                == GENERATION_LISTING_URL
+                    .split_once('?')
+                    .map(|(_, query)| query)
+        }
+        (Some("huggingface.co"), None | Some("blobs=true"), ["api", "models", owner, repo]) => {
+            name(owner) && name(repo)
+        }
+        (Some("huggingface.co"), None, ["Comfy-Org", repo, "resolve", revision, path @ ..]) => {
+            name(repo)
+                && revision.len() == 40
+                && revision.bytes().all(|byte| byte.is_ascii_hexdigit())
+                && !path.is_empty()
+                && path.len() <= 8
+                && path.iter().all(|segment| name(segment))
+                && path
+                    .last()
+                    .is_some_and(|file| file.ends_with(".safetensors"))
+        }
         _ => false,
     }
+}
+
+/// Hugging Face serves `resolve` downloads from its own CDN under `hf.co`.
+pub fn allowed_hub_redirect(url: &Url) -> bool {
+    url.scheme() == "https"
+        && url.port().is_none()
+        && url.username().is_empty()
+        && url.password().is_none()
+        && url
+            .host_str()
+            .is_some_and(|host| host == "huggingface.co" || host.ends_with(".hf.co"))
 }
 
 pub struct Fetched {
@@ -96,14 +129,17 @@ impl NativeAdmissionTransport {
                 env!("CARGO_PKG_VERSION")
             ))
             .redirect(reqwest::redirect::Policy::custom(|attempt| {
-                let from_blob = attempt
-                    .previous()
-                    .last()
-                    .is_some_and(|url| url.path().contains("/blobs/sha256:"));
-                if attempt.previous().len() > 2
-                    || !from_blob
-                    || !allowed_registry_redirect(attempt.url().as_str())
-                {
+                let previous = attempt.previous().last();
+                let from_blob = previous.is_some_and(|url| {
+                    url.host_str() == Some("registry.ollama.ai")
+                        && url.path().contains("/blobs/sha256:")
+                });
+                let from_resolve = previous.is_some_and(|url| {
+                    url.host_str() == Some("huggingface.co") && url.path().contains("/resolve/")
+                });
+                let allowed = (from_blob && allowed_registry_redirect(attempt.url().as_str()))
+                    || (from_resolve && allowed_hub_redirect(attempt.url()));
+                if attempt.previous().len() > 2 || !allowed {
                     attempt.error("registry redirect refused")
                 } else {
                     attempt.follow()
