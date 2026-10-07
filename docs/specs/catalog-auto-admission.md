@@ -244,3 +244,48 @@ deterministic for a given date.
 9. **Recency filter.** `--month 1|2|3` for `recommend`, `catalog` and the TUI (with a
    toggle key), and the GUI selector; labelled as released or added.
    Verify: core filter unit tests, CLI tests, TUI snapshot and GUI WebDriver journey.
+
+## Image and video completeness (decided 2026-10-07)
+
+Ollama's library lists no image or video generation models, so the source for both is
+**Comfy-Org on Hugging Face**. Comfy-Org republishes each major release in ComfyUI's
+file layout, with pinned revisions and LFS SHA-256 digests. The generation catalog gets
+the same `provenance` and `addedAt` fields as the text catalog, plus a `runnable` status:
+
+- **Fit-only (`workflow` absent):** every Comfy-Org text-to-image or text-to-video
+  release whose files, digests, sizes and open license are sourced is admitted. It gets
+  a weight-memory verdict (the existing generation fit rule) and is labelled
+  *workflow coming*. `rigspark generate` refuses it with that reason.
+- **Runnable:** when the release's architecture maps to a built-in workflow and its file
+  roles match that workflow's `roles()`, the entry gets `workflow` set and runs. When a
+  new workflow ships, the next run promotes matching fit-only entries automatically.
+- **New built-in workflows** (implemented and tested against ComfyUI's published
+  example graphs): `wan22-t2v` (Wan 2.2 TI2V-5B), `qwen-image`, `flux2` and `ltx-video`.
+  Each cites its `workflowSource`.
+- **Never:** guess a file role, a revision or a digest; admit gated or non-open
+  licenses; run a fit-only entry.
+
+## Site: Ask Sparky shows only the last month
+
+`cargo catalog-site` writes `site/data/latest.js`, a static data file loaded under the
+existing CSP (`script-src 'self'`, no `fetch`). It lists text, image and video entries
+whose recency date (released, else added) falls within 31 days of the catalog's
+`generatedAt`. Each item carries only display facts: id, label, kind, minimum memory,
+dense or MoE and active params, basis (`released` or `added`), and runnable or fit-only.
+Ask Sparky gets a Text / Image / Video switch, uses the same memory-fit rule as the
+engine, and shows an honest empty state ("No new image models in the last month") rather
+than older models. The catalog workflow regenerates the file, so the Pages deploy picks
+it up. The auto-merge allow-list includes `site/data/latest.js`.
+
+### Additional tasks
+
+10. **Generation schema** (`provenance`, `addedAt`, optional `workflow`) and fit-only
+    handling in `generate`, the CLI, the TUI and the GUI.
+11. **Generation admission** from Comfy-Org: discovery, file roles from repository
+    layouts, digests from LFS metadata, license gate, and promotion when a workflow
+    exists.
+12. **Workflows:** `wan22-t2v`, `qwen-image`, `flux2` and `ltx-video` graphs with tests.
+13. **`catalog-site` generator, plus Ask Sparky** Text/Image/Video switch and empty
+    state.
+14. **Workflow wiring** for generation admission and the site data in the auto-merge
+    allow-list.
