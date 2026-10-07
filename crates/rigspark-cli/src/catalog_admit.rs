@@ -43,6 +43,11 @@ struct Args {
     max_new: u16,
     #[arg(long)]
     dry_run: bool,
+    /// Rewrite curated facts that the shipped Ollama artifact contradicts, with a cited record.
+    #[arg(long)]
+    correct_curated: bool,
+    #[arg(long, default_value = "docs/references/catalog-corrections.json")]
+    corrections_path: PathBuf,
 }
 
 struct File {
@@ -182,6 +187,7 @@ async fn run(args: Args) -> Result<(), Box<dyn Error>> {
         now,
         max_new_variants: usize::from(args.max_new),
         state,
+        correct_curated: args.correct_curated,
     };
     let cancel = CancellationToken::new();
     let outcome = tokio::select! {
@@ -210,6 +216,14 @@ async fn run(args: Args) -> Result<(), Box<dyn Error>> {
         )?;
         evidence_file.write_json(&merged, true)?;
         state_file.write_json(&outcome.state, state_raw.is_some())?;
+        if !outcome.corrections.is_empty() {
+            let corrections_file = File::open(&args.corrections_path)?;
+            let exists = corrections_file.read_optional()?.is_some();
+            corrections_file.write_json(
+                &serde_json::json!({"correctedAt": options.now, "corrections": outcome.corrections}),
+                exists,
+            )?;
+        }
     }
     println!("{}", serde_json::to_string_pretty(&outcome)?);
     eprintln!(

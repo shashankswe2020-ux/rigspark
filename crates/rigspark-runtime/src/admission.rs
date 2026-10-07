@@ -288,6 +288,18 @@ pub struct AdmissionOptions {
     pub now: String,
     pub max_new_variants: usize,
     pub state: AdmissionState,
+    /// Apply source-backed corrections to curated facts that upstream contradicts.
+    pub correct_curated: bool,
+}
+
+/// One cited change to a curated fact, made because the shipped artifact says otherwise.
+#[derive(Clone, Debug, Serialize)]
+pub struct Correction {
+    pub id: String,
+    pub field: String,
+    pub from: Value,
+    pub to: Value,
+    pub sources: Vec<String>,
 }
 
 #[derive(Default, Serialize)]
@@ -308,6 +320,7 @@ pub struct AdmissionOutcome {
     pub updated: Vec<String>,
     pub reverified: Vec<String>,
     pub curated_observed: Vec<String>,
+    pub corrections: Vec<Correction>,
     pub removed: Vec<String>,
     pub rejected: BTreeMap<String, String>,
     pub deferred: Vec<String>,
@@ -506,9 +519,16 @@ pub async fn admit(
     for id in &outcome.deferred {
         eligible.insert(id.clone());
     }
+    let mut corrected: BTreeMap<String, CatalogModel> = BTreeMap::new();
     for model in curated.values() {
         match reobserve(&run, model, &stamp, &mut outcome.state).await {
             Ok(Some(observed)) => {
+                if options.correct_curated
+                    && let Some((fixed, changes)) = correct(model, &observed)?
+                {
+                    corrected.insert(model.id.clone(), fixed);
+                    outcome.corrections.extend(changes);
+                }
                 outcome.curated_observed.push(model.id.clone());
                 outcome.curated_observations.push(observed);
             }
@@ -524,7 +544,7 @@ pub async fn admit(
         .models
         .iter()
         .filter(|model| model.provenance == EntryProvenance::Curated)
-        .cloned()
+        .map(|model| corrected.remove(&model.id).unwrap_or_else(|| model.clone()))
         .chain(auto.into_values())
         .collect();
     models.sort_by(|left, right| {
@@ -854,4 +874,109 @@ async fn reobserve(
         "sources": [manifest_url, format!("https://ollama.com/library/{repo}:{tag}")],
         "facts": facts,
     })))
+}
+
+/// The catalog's own representation of a partially observed fact.
+fn catalog_value(model: &CatalogModel, field: &str) -> io::Result<Value> {
+    if field == "defaultQuantization" {
+        let index = pulled_quantization(model).unwrap_or(0);
+        let mut quant =
+            serde_json::to_value(&model.quantizations[index]).map_err(io::Error::other)?;
+        if let Some(object) = quant.as_object_mut() {
+            for key in ["minRamBytes", "minVramBytes", "digestVerified"] {
+                object.remove(key);
+            }
+        }
+        return Ok(quant);
+    }
+    Ok(serde_json::to_value(model)
+        .map_err(io::Error::other)?
+        .get(field)
+        .cloned()
+        .unwrap_or(Value::Null))
+}
+
+/// Rewrites contradicted, correctable curated facts to what the shipped artifact says.
+/// Architecture contradictions are left for review: they change how the model is sized.
+fn correct(
+    model: &CatalogModel,
+    observed: &Value,
+) -> io::Result<Option<(CatalogModel, Vec<Correction>)>> {
+    let Some(facts) = observed["facts"].as_object() else {
+        return Ok(None);
+    };
+    let sources: Vec<String> = observed["sources"]
+        .as_array()
+        .map(|items| {
+            items
+                .iter()
+                .filter_map(|item| item.as_str().map(str::to_string))
+                .collect()
+        })
+        .unwrap_or_default();
+    let mut fixed = model.clone();
+    let mut changes = Vec::new();
+    for (field, to) in facts {
+        let from = catalog_value(model, field)?;
+        if from == *to || field == "architecture" {
+            continue;
+        }
+        match field.as_str() {
+            "contextLength" => {
+                fixed.context_length = to
+                    .as_f64()
+                    .ok_or_else(|| io::Error::other("invalid context"))?
+            }
+            "license" => {
+                fixed.license = to
+                    .as_str()
+                    .ok_or_else(|| io::Error::other("invalid license"))?
+                    .into()
+            }
+            "kvBytesPerToken" => fixed.kv_bytes_per_token = to.as_f64(),
+            "defaultQuantization" => {
+                let index = pulled_quantization(model).unwrap_or(0);
+                let name = to["name"]
+                    .as_str()
+                    .ok_or_else(|| io::Error::other("invalid quant"))?;
+                let projectors: Vec<rigspark_core::sizing::ProjectorArtifact> =
+                    serde_json::from_value(to.get("projectors").cloned().unwrap_or(json!([])))
+                        .map_err(io::Error::other)?;
+                let quant = rigspark_core::enrich::sized_quantization(
+                    rigspark_core::sizing::parse_param_count(&model.params)
+                        .map_err(io::Error::other)?,
+                    &model.architecture,
+                    name,
+                    to["diskBytes"]
+                        .as_f64()
+                        .ok_or_else(|| io::Error::other("invalid size"))?,
+                    to["sha256"].as_str().map(str::to_string),
+                    projectors,
+                )
+                .map_err(io::Error::other)?;
+                fixed.quantizations[index] = quant;
+                // Facts for other quantizations named like the new one are no longer sourced.
+                let mut position = 0;
+                fixed.quantizations.retain(|candidate| {
+                    let keep = position == index || candidate.name != name;
+                    position += 1;
+                    keep
+                });
+            }
+            _ => continue,
+        }
+        changes.push(Correction {
+            id: model.id.clone(),
+            field: field.clone(),
+            from,
+            to: to.clone(),
+            sources: sources.clone(),
+        });
+    }
+    if changes.is_empty() {
+        return Ok(None);
+    }
+    let check = json!({"schemaVersion": SCHEMA_VERSION, "generatedAt": "2026-01-01T00:00:00.000Z", "models": [fixed]});
+    Catalog::parse(&check.to_string()).map_err(io::Error::other)?;
+    Ok(Some((fixed, changes)))
 }

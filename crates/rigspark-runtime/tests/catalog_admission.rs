@@ -195,6 +195,7 @@ fn options(max_new: usize, state: AdmissionState) -> AdmissionOptions {
         now: NOW.into(),
         max_new_variants: max_new,
         state,
+        correct_curated: false,
     }
 }
 
@@ -642,4 +643,78 @@ async fn a_curated_fact_contradicted_upstream_blocks_publication() {
             .iter()
             .any(|blocker| blocker.starts_with("mistral:7b") && blocker.contains("contradict"))
     );
+}
+
+#[tokio::test]
+async fn source_backed_corrections_fix_contradicted_curated_facts_with_a_cited_record() {
+    let catalog = curated();
+    let mut corrected_options = options(10, AdmissionState::default());
+    corrected_options.correct_curated = true;
+    let outcome = admit(
+        &catalog,
+        &curated_upstream(false).transport(),
+        &corrected_options,
+        &CancellationToken::new(),
+    )
+    .await
+    .unwrap();
+    let corrections = serde_json::to_value(&outcome.corrections).unwrap();
+    assert_eq!(
+        corrections,
+        json!([{"id":"mistral:7b","field":"contextLength","from":32768.0,"to":4096.0,
+            "sources":["https://registry.ollama.ai/v2/library/mistral/manifests/7b","https://ollama.com/library/mistral:7b"]}])
+    );
+    let result = outcome.catalog.as_ref().unwrap();
+    let mistral = result
+        .models
+        .iter()
+        .find(|model| model.id == "mistral:7b")
+        .unwrap();
+    assert_eq!(mistral.context_length, 4096.0);
+    assert_eq!(
+        mistral.provenance,
+        EntryProvenance::Curated,
+        "still curated, now consistent"
+    );
+    let evidence = json!({"policyVersion":1,"scopes":[outcome.scope],"observations":outcome.curated_observations});
+    let report = evaluate(
+        &serde_json::to_string(result).unwrap(),
+        &evidence.to_string(),
+        NOW,
+    )
+    .unwrap();
+    assert!(report.passed, "{:?}", report.blockers);
+
+    // A quantization the default tag no longer pulls is replaced, never kept unverified.
+    let mut stale = catalog.clone();
+    stale.models[0].quantizations[0].name = "Q5_K_M".into();
+    let outcome = admit(
+        &stale,
+        &curated_upstream(true).transport(),
+        &corrected_options,
+        &CancellationToken::new(),
+    )
+    .await
+    .unwrap();
+    let fixed = &outcome.catalog.unwrap().models[0];
+    assert_eq!(fixed.quantizations[0].name, "Q4_K_M");
+    assert!(
+        fixed
+            .quantizations
+            .iter()
+            .all(|quant| quant.name != "Q5_K_M")
+    );
+    assert_eq!(outcome.corrections[0].field, "defaultQuantization");
+
+    // Without the flag nothing curated changes.
+    let untouched = admit(
+        &catalog,
+        &curated_upstream(false).transport(),
+        &options(10, AdmissionState::default()),
+        &CancellationToken::new(),
+    )
+    .await
+    .unwrap();
+    assert!(untouched.corrections.is_empty());
+    assert_eq!(untouched.catalog.unwrap().models[0].context_length, 32768.0);
 }

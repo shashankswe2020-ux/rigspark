@@ -133,7 +133,7 @@ impl RawModel {
     }
 }
 /// Memory need for one quantization: resident weights (never below the bit-width floor) plus 15% headroom.
-pub(crate) fn sized_quantization(
+pub fn sized_quantization(
     params: f64,
     architecture: &Architecture,
     name: &str,
