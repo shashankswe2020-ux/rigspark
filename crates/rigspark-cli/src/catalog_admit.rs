@@ -90,13 +90,22 @@ fn utf8(bytes: &[u8]) -> io::Result<&str> {
     std::str::from_utf8(bytes).map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))
 }
 
-/// Keeps hand-written observations for surviving curated entries, replaces auto ones and the
-/// admission scope, and drops observations for entries no longer in the catalog.
+fn fresh(observation: &Value, now: &str) -> bool {
+    observation["checkedAt"]
+        .as_str()
+        .is_some_and(|checked| rigspark_runtime::catalog_quality::evidence_fresh(checked, now))
+}
+
+/// Builds the evidence for this run: a fresh hand-written full observation of a curated entry
+/// wins, otherwise the run's partial observation; auto observations and the admission scope
+/// are replaced; observations of entries no longer in the catalog are dropped.
 fn merge_evidence(
     mut evidence: Value,
     catalog: &Catalog,
-    observations: Vec<Value>,
+    auto: Vec<Value>,
+    curated_observed: Vec<Value>,
     scope: Value,
+    now: &str,
 ) -> io::Result<Value> {
     let curated: BTreeSet<&str> = catalog
         .models
@@ -107,16 +116,32 @@ fn merge_evidence(
     let object = evidence
         .as_object_mut()
         .ok_or_else(|| io::Error::other("evidence must be an object"))?;
-    let kept: Vec<Value> = object
+    let manual: Vec<Value> = object
         .get("observations")
         .and_then(Value::as_array)
         .ok_or_else(|| io::Error::other("evidence observations missing"))?
         .iter()
-        .filter(|item| item["id"].as_str().is_some_and(|id| curated.contains(id)))
+        .filter(|item| {
+            item["id"].as_str().is_some_and(|id| curated.contains(id))
+                && item.get("model").is_some()
+                && fresh(item, now)
+        })
         .cloned()
-        .chain(observations)
         .collect();
-    object.insert("observations".into(), Value::Array(kept));
+    let manual_ids: BTreeSet<String> = manual
+        .iter()
+        .filter_map(|item| item["id"].as_str().map(str::to_string))
+        .collect();
+    let observations: Vec<Value> = manual
+        .into_iter()
+        .chain(curated_observed.into_iter().filter(|item| {
+            item["id"]
+                .as_str()
+                .is_some_and(|id| curated.contains(id) && !manual_ids.contains(id))
+        }))
+        .chain(auto)
+        .collect();
+    object.insert("observations".into(), Value::Array(observations));
     let mut scopes: Vec<Value> = object
         .get("scopes")
         .and_then(Value::as_array)
@@ -179,18 +204,21 @@ async fn run(args: Args) -> Result<(), Box<dyn Error>> {
             evidence,
             &admitted,
             outcome.observations.clone(),
+            outcome.curated_observations.clone(),
             outcome.scope.clone(),
+            &options.now,
         )?;
         evidence_file.write_json(&merged, true)?;
         state_file.write_json(&outcome.state, state_raw.is_some())?;
     }
     println!("{}", serde_json::to_string_pretty(&outcome)?);
     eprintln!(
-        "catalog-admit{}: added={} updated={} reverified={} removed={} rejected={} deferred={} failures={} complete={}",
+        "catalog-admit{}: added={} updated={} reverified={} curated-observed={} removed={} rejected={} deferred={} failures={} complete={}",
         if args.dry_run { " dry-run" } else { "" },
         outcome.added.len(),
         outcome.updated.len(),
         outcome.reverified.len(),
+        outcome.curated_observed.len(),
         outcome.removed.len(),
         outcome.rejected.len(),
         outcome.deferred.len(),

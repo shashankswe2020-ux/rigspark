@@ -432,7 +432,12 @@ async fn transient_failures_are_reported_not_cached_and_listing_failure_changes_
     .unwrap();
     assert!(outcome.added.is_empty());
     assert!(!outcome.complete);
-    assert_eq!(outcome.failures.len(), 1, "{:?}", outcome.failures);
+    let admission_failures: Vec<_> = outcome
+        .failures
+        .iter()
+        .filter(|failure| !failure.contains("(curated)"))
+        .collect();
+    assert_eq!(admission_failures.len(), 1, "{:?}", outcome.failures);
     assert!(
         outcome.state.rejections.is_empty(),
         "a 503 must not blacklist eligible weights"
@@ -491,4 +496,150 @@ fn only_official_listing_tags_manifests_and_blobs_are_allow_listed() {
     ] {
         assert!(!allowed(refused), "{refused}");
     }
+}
+
+/// Publishes the curated mistral:7b artifact upstream with the given GGUF context length.
+fn curated_upstream(context_ok: bool) -> Upstream {
+    let curated = curated();
+    let quant = &curated.models[0].quantizations[0];
+    let weights = quant.sha256.clone().unwrap();
+    let config = digest("mistral-config");
+    let mut upstream = Upstream::new();
+    upstream.repo("mistral", &["tools"], &["7b"]);
+    let registry = "https://registry.ollama.ai/v2/library/mistral";
+    upstream.responses.insert(
+        format!("{registry}/manifests/7b"),
+        (200, json!({"config":{"mediaType":"x","digest":format!("sha256:{config}")},"layers":[{"mediaType":"application/vnd.ollama.image.model","digest":format!("sha256:{weights}"),"size":quant.disk_bytes as u64}]}).to_string().into_bytes()),
+    );
+    upstream.responses.insert(
+        format!("{registry}/blobs/sha256:{config}"),
+        (
+            200,
+            json!({"model_family":"llama","model_type":"7.2B","file_type":"Q4_K_M"})
+                .to_string()
+                .into_bytes(),
+        ),
+    );
+    let mut header = gguf("llama", Some("apache-2.0"), 7_200_000_000);
+    if !context_ok {
+        // Same shape, smaller context: the catalog's 32768 is contradicted upstream.
+        let needle = 32768u32.to_le_bytes();
+        let at = header
+            .windows(4)
+            .position(|window| window == needle)
+            .unwrap();
+        header[at..at + 4].copy_from_slice(&4096u32.to_le_bytes());
+    }
+    upstream
+        .responses
+        .insert(format!("{registry}/blobs/sha256:{weights}"), (200, header));
+    upstream
+}
+
+#[tokio::test]
+async fn curated_entries_are_reobserved_partially_without_being_modified() {
+    let catalog = curated();
+    let transport = curated_upstream(true).transport();
+    let outcome = admit(
+        &catalog,
+        &transport,
+        &options(10, AdmissionState::default()),
+        &CancellationToken::new(),
+    )
+    .await
+    .unwrap();
+    assert_eq!(outcome.curated_observed, ["mistral:7b"]);
+    assert_eq!(
+        serde_json::to_value(outcome.catalog.as_ref().unwrap()).unwrap()["models"],
+        serde_json::to_value(&catalog).unwrap()["models"],
+        "curated entries are never modified"
+    );
+    let observed = &outcome.curated_observations[0];
+    assert!(observed.get("model").is_none());
+    assert_eq!(
+        observed["sources"],
+        json!([
+            "https://registry.ollama.ai/v2/library/mistral/manifests/7b",
+            "https://ollama.com/library/mistral:7b"
+        ]),
+        "cites only the Ollama reads"
+    );
+    let evidence = json!({"policyVersion":1,"scopes":[outcome.scope],"observations":outcome.curated_observations});
+    let report = serde_json::to_value(
+        evaluate(
+            &serde_json::to_string(outcome.catalog.as_ref().unwrap()).unwrap(),
+            &evidence.to_string(),
+            NOW,
+        )
+        .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(
+        report["entries"][0]["verified"], true,
+        "{}",
+        report["entries"][0]
+    );
+    assert_eq!(
+        report["entries"][0]["checkedFields"],
+        json!([
+            "architecture",
+            "contextLength",
+            "defaultQuantization",
+            "kvBytesPerToken",
+            "license"
+        ])
+    );
+    assert!(
+        report["passed"].as_bool().unwrap(),
+        "{}",
+        report["blockers"]
+    );
+
+    // The GGUF facts are cached by digest: the second run reads only manifests and configs.
+    let again = curated_upstream(true).transport();
+    let second = admit(
+        &catalog,
+        &again,
+        &options(10, outcome.state.clone()),
+        &CancellationToken::new(),
+    )
+    .await
+    .unwrap();
+    assert_eq!(second.curated_observed, ["mistral:7b"]);
+    let weights = catalog.models[0].quantizations[0].sha256.clone().unwrap();
+    assert!(
+        !again
+            .requests
+            .lock()
+            .unwrap()
+            .iter()
+            .any(|url| url.ends_with(&weights))
+    );
+}
+
+#[tokio::test]
+async fn a_curated_fact_contradicted_upstream_blocks_publication() {
+    let catalog = curated();
+    let outcome = admit(
+        &catalog,
+        &curated_upstream(false).transport(),
+        &options(10, AdmissionState::default()),
+        &CancellationToken::new(),
+    )
+    .await
+    .unwrap();
+    let evidence = json!({"policyVersion":1,"scopes":[outcome.scope],"observations":outcome.curated_observations});
+    let report = evaluate(
+        &serde_json::to_string(outcome.catalog.as_ref().unwrap()).unwrap(),
+        &evidence.to_string(),
+        NOW,
+    )
+    .unwrap();
+    assert!(!report.passed);
+    assert!(
+        report
+            .blockers
+            .iter()
+            .any(|blocker| blocker.starts_with("mistral:7b") && blocker.contains("contradict"))
+    );
 }

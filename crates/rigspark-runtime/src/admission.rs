@@ -6,10 +6,14 @@ use rigspark_core::{
     admission::{
         AdmissionInput, Gguf, GgufError, LibraryEntry, MAX_CONFIG_BYTES, MAX_GGUF_HEADER_BYTES,
         MAX_HTML_BYTES, MAX_LICENSE_HEAD_BYTES, RegistryConfig, build_entry, catalog_capabilities,
-        observation, parse_gguf, parse_library, parse_tags, select_variants,
+        kv_bytes_per_token, license_id, observation, parse_gguf, parse_library, parse_tags,
+        select_variants,
     },
     catalog::{Catalog, CatalogModel, EntryProvenance, SCHEMA_VERSION},
-    registry_collector::{MANIFEST_ACCEPT, MAX_MANIFEST_BYTES, parse_layer, parse_reference},
+    registry_collector::{
+        MANIFEST_ACCEPT, MAX_MANIFEST_BYTES, parse_layer, parse_reference, pulled_quantization,
+    },
+    sizing::Architecture,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -262,7 +266,22 @@ fn sha256(digest: &str) -> Option<&str> {
 pub struct AdmissionState {
     /// `"<model sha256>:<license sha256 or none>"` → rejection reason, so ineligible weights
     /// are not re-downloaded every week.
+    #[serde(default)]
     pub rejections: BTreeMap<String, String>,
+    /// Same key → facts read from immutable GGUF headers of curated entries' weights.
+    #[serde(default)]
+    pub facts: BTreeMap<String, SourcedFacts>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct SourcedFacts {
+    pub context_length: u64,
+    pub architecture: Architecture,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub license: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kv_bytes_per_token: Option<f64>,
 }
 
 pub struct AdmissionOptions {
@@ -278,6 +297,9 @@ pub struct AdmissionOutcome {
     pub catalog: Option<Catalog>,
     #[serde(skip)]
     pub observations: Vec<Value>,
+    /// Partial observations of curated entries (facts the collector could source).
+    #[serde(skip)]
+    pub curated_observations: Vec<Value>,
     #[serde(skip)]
     pub scope: Value,
     #[serde(skip)]
@@ -285,6 +307,7 @@ pub struct AdmissionOutcome {
     pub added: Vec<String>,
     pub updated: Vec<String>,
     pub reverified: Vec<String>,
+    pub curated_observed: Vec<String>,
     pub removed: Vec<String>,
     pub rejected: BTreeMap<String, String>,
     pub deferred: Vec<String>,
@@ -483,6 +506,19 @@ pub async fn admit(
     for id in &outcome.deferred {
         eligible.insert(id.clone());
     }
+    for model in curated.values() {
+        match reobserve(&run, model, &stamp, &mut outcome.state).await {
+            Ok(Some(observed)) => {
+                outcome.curated_observed.push(model.id.clone());
+                outcome.curated_observations.push(observed);
+            }
+            Ok(None) => {}
+            Err(error) if interrupted(&error) => return Err(error),
+            Err(error) => outcome
+                .failures
+                .push(format!("{} (curated): {error}", model.id)),
+        }
+    }
 
     let mut models: Vec<CatalogModel> = catalog
         .models
@@ -669,4 +705,153 @@ async fn admit_variant(
         }
         Err(rejection) => reject(outcome, rejection.reason()),
     }
+}
+
+/// A partial observation of a curated entry: the pulled artifact plus GGUF-sourced facts,
+/// citing only the Ollama reads that produced them. Curated entries are never modified.
+async fn reobserve(
+    run: &Run<'_>,
+    model: &CatalogModel,
+    stamp: &str,
+    state: &mut AdmissionState,
+) -> io::Result<Option<Value>> {
+    let Some(reference) = model.source.ollama.as_deref() else {
+        return Ok(None);
+    };
+    let (path, tag) = parse_reference(reference);
+    let repo = path.strip_prefix("library/").unwrap_or(path);
+    if repo.contains('/') || !name(repo) || !name(tag) {
+        return Ok(None);
+    }
+    let Some(index) = pulled_quantization(model) else {
+        return Ok(None);
+    };
+    let manifest_url = format!("https://registry.ollama.ai/v2/library/{repo}/manifests/{tag}");
+    let manifest_raw = run
+        .get(
+            &manifest_url,
+            Some(MANIFEST_ACCEPT),
+            None,
+            MAX_MANIFEST_BYTES,
+        )
+        .await?;
+    let manifest_text = std::str::from_utf8(&manifest_raw)
+        .map_err(|_| io::Error::other("manifest is not UTF-8"))?;
+    let Some(layer) = parse_layer(manifest_text).map_err(io::Error::other)? else {
+        return Ok(None);
+    };
+    let descriptors: ManifestLayers =
+        serde_json::from_str(manifest_text).map_err(io::Error::other)?;
+    let blob = |digest: &str| {
+        format!("https://registry.ollama.ai/v2/library/{repo}/blobs/sha256:{digest}")
+    };
+    let config_digest = sha256(&descriptors.config.digest)
+        .ok_or_else(|| io::Error::other("invalid config digest"))?;
+    let config_raw = run
+        .get(&blob(config_digest), None, None, MAX_CONFIG_BYTES)
+        .await?;
+    let Ok(config) = RegistryConfig::parse(
+        std::str::from_utf8(&config_raw).map_err(|_| io::Error::other("config is not UTF-8"))?,
+    ) else {
+        return Ok(None);
+    };
+    let license_digest = descriptors
+        .layers
+        .iter()
+        .find(|layer| layer.media_type == "application/vnd.ollama.image.license")
+        .and_then(|layer| sha256(&layer.digest))
+        .map(str::to_string);
+    let key = format!(
+        "{}:{}",
+        layer.sha256,
+        license_digest.as_deref().unwrap_or("none")
+    );
+    let sourced = match state.facts.get(&key) {
+        Some(sourced) => sourced.clone(),
+        None => {
+            let Ok(gguf) = run.gguf(&blob(&layer.sha256)).await? else {
+                return Ok(None);
+            };
+            let Some(arch) = gguf.architecture().map(str::to_string) else {
+                return Ok(None);
+            };
+            let Some(context_length) = gguf.u64(&format!("{arch}.context_length")) else {
+                return Ok(None);
+            };
+            let head = match &license_digest {
+                Some(digest) => Some(
+                    String::from_utf8_lossy(
+                        &run.get(
+                            &blob(digest),
+                            None,
+                            Some(MAX_LICENSE_HEAD_BYTES),
+                            MAX_LICENSE_HEAD_BYTES,
+                        )
+                        .await?,
+                    )
+                    .into_owned(),
+                ),
+                None => None,
+            };
+            let sourced = SourcedFacts {
+                context_length,
+                architecture: if gguf
+                    .u64(&format!("{arch}.expert_count"))
+                    .is_some_and(|count| count > 0)
+                {
+                    Architecture::Moe
+                } else {
+                    Architecture::Dense
+                },
+                license: license_id(
+                    gguf.text("general.license"),
+                    gguf.text("general.license.name"),
+                    head.as_deref(),
+                )
+                .ok()
+                .map(str::to_string),
+                kv_bytes_per_token: kv_bytes_per_token(&gguf),
+            };
+            state.facts.insert(key, sourced.clone());
+            sourced
+        }
+    };
+    let mut quant = serde_json::to_value(&model.quantizations[index]).map_err(io::Error::other)?;
+    let object = quant
+        .as_object_mut()
+        .ok_or_else(|| io::Error::other("invalid quantization"))?;
+    for field in ["minRamBytes", "minVramBytes", "digestVerified"] {
+        object.remove(field);
+    }
+    object.insert("name".into(), json!(config.file_type.to_ascii_uppercase()));
+    object.insert("diskBytes".into(), json!(layer.disk_bytes));
+    object.insert("sha256".into(), json!(layer.sha256));
+    if layer.projectors.is_empty() {
+        object.remove("projectors");
+    } else {
+        object.insert(
+            "projectors".into(),
+            serde_json::to_value(&layer.projectors).map_err(io::Error::other)?,
+        );
+    }
+    let mut facts = serde_json::Map::new();
+    facts.insert("defaultQuantization".into(), quant);
+    facts.insert("contextLength".into(), json!(sourced.context_length as f64));
+    facts.insert(
+        "architecture".into(),
+        serde_json::to_value(&sourced.architecture).map_err(io::Error::other)?,
+    );
+    if let Some(license) = sourced.license {
+        facts.insert("license".into(), json!(license));
+    }
+    // Asserted only when the catalog has a value to compare; unknown is not a contradiction.
+    if let (Some(rate), Some(_)) = (sourced.kv_bytes_per_token, model.kv_bytes_per_token) {
+        facts.insert("kvBytesPerToken".into(), json!(rate));
+    }
+    Ok(Some(json!({
+        "id": model.id,
+        "checkedAt": stamp,
+        "sources": [manifest_url, format!("https://ollama.com/library/{repo}:{tag}")],
+        "facts": facts,
+    })))
 }

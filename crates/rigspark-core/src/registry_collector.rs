@@ -66,6 +66,18 @@ pub fn quant_from_tag(tag: &str) -> Option<String> {
     }
 }
 
+/// Index of the quantization an entry's Ollama tag pulls: the tag's quant suffix, else the first.
+pub fn pulled_quantization(model: &CatalogModel) -> Option<usize> {
+    let (_, tag) = parse_reference(model.source.ollama.as_deref()?);
+    match quant_from_tag(tag) {
+        Some(target) => model
+            .quantizations
+            .iter()
+            .position(|quant| quant.name == target),
+        None => (!model.quantizations.is_empty()).then_some(0),
+    }
+}
+
 pub fn parse_layer(raw: &str) -> Result<Option<ModelLayer>, ValidationError> {
     require(raw.len() <= MAX_MANIFEST_BYTES, "manifest exceeds 4 MiB")?;
     let manifest: Manifest =

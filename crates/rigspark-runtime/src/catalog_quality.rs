@@ -37,7 +37,31 @@ struct Observation {
     id: String,
     checked_at: String,
     sources: Vec<String>,
-    model: CatalogModel,
+    /// A full observed model, or `facts` for the subset the collector could source.
+    #[serde(default)]
+    model: Option<CatalogModel>,
+    #[serde(default)]
+    facts: Option<BTreeMap<String, serde_json::Value>>,
+}
+
+/// Facts a partial observation may assert, each compared in the catalog's own representation.
+pub const PARTIAL_FACTS: [&str; 6] = [
+    "activeParams",
+    "architecture",
+    "contextLength",
+    "defaultQuantization",
+    "kvBytesPerToken",
+    "license",
+];
+
+fn catalog_fact(model: &CatalogModel, field: &str) -> Result<serde_json::Value, QualityError> {
+    let value = serde_json::to_value(model).map_err(|_| QualityError("invalid model facts"))?;
+    Ok(if field == "defaultQuantization" {
+        let index = rigspark_core::registry_collector::pulled_quantization(model).unwrap_or(0);
+        facts(model)?["quantizations"][index].clone()
+    } else {
+        value.get(field).cloned().unwrap_or(serde_json::Value::Null)
+    })
 }
 
 #[derive(Serialize)]
@@ -49,6 +73,9 @@ pub struct EntryResult {
     fresh: bool,
     verified: bool,
     reason: &'static str,
+    /// Facts a partial observation verified; absent when the whole entry was observed.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    checked_fields: Option<Vec<String>>,
 }
 
 #[derive(Serialize)]
@@ -85,6 +112,11 @@ fn recent(raw: &str, now: OffsetDateTime) -> Result<bool, QualityError> {
     Ok(now - checked <= time::Duration::days(EVIDENCE_MAX_AGE_DAYS))
 }
 
+/// Whether evidence checked at `checked_at` is still within the gate's freshness window at `now`.
+pub fn evidence_fresh(checked_at: &str, now: &str) -> bool {
+    OffsetDateTime::parse(now, &Rfc3339).is_ok_and(|now| recent(checked_at, now).unwrap_or(false))
+}
+
 fn source_url(raw: &str) -> bool {
     url::Url::parse(raw).is_ok_and(|url| {
         url.scheme() == "https"
@@ -107,8 +139,12 @@ fn facts(model: &CatalogModel) -> Result<serde_json::Value, QualityError> {
     Ok(value)
 }
 
-fn citations_match(observation: &Observation) -> bool {
-    let source = &observation.model.source;
+fn citations_match(observation: &Observation, model: &CatalogModel) -> bool {
+    if observation.model.is_none() {
+        // Partial observations read only Ollama; they must cite exactly those reads.
+        return partial_citations_match(observation, model);
+    }
+    let source = &observation.model.as_ref().unwrap_or(model).source;
     let cites_repo = |repo: &str| {
         let root = format!("https://huggingface.co/{repo}");
         observation
@@ -147,6 +183,23 @@ fn citations_match(observation: &Observation) -> bool {
         }
     }
     source.hf.is_some() || source.ollama.is_some() || source.gguf.is_some() || source.mlx.is_some()
+}
+
+fn partial_citations_match(observation: &Observation, model: &CatalogModel) -> bool {
+    let Some(reference) = &model.source.ollama else {
+        return false;
+    };
+    let (repo, tag) = rigspark_core::registry_collector::parse_reference(reference);
+    let repo = if repo.contains('/') {
+        repo.to_string()
+    } else {
+        format!("library/{repo}")
+    };
+    observation.sources.contains(&format!(
+        "https://registry.ollama.ai/v2/{repo}/manifests/{tag}"
+    )) && observation
+        .sources
+        .contains(&format!("https://ollama.com/{repo}:{tag}"))
 }
 
 fn matches_facts(model: &CatalogModel, observed: &CatalogModel) -> Result<bool, QualityError> {
@@ -243,21 +296,46 @@ pub fn evaluate(
         .collect();
     let mut observations = BTreeMap::new();
     for observation in &evidence.observations {
-        if observation.id != observation.model.id
-            || !models.contains_key(observation.id.as_str())
-            || observations
-                .insert(observation.id.as_str(), observation)
-                .is_some()
+        let Some(model) = models.get(observation.id.as_str()) else {
+            return Err(QualityError("duplicate, unbound, or uncited observation"));
+        };
+        match (&observation.model, &observation.facts) {
+            (Some(observed), None) => {
+                if observed.id != observation.id {
+                    return Err(QualityError("duplicate, unbound, or uncited observation"));
+                }
+                let observed_catalog = serde_json::json!({"schemaVersion":rigspark_core::catalog::SCHEMA_VERSION,"generatedAt":observation.checked_at,"models":[observed]});
+                Catalog::parse(&observed_catalog.to_string())
+                    .map_err(|_| QualityError("observed model facts"))?;
+            }
+            (None, Some(facts)) => {
+                // Partial verification always includes artifact integrity.
+                if !facts.contains_key("defaultQuantization")
+                    || !facts
+                        .keys()
+                        .all(|key| PARTIAL_FACTS.contains(&key.as_str()))
+                {
+                    return Err(QualityError(
+                        "partial observation asserts unsupported facts",
+                    ));
+                }
+            }
+            _ => {
+                return Err(QualityError(
+                    "observation needs exactly one of model or facts",
+                ));
+            }
+        }
+        if observations
+            .insert(observation.id.as_str(), observation)
+            .is_some()
             || observation.sources.is_empty()
             || observation.sources.len() > 16
             || !observation.sources.iter().all(|source| source_url(source))
-            || !citations_match(observation)
+            || !citations_match(observation, model)
         {
             return Err(QualityError("duplicate, unbound, or uncited observation"));
         }
-        let observed_catalog = serde_json::json!({"schemaVersion":rigspark_core::catalog::SCHEMA_VERSION,"generatedAt":observation.checked_at,"models":[observation.model]});
-        Catalog::parse(&observed_catalog.to_string())
-            .map_err(|_| QualityError("observed model facts"))?;
         recent(&observation.checked_at, clock)?;
     }
     let mut entries = Vec::new();
@@ -271,6 +349,7 @@ pub fn evaluate(
             fresh: false,
             verified: false,
             reason: "missing evidence",
+            checked_fields: None,
         };
         if inventory_known && !inventory.contains(&model.id) {
             blockers.push(format!(
@@ -282,7 +361,19 @@ pub fn evaluate(
             entry.checked_at = Some(observation.checked_at.clone());
             entry.sources = observation.sources.clone();
             entry.fresh = recent(&observation.checked_at, clock)?;
-            if !matches_facts(model, &observation.model)? {
+            let agrees = match (&observation.model, &observation.facts) {
+                (Some(observed), _) => matches_facts(model, observed)?,
+                (None, Some(facts)) => {
+                    entry.checked_fields = Some(facts.keys().cloned().collect());
+                    let mut agrees = true;
+                    for (field, value) in facts {
+                        agrees &= catalog_fact(model, field)? == *value;
+                    }
+                    agrees
+                }
+                (None, None) => false,
+            };
+            if !agrees {
                 entry.reason = "authoritative facts contradict catalog";
                 blockers.push(format!(
                     "{}: authoritative facts contradict catalog",
