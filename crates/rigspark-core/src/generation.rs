@@ -3,7 +3,8 @@
 //! Kept separate from the LLM catalog so LLM ranking, signing, and refresh are unaffected.
 use crate::{
     catalog::{
-        LICENSES, coordinates, date, digest, model_file, parse_document, require, timestamp,
+        EntryProvenance, LICENSES, RecencyBasis, coordinates, date, digest, model_file,
+        parse_document, recency, recency_label, require, timestamp,
     },
     reports::{strip_control, table},
     sizing::{HEADROOM, Hardware, ValidationError, memory_capacity},
@@ -108,14 +109,24 @@ pub struct GenerationModel {
     pub params: String,
     pub license: String,
     pub open_weight: bool,
-    pub release_date: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub release_date: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub added_at: Option<String>,
+    #[serde(default, skip_serializing_if = "EntryProvenance::is_curated")]
+    pub provenance: EntryProvenance,
     #[serde(default)]
     pub default: bool,
     pub source: String,
-    pub workflow: Workflow,
-    pub workflow_source: String,
+    /// Absent for fit-only entries: sourced weights without a built-in workflow yet.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub workflow: Option<Workflow>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub workflow_source: Option<String>,
     pub files: Vec<GenerationFile>,
 }
+
+pub const GENERATION_SCHEMA_VERSION: u8 = 2;
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -147,6 +158,21 @@ fn model_id(value: &str) -> bool {
 }
 
 impl GenerationModel {
+    pub fn recency(&self) -> Option<(&str, RecencyBasis)> {
+        recency(self.release_date.as_deref(), self.added_at.as_deref())
+    }
+    pub fn recency_label(&self) -> String {
+        recency_label(self.recency())
+    }
+    /// The built-in workflow that runs this model, or why it cannot run yet.
+    pub fn runnable(&self) -> Result<Workflow, ValidationError> {
+        self.workflow.ok_or_else(|| {
+            ValidationError(format!(
+                "{} is fit-only (workflow coming): RigSpark has no built-in ComfyUI workflow for this architecture yet",
+                self.id
+            ))
+        })
+    }
     pub fn total_bytes(&self) -> u64 {
         self.files.iter().map(|file| file.bytes).sum()
     }
@@ -170,23 +196,48 @@ impl GenerationModel {
             self.open_weight && LICENSES.contains(&self.license.as_str()),
             "generation catalog requires an allowlisted open-weight license",
         )?;
-        date(&self.release_date)?;
+        if let Some(released) = &self.release_date {
+            date(released)?;
+        }
+        if let Some(added) = &self.added_at {
+            date(added)?;
+        }
+        match self.provenance {
+            EntryProvenance::Curated => require(
+                self.release_date.is_some() && self.workflow.is_some(),
+                "curated generation entries need releaseDate and a workflow",
+            )?,
+            EntryProvenance::Auto => require(
+                self.added_at.is_some(),
+                "auto generation entries need addedAt",
+            )?,
+        }
         https(&self.source)?;
-        https(&self.workflow_source)?;
+        require(
+            self.workflow.is_some() == self.workflow_source.is_some(),
+            "workflowSource must accompany a workflow",
+        )?;
         let roles: Vec<_> = self.files.iter().map(|file| file.role).collect();
-        require(
-            roles.len() == self.workflow.roles().len()
-                && self
-                    .workflow
-                    .roles()
-                    .iter()
-                    .all(|role| roles.contains(role)),
-            "files must match the workflow roles exactly",
-        )?;
-        require(
-            self.workflow.kind() == self.kind,
-            "workflow does not produce this model kind",
-        )?;
+        match (self.workflow, &self.workflow_source) {
+            (Some(workflow), Some(source)) => {
+                https(source)?;
+                require(
+                    roles.len() == workflow.roles().len()
+                        && workflow.roles().iter().all(|role| roles.contains(role)),
+                    "files must match the workflow roles exactly",
+                )?;
+                require(
+                    workflow.kind() == self.kind,
+                    "workflow does not produce this model kind",
+                )?;
+            }
+            _ => require(
+                !roles.is_empty()
+                    && roles.len() <= 8
+                    && roles.iter().collect::<HashSet<_>>().len() == roles.len(),
+                "fit-only entries need sourced files with distinct roles",
+            )?,
+        }
         let mut total = 0u64;
         for file in &self.files {
             require(
@@ -217,7 +268,9 @@ impl GenerationCatalog {
     pub fn parse(raw: &str) -> Result<Self, ValidationError> {
         let mut result: Self = parse_document(raw)?;
         require(
-            result.schema_version == 1 && !result.models.is_empty() && result.models.len() <= 256,
+            (1..=GENERATION_SCHEMA_VERSION).contains(&result.schema_version)
+                && !result.models.is_empty()
+                && result.models.len() <= 1024,
             "unsupported or empty generation catalog",
         )?;
         timestamp(&result.generated_at)?;
@@ -225,7 +278,16 @@ impl GenerationCatalog {
         let mut defaults = HashSet::new();
         let mut kinds = HashSet::new();
         for model in &result.models {
+            require(
+                result.schema_version >= 2
+                    || (model.provenance.is_curated() && model.added_at.is_none()),
+                "schema v1 generation catalogs cannot carry v2 fields",
+            )?;
             model.validate()?;
+            require(
+                !model.default || model.workflow.is_some(),
+                "a default model must be runnable",
+            )?;
             require(ids.insert(&model.id), "duplicate generation model id")?;
             kinds.insert(model.kind);
             if model.default {
@@ -285,9 +347,9 @@ fn built_in_family(model: &GenerationModel) -> bool {
         (model.kind, model.workflow, model.family.as_str()),
         (
             GenerationKind::Image,
-            Workflow::FluxCheckpoint | Workflow::FluxSplit,
+            Some(Workflow::FluxCheckpoint | Workflow::FluxSplit),
             "flux1-schnell"
-        ) | (GenerationKind::Video, Workflow::WanT2v, "wan2.1-t2v")
+        ) | (GenerationKind::Video, Some(Workflow::WanT2v), "wan2.1-t2v")
     )
 }
 
@@ -448,7 +510,12 @@ pub fn catalog_text(catalog: &GenerationCatalog, hardware: &Hardware) -> String 
                 fit.verdict.name().into(),
                 fit.speed.into(),
                 model.license.clone(),
-                model.release_date.clone(),
+                model.recency_label(),
+                if model.workflow.is_some() {
+                    "runs".into()
+                } else {
+                    "workflow coming".into()
+                },
             ]
         })
         .collect();
@@ -467,6 +534,7 @@ pub fn catalog_text(catalog: &GenerationCatalog, hardware: &Hardware) -> String 
                 ("Speed", false),
                 ("License", false),
                 ("Release", false),
+                ("Generate", false),
             ],
             rows,
         )

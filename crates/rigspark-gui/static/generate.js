@@ -54,9 +54,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function selectedModel(kind) {
     const selected = activeSelections[kind] || stored(selectionKeys[kind]);
-    return models.find((model) => model.kind === kind && model.id === selected)
-      || models.find((model) => model.kind === kind && model.default)
-      || models.find((model) => model.kind === kind);
+    const runnable = models.filter((model) => model.kind === kind && model.runnable);
+    return runnable.find((model) => model.id === selected)
+      || runnable.find((model) => model.default)
+      || runnable[0];
   }
 
   function showError(message) {
@@ -127,17 +128,28 @@ document.addEventListener("DOMContentLoaded", () => {
       badge.className = `verdict-badge verdict-${model.fit.verdict}`;
       badge.textContent = `fit ${model.fit.verdict}`;
       head.append(title, badge);
+      if (!model.runnable) {
+        const pending = document.createElement("span");
+        pending.className = "verdict-badge verdict-slow";
+        pending.textContent = "workflow coming";
+        head.appendChild(pending);
+      }
       const meta = document.createElement("div");
       meta.className = "model-card-meta";
-      meta.textContent = `${model.params} params · ${gib(model.weightsBytes)} weights · ${model.license} · speed unknown`;
+      const origin = model.provenance === "auto" ? " · auto-sourced" : "";
+      meta.textContent = `${model.params} params · ${gib(model.weightsBytes)} weights · ${model.license} · ${model.recency}${origin} · speed unknown`;
       const reason = document.createElement("div");
       reason.className = "model-card-meta";
       reason.textContent = model.fit.reason;
       const action = document.createElement("button");
       action.type = "button";
       action.className = selected?.id === model.id ? "accent-btn" : "ghost-btn";
-      action.textContent = selected?.id === model.id ? "Active" : "Use in Chat";
-      action.disabled = selected?.id === model.id;
+      action.textContent = !model.runnable
+        ? "Not runnable yet"
+        : selected?.id === model.id
+          ? "Active"
+          : "Use in Chat";
+      action.disabled = !model.runnable || selected?.id === model.id;
       action.addEventListener("click", () => selectModel(model));
       card.append(head, meta, reason, action);
       list.appendChild(card);
@@ -296,6 +308,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!model) throw new Error(`No local ${chatMode} model is available`);
     if (!comfyuiDir) {
       throw new Error("ComfyUI was not detected. Set RIGSPARK_COMFYUI_DIR before starting rigspark");
+    }
+    if (!model.runnable) {
+      throw new Error(`${model.id} has no built-in ComfyUI workflow yet (workflow coming)`);
     }
     if (model.fit.verdict === "no") {
       throw new Error(`${model.id} does not fit this machine (${model.fit.reason})`);

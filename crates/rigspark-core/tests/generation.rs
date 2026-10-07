@@ -95,7 +95,7 @@ fn bundled_catalog_has_pinned_apache_image_and_video_models() {
 
 #[test]
 fn validation_fails_closed_on_untrusted_dataset_fields() {
-    rejects(|v| v["schemaVersion"] = json!(2), "unsupported");
+    rejects(|v| v["schemaVersion"] = json!(3), "unsupported");
     rejects(|v| v["models"] = json!([]), "unsupported");
     rejects(
         |v| model_mut(v, "flux1-schnell:fp8")["extra"] = json!(1),
@@ -249,4 +249,89 @@ fn catalog_text_lists_both_kinds_with_unknown_speed() {
     assert!(text.contains("ComfyUI"));
     assert!(text.contains("rigspark generate image --prompt"));
     assert_eq!(text, catalog_text(&catalog, &apple(16.0)));
+}
+
+/// A fit-only auto entry: sourced files, no built-in workflow yet.
+fn fit_only(value: &mut Value) {
+    let mut entry = model_mut(value, "flux1-schnell:fp16").clone();
+    let object = entry.as_object_mut().unwrap();
+    object.insert("id".into(), json!("qwen-image:bf16"));
+    object.insert("family".into(), json!("qwen-image"));
+    object.insert("default".into(), json!(false));
+    object.insert("provenance".into(), json!("auto"));
+    object.insert("addedAt".into(), json!("2026-10-07"));
+    for field in ["releaseDate", "workflow", "workflowSource"] {
+        object.remove(field);
+    }
+    value["models"].as_array_mut().unwrap().push(entry);
+    value["schemaVersion"] = json!(2);
+}
+
+#[test]
+fn schema_v2_admits_fit_only_auto_entries_that_cannot_run() {
+    let mut value = bundled_with_leading_non_default_variant();
+    fit_only(&mut value);
+    let catalog = GenerationCatalog::parse(&value.to_string()).unwrap();
+    let model = catalog.resolve("qwen-image:bf16").unwrap();
+    assert_eq!(model.workflow, None);
+    assert_eq!(model.recency_label(), "added 2026-10-07");
+    let refusal = model.runnable().unwrap_err().to_string();
+    assert!(refusal.contains("workflow coming"), "{refusal}");
+    assert!(catalog.resolve("image").unwrap().runnable().is_ok());
+    // The weight-memory verdict still works for fit-only entries.
+    assert_eq!(fit(model, &apple(64.0)).verdict, FitVerdict::Yes);
+
+    let mut legacy = serde_json::from_str::<Value>(GENERATION_JSON).unwrap();
+    legacy["schemaVersion"] = json!(1);
+    assert!(
+        GenerationCatalog::parse(&legacy.to_string()).is_ok(),
+        "v1 still parses"
+    );
+}
+
+#[test]
+fn schema_v2_keeps_runnable_defaults_and_sourced_auto_entries() {
+    let reject = |mutate: &dyn Fn(&mut Value), needle: &str| {
+        let mut value = bundled_with_leading_non_default_variant();
+        fit_only(&mut value);
+        mutate(&mut value);
+        let error = GenerationCatalog::parse(&value.to_string()).unwrap_err();
+        assert!(
+            error.to_string().contains(needle),
+            "expected `{needle}`, got `{error}`"
+        );
+    };
+    reject(
+        &|value| model_mut(value, "qwen-image:bf16")["default"] = json!(true),
+        "default",
+    );
+    reject(
+        &|value| {
+            model_mut(value, "qwen-image:bf16")["workflowSource"] = json!("https://example.com/")
+        },
+        "workflowSource",
+    );
+    reject(
+        &|value| {
+            model_mut(value, "qwen-image:bf16")
+                .as_object_mut()
+                .unwrap()
+                .remove("addedAt");
+        },
+        "addedAt",
+    );
+    reject(&|value| value["schemaVersion"] = json!(1), "v1");
+    reject(
+        &|value| {
+            model_mut(value, "flux1-schnell:fp16")
+                .as_object_mut()
+                .unwrap()
+                .remove("releaseDate");
+        },
+        "releaseDate",
+    );
+    reject(
+        &|value| model_mut(value, "qwen-image:bf16")["files"] = json!([]),
+        "files",
+    );
 }

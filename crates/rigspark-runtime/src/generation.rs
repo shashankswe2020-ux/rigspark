@@ -161,7 +161,10 @@ pub fn workflow(
             .cloned()
             .ok_or(GenerationError::Invalid("missing installed weight name"))
     };
-    Ok(match model.workflow {
+    let workflow = model
+        .runnable()
+        .map_err(|error| GenerationError::Catalog(error.to_string()))?;
+    Ok(match workflow {
         // https://comfyanonymous.github.io/ComfyUI_examples/flux/ (schnell fp8 checkpoint)
         Workflow::FluxCheckpoint => json!({
             "6": {"class_type": "CLIPTextEncode", "inputs": {"text": prompt, "clip": ["30", 1]}},
@@ -504,8 +507,11 @@ impl ComfyUi<'_> {
                 "ComfyUI directory must contain a models/ folder",
             ));
         }
+        let workflow = model
+            .runnable()
+            .map_err(|error| GenerationError::Catalog(error.to_string()))?;
         let mut installed = Vec::new();
-        for role in model.workflow.roles() {
+        for role in workflow.roles() {
             let file = model
                 .file(*role)
                 .ok_or(GenerationError::Invalid("model is missing a workflow file"))?;
@@ -866,7 +872,10 @@ impl ComfyUi<'_> {
         }
         let status = self.ready(request.endpoint, cancel).await?;
         let devices = &status.devices;
-        if model.workflow == Workflow::WanT2v && apple_mps(devices) {
+        let built_in = model
+            .runnable()
+            .map_err(|error| GenerationError::Catalog(error.to_string()))?;
+        if built_in == Workflow::WanT2v && apple_mps(devices) {
             self.emit(
                 "ComfyUI reports Apple MPS: using the euler sampler (uni_pc diverges on MPS)"
                     .into(),
@@ -923,7 +932,7 @@ impl ComfyUi<'_> {
             }
         };
         let descriptor = outputs
-            .get(save_node(model.workflow))
+            .get(save_node(built_in))
             .and_then(|node| node.get("images"))
             .and_then(Value::as_array)
             .and_then(|images| images.first())

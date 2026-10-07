@@ -120,7 +120,7 @@ pub enum EntryProvenance {
     Auto,
 }
 impl EntryProvenance {
-    fn is_curated(&self) -> bool {
+    pub(crate) fn is_curated(&self) -> bool {
         matches!(self, Self::Curated)
     }
 }
@@ -199,25 +199,30 @@ pub(crate) fn digest(value: &str) -> Result<(), ValidationError> {
     )
 }
 
-impl CatalogModel {
-    /// The date recency is measured from: the sourced release date, else the admission date.
-    pub fn recency(&self) -> Option<(&str, RecencyBasis)> {
-        self.release_date
-            .as_deref()
-            .map(|day| (day, RecencyBasis::Released))
-            .or_else(|| {
-                self.added_at
-                    .as_deref()
-                    .map(|day| (day, RecencyBasis::Added))
-            })
+/// The date recency is measured from: the sourced release date, else the admission date.
+pub fn recency<'a>(
+    release_date: Option<&'a str>,
+    added_at: Option<&'a str>,
+) -> Option<(&'a str, RecencyBasis)> {
+    release_date
+        .map(|day| (day, RecencyBasis::Released))
+        .or_else(|| added_at.map(|day| (day, RecencyBasis::Added)))
+}
+/// Display form of [`recency`]: the release date, `added <date>`, or `unknown`.
+pub fn recency_label(recency: Option<(&str, RecencyBasis)>) -> String {
+    match recency {
+        Some((day, RecencyBasis::Released)) => day.to_string(),
+        Some((day, RecencyBasis::Added)) => format!("added {day}"),
+        None => "unknown".into(),
     }
-    /// Display form of [`Self::recency`]: the release date, `added <date>`, or `unknown`.
+}
+
+impl CatalogModel {
+    pub fn recency(&self) -> Option<(&str, RecencyBasis)> {
+        recency(self.release_date.as_deref(), self.added_at.as_deref())
+    }
     pub fn recency_label(&self) -> String {
-        match self.recency() {
-            Some((day, RecencyBasis::Released)) => day.to_string(),
-            Some((day, RecencyBasis::Added)) => format!("added {day}"),
-            None => "unknown".into(),
-        }
+        recency_label(self.recency())
     }
     pub fn sizing(&self) -> Model {
         Model {
