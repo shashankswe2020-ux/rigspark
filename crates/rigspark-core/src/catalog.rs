@@ -112,6 +112,25 @@ pub struct Source {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub mlx: Option<MlxSource>,
 }
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum EntryProvenance {
+    #[default]
+    Curated,
+    Auto,
+}
+impl EntryProvenance {
+    fn is_curated(&self) -> bool {
+        matches!(self, Self::Curated)
+    }
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum RecencyBasis {
+    Released,
+    Added,
+}
+pub const SCHEMA_VERSION: u8 = 3;
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct CatalogModel {
@@ -125,7 +144,12 @@ pub struct CatalogModel {
     pub open_weight: bool,
     pub context_length: f64,
     pub capabilities: Vec<String>,
-    pub release_date: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub release_date: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub added_at: Option<String>,
+    #[serde(default, skip_serializing_if = "EntryProvenance::is_curated")]
+    pub provenance: EntryProvenance,
     pub source: Source,
     pub quantizations: Vec<Quantization>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -176,6 +200,25 @@ pub(crate) fn digest(value: &str) -> Result<(), ValidationError> {
 }
 
 impl CatalogModel {
+    /// The date recency is measured from: the sourced release date, else the admission date.
+    pub fn recency(&self) -> Option<(&str, RecencyBasis)> {
+        self.release_date
+            .as_deref()
+            .map(|day| (day, RecencyBasis::Released))
+            .or_else(|| {
+                self.added_at
+                    .as_deref()
+                    .map(|day| (day, RecencyBasis::Added))
+            })
+    }
+    /// Display form of [`Self::recency`]: the release date, `added <date>`, or `unknown`.
+    pub fn recency_label(&self) -> String {
+        match self.recency() {
+            Some((day, RecencyBasis::Released)) => day.to_string(),
+            Some((day, RecencyBasis::Added)) => format!("added {day}"),
+            None => "unknown".into(),
+        }
+    }
     pub fn sizing(&self) -> Model {
         Model {
             id: self.id.clone(),
@@ -217,7 +260,29 @@ impl CatalogModel {
                     .all(|cap| CAPABILITIES.contains(&cap.as_str())),
             "invalid context or capabilities",
         )?;
-        date(&self.release_date)?;
+        if let Some(released) = &self.release_date {
+            date(released)?;
+        }
+        if let Some(added) = &self.added_at {
+            date(added)?;
+        }
+        match self.provenance {
+            EntryProvenance::Curated => require(
+                self.release_date.is_some(),
+                "curated entry needs releaseDate",
+            )?,
+            // Auto entries carry only sourced facts and must stay integrity-pinned.
+            EntryProvenance::Auto => require(
+                self.added_at.is_some()
+                    && self.benchmark_proxy.is_none()
+                    && self.source.ollama.is_some()
+                    && self
+                        .quantizations
+                        .iter()
+                        .all(|quant| quant.sha256.is_some()),
+                "auto entry needs addedAt, a pinned Ollama digest and no benchmarkProxy",
+            )?,
+        }
         require(
             matches!(self.architecture, Architecture::Moe) == self.active_params.is_some(),
             "activeParams must exist only for MoE",
@@ -328,11 +393,16 @@ impl Catalog {
     pub fn parse(raw: &str) -> Result<Self, ValidationError> {
         let mut result: Self = parse_document(raw)?;
         require(
-            result.schema_version == 2 && !result.models.is_empty(),
+            (2..=SCHEMA_VERSION).contains(&result.schema_version) && !result.models.is_empty(),
             "unsupported or empty catalog",
         )?;
         timestamp(&result.generated_at)?;
         for model in &result.models {
+            require(
+                result.schema_version >= 3
+                    || (model.provenance.is_curated() && model.added_at.is_none()),
+                "schema v2 catalogs cannot carry v3 fields",
+            )?;
             model.validate()?;
         }
         for model in &mut result.models {

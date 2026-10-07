@@ -18,7 +18,7 @@ struct Metadata {
 
 pub fn build_catalog(candidates: &[RawModel], now: &str) -> Result<Catalog, ValidationError> {
     let seed = Catalog {
-        schema_version: 2,
+        schema_version: crate::catalog::SCHEMA_VERSION,
         generated_at: BOOTSTRAP_CLOCK.into(),
         models: Vec::new(),
     };

@@ -361,8 +361,9 @@ pub fn catalog_text(
     let mut models: Vec<_> = catalog.models.iter().collect();
     models.sort_by(|left, right| {
         right
-            .release_date
-            .cmp(&left.release_date)
+            .recency()
+            .map(|(day, _)| day)
+            .cmp(&left.recency().map(|(day, _)| day))
             .then_with(|| left.id.cmp(&right.id))
     });
     let mut rows = Vec::new();
@@ -401,7 +402,7 @@ pub fn catalog_text(
                 sizing.fit.required_bytes.unwrap_or(0.0) / 1073741824.0
             ),
             sizing.fit.reason.unwrap_or("fit").into(),
-            model.release_date.clone(),
+            model.recency_label(),
         ]);
     }
     let header = format!(

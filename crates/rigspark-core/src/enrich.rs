@@ -131,7 +131,9 @@ impl RawModel {
             open_weight: self.open_weight,
             context_length: self.context_length,
             capabilities: self.capabilities.clone(),
-            release_date: self.release_date.clone(),
+            release_date: Some(self.release_date.clone()),
+            added_at: None,
+            provenance: crate::catalog::EntryProvenance::Curated,
             source: Source {
                 ollama: self
                     .source
@@ -181,7 +183,9 @@ pub fn enrich(
     maximum: Option<usize>,
 ) -> Result<EnrichResult, ValidationError> {
     require(
-        existing.schema_version == 2 && maximum != Some(0) && candidates.len() <= 10000,
+        (2..=crate::catalog::SCHEMA_VERSION).contains(&existing.schema_version)
+            && maximum != Some(0)
+            && candidates.len() <= 10000,
         "invalid enrichment options",
     )?;
     require(
@@ -206,7 +210,7 @@ pub fn enrich(
     let newest = existing
         .models
         .iter()
-        .map(|model| model.release_date.as_str())
+        .filter_map(|model| model.recency().map(|(day, _)| day))
         .max()
         .unwrap_or("");
     let mut result: BTreeMap<String, CatalogModel> = existing
@@ -269,9 +273,9 @@ pub fn enrich(
     }
     let mut models: Vec<_> = result.into_values().collect();
     models.sort_by(|left, right| {
-        right
-            .release_date
-            .cmp(&left.release_date)
+        let day = |model: &CatalogModel| model.recency().map(|(day, _)| day.to_string());
+        day(right)
+            .cmp(&day(left))
             .then_with(|| left.id.cmp(&right.id))
     });
     if let Some(maximum) = maximum
@@ -287,7 +291,7 @@ pub fn enrich(
     diff.updated.retain(|id| !diff.capped.contains(id));
     Ok(EnrichResult {
         catalog: Catalog {
-            schema_version: 2,
+            schema_version: crate::catalog::SCHEMA_VERSION,
             generated_at: if changed {
                 stamp
             } else {

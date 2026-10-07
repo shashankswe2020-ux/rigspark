@@ -1,4 +1,4 @@
-use rigspark_core::catalog::{Catalog, PerfDataset, resolve};
+use rigspark_core::catalog::{Catalog, EntryProvenance, PerfDataset, RecencyBasis, resolve};
 use serde_json::{Value, json};
 
 fn catalog() -> Value {
@@ -197,5 +197,85 @@ fn sanitizes_loaded_display_fields_and_checks_sanitized_duplicates() {
     assert_eq!(
         PerfDataset::parse(&perf.to_string()).unwrap().classes[0].label,
         "label"
+    );
+}
+
+fn auto_entry(mut value: Value) -> Value {
+    let model = &mut value["models"][0];
+    let object = model.as_object_mut().unwrap();
+    object.remove("releaseDate");
+    object.remove("benchmarkProxy");
+    object.insert("provenance".into(), json!("auto"));
+    object.insert("addedAt".into(), json!("2026-10-07"));
+    value["schemaVersion"] = json!(3);
+    value
+}
+
+#[test]
+fn schema_v3_accepts_auto_entries_and_keeps_v2_compatible() {
+    let v2 = catalog();
+    let mut legacy = v2.clone();
+    legacy["schemaVersion"] = json!(2);
+    assert!(
+        Catalog::parse(&legacy.to_string()).is_ok(),
+        "v2 still parses"
+    );
+
+    let loaded = Catalog::parse(&auto_entry(v2.clone()).to_string()).unwrap();
+    let model = &loaded.models[0];
+    assert_eq!(model.provenance, EntryProvenance::Auto);
+    assert_eq!(model.release_date, None);
+    assert_eq!(model.recency(), Some(("2026-10-07", RecencyBasis::Added)));
+    let curated = &loaded.models[1];
+    assert_eq!(curated.provenance, EntryProvenance::Curated);
+    assert_eq!(curated.recency().unwrap().1, RecencyBasis::Released);
+
+    let encoded = serde_json::to_value(&loaded).unwrap();
+    assert_eq!(encoded["models"][0]["provenance"], "auto");
+    assert!(
+        encoded["models"][1].get("provenance").is_none(),
+        "curated is the implicit default"
+    );
+}
+
+#[test]
+fn schema_v3_rejects_unsourced_or_unpinned_auto_entries_and_v3_fields_in_v2() {
+    let base = auto_entry(catalog());
+    let reject = |edit: &dyn Fn(&mut Value)| {
+        let mut value = base.clone();
+        edit(&mut value);
+        Catalog::parse(&value.to_string()).is_err()
+    };
+    assert!(reject(&|value| {
+        value["models"][0]
+            .as_object_mut()
+            .unwrap()
+            .remove("addedAt");
+    }));
+    assert!(reject(
+        &|value| value["models"][0]["benchmarkProxy"] = json!(0.5)
+    ));
+    assert!(reject(&|value| {
+        value["models"][0]["quantizations"][0]
+            .as_object_mut()
+            .unwrap()
+            .remove("sha256");
+    }));
+    assert!(reject(
+        &|value| value["models"][0]["addedAt"] = json!("2026-13-01")
+    ));
+    assert!(
+        reject(&|value| value["schemaVersion"] = json!(2)),
+        "v2 cannot carry auto entries"
+    );
+    assert!(reject(&|value| value["schemaVersion"] = json!(4)));
+    assert!(
+        reject(&|value| {
+            value["models"][1]
+                .as_object_mut()
+                .unwrap()
+                .remove("releaseDate");
+        }),
+        "curated entries keep a release date"
     );
 }

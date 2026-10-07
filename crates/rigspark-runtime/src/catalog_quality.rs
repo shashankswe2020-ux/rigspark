@@ -255,7 +255,7 @@ pub fn evaluate(
         {
             return Err(QualityError("duplicate, unbound, or uncited observation"));
         }
-        let observed_catalog = serde_json::json!({"schemaVersion":2,"generatedAt":observation.checked_at,"models":[observation.model]});
+        let observed_catalog = serde_json::json!({"schemaVersion":rigspark_core::catalog::SCHEMA_VERSION,"generatedAt":observation.checked_at,"models":[observation.model]});
         Catalog::parse(&observed_catalog.to_string())
             .map_err(|_| QualityError("observed model facts"))?;
         recent(&observation.checked_at, clock)?;
