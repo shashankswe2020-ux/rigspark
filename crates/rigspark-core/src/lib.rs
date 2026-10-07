@@ -1,3 +1,4 @@
+pub mod admission;
 pub mod advice;
 pub mod bootstrap;
 pub mod catalog;

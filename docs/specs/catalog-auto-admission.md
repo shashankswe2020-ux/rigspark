@@ -50,19 +50,22 @@ Every field is read from an upstream artifact or left absent. Nothing is estimat
 | `quantizations[0].name` | config blob `file_type` | skip variant |
 | `family` | config blob `model_family` | skip variant |
 | `params` | GGUF `general.size_label`, else config `model_type`, normalised to `^\d+(\.\d+)?[BMT]$` | skip variant |
-| `architecture`, `activeParams` | GGUF `{arch}.expert_count > 0` → `moe`; active from the size label `…-A3B`, else from tensor shapes | MoE with no sourced active params → skip |
+| `architecture`, `activeParams` | GGUF `{arch}.expert_count > 0` → `moe`; active = total tensor elements − expert-tensor (`*_exps`) elements × (1 − `expert_used_count`/`expert_count`), from the GGUF tensor table | MoE without both counts → skip |
 | `contextLength` | GGUF `{arch}.context_length` | skip variant |
-| `license`, `openWeight` | GGUF `general.license` mapped to the `LICENSES` allow-list, cross-checked against a fingerprint of the license blob | unknown or non-open → skip (reported) |
+| `license`, `openWeight` | GGUF `general.license` and/or a fingerprint of the license blob's opening text, mapped to the `LICENSES` allow-list; when both exist they must agree | neither, a conflict, or non-open → skip (reported) |
 | `capabilities` | library chips: `tools`→tools, `vision`→vision, `thinking`→reasoning, `embedding`→embedding; `chat` unless embedding-only | never inferred from names |
-| `kvBytesPerToken` | `block_count × head_count_kv × (key_length + value_length) × 2`, only for plain attention (no `ssm.*`, `full_attention_interval`, sliding-window or MLA keys) | absent (honesty gate) |
-| `releaseDate` | Hugging Face `createdAt` of `general.base_model.0.repo_url` when it is a huggingface.co URL | absent |
+| `kvBytesPerToken` | `block_count × head_count_kv × (key_length + value_length) × 2`, only for plain attention (no `ssm.*`, `full_attention_interval`, sliding-window or MLA keys); when the key and value lengths are absent, the GGUF head dimension is `embedding_length / head_count` | absent (honesty gate) |
+| `releaseDate` | not sourced: Hugging Face `createdAt` is a repository creation time, not a release date | absent; `addedAt` is used for recency |
 | `benchmarkProxy` | not sourced | absent; ranking already falls back to weights |
 | `provenance` | `"auto"` | — |
 | `addedAt` | date of first admission by the pipeline (never changes) | — |
 
-**Variant selection.** For each repository, the pipeline admits the plain size tags
-(`^\d+(\.\d+)?[bm](-a\d+(\.\d+)?b)?$`, for example `27b` or `30b-a3b`). These are Ollama's
-default quantizations. Tags are deduplicated by model-layer digest. Cloud-only models (a
+**Variant selection.** For each repository and each size prefix, the pipeline admits
+the plain size tag (`^\d+(\.\d+)?[bm](-a\d+(\.\d+)?b)?$`, for example `27b` or
+`30b-a3b`), which is Ollama's default quantization. When no plain tag exists, it admits
+`<size>-q4_K_M` instead (some MoE repositories publish only quantized tags). The model
+format is proven by the manifest having a single `image.model` layer whose blob starts
+with the `GGUF` magic. Tags are deduplicated by model-layer digest. Cloud-only models (a
 `cloud` chip or `-cloud` tags), non-GGUF manifests (`format != gguf`, such as mlx, nvfp4
 or mxfp8) and repositories outside `library/` are excluded.
 
@@ -80,9 +83,9 @@ A per-run cursor resumes where the last run stopped. Every network read has a si
 - **Removal:** if a later run finds an auto entry's tag gone, its license changed to a
   non-open one, or its digest changed, the entry is updated or removed. That only
   happens to auto entries.
-- **Hosts:** reads go only to `ollama.com`, `registry.ollama.ai`, the registry's blob
+- **Hosts:** reads go only to `ollama.com`, `registry.ollama.ai` and the registry's blob
   redirect host (`*.r2.cloudflarestorage.com`, HTTPS only, used solely for blob range
-  reads) and `huggingface.co/api/models`. No other redirects are followed.
+  reads) and nothing else. No other redirects are followed.
 - **Determinism and offline advice are unchanged:** the network is used only by the
   maintenance pipeline. User-facing advice reads the bundled or signed catalog.
 - **Labelling:** the CLI (`recommend`, `can-run`, `catalog`), the TUI and the GUI show

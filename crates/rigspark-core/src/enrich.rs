@@ -90,33 +90,14 @@ impl RawModel {
         let count = parse_param_count(&self.params)?;
         let mut quantizations = Vec::new();
         for quant in &self.quantizations {
-            let bits = quant_bits(&quant.name);
-            require(
-                bits.is_some() || !matches!(self.architecture, Architecture::Moe),
-                "unknown MoE quantization",
-            )?;
-            let projector_bytes = quant
-                .projectors
-                .iter()
-                .map(|projector| projector.bytes as f64)
-                .sum::<f64>();
-            require(
-                projector_bytes < quant.disk_bytes,
-                "projector size exceeds aggregate weights",
-            )?;
-            let resident = (quant.disk_bytes - projector_bytes)
-                .max(bits.map(|bits| (count * bits / 8.0).ceil()).unwrap_or(0.0))
-                + projector_bytes;
-            let memory = resident + (resident * 0.15).ceil();
-            quantizations.push(Quantization {
-                name: strip_control(&quant.name),
-                disk_bytes: quant.disk_bytes,
-                min_ram_bytes: memory,
-                min_vram_bytes: memory,
-                sha256: quant.sha256.as_ref().map(|sha| strip_control(sha)),
-                digest_verified: None,
-                projectors: quant.projectors.clone(),
-            });
+            quantizations.push(sized_quantization(
+                count,
+                &self.architecture,
+                &strip_control(&quant.name),
+                quant.disk_bytes,
+                quant.sha256.as_ref().map(|sha| strip_control(sha)),
+                quant.projectors.clone(),
+            )?);
         }
         let model = CatalogModel {
             id: strip_control(&self.id),
@@ -150,6 +131,42 @@ impl RawModel {
         model.validate()?;
         Ok(model)
     }
+}
+/// Memory need for one quantization: resident weights (never below the bit-width floor) plus 15% headroom.
+pub(crate) fn sized_quantization(
+    params: f64,
+    architecture: &Architecture,
+    name: &str,
+    disk_bytes: f64,
+    sha256: Option<String>,
+    projectors: Vec<crate::sizing::ProjectorArtifact>,
+) -> Result<Quantization, ValidationError> {
+    let bits = quant_bits(name);
+    require(
+        bits.is_some() || !matches!(architecture, Architecture::Moe),
+        "unknown MoE quantization",
+    )?;
+    let projector_bytes = projectors
+        .iter()
+        .map(|projector| projector.bytes as f64)
+        .sum::<f64>();
+    require(
+        projector_bytes < disk_bytes,
+        "projector size exceeds aggregate weights",
+    )?;
+    let resident = (disk_bytes - projector_bytes)
+        .max(bits.map(|bits| (params * bits / 8.0).ceil()).unwrap_or(0.0))
+        + projector_bytes;
+    let memory = resident + (resident * 0.15).ceil();
+    Ok(Quantization {
+        name: name.into(),
+        disk_bytes,
+        min_ram_bytes: memory,
+        min_vram_bytes: memory,
+        sha256,
+        digest_verified: None,
+        projectors,
+    })
 }
 pub fn parse_candidates(raw: &str) -> Result<Vec<RawModel>, ValidationError> {
     let candidates: Vec<RawModel> = parse_document(raw)?;
