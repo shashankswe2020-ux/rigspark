@@ -496,6 +496,20 @@ impl Rejection {
     }
 }
 
+/// Catalog capabilities from listing chips: `chat` unless embedding-only, then chips in catalog order.
+pub fn catalog_capabilities(chips: &[String]) -> Vec<String> {
+    let mut capabilities: Vec<String> = Vec::new();
+    if !chips.iter().any(|cap| cap == "embedding") {
+        capabilities.push("chat".into());
+    }
+    for known in CAPABILITIES {
+        if known != "chat" && chips.iter().any(|cap| cap == known) {
+            capabilities.push(known.into());
+        }
+    }
+    capabilities
+}
+
 pub struct AdmissionInput<'a> {
     pub repository: &'a str,
     pub tag: &'a str,
@@ -562,15 +576,7 @@ pub fn build_entry(input: &AdmissionInput) -> Result<CatalogModel, Rejection> {
     } else {
         (Architecture::Dense, None)
     };
-    let mut capabilities: Vec<String> = Vec::new();
-    if !input.capabilities.iter().any(|cap| cap == "embedding") {
-        capabilities.push("chat".into());
-    }
-    for known in CAPABILITIES {
-        if known != "chat" && input.capabilities.iter().any(|cap| cap == known) {
-            capabilities.push(known.into());
-        }
-    }
+    let capabilities = catalog_capabilities(input.capabilities);
     let quant = sized_quantization(
         count,
         &architecture_kind,

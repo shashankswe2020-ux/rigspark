@@ -1,5 +1,6 @@
 pub mod acquire;
 pub mod adapters;
+pub mod admission;
 pub mod agent;
 pub mod application;
 pub mod cache;
