@@ -72,6 +72,23 @@ fn bundled_catalog_has_pinned_apache_image_and_video_models() {
         catalog.resolve("wan2.1-t2v:1.3b").unwrap().id,
         "wan2.1-t2v:1.3b"
     );
+    let flux_fp16 = catalog.resolve("flux1-schnell:fp16").unwrap();
+    assert_eq!(flux_fp16.files.len(), 4);
+    assert_eq!(flux_fp16.total_bytes(), 29_521_303_916);
+    let roles: Vec<_> = flux_fp16
+        .files
+        .iter()
+        .map(|file| serde_json::to_value(file.role).unwrap())
+        .collect();
+    assert_eq!(
+        roles,
+        [
+            json!("diffusion"),
+            json!("text-encoder"),
+            json!("clip"),
+            json!("vae")
+        ]
+    );
     assert!(catalog.resolve("audio").is_err());
     assert!(catalog.resolve("").is_err());
 }

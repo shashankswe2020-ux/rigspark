@@ -27,14 +27,21 @@ pub const MAX_SEED: u64 = 9_007_199_254_740_991;
 const MAX_OUTPUT_BYTES: u64 = 1024 * 1024 * 1024;
 const WEIGHT_TIMEOUT: Duration = Duration::from_secs(6 * 60 * 60);
 /// Core ComfyUI nodes used by the built-in workflows; anything else is refused.
-pub const LOCAL_NODES: [&str; 12] = [
+pub const LOCAL_NODES: [&str; 19] = [
+    "BasicGuider",
+    "BasicScheduler",
     "CheckpointLoaderSimple",
     "CLIPLoader",
     "CLIPTextEncode",
+    "DualCLIPLoader",
     "EmptyHunyuanLatentVideo",
+    "EmptyLatentImage",
     "EmptySD3LatentImage",
     "KSampler",
+    "KSamplerSelect",
     "ModelSamplingSD3",
+    "RandomNoise",
+    "SamplerCustomAdvanced",
     "SaveAnimatedWEBP",
     "SaveImage",
     "UNETLoader",
@@ -101,7 +108,7 @@ pub fn output_extension(kind: GenerationKind) -> &'static str {
 }
 fn save_node(workflow: Workflow) -> &'static str {
     match workflow {
-        Workflow::FluxCheckpoint => "9",
+        Workflow::FluxCheckpoint | Workflow::FluxSplit => "9",
         Workflow::WanT2v => "28",
     }
 }
@@ -168,6 +175,29 @@ pub fn workflow(
                 "latent_image": ["27", 0]}},
             "33": {"class_type": "CLIPTextEncode", "inputs": {"text": "", "clip": ["30", 1]}},
         }),
+        // https://comfyanonymous.github.io/ComfyUI_examples/flux/ (regular full version)
+        Workflow::FluxSplit => json!({
+            "5": {"class_type": "EmptyLatentImage", "inputs": {"width": 1024, "height": 1024, "batch_size": 1}},
+            "6": {"class_type": "CLIPTextEncode", "inputs": {"text": prompt, "clip": ["11", 0]}},
+            "8": {"class_type": "VAEDecode", "inputs": {"samples": ["13", 0], "vae": ["10", 0]}},
+            "9": {"class_type": "SaveImage", "inputs": {"filename_prefix": "rigspark", "images": ["8", 0]}},
+            "10": {"class_type": "VAELoader", "inputs": {"vae_name": name(FileRole::Vae)?}},
+            "11": {"class_type": "DualCLIPLoader", "inputs": {
+                "clip_name1": name(FileRole::TextEncoder)?,
+                "clip_name2": name(FileRole::Clip)?,
+                "type": "flux"}},
+            "12": {"class_type": "UNETLoader", "inputs": {
+                "unet_name": name(FileRole::Diffusion)?, "weight_dtype": "default"}},
+            "13": {"class_type": "SamplerCustomAdvanced", "inputs": {
+                "noise": ["25", 0], "guider": ["22", 0], "sampler": ["16", 0],
+                "sigmas": ["17", 0], "latent_image": ["5", 0]}},
+            "16": {"class_type": "KSamplerSelect", "inputs": {"sampler_name": "euler"}},
+            "17": {"class_type": "BasicScheduler", "inputs": {
+                "scheduler": "simple", "steps": 4, "denoise": 1.0, "model": ["12", 0]}},
+            "22": {"class_type": "BasicGuider", "inputs": {
+                "model": ["12", 0], "conditioning": ["6", 0]}},
+            "25": {"class_type": "RandomNoise", "inputs": {"noise_seed": seed}},
+        }),
         // https://comfyanonymous.github.io/ComfyUI_examples/wan/ (text to video, 1.3B)
         Workflow::WanT2v => json!({
             "3": {"class_type": "KSampler", "inputs": {
@@ -183,7 +213,7 @@ pub fn workflow(
             "37": {"class_type": "UNETLoader", "inputs": {"unet_name": name(FileRole::Diffusion)?, "weight_dtype": "default"}},
             "38": {"class_type": "CLIPLoader", "inputs": {"clip_name": name(FileRole::TextEncoder)?, "type": "wan", "device": "default"}},
             "39": {"class_type": "VAELoader", "inputs": {"vae_name": name(FileRole::Vae)?}},
-            "40": {"class_type": "EmptyHunyuanLatentVideo", "inputs": {"width": 832, "height": 480, "length": 33, "batch_size": 1}},
+            "40": {"class_type": "EmptyHunyuanLatentVideo", "inputs": {"width": 832, "height": 480, "length": 49, "batch_size": 1}},
             "48": {"class_type": "ModelSamplingSD3", "inputs": {"shift": 8.0, "model": ["37", 0]}},
         }),
     })

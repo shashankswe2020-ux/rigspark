@@ -40,12 +40,13 @@ impl GenerationKind {
 #[serde(rename_all = "kebab-case")]
 pub enum Workflow {
     FluxCheckpoint,
+    FluxSplit,
     WanT2v,
 }
 impl Workflow {
     pub fn kind(self) -> GenerationKind {
         match self {
-            Self::FluxCheckpoint => GenerationKind::Image,
+            Self::FluxCheckpoint | Self::FluxSplit => GenerationKind::Image,
             Self::WanT2v => GenerationKind::Video,
         }
     }
@@ -53,6 +54,12 @@ impl Workflow {
     pub fn roles(self) -> &'static [FileRole] {
         match self {
             Self::FluxCheckpoint => &[FileRole::Checkpoint],
+            Self::FluxSplit => &[
+                FileRole::Diffusion,
+                FileRole::TextEncoder,
+                FileRole::Clip,
+                FileRole::Vae,
+            ],
             Self::WanT2v => &[FileRole::Diffusion, FileRole::TextEncoder, FileRole::Vae],
         }
     }
@@ -64,6 +71,7 @@ pub enum FileRole {
     Checkpoint,
     Diffusion,
     TextEncoder,
+    Clip,
     Vae,
 }
 impl FileRole {
@@ -73,6 +81,7 @@ impl FileRole {
             Self::Checkpoint => "checkpoints",
             Self::Diffusion => "diffusion_models",
             Self::TextEncoder => "text_encoders",
+            Self::Clip => "text_encoders",
             Self::Vae => "vae",
         }
     }
@@ -276,7 +285,7 @@ fn built_in_family(model: &GenerationModel) -> bool {
         (model.kind, model.workflow, model.family.as_str()),
         (
             GenerationKind::Image,
-            Workflow::FluxCheckpoint,
+            Workflow::FluxCheckpoint | Workflow::FluxSplit,
             "flux1-schnell"
         ) | (GenerationKind::Video, Workflow::WanT2v, "wan2.1-t2v")
     )
