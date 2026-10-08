@@ -623,6 +623,9 @@ document.addEventListener("DOMContentLoaded", () => {
           addMessage(item.role, item.content);
         }
       }
+      if (!messages.querySelector(".message")) {
+        showEmptyMessages();
+      }
     } catch {
       // Ignore stale history failures.
     }

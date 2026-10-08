@@ -165,6 +165,24 @@ async fn journeys(client: &Client, origin: &str, artifacts: &std::path::Path) ->
         .for_element(Locator::Css("#prompt"))
         .await?;
     new_session(client).await?;
+    // Refreshing an empty chat must keep the welcome rather than blanking the log.
+    client
+        .execute(
+            "window.__historyLoads = 0; const original = window.fetch; window.fetch = async (...args) => { const response = await original(...args); if (String(args[0]).endsWith('/api/history')) { await response.clone().text(); setTimeout(() => { window.__historyLoads += 1; }, 0); } return response; };",
+            vec![],
+        )
+        .await?;
+    click(client, "#model-chip").await?;
+    click(client, "#refresh-status").await?;
+    wait_for(client, "window.__historyLoads > 0").await?;
+    wait_for(
+        client,
+        "document.querySelector('#messages .welcome') && document.querySelectorAll('#messages .message').length === 0",
+    )
+    .await
+    .map_err(|error| format!("refresh blanked the empty chat: {error}"))?;
+    client.active_element().await?.send_keys("\u{e00c}").await?;
+    wait_for(client, "document.querySelector('#model-pop').hidden").await?;
     send(client, "checkpoint five").await?;
     wait_for(client, "document.querySelector('.message.assistant')?.textContent.includes('Native reply: checkpoint five') && document.querySelector('#a11y-status')?.textContent === 'Response ready.'").await?;
     wait_for(client, "document.title === 'RigSpark' && (() => { const image = document.querySelector('.message.assistant .message-avatar'); return image && /^\\/static\\/brand\\/sparky-yes(-dark)?\\.svg$/.test(image.getAttribute('src')) && image.complete && image.naturalWidth > 0; })() && !document.querySelector('.message.user .message-avatar')").await?;
