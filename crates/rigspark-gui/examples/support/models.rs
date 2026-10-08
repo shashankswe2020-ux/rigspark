@@ -182,7 +182,7 @@ pub async fn bonsai(
     artifacts: &std::path::Path,
 ) -> TestResult {
     open_models(client, origin).await?;
-    let advice = fetch_json(client, "/api/models/recommended?limit=100&context=mid").await?;
+    let advice = fetch_json(client, "/api/models/recommended?limit=1000&context=mid").await?;
     let model = advice["models"]
         .as_array()
         .and_then(|models| models.iter().find(|model| model["id"] == "bonsai:8b"))
@@ -414,9 +414,12 @@ pub async fn workspace(client: &Client, origin: &str) -> TestResult {
     let path = fetch_json(client, "/__fixture/workspace").await?;
     let path = path.as_str().ok_or("fixture workspace path unavailable")?;
     fresh_session(client).await?;
+    // The paperclip only appears once workspace context is available (the bar is layout-only).
     wait_for(
         client,
-        &format!("{VISIBLE}(document.querySelector('#context-bar'))"),
+        &format!(
+            "!document.querySelector('#context-bar').hidden && {VISIBLE}(document.querySelector('#context-add'))"
+        ),
     )
     .await?;
     click(client, "#context-add").await?;

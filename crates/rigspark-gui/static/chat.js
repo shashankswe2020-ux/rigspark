@@ -1904,7 +1904,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const runtime = selectedRuntime();
       const params = new globalThis.URLSearchParams();
       const installed = modelSource?.value === "installed";
-      if (!installed) params.set("limit", "100");
+      if (!installed) params.set("limit", "1000");
       if (!installed && modelsRecency?.value) params.set("month", modelsRecency.value);
       if (runtime && !installed) {
         params.set("runtime", runtime);

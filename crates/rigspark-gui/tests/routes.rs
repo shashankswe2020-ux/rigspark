@@ -156,7 +156,7 @@ async fn local_benchmark_report_is_not_exposed_by_gui() {
 async fn catalog_browsing_limit_is_bounded_and_default_stays_eight() {
     let home = tempfile::tempdir().unwrap();
     let host = Host::new(home.path(), 43210).unwrap();
-    for limit in ["0", "101", "-1", "invalid"] {
+    for limit in ["0", "1001", "-1", "invalid"] {
         assert_eq!(
             call(
                 &host,
@@ -184,6 +184,28 @@ async fn catalog_browsing_limit_is_bounded_and_default_stays_eight() {
         expanded
             .iter()
             .take(default.len())
+            .map(|model| &model["id"])
+            .collect::<Vec<_>>()
+    );
+    // The GUI loads the whole ranked catalog so search and filters can reach every model.
+    let (status, full) = call(
+        &host,
+        "GET",
+        "/api/models/recommended?limit=1000",
+        json!({}),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    let full = full["models"].as_array().unwrap();
+    assert!(full.len() > 100, "only {} models ranked", full.len());
+    assert!(full.iter().any(|model| model["id"] == "bonsai:8b"));
+    assert_eq!(
+        expanded
+            .iter()
+            .map(|model| &model["id"])
+            .collect::<Vec<_>>(),
+        full.iter()
+            .take(expanded.len())
             .map(|model| &model["id"])
             .collect::<Vec<_>>()
     );
