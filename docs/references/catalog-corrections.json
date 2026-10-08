@@ -1,3 +1,462 @@
 {
-  "corrections": []
+  "corrections": [
+    {
+      "correctedAt": "2026-10-08T12:11:08.720396201Z",
+      "field": "license",
+      "from": "apache-2.0",
+      "id": "deepseek-r1:14b",
+      "sources": [
+        "https://registry.ollama.ai/v2/library/deepseek-r1/manifests/14b",
+        "https://ollama.com/library/deepseek-r1:14b"
+      ],
+      "to": "mit"
+    },
+    {
+      "correctedAt": "2026-10-08T12:11:08.720396201Z",
+      "field": "license",
+      "from": "apache-2.0",
+      "id": "deepseek-r1:32b",
+      "sources": [
+        "https://registry.ollama.ai/v2/library/deepseek-r1/manifests/32b",
+        "https://ollama.com/library/deepseek-r1:32b"
+      ],
+      "to": "mit"
+    },
+    {
+      "correctedAt": "2026-10-08T12:11:08.720396201Z",
+      "field": "contextLength",
+      "from": 131072.0,
+      "id": "deepseek-r1:671b",
+      "sources": [
+        "https://registry.ollama.ai/v2/library/deepseek-r1/manifests/671b",
+        "https://ollama.com/library/deepseek-r1:671b"
+      ],
+      "to": 163840.0
+    },
+    {
+      "correctedAt": "2026-10-08T12:11:08.720396201Z",
+      "field": "license",
+      "from": "llama-3.3-community",
+      "id": "deepseek-r1:70b",
+      "sources": [
+        "https://registry.ollama.ai/v2/library/deepseek-r1/manifests/70b",
+        "https://ollama.com/library/deepseek-r1:70b"
+      ],
+      "to": "mit"
+    },
+    {
+      "correctedAt": "2026-10-08T12:11:08.720396201Z",
+      "field": "license",
+      "from": "apache-2.0",
+      "id": "deepseek-r1:7b",
+      "sources": [
+        "https://registry.ollama.ai/v2/library/deepseek-r1/manifests/7b",
+        "https://ollama.com/library/deepseek-r1:7b"
+      ],
+      "to": "mit"
+    },
+    {
+      "correctedAt": "2026-10-08T12:11:08.720396201Z",
+      "field": "license",
+      "from": "llama-3.1-community",
+      "id": "deepseek-r1:8b",
+      "sources": [
+        "https://registry.ollama.ai/v2/library/deepseek-r1/manifests/8b",
+        "https://ollama.com/library/deepseek-r1:8b"
+      ],
+      "to": "mit"
+    },
+    {
+      "correctedAt": "2026-10-08T12:11:08.720396201Z",
+      "field": "contextLength",
+      "from": 131072.0,
+      "id": "deepseek-v3",
+      "sources": [
+        "https://registry.ollama.ai/v2/library/deepseek-v3/manifests/latest",
+        "https://ollama.com/library/deepseek-v3:latest"
+      ],
+      "to": 163840.0
+    },
+    {
+      "correctedAt": "2026-10-08T12:11:08.720396201Z",
+      "field": "defaultQuantization",
+      "from": {
+        "diskBytes": 15628378336.0,
+        "name": "Q4_K_M",
+        "sha256": "d7e4b00a7d7a8d03d4eed9b0f3f61a427e9f0fc5dea6aeb414e41dee23dc8ecc"
+      },
+      "id": "gemma2:27b",
+      "sources": [
+        "https://registry.ollama.ai/v2/library/gemma2/manifests/27b",
+        "https://ollama.com/library/gemma2:27b"
+      ],
+      "to": {
+        "diskBytes": 15628378336.0,
+        "name": "Q4_0",
+        "sha256": "d7e4b00a7d7a8d03d4eed9b0f3f61a427e9f0fc5dea6aeb414e41dee23dc8ecc"
+      }
+    },
+    {
+      "correctedAt": "2026-10-08T12:11:08.720396201Z",
+      "field": "defaultQuantization",
+      "from": {
+        "diskBytes": 1629509152.0,
+        "name": "Q4_K_M",
+        "sha256": "7462734796d67c40ecec2ca98eddf970e171dbb6b370e43fd633ee75b69abe1b"
+      },
+      "id": "gemma2:2b",
+      "sources": [
+        "https://registry.ollama.ai/v2/library/gemma2/manifests/2b",
+        "https://ollama.com/library/gemma2:2b"
+      ],
+      "to": {
+        "diskBytes": 1629509152.0,
+        "name": "Q4_0",
+        "sha256": "7462734796d67c40ecec2ca98eddf970e171dbb6b370e43fd633ee75b69abe1b"
+      }
+    },
+    {
+      "correctedAt": "2026-10-08T12:11:08.720396201Z",
+      "field": "defaultQuantization",
+      "from": {
+        "diskBytes": 5443143296.0,
+        "name": "Q4_K_M",
+        "sha256": "ff1d1fc78170d787ee1201778e2dd65ea211654ca5fb7d69b5a2e7b123a50373"
+      },
+      "id": "gemma2:9b",
+      "sources": [
+        "https://registry.ollama.ai/v2/library/gemma2/manifests/9b",
+        "https://ollama.com/library/gemma2:9b"
+      ],
+      "to": {
+        "diskBytes": 5443143296.0,
+        "name": "Q4_0",
+        "sha256": "ff1d1fc78170d787ee1201778e2dd65ea211654ca5fb7d69b5a2e7b123a50373"
+      }
+    },
+    {
+      "correctedAt": "2026-10-08T12:11:08.720396201Z",
+      "field": "defaultQuantization",
+      "from": {
+        "diskBytes": 5455319040.0,
+        "name": "Q4_K_M",
+        "sha256": "b506a070d1152798d435ec4e7687336567ae653b3106f73b7b4ac7be1cbc4449"
+      },
+      "id": "glm4:9b",
+      "sources": [
+        "https://registry.ollama.ai/v2/library/glm4/manifests/9b",
+        "https://ollama.com/library/glm4:9b"
+      ],
+      "to": {
+        "diskBytes": 5455319040.0,
+        "name": "Q4_0",
+        "sha256": "b506a070d1152798d435ec4e7687336567ae653b3106f73b7b4ac7be1cbc4449"
+      }
+    },
+    {
+      "correctedAt": "2026-10-08T12:11:08.720396201Z",
+      "field": "defaultQuantization",
+      "from": {
+        "diskBytes": 1321082688.0,
+        "name": "Q4_K_M",
+        "sha256": "74701a8c35f6c8d9a4b91f3f3497643001d63e0c7a84e085bed452548fa88d45"
+      },
+      "id": "llama3.2:1b",
+      "sources": [
+        "https://registry.ollama.ai/v2/library/llama3.2/manifests/1b",
+        "https://ollama.com/library/llama3.2:1b"
+      ],
+      "to": {
+        "diskBytes": 1321082688.0,
+        "name": "Q8_0",
+        "sha256": "74701a8c35f6c8d9a4b91f3f3497643001d63e0c7a84e085bed452548fa88d45"
+      }
+    },
+    {
+      "correctedAt": "2026-10-08T12:11:08.720396201Z",
+      "field": "contextLength",
+      "from": 131072.0,
+      "id": "mistral-nemo:12b",
+      "sources": [
+        "https://registry.ollama.ai/v2/library/mistral-nemo/manifests/12b",
+        "https://ollama.com/library/mistral-nemo:12b"
+      ],
+      "to": 1024000.0
+    },
+    {
+      "correctedAt": "2026-10-08T12:11:08.720396201Z",
+      "field": "defaultQuantization",
+      "from": {
+        "diskBytes": 7071700672.0,
+        "name": "Q4_K_M",
+        "sha256": "b559938ab7a0392fc9ea9675b82280f2a15669ec3e0e0fc491c9cb0a7681cf94"
+      },
+      "id": "mistral-nemo:12b",
+      "sources": [
+        "https://registry.ollama.ai/v2/library/mistral-nemo/manifests/12b",
+        "https://ollama.com/library/mistral-nemo:12b"
+      ],
+      "to": {
+        "diskBytes": 7071700672.0,
+        "name": "Q4_0",
+        "sha256": "b559938ab7a0392fc9ea9675b82280f2a15669ec3e0e0fc491c9cb0a7681cf94"
+      }
+    },
+    {
+      "correctedAt": "2026-10-08T12:11:08.720396201Z",
+      "field": "defaultQuantization",
+      "from": {
+        "diskBytes": 79521266688.0,
+        "name": "Q4_K_M",
+        "sha256": "94e70a590f93b8f12eb2bc6ddb2e48b3f2fab0bc577fee4b1cb42305ba590916"
+      },
+      "id": "mixtral:8x22b",
+      "sources": [
+        "https://registry.ollama.ai/v2/library/mixtral/manifests/8x22b",
+        "https://ollama.com/library/mixtral:8x22b"
+      ],
+      "to": {
+        "diskBytes": 79521266688.0,
+        "name": "Q4_0",
+        "sha256": "94e70a590f93b8f12eb2bc6ddb2e48b3f2fab0bc577fee4b1cb42305ba590916"
+      }
+    },
+    {
+      "correctedAt": "2026-10-08T12:11:08.720396201Z",
+      "field": "defaultQuantization",
+      "from": {
+        "diskBytes": 26443590560.0,
+        "name": "Q4_K_M",
+        "sha256": "f2dc41fa964b42bfe34e9fb09c0acdcfbfd6e52f1332930b4eacc9d6ad1c6cd2"
+      },
+      "id": "mixtral:8x7b",
+      "sources": [
+        "https://registry.ollama.ai/v2/library/mixtral/manifests/8x7b",
+        "https://ollama.com/library/mixtral:8x7b"
+      ],
+      "to": {
+        "diskBytes": 26443590560.0,
+        "name": "Q4_0",
+        "sha256": "f2dc41fa964b42bfe34e9fb09c0acdcfbfd6e52f1332930b4eacc9d6ad1c6cd2"
+      }
+    },
+    {
+      "correctedAt": "2026-10-08T12:11:08.720396201Z",
+      "field": "defaultQuantization",
+      "from": {
+        "diskBytes": 2176177152.0,
+        "name": "Q4_K_M",
+        "sha256": "b5374915da534cb93df39f03bd4f2cd5a0c533df0d5e21957dc9556c260be9eb"
+      },
+      "id": "phi3.5:mini",
+      "sources": [
+        "https://registry.ollama.ai/v2/library/phi3.5/manifests/3.8b",
+        "https://ollama.com/library/phi3.5:3.8b"
+      ],
+      "to": {
+        "diskBytes": 2176177152.0,
+        "name": "Q4_0",
+        "sha256": "b5374915da534cb93df39f03bd4f2cd5a0c533df0d5e21957dc9556c260be9eb"
+      }
+    },
+    {
+      "correctedAt": "2026-10-08T12:11:08.720396201Z",
+      "field": "defaultQuantization",
+      "from": {
+        "diskBytes": 2176177120.0,
+        "name": "Q4_K_M",
+        "sha256": "633fc5be925f9a484b61d6f9b9a78021eeb462100bd557309f01ba84cac26adf"
+      },
+      "id": "phi3:mini",
+      "sources": [
+        "https://registry.ollama.ai/v2/library/phi3/manifests/mini",
+        "https://ollama.com/library/phi3:mini"
+      ],
+      "to": {
+        "diskBytes": 2176177120.0,
+        "name": "Q4_0",
+        "sha256": "633fc5be925f9a484b61d6f9b9a78021eeb462100bd557309f01ba84cac26adf"
+      }
+    },
+    {
+      "correctedAt": "2026-10-08T12:11:08.720396201Z",
+      "field": "contextLength",
+      "from": 131072.0,
+      "id": "qwen2.5-coder:32b",
+      "sources": [
+        "https://registry.ollama.ai/v2/library/qwen2.5-coder/manifests/32b",
+        "https://ollama.com/library/qwen2.5-coder:32b"
+      ],
+      "to": 32768.0
+    },
+    {
+      "correctedAt": "2026-10-08T12:11:08.720396201Z",
+      "field": "contextLength",
+      "from": 131072.0,
+      "id": "qwen2.5-coder:7b",
+      "sources": [
+        "https://registry.ollama.ai/v2/library/qwen2.5-coder/manifests/7b",
+        "https://ollama.com/library/qwen2.5-coder:7b"
+      ],
+      "to": 32768.0
+    },
+    {
+      "correctedAt": "2026-10-08T12:11:08.720396201Z",
+      "field": "contextLength",
+      "from": 131072.0,
+      "id": "qwen2.5:14b",
+      "sources": [
+        "https://registry.ollama.ai/v2/library/qwen2.5/manifests/14b",
+        "https://ollama.com/library/qwen2.5:14b"
+      ],
+      "to": 32768.0
+    },
+    {
+      "correctedAt": "2026-10-08T12:11:08.720396201Z",
+      "field": "contextLength",
+      "from": 131072.0,
+      "id": "qwen2.5:32b",
+      "sources": [
+        "https://registry.ollama.ai/v2/library/qwen2.5/manifests/32b",
+        "https://ollama.com/library/qwen2.5:32b"
+      ],
+      "to": 32768.0
+    },
+    {
+      "correctedAt": "2026-10-08T12:11:08.720396201Z",
+      "field": "contextLength",
+      "from": 131072.0,
+      "id": "qwen2.5:72b",
+      "sources": [
+        "https://registry.ollama.ai/v2/library/qwen2.5/manifests/72b",
+        "https://ollama.com/library/qwen2.5:72b"
+      ],
+      "to": 32768.0
+    },
+    {
+      "correctedAt": "2026-10-08T12:11:08.720396201Z",
+      "field": "contextLength",
+      "from": 131072.0,
+      "id": "qwen2.5:7b",
+      "sources": [
+        "https://registry.ollama.ai/v2/library/qwen2.5/manifests/7b",
+        "https://ollama.com/library/qwen2.5:7b"
+      ],
+      "to": 32768.0
+    },
+    {
+      "correctedAt": "2026-10-08T12:11:08.720396201Z",
+      "field": "defaultQuantization",
+      "from": {
+        "diskBytes": 1820414656.0,
+        "name": "Q4_K_M",
+        "sha256": "4d2396b16114669389d7555c15a1592aad584750310f648edad5ca8c4eccda17"
+      },
+      "id": "smollm2:1.7b",
+      "sources": [
+        "https://registry.ollama.ai/v2/library/smollm2/manifests/1.7b",
+        "https://ollama.com/library/smollm2:1.7b"
+      ],
+      "to": {
+        "diskBytes": 1820414656.0,
+        "name": "Q8_0",
+        "sha256": "4d2396b16114669389d7555c15a1592aad584750310f648edad5ca8c4eccda17"
+      }
+    },
+    {
+      "correctedAt": "2026-10-08T12:11:08.720396201Z",
+      "field": "defaultQuantization",
+      "from": {
+        "diskBytes": 270885952.0,
+        "name": "Q4_K_M",
+        "sha256": "f535f83ec568d040f88ddc04a199fa6da90923bbb41d4dcaed02caa924d6ef57"
+      },
+      "id": "smollm2:135m",
+      "sources": [
+        "https://registry.ollama.ai/v2/library/smollm2/manifests/135m",
+        "https://ollama.com/library/smollm2:135m"
+      ],
+      "to": {
+        "diskBytes": 270885952.0,
+        "name": "F16",
+        "sha256": "f535f83ec568d040f88ddc04a199fa6da90923bbb41d4dcaed02caa924d6ef57"
+      }
+    },
+    {
+      "correctedAt": "2026-10-08T12:11:08.720396201Z",
+      "field": "defaultQuantization",
+      "from": {
+        "diskBytes": 725553792.0,
+        "name": "Q4_K_M",
+        "sha256": "7d23be4097d67c5c43c3df62ebc19609a25f483c7d0b77d3989e1d94e36ccab6"
+      },
+      "id": "smollm2:360m",
+      "sources": [
+        "https://registry.ollama.ai/v2/library/smollm2/manifests/360m",
+        "https://ollama.com/library/smollm2:360m"
+      ],
+      "to": {
+        "diskBytes": 725553792.0,
+        "name": "F16",
+        "sha256": "7d23be4097d67c5c43c3df62ebc19609a25f483c7d0b77d3989e1d94e36ccab6"
+      }
+    },
+    {
+      "correctedAt": "2026-10-08T12:11:08.720396201Z",
+      "field": "defaultQuantization",
+      "from": {
+        "diskBytes": 19466529344.0,
+        "name": "Q4_K_M",
+        "sha256": "648f108f6a1ef7e12c33003d2308028ec98356d4ebda894d7db541f9e8c11aeb"
+      },
+      "id": "yi:34b",
+      "sources": [
+        "https://registry.ollama.ai/v2/library/yi/manifests/34b",
+        "https://ollama.com/library/yi:34b"
+      ],
+      "to": {
+        "diskBytes": 19466529344.0,
+        "name": "Q4_0",
+        "sha256": "648f108f6a1ef7e12c33003d2308028ec98356d4ebda894d7db541f9e8c11aeb"
+      }
+    },
+    {
+      "correctedAt": "2026-10-08T12:11:08.720396201Z",
+      "field": "defaultQuantization",
+      "from": {
+        "diskBytes": 3479326560.0,
+        "name": "Q4_K_M",
+        "sha256": "3502ee168c97b13ce3966acea684973e73c22f0ede62ca05f886b009b43b2f09"
+      },
+      "id": "yi:6b",
+      "sources": [
+        "https://registry.ollama.ai/v2/library/yi/manifests/6b",
+        "https://ollama.com/library/yi:6b"
+      ],
+      "to": {
+        "diskBytes": 3479326560.0,
+        "name": "Q4_0",
+        "sha256": "3502ee168c97b13ce3966acea684973e73c22f0ede62ca05f886b009b43b2f09"
+      }
+    },
+    {
+      "correctedAt": "2026-10-08T12:11:08.720396201Z",
+      "field": "defaultQuantization",
+      "from": {
+        "diskBytes": 5036994816.0,
+        "name": "Q4_K_M",
+        "sha256": "59b1e2a78cb0a5b8f7ba25e459ee17788242cd996e1f62a295dcbd65e5344b11"
+      },
+      "id": "yi:9b",
+      "sources": [
+        "https://registry.ollama.ai/v2/library/yi/manifests/9b",
+        "https://ollama.com/library/yi:9b"
+      ],
+      "to": {
+        "diskBytes": 5036994816.0,
+        "name": "Q4_0",
+        "sha256": "59b1e2a78cb0a5b8f7ba25e459ee17788242cd996e1f62a295dcbd65e5344b11"
+      }
+    }
+  ]
 }
