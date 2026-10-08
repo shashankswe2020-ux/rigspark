@@ -187,7 +187,8 @@ async fn catalog_browsing_limit_is_bounded_and_default_stays_eight() {
             .map(|model| &model["id"])
             .collect::<Vec<_>>()
     );
-    // The GUI loads the whole ranked catalog so search and filters can reach every model.
+    // Accepted up to the bound; ranking content is checked with fixed hardware below, because
+    // each request re-detects live memory, which shifts between calls on non-unified machines.
     let (status, full) = call(
         &host,
         "GET",
@@ -196,19 +197,35 @@ async fn catalog_browsing_limit_is_bounded_and_default_stays_eight() {
     )
     .await;
     assert_eq!(status, StatusCode::OK);
-    let full = full["models"].as_array().unwrap();
-    assert!(full.len() > 100, "only {} models ranked", full.len());
-    assert!(full.iter().any(|model| model["id"] == "bonsai:8b"));
-    assert_eq!(
-        expanded
-            .iter()
-            .map(|model| &model["id"])
-            .collect::<Vec<_>>(),
-        full.iter()
-            .take(expanded.len())
-            .map(|model| &model["id"])
+    assert!(full["models"].as_array().unwrap().len() <= 1000);
+}
+
+#[test]
+fn full_catalog_ranking_extends_the_top_results_unchanged() {
+    let catalog = rigspark_core::catalog::Catalog::parse(rigspark_core::MODELS_JSON).unwrap();
+    let perf = rigspark_core::catalog::PerfDataset::parse(rigspark_core::PERF_JSON).unwrap();
+    let gib = 1024_u64.pow(3);
+    let hardware: rigspark_core::sizing::Hardware = serde_json::from_value(json!({
+        "arch": "arm64", "platform": "darwin", "totalRamBytes": 64 * gib,
+        "freeRamBytes": 48 * gib, "freeDiskBytes": 2000 * gib,
+        "gpu": [{"vendor": "apple", "vramBytes": 0}]
+    }))
+    .unwrap();
+    let options = rigspark_core::ranking::AdviceOptions::default();
+    let rank = |limit| {
+        rigspark_gui::models::recommended(&catalog, &hardware, &perf, &options, limit)
+            .unwrap()
+            .into_iter()
+            .map(|model| model["id"].as_str().unwrap().to_owned())
             .collect::<Vec<_>>()
-    );
+    };
+    let top = rank(100);
+    let full = rank(1000);
+    assert_eq!(top.len(), 100);
+    assert!(full.len() > 100, "only {} models ranked", full.len());
+    assert!(full.len() <= catalog.models.len());
+    assert!(full.iter().any(|id| id == "bonsai:8b"));
+    assert_eq!(top, full[..100]);
 }
 
 #[tokio::test]
