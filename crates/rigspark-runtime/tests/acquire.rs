@@ -679,3 +679,127 @@ fn walk(path: &std::path::Path) -> Vec<String> {
     }
     found
 }
+
+#[cfg(unix)]
+#[tokio::test]
+async fn verified_cache_skips_rehash_until_the_file_or_stamp_changes() {
+    let root = tempfile::tempdir().unwrap();
+    let bytes = b"verified weights";
+    let acquire = Acquisition::new(root.path()).unwrap();
+    let transport = FakeTransport {
+        bytes: bytes.to_vec(),
+    };
+    let cancel = tokio_util::sync::CancellationToken::new();
+    let downloaded = acquire
+        .acquire(&artifact(bytes), &transport, &cancel)
+        .await
+        .unwrap();
+    assert!(!downloaded.cached && !downloaded.rehashed);
+
+    let reused = acquire
+        .acquire(&artifact(bytes), &transport, &cancel)
+        .await
+        .unwrap();
+    assert!(reused.cached, "unchanged file must be a cache hit");
+    assert!(!reused.rehashed, "unchanged verified file was re-hashed");
+
+    let stamps = root.path().join(".verified");
+    for entry in std::fs::read_dir(&stamps).unwrap() {
+        std::fs::write(entry.unwrap().path(), b"{not json").unwrap();
+    }
+    let unreadable = acquire
+        .acquire(&artifact(bytes), &transport, &cancel)
+        .await
+        .unwrap();
+    assert!(
+        unreadable.cached && unreadable.rehashed,
+        "bad stamp must force a full hash"
+    );
+    let restamped = acquire
+        .acquire(&artifact(bytes), &transport, &cancel)
+        .await
+        .unwrap();
+    assert!(
+        restamped.cached && !restamped.rehashed,
+        "full hash must refresh the stamp"
+    );
+
+    std::fs::remove_dir_all(&stamps).unwrap();
+    let unstamped = acquire
+        .acquire(&artifact(bytes), &transport, &cancel)
+        .await
+        .unwrap();
+    assert!(
+        unstamped.cached && unstamped.rehashed,
+        "pre-existing caches are re-hashed once"
+    );
+}
+
+#[cfg(unix)]
+#[tokio::test]
+async fn verified_cache_detects_same_size_in_place_corruption() {
+    let root = tempfile::tempdir().unwrap();
+    let bytes = b"verified weights";
+    let acquire = Acquisition::new(root.path()).unwrap();
+    let transport = FakeTransport {
+        bytes: bytes.to_vec(),
+    };
+    let cancel = tokio_util::sync::CancellationToken::new();
+    let first = acquire
+        .acquire(&artifact(bytes), &transport, &cancel)
+        .await
+        .unwrap();
+    std::thread::sleep(std::time::Duration::from_millis(20));
+    {
+        use std::io::Write;
+        let mut file = std::fs::OpenOptions::new()
+            .write(true)
+            .open(&first.path)
+            .unwrap();
+        file.write_all(b"corrupt").unwrap();
+    }
+    assert_eq!(
+        std::fs::metadata(&first.path).unwrap().len(),
+        bytes.len() as u64
+    );
+
+    let repaired = acquire
+        .acquire(&artifact(bytes), &transport, &cancel)
+        .await
+        .unwrap();
+    assert!(!repaired.cached, "corrupted cache was trusted");
+    assert_eq!(std::fs::read(&repaired.path).unwrap(), bytes);
+}
+
+#[tokio::test]
+async fn verified_cache_stamps_stay_outside_mlx_repository_folders() {
+    let root = tempfile::tempdir().unwrap();
+    let acquire = Acquisition::new(root.path()).unwrap();
+    let artifacts: Vec<_> = [
+        "config.json",
+        "tokenizer_config.json",
+        "weights.safetensors",
+    ]
+    .into_iter()
+    .map(|file| {
+        let mut request = artifact(b"verified");
+        request.backend = "mlx".into();
+        request.file = file.into();
+        request
+    })
+    .collect();
+    let transport = FakeTransport {
+        bytes: b"verified".to_vec(),
+    };
+    let cancel = tokio_util::sync::CancellationToken::new();
+    let first = acquire
+        .repository(&artifacts, &transport, &cancel)
+        .await
+        .unwrap();
+    let second = acquire
+        .repository(&artifacts, &transport, &cancel)
+        .await
+        .unwrap();
+    assert_eq!(first, second);
+    assert_eq!(std::fs::read_dir(&second).unwrap().count(), 3);
+}
