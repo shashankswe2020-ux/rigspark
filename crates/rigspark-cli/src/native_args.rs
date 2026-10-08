@@ -17,6 +17,8 @@ const COMMANDS: &[CommandSpec] = &[
         description: "Detect hardware and rank local models (default command)",
         flags: &[
             "task",
+            "month",
+            "today",
             "context",
             "max_context",
             "context_percent",
@@ -130,6 +132,8 @@ const COMMANDS: &[CommandSpec] = &[
         description: "Show the model catalog or preview a catalog refresh",
         flags: &[
             "all",
+            "month",
+            "today",
             "generation",
             "refresh",
             "update",
@@ -245,6 +249,8 @@ fn help_command(spec: &CommandSpec, flat: &Command) -> Command {
                 "task" => {
                     "Boost models for a task: chat, code, vision, reasoning, tools, embedding"
                 }
+                "month" => "Only models released (or auto-added) in the last 1, 2 or 3 months",
+                "today" => "Date the --month window ends on (YYYY-MM-DD)",
                 "backend" => "Runtime: ollama, llamacpp, mlx, lmstudio",
                 "port" if spec.name == "gui" => "Loopback GUI port (default: 4000)",
                 "port" if spec.name == "generate" => "Loopback ComfyUI port (default: 8188)",

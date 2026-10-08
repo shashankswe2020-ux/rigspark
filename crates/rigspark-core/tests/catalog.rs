@@ -279,3 +279,39 @@ fn schema_v3_rejects_unsourced_or_unpinned_auto_entries_and_v3_fields_in_v2() {
         "curated entries keep a release date"
     );
 }
+
+#[test]
+fn recency_window_keeps_entries_released_or_added_within_calendar_months() {
+    use rigspark_core::catalog::months_before;
+    assert_eq!(
+        months_before("2026-03-31", 1).unwrap().to_string(),
+        "2026-02-28"
+    );
+    assert_eq!(
+        months_before("2026-01-15", 2).unwrap().to_string(),
+        "2025-11-15"
+    );
+    assert!(months_before("2026-01-15", 0).is_err() && months_before("2026-01-15", 4).is_err());
+
+    let mut value = auto_entry(catalog());
+    value["models"][1]["releaseDate"] = json!("2026-09-20");
+    value["models"][2]["releaseDate"] = json!("2026-06-01");
+    let mut loaded = Catalog::parse(&value.to_string()).unwrap();
+    let total = loaded.models.len();
+    loaded.retain_recent("2026-10-07", 1).unwrap();
+    let ids: Vec<&str> = loaded
+        .models
+        .iter()
+        .map(|model| model.id.as_str())
+        .collect();
+    assert!(
+        ids.contains(&value["models"][0]["id"].as_str().unwrap()),
+        "added 2026-10-07 counts"
+    );
+    assert!(
+        ids.contains(&value["models"][1]["id"].as_str().unwrap()),
+        "released 2026-09-20 counts"
+    );
+    assert!(!ids.contains(&value["models"][2]["id"].as_str().unwrap()));
+    assert!(loaded.models.len() < total);
+}

@@ -394,7 +394,37 @@ impl CatalogModel {
         Ok(())
     }
 }
+/// The calendar date `months` (1–3) before `today`, clamped to the end of shorter months.
+pub fn months_before(today: &str, months: u8) -> Result<Date, ValidationError> {
+    require(
+        (1..=3).contains(&months),
+        "recency window must be 1, 2 or 3 months",
+    )?;
+    let today = date(today)?;
+    let mut year = today.year();
+    let mut month = u8::from(today.month()) as i32 - i32::from(months);
+    if month < 1 {
+        month += 12;
+        year -= 1;
+    }
+    let month =
+        time::Month::try_from(month as u8).map_err(|_| ValidationError("invalid month".into()))?;
+    let day = today.day().min(month.length(year));
+    Date::from_calendar_date(year, month, day).map_err(|_| ValidationError("invalid date".into()))
+}
+
 impl Catalog {
+    /// Keeps entries whose recency date (released, else added) is within `months` of `today`.
+    pub fn retain_recent(&mut self, today: &str, months: u8) -> Result<(), ValidationError> {
+        let cutoff = months_before(today, months)?;
+        self.models.retain(|model| {
+            model
+                .recency()
+                .and_then(|(day, _)| date(day).ok())
+                .is_some_and(|day| day >= cutoff)
+        });
+        Ok(())
+    }
     pub fn parse(raw: &str) -> Result<Self, ValidationError> {
         let mut result: Self = parse_document(raw)?;
         require(

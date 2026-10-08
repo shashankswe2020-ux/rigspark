@@ -116,6 +116,10 @@ struct Args {
     context_percent: Option<u8>,
     #[arg(long)]
     task: Option<String>,
+    #[arg(long, value_parser = clap::value_parser!(u8).range(1..=3))]
+    month: Option<u8>,
+    #[arg(long, hide = true)]
+    today: Option<String>,
     #[arg(long)]
     backend: Option<String>,
     #[arg(long)]
@@ -1172,7 +1176,21 @@ async fn execute(mut args: Args) -> Result<u8, Box<dyn std::error::Error>> {
         .map(read_file)
         .transpose()?
         .unwrap_or_else(|| rigspark_core::PERF_JSON.into());
-    let catalog = Catalog::parse(&catalog_raw)?;
+    let mut catalog = Catalog::parse(&catalog_raw)?;
+    if let Some(months) = args.month {
+        let today = match &args.today {
+            Some(day) => day.clone(),
+            None => rigspark_runtime::native_chat::timestamp()?[..10].to_string(),
+        };
+        catalog.retain_recent(&today, months)?;
+        if catalog.models.is_empty() {
+            println!(
+                "No catalog models were released or added in the last {months} month{}. Run `rigspark catalog --update` for the newest signed catalog, or drop --month.",
+                if months == 1 { "" } else { "s" }
+            );
+            return Ok(0);
+        }
+    }
     let perf = PerfDataset::parse(&perf_raw)?;
     if args.command == "plan" {
         return run_plan(&args, &catalog, &perf, supplied_hardware.take()).await;
