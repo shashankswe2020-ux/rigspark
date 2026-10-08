@@ -87,7 +87,10 @@ fn ci_runs_every_native_gate_read_only() {
 fn write_capable_workflows_never_push_to_main() {
     let catalog = read(".github/workflows/catalog-refresh.yml");
     assert!(catalog.contains("contents: write\n  pull-requests: write\n  issues: write\n"));
-    assert!(catalog.contains("git add crates/rigspark-core/data/models.json"));
+    // Only the admission job writes catalog data; the proposal job writes its report only.
+    let proposals = catalog.split("\n  admit:\n").next().unwrap();
+    assert!(!proposals.contains("git add crates/rigspark-core/data/models.json"));
+    assert!(proposals.contains("git add docs/references/catalog-proposals.json"));
     assert!(catalog.contains("gh pr create --base main"));
     assert!(catalog.contains("cargo test --locked -p rigspark-core --test catalog"));
     let pages = read(".github/workflows/pages.yml");
@@ -114,7 +117,7 @@ fn automatic_admission_merges_only_verified_data_only_changes() {
         .nth(1)
         .expect("admission job");
     for required in [
-        "needs.pending-review.outputs.proceed == 'true'",
+        "needs.pending-review.outputs.admit == 'true'",
         "cargo catalog-admit --correct-curated",
         "cargo generation-admit",
         "cargo catalog-site",
