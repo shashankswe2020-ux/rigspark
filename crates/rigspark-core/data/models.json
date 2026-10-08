@@ -1,7 +1,5191 @@
 {
   "schemaVersion": 3,
-  "generatedAt": "2026-09-30T14:33:14.970Z",
+  "generatedAt": "2026-10-08T12:11:08.720Z",
   "models": [
+    {
+      "id": "all-minilm:22m",
+      "family": "bert",
+      "params": "23M",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 512.0,
+      "capabilities": [
+        "embedding"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "all-minilm:22m"
+      },
+      "quantizations": [
+        {
+          "name": "F16",
+          "diskBytes": 45949216.0,
+          "minRamBytes": 54553125.0,
+          "minVramBytes": 54553125.0,
+          "sha256": "797b70c4edf85907fe0a49eb85811256f65fa0f7bf52166b147fd16be2be4662"
+        }
+      ]
+    },
+    {
+      "id": "all-minilm:33m",
+      "family": "bert",
+      "params": "33M",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 512.0,
+      "capabilities": [
+        "embedding"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "all-minilm:33m"
+      },
+      "quantizations": [
+        {
+          "name": "F16",
+          "diskBytes": 67308128.0,
+          "minRamBytes": 78271875.0,
+          "minVramBytes": 78271875.0,
+          "sha256": "cb39eaabff82f51e66bd24221cb4cadee4d280a834ac56d9660324e79152d6fd"
+        }
+      ]
+    },
+    {
+      "id": "bge-large:335m",
+      "family": "bert",
+      "params": "334.09M",
+      "architecture": "dense",
+      "license": "mit",
+      "openWeight": true,
+      "contextLength": 512.0,
+      "capabilities": [
+        "embedding"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "bge-large:335m"
+      },
+      "quantizations": [
+        {
+          "name": "F16",
+          "diskBytes": 670530624.0,
+          "minRamBytes": 792419719.0,
+          "minVramBytes": 792419719.0,
+          "sha256": "92b37e50807d951e27ead73c059cf9c3b14941498e37dfde57271e19e6d411df"
+        }
+      ]
+    },
+    {
+      "id": "bge-m3:567m",
+      "family": "bert",
+      "params": "566.70M",
+      "architecture": "dense",
+      "license": "mit",
+      "openWeight": true,
+      "contextLength": 8192.0,
+      "capabilities": [
+        "embedding"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "bge-m3:567m"
+      },
+      "quantizations": [
+        {
+          "name": "F16",
+          "diskBytes": 1157671200.0,
+          "minRamBytes": 1344141563.0,
+          "minVramBytes": 1344141563.0,
+          "sha256": "daec91ffb5dd0c27411bd71f29932917c49cf529a641d0168496c3a501e3062c"
+        }
+      ]
+    },
+    {
+      "id": "clef-flash:9b",
+      "family": "qwen35",
+      "params": "9.1B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 262144.0,
+      "capabilities": [
+        "chat",
+        "vision"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "clef-flash:9b"
+      },
+      "quantizations": [
+        {
+          "name": "Q8_0",
+          "diskBytes": 10932727840.0,
+          "minRamBytes": 12572637016.0,
+          "minVramBytes": 12572637016.0,
+          "sha256": "c9ac3afdf0b5928b00a5762aed44a338a0096af952194ccdedecdfd46bb92c33",
+          "projectors": [
+            {
+              "bytes": 918165984,
+              "sha256": "c8a6e9e00e1baf6433c4874dbc73bed2a56e887bcbb582fffcb00b533bc638dd"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "clef:27b",
+      "family": "qwen35",
+      "params": "27.0B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 262144.0,
+      "capabilities": [
+        "chat",
+        "vision"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "clef:27b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 17987242016.0,
+          "minRamBytes": 20685328319.0,
+          "minVramBytes": 20685328319.0,
+          "sha256": "6c02216a0055c1e1e92994d240e37c440f1c09b30281f538f4a38ebab0743da9",
+          "projectors": [
+            {
+              "bytes": 927607360,
+              "sha256": "f0e2930e301586f0932262c7d232c74e385d7b4281170111c36a686e16e59ba8"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "codegemma:2b",
+      "family": "gemma",
+      "params": "3B",
+      "architecture": "dense",
+      "license": "gemma",
+      "openWeight": true,
+      "contextLength": 8192.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "codegemma:2b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 1551189312.0,
+          "minRamBytes": 2026875000.0,
+          "minVramBytes": 2026875000.0,
+          "sha256": "dd0c6f2ea876e4c433325df3398386f24e00d321abf6cec197c1bc1fcf1e0025"
+        }
+      ],
+      "kvBytesPerToken": 18432.0
+    },
+    {
+      "id": "codegemma:7b",
+      "family": "gemma",
+      "params": "9B",
+      "architecture": "dense",
+      "license": "gemma",
+      "openWeight": true,
+      "contextLength": 8192.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "codegemma:7b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 5011843648.0,
+          "minRamBytes": 6080625000.0,
+          "minVramBytes": 6080625000.0,
+          "sha256": "392f2ba7a9bea371a2e27b547cbed87eb3964ac722b26d847b66fa90e5b8c49e"
+        }
+      ],
+      "kvBytesPerToken": 458752.0
+    },
+    {
+      "id": "codellama:13b",
+      "family": "llama",
+      "params": "13B",
+      "architecture": "dense",
+      "license": "llama-2-community",
+      "openWeight": true,
+      "contextLength": 16384.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "codellama:13b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 7365948416.0,
+          "minRamBytes": 8783125000.0,
+          "minVramBytes": 8783125000.0,
+          "sha256": "e73cc17c718156e5ad34b119eb363e2c10389a503673f9c36144c42dfde8334c"
+        }
+      ],
+      "kvBytesPerToken": 819200.0
+    },
+    {
+      "id": "codellama:7b",
+      "family": "llama",
+      "params": "7B",
+      "architecture": "dense",
+      "license": "llama-2-community",
+      "openWeight": true,
+      "contextLength": 16384.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "codellama:7b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 3825898144.0,
+          "minRamBytes": 4729375000.0,
+          "minVramBytes": 4729375000.0,
+          "sha256": "3a43f93b78ec50f7c4e4dc8bd1cb3fff5a900e7d574c51a6f7495e48486e0dac"
+        }
+      ],
+      "kvBytesPerToken": 524288.0
+    },
+    {
+      "id": "cogito-2.1:671b",
+      "family": "deepseek2",
+      "params": "671.0B",
+      "architecture": "moe",
+      "activeParams": "37.5B",
+      "license": "mit",
+      "openWeight": true,
+      "contextLength": 163840.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "cogito-2.1:671b"
+      },
+      "quantizations": [
+        {
+          "name": "F16",
+          "diskBytes": 1342259708864.0,
+          "minRamBytes": 1591528125000.0,
+          "minVramBytes": 1591528125000.0,
+          "sha256": "fca0589090b81189b771e7d68e341a6663a6bb7c3ce475758d2ef62215edcc29"
+        }
+      ]
+    },
+    {
+      "id": "cogito:14b",
+      "family": "qwen2",
+      "params": "14.8B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 131072.0,
+      "capabilities": [
+        "chat",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "cogito:14b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 8985277984.0,
+          "minRamBytes": 10333069682.0,
+          "minVramBytes": 10333069682.0,
+          "sha256": "19718c32a55ea4e4f0005adbe0d818f3eaa672eeecfdd9c28e393e2c04d18f51"
+        }
+      ],
+      "kvBytesPerToken": 196608.0
+    },
+    {
+      "id": "cogito:32b",
+      "family": "qwen2",
+      "params": "32.8B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 131072.0,
+      "capabilities": [
+        "chat",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "cogito:32b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 19848503584.0,
+          "minRamBytes": 22825779122.0,
+          "minVramBytes": 22825779122.0,
+          "sha256": "bc81444f9cd997ddab040aa99186a04e1d1f093aadc4bfd9fdd233e1e161b541"
+        }
+      ],
+      "kvBytesPerToken": 262144.0
+    },
+    {
+      "id": "cogito:3b",
+      "family": "llama",
+      "params": "3.6B",
+      "architecture": "dense",
+      "license": "llama-3.2-community",
+      "openWeight": true,
+      "contextLength": 131072.0,
+      "capabilities": [
+        "chat",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "cogito:3b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 2241004448.0,
+          "minRamBytes": 2577155116.0,
+          "minVramBytes": 2577155116.0,
+          "sha256": "c4e22d5765341f9515f28583520ea3ca92013505d34d6b909d7b4bfc035ce02f"
+        }
+      ],
+      "kvBytesPerToken": 114688.0
+    },
+    {
+      "id": "deepcoder:1.5b",
+      "family": "qwen2",
+      "params": "1.8B",
+      "architecture": "dense",
+      "license": "mit",
+      "openWeight": true,
+      "contextLength": 131072.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "deepcoder:1.5b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 1117321728.0,
+          "minRamBytes": 1284919988.0,
+          "minVramBytes": 1284919988.0,
+          "sha256": "46558b1a907d02619e642d01d09ae667906e6f903a01c2408cac670c1144a759"
+        }
+      ],
+      "kvBytesPerToken": 28672.0
+    },
+    {
+      "id": "deepcoder:14b",
+      "family": "qwen2",
+      "params": "14.8B",
+      "architecture": "dense",
+      "license": "mit",
+      "openWeight": true,
+      "contextLength": 131072.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "deepcoder:14b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 8988111168.0,
+          "minRamBytes": 10336327844.0,
+          "minVramBytes": 10336327844.0,
+          "sha256": "a814bd1f5db7a8d0f387769dd58462e75c8f19ce830b57be6fdf7de3084302e8"
+        }
+      ],
+      "kvBytesPerToken": 196608.0
+    },
+    {
+      "id": "deepscaler:1.5b",
+      "family": "qwen2",
+      "params": "1.8B",
+      "architecture": "dense",
+      "license": "mit",
+      "openWeight": true,
+      "contextLength": 131072.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "deepscaler:1.5b"
+      },
+      "quantizations": [
+        {
+          "name": "F16",
+          "diskBytes": 3560417376.0,
+          "minRamBytes": 4269375000.0,
+          "minVramBytes": 4269375000.0,
+          "sha256": "95ff0bccfe6096c58d176bcbe8d0c87ccc4b517c0eade8acaa0797a9e441122e"
+        }
+      ],
+      "kvBytesPerToken": 28672.0
+    },
+    {
+      "id": "deepseek-ocr:3b",
+      "family": "deepseekocr",
+      "params": "3.3B",
+      "architecture": "moe",
+      "activeParams": "1.1B",
+      "license": "mit",
+      "openWeight": true,
+      "contextLength": 8192.0,
+      "capabilities": [
+        "chat",
+        "vision"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "deepseek-ocr:3b"
+      },
+      "quantizations": [
+        {
+          "name": "F16",
+          "diskBytes": 6687238848.0,
+          "minRamBytes": 7827187500.0,
+          "minVramBytes": 7827187500.0,
+          "sha256": "3a18673ff291a1d8de94d490877127899356d33a18028d5f3945bf245c11b02c"
+        }
+      ],
+      "kvBytesPerToken": 61440.0
+    },
+    {
+      "id": "deepseek-r1:1.5b",
+      "family": "qwen2",
+      "params": "1.8B",
+      "architecture": "dense",
+      "license": "mit",
+      "openWeight": true,
+      "contextLength": 131072.0,
+      "capabilities": [
+        "chat",
+        "reasoning",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "deepseek-r1:1.5b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 1117320512.0,
+          "minRamBytes": 1284918589.0,
+          "minVramBytes": 1284918589.0,
+          "sha256": "aabd4debf0c8f08881923f2c25fc0fdeed24435271c2b3e92c4af36704040dbc"
+        }
+      ],
+      "kvBytesPerToken": 28672.0
+    },
+    {
+      "id": "deepseek-v3.1:671b",
+      "family": "deepseek2",
+      "params": "671.0B",
+      "architecture": "moe",
+      "activeParams": "37.6B",
+      "license": "mit",
+      "openWeight": true,
+      "contextLength": 163840.0,
+      "capabilities": [
+        "chat",
+        "reasoning",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "deepseek-v3.1:671b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 404494154496.0,
+          "minRamBytes": 465168277671.0,
+          "minVramBytes": 465168277671.0,
+          "sha256": "8eeb1709986060613eb794d3fbbbf4ce7f2120cd174c95b64ee9f0c906c48910"
+        }
+      ]
+    },
+    {
+      "id": "devstral:24b",
+      "family": "llama",
+      "params": "23.6B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 131072.0,
+      "capabilities": [
+        "chat",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "devstral:24b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 14333909728.0,
+          "minRamBytes": 16483996188.0,
+          "minVramBytes": 16483996188.0,
+          "sha256": "b3a2c9a8fef9be8d2ef951aecca36a36b9ea0b70abe9359eab4315bf4cd9be01"
+        }
+      ],
+      "kvBytesPerToken": 163840.0
+    },
+    {
+      "id": "dolphin-llama3:70b",
+      "family": "llama",
+      "params": "71B",
+      "architecture": "dense",
+      "license": "llama-3-community",
+      "openWeight": true,
+      "contextLength": 8192.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "dolphin-llama3:70b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 39969754688.0,
+          "minRamBytes": 47969375000.0,
+          "minVramBytes": 47969375000.0,
+          "sha256": "9631a2551ac477921b64862e5cd4e13223183d7699ebf6bf6d14488edc8b4552"
+        }
+      ],
+      "kvBytesPerToken": 327680.0
+    },
+    {
+      "id": "dolphin-llama3:8b",
+      "family": "llama",
+      "params": "8B",
+      "architecture": "dense",
+      "license": "llama-3-community",
+      "openWeight": true,
+      "contextLength": 8192.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "dolphin-llama3:8b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 4661222752.0,
+          "minRamBytes": 5405000000.0,
+          "minVramBytes": 5405000000.0,
+          "sha256": "ea025c107c1c3e5a87380b25e205db3b19a4d2ed56f1954f531573a963621580"
+        }
+      ],
+      "kvBytesPerToken": 131072.0
+    },
+    {
+      "id": "dolphin-mistral:7b",
+      "family": "llama",
+      "params": "7B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 32768.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "dolphin-mistral:7b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 4108928128.0,
+          "minRamBytes": 4729375000.0,
+          "minVramBytes": 4729375000.0,
+          "sha256": "11a57a9bd0bc7d5e12aa0cc3d83e8d34b776fe5a8c232b20d610ca9f4e8b4b23"
+        }
+      ],
+      "kvBytesPerToken": 131072.0
+    },
+    {
+      "id": "dolphin3:8b",
+      "family": "llama",
+      "params": "8.0B",
+      "architecture": "dense",
+      "license": "llama-3.1-community",
+      "openWeight": true,
+      "contextLength": 131072.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "dolphin3:8b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 4920749184.0,
+          "minRamBytes": 5658861562.0,
+          "minVramBytes": 5658861562.0,
+          "sha256": "1eee6953530837b2b17d61a4e6f71a5aa31c9714cfcf3cb141aa5c1972b5116b"
+        }
+      ],
+      "kvBytesPerToken": 131072.0
+    },
+    {
+      "id": "embeddinggemma:300m",
+      "family": "gemma3",
+      "params": "307.58M",
+      "architecture": "dense",
+      "license": "gemma",
+      "openWeight": true,
+      "contextLength": 2048.0,
+      "capabilities": [
+        "embedding"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "embeddinggemma:300m"
+      },
+      "quantizations": [
+        {
+          "name": "BF16",
+          "diskBytes": 621867104.0,
+          "minRamBytes": 729541313.0,
+          "minVramBytes": 729541313.0,
+          "sha256": "0800cbac9c2064dde519420e75e512a83cb360de3ad5df176185dc69652fc515"
+        }
+      ]
+    },
+    {
+      "id": "everythinglm:13b",
+      "family": "llama",
+      "params": "13B",
+      "architecture": "dense",
+      "license": "llama-2-community",
+      "openWeight": true,
+      "contextLength": 16384.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "everythinglm:13b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 7366808096.0,
+          "minRamBytes": 8783125000.0,
+          "minVramBytes": 8783125000.0,
+          "sha256": "5218f9a2a8256d7a3ded27e1a6cbfcfb03ecece4d77bf275b9b45e9ce5b455a5"
+        }
+      ],
+      "kvBytesPerToken": 819200.0
+    },
+    {
+      "id": "firefunction-v2:70b",
+      "family": "llama",
+      "params": "70.6B",
+      "architecture": "dense",
+      "license": "llama-3-community",
+      "openWeight": true,
+      "contextLength": 8192.0,
+      "capabilities": [
+        "chat",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "firefunction-v2:70b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 39969735136.0,
+          "minRamBytes": 47699125000.0,
+          "minVramBytes": 47699125000.0,
+          "sha256": "753c611024aa306aa4e8de2ba9654414ff73c2209d7d4d0bb2247e0c514ae1bd"
+        }
+      ],
+      "kvBytesPerToken": 327680.0
+    },
+    {
+      "id": "functiongemma:270m",
+      "family": "gemma3",
+      "params": "268.10M",
+      "architecture": "dense",
+      "license": "gemma",
+      "openWeight": true,
+      "contextLength": 32768.0,
+      "capabilities": [
+        "chat",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "functiongemma:270m"
+      },
+      "quantizations": [
+        {
+          "name": "Q8_0",
+          "diskBytes": 300796576.0,
+          "minRamBytes": 345916063.0,
+          "minVramBytes": 345916063.0,
+          "sha256": "415f8f959d807bd4d4da891f01225d7b330416947fb011a8473080ae4fd07885"
+        }
+      ]
+    },
+    {
+      "id": "gemma3:1b",
+      "family": "gemma3",
+      "params": "999.89M",
+      "architecture": "dense",
+      "license": "gemma",
+      "openWeight": true,
+      "contextLength": 32768.0,
+      "capabilities": [
+        "chat",
+        "vision"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "gemma3:1b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 815310432.0,
+          "minRamBytes": 937606997.0,
+          "minVramBytes": 937606997.0,
+          "sha256": "7cd4618c1faf8b7233c6c906dac1694b6a47684b37b8895d470ac688520b9c01"
+        }
+      ]
+    },
+    {
+      "id": "gemma3:270m",
+      "family": "gemma3",
+      "params": "268.10M",
+      "architecture": "dense",
+      "license": "gemma",
+      "openWeight": true,
+      "contextLength": 32768.0,
+      "capabilities": [
+        "chat",
+        "vision"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "gemma3:270m"
+      },
+      "quantizations": [
+        {
+          "name": "Q8_0",
+          "diskBytes": 291545472.0,
+          "minRamBytes": 335277293.0,
+          "minVramBytes": 335277293.0,
+          "sha256": "735af2139dc652bf01112746474883d79a52fa1c19038265d363e3d42556f7a2"
+        }
+      ]
+    },
+    {
+      "id": "gemma4:12b",
+      "family": "gemma4",
+      "params": "11.9B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 262144.0,
+      "capabilities": [
+        "chat",
+        "vision",
+        "reasoning",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "gemma4:12b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 7556499296.0,
+          "minRamBytes": 8689974191.0,
+          "minVramBytes": 8689974191.0,
+          "sha256": "bb722270d54346adc198f213851dbe0207e87c3ecf2a0aff4d92262726215391",
+          "projectors": [
+            {
+              "bytes": 175115616,
+              "sha256": "0cb0cd0a5c499d92942caa22fe5abb98f6e8874868d590e2b094ece4ac8e6d28"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gemma4:26b",
+      "family": "gemma4",
+      "params": "25.2B",
+      "architecture": "moe",
+      "activeParams": "3.8B",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 262144.0,
+      "capabilities": [
+        "chat",
+        "vision",
+        "reasoning",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "gemma4:26b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 18269247200.0,
+          "minRamBytes": 21009634280.0,
+          "minVramBytes": 21009634280.0,
+          "sha256": "a8bdd07a49b895083bb1420bb895ad9ab3e3b8f7d5cc42c7582ca0fa765eede2",
+          "projectors": [
+            {
+              "bytes": 1194828128,
+              "sha256": "7e78b02d928be76d0db72d23ba011aeae7fcdd9488358fd83741a8fd10b8556d"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gemma4:31b",
+      "family": "gemma4",
+      "params": "30.7B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 262144.0,
+      "capabilities": [
+        "chat",
+        "vision",
+        "reasoning",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "gemma4:31b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 19870759488.0,
+          "minRamBytes": 22851373412.0,
+          "minVramBytes": 22851373412.0,
+          "sha256": "cd20f2b3f2e30239023189c04e65754b0cc7c38959665ac727461ee470df16cf",
+          "projectors": [
+            {
+              "bytes": 1200726368,
+              "sha256": "6357a8a2d521e7b3b67d5afd3a6f5094b2712736b5bd6e1c9f17f8e4e6fae9b0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gemma:2b",
+      "family": "gemma",
+      "params": "3B",
+      "architecture": "dense",
+      "license": "gemma",
+      "openWeight": true,
+      "contextLength": 8192.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "gemma:2b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 1678447520.0,
+          "minRamBytes": 2026875000.0,
+          "minVramBytes": 2026875000.0,
+          "sha256": "c1864a5eb19305c40519da12cc543519e48a0697ecd30e15d5ac228644957d12"
+        }
+      ],
+      "kvBytesPerToken": 18432.0
+    },
+    {
+      "id": "gemma:7b",
+      "family": "gemma",
+      "params": "9B",
+      "architecture": "dense",
+      "license": "gemma",
+      "openWeight": true,
+      "contextLength": 8192.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "gemma:7b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 5011844064.0,
+          "minRamBytes": 6080625000.0,
+          "minVramBytes": 6080625000.0,
+          "sha256": "ef311de6af9db043d51ca4b1e766c28e0a1ac41d60420fed5e001dc470c64b77"
+        }
+      ],
+      "kvBytesPerToken": 458752.0
+    },
+    {
+      "id": "gpt-oss-safeguard:120b",
+      "family": "gptoss",
+      "params": "116.8B",
+      "architecture": "moe",
+      "activeParams": "5.7B",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 131072.0,
+      "capabilities": [
+        "chat",
+        "reasoning",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "gpt-oss-safeguard:120b"
+      },
+      "quantizations": [
+        {
+          "name": "MXFP4",
+          "diskBytes": 65369799840.0,
+          "minRamBytes": 75175269816.0,
+          "minVramBytes": 75175269816.0,
+          "sha256": "e5a44e5a8c7c31d572d002d48e9ae37354adf6973d45b2085802260c14a7274d"
+        }
+      ]
+    },
+    {
+      "id": "gpt-oss-safeguard:20b",
+      "family": "gptoss",
+      "params": "20.9B",
+      "architecture": "moe",
+      "activeParams": "4.2B",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 131072.0,
+      "capabilities": [
+        "chat",
+        "reasoning",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "gpt-oss-safeguard:20b"
+      },
+      "quantizations": [
+        {
+          "name": "MXFP4",
+          "diskBytes": 13793422144.0,
+          "minRamBytes": 15862435466.0,
+          "minVramBytes": 15862435466.0,
+          "sha256": "c4016c9e54d0a9218b5911790579e58284a9ed57c48b7e87607125c6307f9da1"
+        }
+      ]
+    },
+    {
+      "id": "gpt-oss:120b",
+      "family": "gptoss",
+      "params": "116.8B",
+      "architecture": "moe",
+      "activeParams": "5.7B",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 131072.0,
+      "capabilities": [
+        "chat",
+        "reasoning",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "gpt-oss:120b"
+      },
+      "quantizations": [
+        {
+          "name": "MXFP4",
+          "diskBytes": 65369799840.0,
+          "minRamBytes": 75175269816.0,
+          "minVramBytes": 75175269816.0,
+          "sha256": "6be6d66a3f546d8c19b130dc41dc24b2fc159f84ffbc76a0ee0676205083cf5a"
+        }
+      ]
+    },
+    {
+      "id": "gpt-oss:20b",
+      "family": "gptoss",
+      "params": "20.9B",
+      "architecture": "moe",
+      "activeParams": "4.2B",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 131072.0,
+      "capabilities": [
+        "chat",
+        "reasoning",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "gpt-oss:20b"
+      },
+      "quantizations": [
+        {
+          "name": "MXFP4",
+          "diskBytes": 13793422144.0,
+          "minRamBytes": 15862435466.0,
+          "minVramBytes": 15862435466.0,
+          "sha256": "e7b273f9636059a689e3ddcab3716e4f65abe0143ac978e46673ad0e52d09efb"
+        }
+      ]
+    },
+    {
+      "id": "granite-code:20b",
+      "family": "starcoder",
+      "params": "20.1B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 8192.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "granite-code:20b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 11552479904.0,
+          "minRamBytes": 13580062500.0,
+          "minVramBytes": 13580062500.0,
+          "sha256": "99f08a62bc7b101b56f4fd55cd334889a509dacdcbb79acf1ab42a69b797a9bb"
+        }
+      ],
+      "kvBytesPerToken": 26624.0
+    },
+    {
+      "id": "granite-code:34b",
+      "family": "starcoder",
+      "params": "33.7B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 8192.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "granite-code:34b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 19238241664.0,
+          "minRamBytes": 22768562502.0,
+          "minVramBytes": 22768562502.0,
+          "sha256": "85aa034aee49f1c59ddeb6c867a6592767875c4aba642aa67fdfaa8e5b836c96"
+        }
+      ],
+      "kvBytesPerToken": 45056.0
+    },
+    {
+      "id": "granite-code:3b",
+      "family": "llama",
+      "params": "3.5B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 128000.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "granite-code:3b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 1997330784.0,
+          "minRamBytes": 2364687500.0,
+          "minVramBytes": 2364687500.0,
+          "sha256": "9699e81546fad30bfcc6a005f9c30316828b444e37ece48ddab1babfb4d634c5"
+        }
+      ],
+      "kvBytesPerToken": 327680.0
+    },
+    {
+      "id": "granite-code:8b",
+      "family": "llama",
+      "params": "8.1B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 128000.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "granite-code:8b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 4590894944.0,
+          "minRamBytes": 5472562500.0,
+          "minVramBytes": 5472562500.0,
+          "sha256": "bf481f838ba0e13524bde2f44cfd57a0eefb1c422da885fb26ca6cf12bea11fa"
+        }
+      ],
+      "kvBytesPerToken": 147456.0
+    },
+    {
+      "id": "granite-embedding:278m",
+      "family": "bert",
+      "params": "277.45M",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 512.0,
+      "capabilities": [
+        "embedding"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "granite-embedding:278m"
+      },
+      "quantizations": [
+        {
+          "name": "F16",
+          "diskBytes": 562765632.0,
+          "minRamBytes": 658076719.0,
+          "minVramBytes": 658076719.0,
+          "sha256": "a658c903bf83a9d84fe1b9869874229ddfdfc1c88b04f958f17dd24e243d262c"
+        }
+      ]
+    },
+    {
+      "id": "granite-embedding:30m",
+      "family": "bert",
+      "params": "30.15M",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 512.0,
+      "capabilities": [
+        "embedding"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "granite-embedding:30m"
+      },
+      "quantizations": [
+        {
+          "name": "F16",
+          "diskBytes": 62523136.0,
+          "minRamBytes": 71901607.0,
+          "minVramBytes": 71901607.0,
+          "sha256": "27d24c87a53d110b95abecbff83f966206857a9dc0ba1efd336d08dbd0afc833"
+        }
+      ]
+    },
+    {
+      "id": "granite3-dense:2b",
+      "family": "granite",
+      "params": "2.6B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 4096.0,
+      "capabilities": [
+        "chat",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "granite3-dense:2b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 1601919392.0,
+          "minRamBytes": 1842207301.0,
+          "minVramBytes": 1842207301.0,
+          "sha256": "63dd4fe4571a2fa1521a6127be533abf85dfc76a653572ee629c1de9fdd794ce"
+        }
+      ],
+      "kvBytesPerToken": 81920.0
+    },
+    {
+      "id": "granite3-dense:8b",
+      "family": "granite",
+      "params": "8.2B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 4096.0,
+      "capabilities": [
+        "chat",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "granite3-dense:8b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 4942856064.0,
+          "minRamBytes": 5684284474.0,
+          "minVramBytes": 5684284474.0,
+          "sha256": "1a9a388336073f25f143cdd39abe37b306a367d031d6c04a79bbb545232ae113"
+        }
+      ],
+      "kvBytesPerToken": 163840.0
+    },
+    {
+      "id": "granite3-guardian:2b",
+      "family": "granite",
+      "params": "2.5B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 8192.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "granite3-guardian:2b"
+      },
+      "quantizations": [
+        {
+          "name": "Q8_0",
+          "diskBytes": 2694116160.0,
+          "minRamBytes": 3098233584.0,
+          "minVramBytes": 3098233584.0,
+          "sha256": "ded6c5f885f542875cd549c05852a23fa75060aa36772854e3a7f20d099937f7"
+        }
+      ],
+      "kvBytesPerToken": 81920.0
+    },
+    {
+      "id": "granite3-guardian:8b",
+      "family": "granite",
+      "params": "8.2B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 8192.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "granite3-guardian:8b"
+      },
+      "quantizations": [
+        {
+          "name": "Q5_K_M",
+          "diskBytes": 5797454112.0,
+          "minRamBytes": 6667072229.0,
+          "minVramBytes": 6667072229.0,
+          "sha256": "fc93e012ac809ee2e55858a9104ee9e2ad49139aefff5a372cb5101f4d3a1db4"
+        }
+      ],
+      "kvBytesPerToken": 163840.0
+    },
+    {
+      "id": "granite3-moe:1b",
+      "family": "granitemoe",
+      "params": "1.3B",
+      "architecture": "moe",
+      "activeParams": "428.7M",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 4096.0,
+      "capabilities": [
+        "chat",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "granite3-moe:1b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 821844672.0,
+          "minRamBytes": 945121373.0,
+          "minVramBytes": 945121373.0,
+          "sha256": "6bd48eb2b42c83802e8b07a4a8d74cb15b641cf083d7d56f32974b27d64a3ac9"
+        }
+      ],
+      "kvBytesPerToken": 49152.0
+    },
+    {
+      "id": "granite3.1-moe:1b",
+      "family": "granitemoe",
+      "params": "1.3B",
+      "architecture": "moe",
+      "activeParams": "428.7M",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 131072.0,
+      "capabilities": [
+        "chat",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "granite3.1-moe:1b"
+      },
+      "quantizations": [
+        {
+          "name": "Q8_0",
+          "diskBytes": 1422239776.0,
+          "minRamBytes": 1635575743.0,
+          "minVramBytes": 1635575743.0,
+          "sha256": "cd60b3e8bb445d4c05e0b0b99b1bb41e8bb77211b161e783c71931168131df80"
+        }
+      ],
+      "kvBytesPerToken": 49152.0
+    },
+    {
+      "id": "granite3.1-moe:3b",
+      "family": "granitemoe",
+      "params": "3.3B",
+      "architecture": "moe",
+      "activeParams": "882.9M",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 131072.0,
+      "capabilities": [
+        "chat",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "granite3.1-moe:3b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 2035174048.0,
+          "minRamBytes": 2340450156.0,
+          "minVramBytes": 2340450156.0,
+          "sha256": "4cbc52994d8ce56d58f3ecadcd451a5dbb2a4f1142098c6b9f030d18ee5e052b"
+        }
+      ],
+      "kvBytesPerToken": 65536.0
+    },
+    {
+      "id": "granite3.2-vision:2b",
+      "family": "granite",
+      "params": "2.5B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 16384.0,
+      "capabilities": [
+        "chat",
+        "vision",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "granite3.2-vision:2b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 2437839008.0,
+          "minRamBytes": 2803514860.0,
+          "minVramBytes": 2803514860.0,
+          "sha256": "1aefcd9a8a15091b670951963b5f8a7e6653bb1350345e9621e179685ac9bc5f",
+          "projectors": [
+            {
+              "bytes": 892544608,
+              "sha256": "4d464be24899cf8dc1862945432e0cef4366c4181fa38b14754cc9279b727608"
+            }
+          ]
+        }
+      ],
+      "kvBytesPerToken": 81920.0
+    },
+    {
+      "id": "granite3.2:2b",
+      "family": "granite",
+      "params": "2.5B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 131072.0,
+      "capabilities": [
+        "chat",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "granite3.2:2b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 1545296256.0,
+          "minRamBytes": 1777090695.0,
+          "minVramBytes": 1777090695.0,
+          "sha256": "36c09b22ee395b0a80053af776e65d8c34cc38ee47eb1d842c2578f0dacd10d4"
+        }
+      ],
+      "kvBytesPerToken": 81920.0
+    },
+    {
+      "id": "granite3.2:8b",
+      "family": "granite",
+      "params": "8.2B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 131072.0,
+      "capabilities": [
+        "chat",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "granite3.2:8b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 4942859552.0,
+          "minRamBytes": 5684288485.0,
+          "minVramBytes": 5684288485.0,
+          "sha256": "59c55d0e7b6a16d103f324fe4d2cc83843936e1ac65e93b632b6dc577d732630"
+        }
+      ],
+      "kvBytesPerToken": 163840.0
+    },
+    {
+      "id": "granite3.3:2b",
+      "family": "granite",
+      "params": "2.5B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 131072.0,
+      "capabilities": [
+        "chat",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "granite3.3:2b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 1545303328.0,
+          "minRamBytes": 1777098828.0,
+          "minVramBytes": 1777098828.0,
+          "sha256": "ac71e9e32c0bea919b409c5918f69ca74339854b0319c5065e4e9fb6d95c4852"
+        }
+      ],
+      "kvBytesPerToken": 81920.0
+    },
+    {
+      "id": "granite3.3:8b",
+      "family": "granite",
+      "params": "8.2B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 131072.0,
+      "capabilities": [
+        "chat",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "granite3.3:8b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 4942873344.0,
+          "minRamBytes": 5684304346.0,
+          "minVramBytes": 5684304346.0,
+          "sha256": "77bcee066a76dcdd10d0d123c87e32c8ec2c74e31b6ffd87ebee49c9ac215dca"
+        }
+      ],
+      "kvBytesPerToken": 163840.0
+    },
+    {
+      "id": "granite4.1-guardian:8b",
+      "family": "granite",
+      "params": "8.4B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 131072.0,
+      "capabilities": [
+        "chat",
+        "reasoning",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "granite4.1-guardian:8b"
+      },
+      "quantizations": [
+        {
+          "name": "Q6_K",
+          "diskBytes": 6879294528.0,
+          "minRamBytes": 7969500000.0,
+          "minVramBytes": 7969500000.0,
+          "sha256": "0061355a4ef83a8f2bd1c39012b6c013c7679ab658b3845a64f39b5c52ada488"
+        }
+      ],
+      "kvBytesPerToken": 163840.0
+    },
+    {
+      "id": "granite4.1:30b",
+      "family": "granite",
+      "params": "28.9B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 131072.0,
+      "capabilities": [
+        "chat",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "granite4.1:30b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 17490240736.0,
+          "minRamBytes": 20113776847.0,
+          "minVramBytes": 20113776847.0,
+          "sha256": "b33e4376e3581d11236ea53ced6b38399f6e91c0a391488486dc0827972f23f6"
+        }
+      ],
+      "kvBytesPerToken": 262144.0
+    },
+    {
+      "id": "granite4.1:3b",
+      "family": "granite",
+      "params": "3.4B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 131072.0,
+      "capabilities": [
+        "chat",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "granite4.1:3b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 2099501664.0,
+          "minRamBytes": 2414426914.0,
+          "minVramBytes": 2414426914.0,
+          "sha256": "662b0626cd58f443baea23559b469df6576a81d349649c59413b36a9fb32eb29"
+        }
+      ],
+      "kvBytesPerToken": 81920.0
+    },
+    {
+      "id": "granite4.1:8b",
+      "family": "granite",
+      "params": "8.8B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 131072.0,
+      "capabilities": [
+        "chat",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "granite4.1:8b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 5347914400.0,
+          "minRamBytes": 6150101560.0,
+          "minVramBytes": 6150101560.0,
+          "sha256": "ed902ac9eb6adce5a90c6a08c8ea201b50e23fdc5976d1cd0362006afac5309e"
+        }
+      ],
+      "kvBytesPerToken": 163840.0
+    },
+    {
+      "id": "granite4.2:30b",
+      "family": "granite",
+      "params": "29.3B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 131072.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "granite4.2:30b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 17721455328.0,
+          "minRamBytes": 20379673628.0,
+          "minVramBytes": 20379673628.0,
+          "sha256": "f299dace85d77ee0e24ca0b6720bd211b1f4cd1f65b9c0a2111e79692e29c9be"
+        }
+      ],
+      "kvBytesPerToken": 262144.0
+    },
+    {
+      "id": "granite4.2:3b",
+      "family": "granite",
+      "params": "3.7B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 131072.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "granite4.2:3b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 2244012160.0,
+          "minRamBytes": 2580613984.0,
+          "minVramBytes": 2580613984.0,
+          "sha256": "20e436143017578687f7f848225cc6c6038126c84149192229c7dff6e4e0f427"
+        }
+      ],
+      "kvBytesPerToken": 81920.0
+    },
+    {
+      "id": "granite4.2:8b",
+      "family": "granite",
+      "params": "8.8B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 131072.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "granite4.2:8b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 5347917952.0,
+          "minRamBytes": 6150105645.0,
+          "minVramBytes": 6150105645.0,
+          "sha256": "16a9369d0805f80b7377d25d87f937a90c05dc04ad79173a52001e42c9aab311"
+        }
+      ],
+      "kvBytesPerToken": 163840.0
+    },
+    {
+      "id": "granite4:1b",
+      "family": "granite",
+      "params": "1.6B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 131072.0,
+      "capabilities": [
+        "chat",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "granite4:1b"
+      },
+      "quantizations": [
+        {
+          "name": "BF16",
+          "diskBytes": 3267401472.0,
+          "minRamBytes": 3795000000.0,
+          "minVramBytes": 3795000000.0,
+          "sha256": "551fc8b33f100c13d056e114b4e352bd4f2763240b68283076110203da8f5843"
+        }
+      ]
+    },
+    {
+      "id": "granite4:350m",
+      "family": "granite",
+      "params": "352.38M",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 32768.0,
+      "capabilities": [
+        "chat",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "granite4:350m"
+      },
+      "quantizations": [
+        {
+          "name": "BF16",
+          "diskBytes": 708439456.0,
+          "minRamBytes": 835801313.0,
+          "minVramBytes": 835801313.0,
+          "sha256": "431e956cac90a7e4d36a9b37bb086c413491c598bb51f90ada8e0c75d0219645"
+        }
+      ]
+    },
+    {
+      "id": "granite4:3b",
+      "family": "granite",
+      "params": "3.4B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 131072.0,
+      "capabilities": [
+        "chat",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "granite4:3b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 2099502528.0,
+          "minRamBytes": 2414427908.0,
+          "minVramBytes": 2414427908.0,
+          "sha256": "6c02683809a8dc4eb05c78d44bc63bcd707703b078998fa58829c858ab337bb0"
+        }
+      ]
+    },
+    {
+      "id": "hermes3:3b",
+      "family": "llama",
+      "params": "3.2B",
+      "architecture": "dense",
+      "license": "llama-3-community",
+      "openWeight": true,
+      "contextLength": 131072.0,
+      "capabilities": [
+        "chat",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "hermes3:3b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 2019373888.0,
+          "minRamBytes": 2322279972.0,
+          "minVramBytes": 2322279972.0,
+          "sha256": "f616bb4104f36158e1838a5065618f7eba8437504250e80f9a9c51b373f4f1d4"
+        }
+      ],
+      "kvBytesPerToken": 114688.0
+    },
+    {
+      "id": "hermes3:405b",
+      "family": "llama",
+      "params": "405.9B",
+      "architecture": "dense",
+      "license": "llama-3-community",
+      "openWeight": true,
+      "contextLength": 131072.0,
+      "capabilities": [
+        "chat",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "hermes3:405b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 228856425856.0,
+          "minRamBytes": 274236187500.0,
+          "minVramBytes": 274236187500.0,
+          "sha256": "6ff8efcbce774f2fb2cb1c6443b559039bb9b96da5abb86ff40b2666a3b5af97"
+        }
+      ],
+      "kvBytesPerToken": 516096.0
+    },
+    {
+      "id": "hermes3:70b",
+      "family": "llama",
+      "params": "70.6B",
+      "architecture": "dense",
+      "license": "llama-3-community",
+      "openWeight": true,
+      "contextLength": 131072.0,
+      "capabilities": [
+        "chat",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "hermes3:70b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 39969737632.0,
+          "minRamBytes": 47699125000.0,
+          "minVramBytes": 47699125000.0,
+          "sha256": "8550b6c3356ddaa165b5d614b682ae8fd0dbb343f15f8e6cc263bb2d6fa35212"
+        }
+      ],
+      "kvBytesPerToken": 327680.0
+    },
+    {
+      "id": "hermes3:8b",
+      "family": "llama",
+      "params": "8.0B",
+      "architecture": "dense",
+      "license": "llama-3-community",
+      "openWeight": true,
+      "contextLength": 131072.0,
+      "capabilities": [
+        "chat",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "hermes3:8b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 4661217024.0,
+          "minRamBytes": 5405000000.0,
+          "minVramBytes": 5405000000.0,
+          "sha256": "c8985d236593f7a17da2a3da49588aa951a9b1e57ce97753364fbf59e63af84a"
+        }
+      ],
+      "kvBytesPerToken": 131072.0
+    },
+    {
+      "id": "internlm2:7b",
+      "family": "internlm2",
+      "params": "7.7B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 32768.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "internlm2:7b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 4453245792.0,
+          "minRamBytes": 5202312500.0,
+          "minVramBytes": 5202312500.0,
+          "sha256": "fc9cdb4d5d78daba304cedba236a2fa532e5e6189850386952ad4cc14b33ca9a"
+        }
+      ],
+      "kvBytesPerToken": 131072.0
+    },
+    {
+      "id": "llama-guard3:1b",
+      "family": "llama",
+      "params": "1.5B",
+      "architecture": "dense",
+      "license": "llama-3.2-community",
+      "openWeight": true,
+      "contextLength": 131072.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "llama-guard3:1b"
+      },
+      "quantizations": [
+        {
+          "name": "Q8_0",
+          "diskBytes": 1600166464.0,
+          "minRamBytes": 1840191434.0,
+          "minVramBytes": 1840191434.0,
+          "sha256": "f2380ab40b82d64d967cf72371d75148736573895fe93d935bdd05c783667a83"
+        }
+      ],
+      "kvBytesPerToken": 32768.0
+    },
+    {
+      "id": "llama-guard3:8b",
+      "family": "llama",
+      "params": "8.0B",
+      "architecture": "dense",
+      "license": "llama-3.1-community",
+      "openWeight": true,
+      "contextLength": 131072.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "llama-guard3:8b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 4920735872.0,
+          "minRamBytes": 5658846253.0,
+          "minVramBytes": 5658846253.0,
+          "sha256": "883f1adfefb2622b3b8b226e45c52d45551f97304cd77b7e2a8009fea106d926"
+        }
+      ],
+      "kvBytesPerToken": 131072.0
+    },
+    {
+      "id": "llama2-uncensored:7b",
+      "family": "llama",
+      "params": "7B",
+      "architecture": "dense",
+      "license": "llama-2-community",
+      "openWeight": true,
+      "contextLength": 2048.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "llama2-uncensored:7b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 3825807040.0,
+          "minRamBytes": 4729375000.0,
+          "minVramBytes": 4729375000.0,
+          "sha256": "6aa74acf170f8fb8e6ff8dae9bc9ea918d3a14b6ba95d0b0287da31b09a4848c"
+        }
+      ],
+      "kvBytesPerToken": 524288.0
+    },
+    {
+      "id": "llama2:13b",
+      "family": "llama",
+      "params": "13B",
+      "architecture": "dense",
+      "license": "llama-2-community",
+      "openWeight": true,
+      "contextLength": 4096.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "llama2:13b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 7366808800.0,
+          "minRamBytes": 8783125000.0,
+          "minVramBytes": 8783125000.0,
+          "sha256": "2609048d349e7c70196401be59bea7eb89a968d4642e409b0e798b34403b96c8"
+        }
+      ],
+      "kvBytesPerToken": 819200.0
+    },
+    {
+      "id": "llama2:70b",
+      "family": "llama",
+      "params": "69B",
+      "architecture": "dense",
+      "license": "llama-2-community",
+      "openWeight": true,
+      "contextLength": 4096.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "llama2:70b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 38873223392.0,
+          "minRamBytes": 46618125000.0,
+          "minVramBytes": 46618125000.0,
+          "sha256": "68bbe6dc9cf42eb60c9a7f96137fb8d472f752de6ebf53e9942f267f1a1e2577"
+        }
+      ],
+      "kvBytesPerToken": 327680.0
+    },
+    {
+      "id": "llama2:7b",
+      "family": "llama",
+      "params": "7B",
+      "architecture": "dense",
+      "license": "llama-2-community",
+      "openWeight": true,
+      "contextLength": 4096.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "llama2:7b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 3826781184.0,
+          "minRamBytes": 4729375000.0,
+          "minVramBytes": 4729375000.0,
+          "sha256": "8934d96d3f08982e95922b2b7a2c626a1fe873d7c3b06e8e56d7bc0a1fef9246"
+        }
+      ],
+      "kvBytesPerToken": 524288.0
+    },
+    {
+      "id": "llama3-chatqa:70b",
+      "family": "llama",
+      "params": "71B",
+      "architecture": "dense",
+      "license": "llama-3-community",
+      "openWeight": true,
+      "contextLength": 8192.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "llama3-chatqa:70b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 39969731648.0,
+          "minRamBytes": 47969375000.0,
+          "minVramBytes": 47969375000.0,
+          "sha256": "23cc510e5cbfa6f19181be1dd2730f158ccb6110f7fbdffd358db31f98962dd8"
+        }
+      ],
+      "kvBytesPerToken": 327680.0
+    },
+    {
+      "id": "llama3-chatqa:8b",
+      "family": "llama",
+      "params": "8B",
+      "architecture": "dense",
+      "license": "llama-3-community",
+      "openWeight": true,
+      "contextLength": 8192.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "llama3-chatqa:8b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 4661210976.0,
+          "minRamBytes": 5405000000.0,
+          "minVramBytes": 5405000000.0,
+          "sha256": "df02d0708a46bcb38f1f2c16ce958c6785ac708328fb76a3f4c440e8cec88e91"
+        }
+      ],
+      "kvBytesPerToken": 131072.0
+    },
+    {
+      "id": "llama3-gradient:70b",
+      "family": "llama",
+      "params": "71B",
+      "architecture": "dense",
+      "license": "llama-3-community",
+      "openWeight": true,
+      "contextLength": 1048576.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "llama3-gradient:70b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 39969732096.0,
+          "minRamBytes": 47969375000.0,
+          "minVramBytes": 47969375000.0,
+          "sha256": "bbb2cc0fda1862b956246384deb9eabddabf67e916399ad5a845999bc0e913d8"
+        }
+      ],
+      "kvBytesPerToken": 327680.0
+    },
+    {
+      "id": "llama3-gradient:8b",
+      "family": "llama",
+      "params": "8B",
+      "architecture": "dense",
+      "license": "llama-3-community",
+      "openWeight": true,
+      "contextLength": 1048576.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "llama3-gradient:8b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 4661211392.0,
+          "minRamBytes": 5405000000.0,
+          "minVramBytes": 5405000000.0,
+          "sha256": "011c3962dbd7dc3c22671e11a5ceea93a85697d532f3559db43a463a7b2c9968"
+        }
+      ],
+      "kvBytesPerToken": 131072.0
+    },
+    {
+      "id": "llama3-groq-tool-use:70b",
+      "family": "llama",
+      "params": "70.6B",
+      "architecture": "dense",
+      "license": "llama-3-community",
+      "openWeight": true,
+      "contextLength": 8192.0,
+      "capabilities": [
+        "chat",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "llama3-groq-tool-use:70b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 39969800288.0,
+          "minRamBytes": 47699125000.0,
+          "minVramBytes": 47699125000.0,
+          "sha256": "0bf4ff8dd2ee14de4423ce58ae0c67cd5ab2dfcb5674164a0cbdb85d69f9007c"
+        }
+      ],
+      "kvBytesPerToken": 327680.0
+    },
+    {
+      "id": "llama3-groq-tool-use:8b",
+      "family": "llama",
+      "params": "8.0B",
+      "architecture": "dense",
+      "license": "llama-3-community",
+      "openWeight": true,
+      "contextLength": 8192.0,
+      "capabilities": [
+        "chat",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "llama3-groq-tool-use:8b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 4661245632.0,
+          "minRamBytes": 5405000000.0,
+          "minVramBytes": 5405000000.0,
+          "sha256": "23e78d0ea1ab895bcbe63a12422a731cfd2b1a8bd124a1c91790b2b9c3fc9d14"
+        }
+      ],
+      "kvBytesPerToken": 131072.0
+    },
+    {
+      "id": "llama3.1:405b",
+      "family": "llama",
+      "params": "405.9B",
+      "architecture": "dense",
+      "license": "llama-3.1-community",
+      "openWeight": true,
+      "contextLength": 131072.0,
+      "capabilities": [
+        "chat",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "llama3.1:405b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 243069610720.0,
+          "minRamBytes": 279530052328.0,
+          "minVramBytes": 279530052328.0,
+          "sha256": "b496d31b938d6c13628fc98649dc2ef59031cce7d0046f2a14f87cbde92dbe2d"
+        }
+      ],
+      "kvBytesPerToken": 516096.0
+    },
+    {
+      "id": "llama3:70b",
+      "family": "llama",
+      "params": "70.6B",
+      "architecture": "dense",
+      "license": "llama-3-community",
+      "openWeight": true,
+      "contextLength": 8192.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "llama3:70b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 39969732096.0,
+          "minRamBytes": 47699125000.0,
+          "minVramBytes": 47699125000.0,
+          "sha256": "0bd51f8f0c975ce910ed067dcb962a9af05b77bafcdc595ef02178387f10e51d"
+        }
+      ],
+      "kvBytesPerToken": 327680.0
+    },
+    {
+      "id": "llama3:8b",
+      "family": "llama",
+      "params": "8.0B",
+      "architecture": "dense",
+      "license": "llama-3-community",
+      "openWeight": true,
+      "contextLength": 8192.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "llama3:8b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 4661211424.0,
+          "minRamBytes": 5405000000.0,
+          "minVramBytes": 5405000000.0,
+          "sha256": "6a0746a1ec1aef3e7ec53868f220ff6e389f6f8ef87a01d77c96807de94ca2aa"
+        }
+      ],
+      "kvBytesPerToken": 131072.0
+    },
+    {
+      "id": "llava:13b",
+      "family": "llama",
+      "params": "13B",
+      "architecture": "dense",
+      "license": "llama-2-community",
+      "openWeight": true,
+      "contextLength": 4096.0,
+      "capabilities": [
+        "chat",
+        "vision"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "llava:13b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 8011248832.0,
+          "minRamBytes": 9525351192.0,
+          "minVramBytes": 9525351192.0,
+          "sha256": "87d5b13e5157d3a67f8e10a46d8a846ec2b68c1f731e3dfe1546a585432b8fa0",
+          "projectors": [
+            {
+              "bytes": 645414080,
+              "sha256": "42037f9f4c1b801eebaec1545ed144b8b0fa8259672158fb69c8c68f02cfe00c"
+            }
+          ]
+        }
+      ],
+      "kvBytesPerToken": 819200.0
+    },
+    {
+      "id": "llava:34b",
+      "family": "llama",
+      "params": "34B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 4096.0,
+      "capabilities": [
+        "chat",
+        "vision"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "llava:34b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 20166485440.0,
+          "minRamBytes": 23776199879.0,
+          "minVramBytes": 23776199879.0,
+          "sha256": "00c39c2649c078d5ba6f74e6806c2e4ab1bce903e16105409786ef638caf24a1",
+          "projectors": [
+            {
+              "bytes": 699956416,
+              "sha256": "83720bd8438ccdc910deba5efbdc3340820b29258d94a7a60d1addc9a1b5f095"
+            }
+          ]
+        }
+      ],
+      "kvBytesPerToken": 245760.0
+    },
+    {
+      "id": "llava:7b",
+      "family": "llama",
+      "params": "7B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 32768.0,
+      "capabilities": [
+        "chat",
+        "vision"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "llava:7b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 4733351360.0,
+          "minRamBytes": 5447474524.0,
+          "minVramBytes": 5447474524.0,
+          "sha256": "170370233dd5c5415250a2ecd5c71586352850729062ccef1496385647293868",
+          "projectors": [
+            {
+              "bytes": 624434368,
+              "sha256": "72d6f08a42f656d36b356dbe0920675899a99ce21192fd66266fb7d82ed07539"
+            }
+          ]
+        }
+      ],
+      "kvBytesPerToken": 131072.0
+    },
+    {
+      "id": "magistral:24b",
+      "family": "llama",
+      "params": "23.6B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 40000.0,
+      "capabilities": [
+        "chat",
+        "reasoning",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "magistral:24b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 14333907488.0,
+          "minRamBytes": 16483993612.0,
+          "minVramBytes": 16483993612.0,
+          "sha256": "641615e9986bc8687f936cd87c586bdd92d338172c4180963080e48b8e84ec36"
+        }
+      ],
+      "kvBytesPerToken": 163840.0
+    },
+    {
+      "id": "marco-o1:7b",
+      "family": "qwen2",
+      "params": "7.6B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 32768.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "marco-o1:7b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 4683071648.0,
+          "minRamBytes": 5385532396.0,
+          "minVramBytes": 5385532396.0,
+          "sha256": "234ea779a388b986a6c961440f175e75c7cd336f70614d7c5b043c09a5931ad7"
+        }
+      ],
+      "kvBytesPerToken": 57344.0
+    },
+    {
+      "id": "mathstral:7b",
+      "family": "llama",
+      "params": "7.2B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 32768.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "mathstral:7b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 4113288768.0,
+          "minRamBytes": 4864500000.0,
+          "minVramBytes": 4864500000.0,
+          "sha256": "9bf04412c5e222bf940d474c4b38c4acc7e8bb8964fb9f41a5c7e8c9388fbd20"
+        }
+      ],
+      "kvBytesPerToken": 131072.0
+    },
+    {
+      "id": "megadolphin:120b",
+      "family": "llama",
+      "params": "120B",
+      "architecture": "dense",
+      "license": "llama-2-community",
+      "openWeight": true,
+      "contextLength": 4096.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "megadolphin:120b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 67754993504.0,
+          "minRamBytes": 81075000000.0,
+          "minVramBytes": 81075000000.0,
+          "sha256": "c3fb7b7af35d112087fc186d42bd72d1ddce6bbee1c0e06a3a4526a6ebbe5132"
+        }
+      ],
+      "kvBytesPerToken": 573440.0
+    },
+    {
+      "id": "ministral-3:14b",
+      "family": "mistral3",
+      "params": "13.9B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 262144.0,
+      "capabilities": [
+        "chat",
+        "vision",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "ministral-3:14b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 9082522240.0,
+          "minRamBytes": 10444900576.0,
+          "minVramBytes": 10444900576.0,
+          "sha256": "bfb40fc6bb9c3b2ed529b480e04f824c005ea8f86733d4ebbf0c204de484891e"
+        }
+      ],
+      "kvBytesPerToken": 163840.0
+    },
+    {
+      "id": "ministral-3:3b",
+      "family": "mistral3",
+      "params": "3.8B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 262144.0,
+      "capabilities": [
+        "chat",
+        "vision",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "ministral-3:3b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 2953825504.0,
+          "minRamBytes": 3396899330.0,
+          "minVramBytes": 3396899330.0,
+          "sha256": "910e4bf4e2338f181e99796d7452404e85c1b6bbbf8cd0bb094672cf9b6f2f22"
+        }
+      ],
+      "kvBytesPerToken": 106496.0
+    },
+    {
+      "id": "ministral-3:8b",
+      "family": "mistral3",
+      "params": "8.9B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 262144.0,
+      "capabilities": [
+        "chat",
+        "vision",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "ministral-3:8b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 6022221312.0,
+          "minRamBytes": 6925554509.0,
+          "minVramBytes": 6925554509.0,
+          "sha256": "3ea32f882c990baebcfe6ab5cda2e3167d54ab16d7937c0b9aa3db11aba01574"
+        }
+      ],
+      "kvBytesPerToken": 139264.0
+    },
+    {
+      "id": "mistral-small3.2:24b",
+      "family": "mistral3",
+      "params": "24.0B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 131072.0,
+      "capabilities": [
+        "chat",
+        "vision",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "mistral-small3.2:24b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 15177369888.0,
+          "minRamBytes": 17453975372.0,
+          "minVramBytes": 17453975372.0,
+          "sha256": "41a5b0c36a28a3a0480ce2e4007d3a21e3298be70e2b9a103960581412997dca"
+        }
+      ],
+      "kvBytesPerToken": 163840.0
+    },
+    {
+      "id": "moondream:1.8b",
+      "family": "phi2",
+      "params": "1B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 2048.0,
+      "capabilities": [
+        "chat",
+        "vision"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "moondream:1.8b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 1738439136.0,
+          "minRamBytes": 1999205007.0,
+          "minVramBytes": 1999205007.0,
+          "sha256": "e554c6b9de016673fd2c732e0342967727e9659ca5f853a4947cc96263fa602b",
+          "projectors": [
+            {
+              "bytes": 909777984,
+              "sha256": "4cc1cb3660d87ff56432ebeb7884ad35d67c48c7b9f6b2856f305e39c38eed8f"
+            }
+          ]
+        }
+      ],
+      "kvBytesPerToken": 196608.0
+    },
+    {
+      "id": "mxbai-embed-large:335m",
+      "family": "bert",
+      "params": "334M",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 512.0,
+      "capabilities": [
+        "embedding"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "mxbai-embed-large:335m"
+      },
+      "quantizations": [
+        {
+          "name": "F16",
+          "diskBytes": 669603712.0,
+          "minRamBytes": 792206250.0,
+          "minVramBytes": 792206250.0,
+          "sha256": "819c2adf5ce6df2b6bd2ae4ca90d2a69f060afeb438d0c171db57daa02e39c3d"
+        }
+      ]
+    },
+    {
+      "id": "nemotron:70b",
+      "family": "llama",
+      "params": "70.6B",
+      "architecture": "dense",
+      "license": "llama-3.1-community",
+      "openWeight": true,
+      "contextLength": 131072.0,
+      "capabilities": [
+        "chat",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "nemotron:70b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 42520398432.0,
+          "minRamBytes": 48898458197.0,
+          "minVramBytes": 48898458197.0,
+          "sha256": "c147388e99312d168a2c5a75d2048cd7654828c0bb9ed5f0ad1735c655aa5b45"
+        }
+      ],
+      "kvBytesPerToken": 327680.0
+    },
+    {
+      "id": "nimble:9b",
+      "family": "qwen35",
+      "params": "9.0B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 262144.0,
+      "capabilities": [
+        "chat",
+        "reasoning",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "nimble:9b"
+      },
+      "quantizations": [
+        {
+          "name": "Q8_0",
+          "diskBytes": 9527501312.0,
+          "minRamBytes": 10996875000.0,
+          "minVramBytes": 10996875000.0,
+          "sha256": "bbf1d6fc03bb0ed24d88f4c214ed7b5d1768aeb43d5cf433fb69eff0c8578013"
+        }
+      ]
+    },
+    {
+      "id": "notus:7b",
+      "family": "llama",
+      "params": "7B",
+      "architecture": "dense",
+      "license": "mit",
+      "openWeight": true,
+      "contextLength": 32768.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "notus:7b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 4109853152.0,
+          "minRamBytes": 4729375000.0,
+          "minVramBytes": 4729375000.0,
+          "sha256": "3da3b49a4fe1a26d0a81d90338b33373bf4c38e108037f5f4d959299739875a8"
+        }
+      ],
+      "kvBytesPerToken": 131072.0
+    },
+    {
+      "id": "nous-hermes2:10.7b",
+      "family": "llama",
+      "params": "11B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 4096.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "nous-hermes2:10.7b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 6072394944.0,
+          "minRamBytes": 7431875000.0,
+          "minVramBytes": 7431875000.0,
+          "sha256": "416e45a35835249480f30c83378473b5184022316035203d6a60f82a0656cd21"
+        }
+      ],
+      "kvBytesPerToken": 196608.0
+    },
+    {
+      "id": "nous-hermes2:34b",
+      "family": "llama",
+      "params": "34B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 4096.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "nous-hermes2:34b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 19466528992.0,
+          "minRamBytes": 22971250000.0,
+          "minVramBytes": 22971250000.0,
+          "sha256": "c7c4687b3952a72234e0703ee350a6940f5f3c8657e57ab2510f0095d37a52ba"
+        }
+      ],
+      "kvBytesPerToken": 245760.0
+    },
+    {
+      "id": "olmo-3.1:32b",
+      "family": "olmo3",
+      "params": "32.2B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 65536.0,
+      "capabilities": [
+        "chat",
+        "reasoning",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "olmo-3.1:32b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 19482434848.0,
+          "minRamBytes": 22404800076.0,
+          "minVramBytes": 22404800076.0,
+          "sha256": "ed701358fd1da0f1c0ef0eb5e268d5afb7e7a450a54c285faa266acbad36e5dc"
+        }
+      ]
+    },
+    {
+      "id": "olmo-3:32b",
+      "family": "olmo3",
+      "params": "32.2B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 65536.0,
+      "capabilities": [
+        "chat",
+        "reasoning",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "olmo-3:32b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 19482433248.0,
+          "minRamBytes": 22404798236.0,
+          "minVramBytes": 22404798236.0,
+          "sha256": "e7b4ff6dfb0437106e4b1c479dd57f9560088fbcf55dcb7b90e7037709366063"
+        }
+      ]
+    },
+    {
+      "id": "olmo-3:7b",
+      "family": "olmo3",
+      "params": "7.3B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 65536.0,
+      "capabilities": [
+        "chat",
+        "reasoning",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "olmo-3:7b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 4471999712.0,
+          "minRamBytes": 5142799669.0,
+          "minVramBytes": 5142799669.0,
+          "sha256": "3b6b58718a439291ffc1953067c4cc16587a23a88b00492c491c3d0787fb206c"
+        }
+      ]
+    },
+    {
+      "id": "openchat:7b",
+      "family": "llama",
+      "params": "7B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 8192.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "openchat:7b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 4109864384.0,
+          "minRamBytes": 4729375000.0,
+          "minVramBytes": 4729375000.0,
+          "sha256": "1cecc26325a197571a1961bfacf64dc6e35e0f05faf57d3c6941a982e1eb2e1d"
+        }
+      ],
+      "kvBytesPerToken": 131072.0
+    },
+    {
+      "id": "openthinker:32b",
+      "family": "qwen2",
+      "params": "32.8B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 32768.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "openthinker:32b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 19851336384.0,
+          "minRamBytes": 22829036842.0,
+          "minVramBytes": 22829036842.0,
+          "sha256": "91caa17000dd473aa64689ed40795df5511baab177c43c04a6ad71f1434e9b78"
+        }
+      ],
+      "kvBytesPerToken": 262144.0
+    },
+    {
+      "id": "openthinker:7b",
+      "family": "qwen2",
+      "params": "7.6B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 32768.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "openthinker:7b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 4683074144.0,
+          "minRamBytes": 5385535266.0,
+          "minVramBytes": 5385535266.0,
+          "sha256": "8c43c12af50714bb5a5af123334ca23c54730cb6b3eed641cf12613ab9349c77"
+        }
+      ],
+      "kvBytesPerToken": 57344.0
+    },
+    {
+      "id": "ornith:35b",
+      "family": "qwen35moe",
+      "params": "34.7B",
+      "architecture": "moe",
+      "activeParams": "3.5B",
+      "license": "mit",
+      "openWeight": true,
+      "contextLength": 262144.0,
+      "capabilities": [
+        "chat",
+        "reasoning",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "ornith:35b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 21166757664.0,
+          "minRamBytes": 24341771314.0,
+          "minVramBytes": 24341771314.0,
+          "sha256": "6540411d9e4ca638983e905959188e1be74db7ff62151c69d71a6f2748584f68"
+        }
+      ]
+    },
+    {
+      "id": "ornith:9b",
+      "family": "qwen35",
+      "params": "9.0B",
+      "architecture": "dense",
+      "license": "mit",
+      "openWeight": true,
+      "contextLength": 262144.0,
+      "capabilities": [
+        "chat",
+        "reasoning",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "ornith:9b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 5629108640.0,
+          "minRamBytes": 6473474936.0,
+          "minVramBytes": 6473474936.0,
+          "sha256": "af63361d2ac3ba2cb454f440842e345b926a50fe89cbdbe6a55160f32fc28e93"
+        }
+      ]
+    },
+    {
+      "id": "paraphrase-multilingual:278m",
+      "family": "bert",
+      "params": "277.45M",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 512.0,
+      "capabilities": [
+        "embedding"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "paraphrase-multilingual:278m"
+      },
+      "quantizations": [
+        {
+          "name": "F16",
+          "diskBytes": 562766080.0,
+          "minRamBytes": 658076719.0,
+          "minVramBytes": 658076719.0,
+          "sha256": "aa99ebfc77f41e752c215353c08bdb22a75d7858a629934fa04f587d3cdee165"
+        }
+      ]
+    },
+    {
+      "id": "phi:2.7b",
+      "family": "phi2",
+      "params": "3B",
+      "architecture": "dense",
+      "license": "mit",
+      "openWeight": true,
+      "contextLength": 2048.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "phi:2.7b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 1602461536.0,
+          "minRamBytes": 2026875000.0,
+          "minVramBytes": 2026875000.0,
+          "sha256": "04778965089b91318ad61d0995b7e44fad4b9a9f4e049d7be90932bf8812e828"
+        }
+      ],
+      "kvBytesPerToken": 327680.0
+    },
+    {
+      "id": "phind-codellama:34b",
+      "family": "llama",
+      "params": "34B",
+      "architecture": "dense",
+      "license": "llama-2-community",
+      "openWeight": true,
+      "contextLength": 16384.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "phind-codellama:34b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 19052048544.0,
+          "minRamBytes": 22971250000.0,
+          "minVramBytes": 22971250000.0,
+          "sha256": "45488384ce7a0a42ed3afa01b759df504b9d994f896aacbea64e5b1414d38ba2"
+        }
+      ],
+      "kvBytesPerToken": 196608.0
+    },
+    {
+      "id": "qwen2-math:1.5b",
+      "family": "qwen2",
+      "params": "1.5B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 4096.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "qwen2-math:1.5b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 934952384.0,
+          "minRamBytes": 1075195242.0,
+          "minVramBytes": 1075195242.0,
+          "sha256": "5995e210a45281db80e45b362593747b7a7a49d50a8ee57bbf654db362ad8bed"
+        }
+      ],
+      "kvBytesPerToken": 28672.0
+    },
+    {
+      "id": "qwen2-math:7b",
+      "family": "qwen2",
+      "params": "7.6B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 4096.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "qwen2-math:7b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 4431388512.0,
+          "minRamBytes": 5134750000.0,
+          "minVramBytes": 5134750000.0,
+          "sha256": "857e2f21d3ffef28100d6799ae3fc8d5c9125d5434a041b6a741dd123ba2b0fa"
+        }
+      ],
+      "kvBytesPerToken": 57344.0
+    },
+    {
+      "id": "qwen2.5-coder:0.5b",
+      "family": "qwen2",
+      "params": "494.03M",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 32768.0,
+      "capabilities": [
+        "chat",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "qwen2.5-coder:0.5b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 397808000.0,
+          "minRamBytes": 457479200.0,
+          "minVramBytes": 457479200.0,
+          "sha256": "20693aeb02c63304e263a72453b6ab89e1c700a87c6948cac523ac1e6f7cade0"
+        }
+      ],
+      "kvBytesPerToken": 12288.0
+    },
+    {
+      "id": "qwen2.5-coder:1.5b",
+      "family": "qwen2",
+      "params": "1.5B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 32768.0,
+      "capabilities": [
+        "chat",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "qwen2.5-coder:1.5b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 986048576.0,
+          "minRamBytes": 1133955863.0,
+          "minVramBytes": 1133955863.0,
+          "sha256": "29d8c98fa6b098e200069bfb88b9508dc3e85586d20cba59f8dda9a808165104"
+        }
+      ],
+      "kvBytesPerToken": 28672.0
+    },
+    {
+      "id": "qwen2.5-coder:14b",
+      "family": "qwen2",
+      "params": "14.8B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 32768.0,
+      "capabilities": [
+        "chat",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "qwen2.5-coder:14b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 8988110784.0,
+          "minRamBytes": 10336327402.0,
+          "minVramBytes": 10336327402.0,
+          "sha256": "ac9bc7a69dab38da1c790838955f1293420b55ab555ef6b4615efa1c1507b1ed"
+        }
+      ],
+      "kvBytesPerToken": 196608.0
+    },
+    {
+      "id": "qwen2.5vl:32b",
+      "family": "qwen25vl",
+      "params": "33.5B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 128000.0,
+      "capabilities": [
+        "chat",
+        "vision"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "qwen2.5vl:32b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 21159298208.0,
+          "minRamBytes": 24333192940.0,
+          "minVramBytes": 24333192940.0,
+          "sha256": "043a363c6ca35e3b1a29b8a5b0bbd28474820239bbc5ad943c9be18f0dc77b66"
+        }
+      ],
+      "kvBytesPerToken": 262144.0
+    },
+    {
+      "id": "qwen2.5vl:3b",
+      "family": "qwen25vl",
+      "params": "3.8B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 128000.0,
+      "capabilities": [
+        "chat",
+        "vision"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "qwen2.5vl:3b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 3200614720.0,
+          "minRamBytes": 3680706928.0,
+          "minVramBytes": 3680706928.0,
+          "sha256": "e9758e589d443f653821b7be9bb9092c1bf7434522b70ec6e83591b1320fdb4d"
+        }
+      ],
+      "kvBytesPerToken": 36864.0
+    },
+    {
+      "id": "qwen2.5vl:72b",
+      "family": "qwen25vl",
+      "params": "73.4B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 128000.0,
+      "capabilities": [
+        "chat",
+        "vision"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "qwen2.5vl:72b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 48709030400.0,
+          "minRamBytes": 56015384960.0,
+          "minVramBytes": 56015384960.0,
+          "sha256": "ae3823d63bf19077ec4c484843defaf89c4494a61d32db9b1e38c9bbd2343cb4"
+        }
+      ],
+      "kvBytesPerToken": 327680.0
+    },
+    {
+      "id": "qwen2.5vl:7b",
+      "family": "qwen25vl",
+      "params": "8.3B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 128000.0,
+      "capabilities": [
+        "chat",
+        "vision"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "qwen2.5vl:7b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 5969233408.0,
+          "minRamBytes": 6864618420.0,
+          "minVramBytes": 6864618420.0,
+          "sha256": "a99b7f834d754b88f122d865f32758ba9f0994a83f8363df2c1e71c17605a025"
+        }
+      ],
+      "kvBytesPerToken": 57344.0
+    },
+    {
+      "id": "qwen2:0.5b",
+      "family": "qwen2",
+      "params": "494.03M",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 32768.0,
+      "capabilities": [
+        "chat",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "qwen2:0.5b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 352151968.0,
+          "minRamBytes": 404974764.0,
+          "minVramBytes": 404974764.0,
+          "sha256": "8de95da68dc485c0889c205384c24642f83ca18d089559c977ffc6a3972a71a8"
+        }
+      ],
+      "kvBytesPerToken": 12288.0
+    },
+    {
+      "id": "qwen2:1.5b",
+      "family": "qwen2",
+      "params": "1.5B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 32768.0,
+      "capabilities": [
+        "chat",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "qwen2:1.5b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 934952032.0,
+          "minRamBytes": 1075194837.0,
+          "minVramBytes": 1075194837.0,
+          "sha256": "405b56374e02b21122ae1469db646be0617c02928fd78e246723ebbb98dbca3e"
+        }
+      ],
+      "kvBytesPerToken": 28672.0
+    },
+    {
+      "id": "qwen2:7b",
+      "family": "qwen2",
+      "params": "7.6B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 32768.0,
+      "capabilities": [
+        "chat",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "qwen2:7b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 4431388192.0,
+          "minRamBytes": 5134750000.0,
+          "minVramBytes": 5134750000.0,
+          "sha256": "43f7a214e5329f672bb05404cfba1913cbb70fdaa1a17497224e1925046b0ed5"
+        }
+      ],
+      "kvBytesPerToken": 57344.0
+    },
+    {
+      "id": "qwen3-coder:30b",
+      "family": "qwen3moe",
+      "params": "30.5B",
+      "architecture": "moe",
+      "activeParams": "3.4B",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 262144.0,
+      "capabilities": [
+        "chat",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "qwen3-coder:30b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 18556688736.0,
+          "minRamBytes": 21340192047.0,
+          "minVramBytes": 21340192047.0,
+          "sha256": "1194192cf2a187eb02722edcc3f77b11d21f537048ce04b67ccf8ba78863006a"
+        }
+      ],
+      "kvBytesPerToken": 98304.0
+    },
+    {
+      "id": "qwen3-coder:480b",
+      "family": "qwen3moe",
+      "params": "480.2B",
+      "architecture": "moe",
+      "activeParams": "35.5B",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 262144.0,
+      "capabilities": [
+        "chat",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "qwen3-coder:480b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 290058824416.0,
+          "minRamBytes": 333567648079.0,
+          "minVramBytes": 333567648079.0,
+          "sha256": "7724360538aa937d85b5c3029e739d41b4c1c11726a53ff4771abde8e2a3809e"
+        }
+      ],
+      "kvBytesPerToken": 253952.0
+    },
+    {
+      "id": "qwen3-embedding:0.6b",
+      "family": "qwen3",
+      "params": "595.78M",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 32768.0,
+      "capabilities": [
+        "embedding"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "qwen3-embedding:0.6b"
+      },
+      "quantizations": [
+        {
+          "name": "Q8_0",
+          "diskBytes": 639150592.0,
+          "minRamBytes": 735023181.0,
+          "minVramBytes": 735023181.0,
+          "sha256": "06507c7b42688469c4e7298b0a1e16deff06caf291cf0a5b278c308249c3e439"
+        }
+      ],
+      "kvBytesPerToken": 114688.0
+    },
+    {
+      "id": "qwen3-embedding:4b",
+      "family": "qwen3",
+      "params": "4.0B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 40960.0,
+      "capabilities": [
+        "embedding"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "qwen3-embedding:4b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 2496703776.0,
+          "minRamBytes": 2871209343.0,
+          "minVramBytes": 2871209343.0,
+          "sha256": "2b0cf8f17b4c723c27303015383c27ec4bf2d8314bb677d05e920dd70bb0f16b"
+        }
+      ],
+      "kvBytesPerToken": 147456.0
+    },
+    {
+      "id": "qwen3-embedding:8b",
+      "family": "qwen3",
+      "params": "7.6B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 40960.0,
+      "capabilities": [
+        "embedding"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "qwen3-embedding:8b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 4676804928.0,
+          "minRamBytes": 5378325668.0,
+          "minVramBytes": 5378325668.0,
+          "sha256": "3fcd3febec8b3fd64435204db75bf0dd73b91e8d0661e0331acfe7e7c3120b85"
+        }
+      ],
+      "kvBytesPerToken": 147456.0
+    },
+    {
+      "id": "qwen3-next:80b",
+      "family": "qwen3next",
+      "params": "79.7B",
+      "architecture": "moe",
+      "activeParams": "3.9B",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 262144.0,
+      "capabilities": [
+        "chat",
+        "reasoning",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "qwen3-next:80b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 50351320736.0,
+          "minRamBytes": 57904018847.0,
+          "minVramBytes": 57904018847.0,
+          "sha256": "8476acca2ca7dc4dd86ad2e069cb270fdbd44287d9ff3006d86e9a54cc19acd1"
+        }
+      ]
+    },
+    {
+      "id": "qwen3-vl:235b",
+      "family": "qwen3vlmoe",
+      "params": "235.7B",
+      "architecture": "moe",
+      "activeParams": "22.8B",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 262144.0,
+      "capabilities": [
+        "chat",
+        "vision",
+        "reasoning",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "qwen3-vl:235b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 143268630400.0,
+          "minRamBytes": 164758924960.0,
+          "minVramBytes": 164758924960.0,
+          "sha256": "02e588929c87e95d29571faea0693185503bea6f06ac3ea516092b037e149c8a"
+        }
+      ],
+      "kvBytesPerToken": 192512.0
+    },
+    {
+      "id": "qwen3-vl:2b",
+      "family": "qwen3vl",
+      "params": "2.1B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 262144.0,
+      "capabilities": [
+        "chat",
+        "vision",
+        "reasoning",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "qwen3-vl:2b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 1889496384.0,
+          "minRamBytes": 2172920842.0,
+          "minVramBytes": 2172920842.0,
+          "sha256": "ebabfa59b71a5b96e0281ec2994977e785284e0939807a99fc340dec3c6f10de"
+        }
+      ],
+      "kvBytesPerToken": 114688.0
+    },
+    {
+      "id": "qwen3-vl:30b",
+      "family": "qwen3vlmoe",
+      "params": "31.1B",
+      "architecture": "moe",
+      "activeParams": "3.9B",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 262144.0,
+      "capabilities": [
+        "chat",
+        "vision",
+        "reasoning",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "qwen3-vl:30b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 19595386752.0,
+          "minRamBytes": 22534694765.0,
+          "minVramBytes": 22534694765.0,
+          "sha256": "b1da6f96a2e40e5db05b6066d799c69411225b336bfa20ef1b002c223ed4b190"
+        }
+      ],
+      "kvBytesPerToken": 98304.0
+    },
+    {
+      "id": "qwen3-vl:32b",
+      "family": "qwen3vl",
+      "params": "33.4B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 262144.0,
+      "capabilities": [
+        "chat",
+        "vision",
+        "reasoning",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "qwen3-vl:32b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 20910274496.0,
+          "minRamBytes": 24046815671.0,
+          "minVramBytes": 24046815671.0,
+          "sha256": "6e416d39200aae1cec3ea197c5a5ebbaf214ccddc9561bcc0ec7157c83b2a99b"
+        }
+      ],
+      "kvBytesPerToken": 262144.0
+    },
+    {
+      "id": "qwen3-vl:4b",
+      "family": "qwen3vl",
+      "params": "4.4B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 262144.0,
+      "capabilities": [
+        "chat",
+        "vision",
+        "reasoning",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "qwen3-vl:4b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 3295612832.0,
+          "minRamBytes": 3789954757.0,
+          "minVramBytes": 3789954757.0,
+          "sha256": "9c60bdd691c1897bbfe5ddbc67336848e18c346b7ee2ab8541b135f208e5bb38"
+        }
+      ],
+      "kvBytesPerToken": 147456.0
+    },
+    {
+      "id": "qwen3-vl:8b",
+      "family": "qwen3vl",
+      "params": "8.8B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 262144.0,
+      "capabilities": [
+        "chat",
+        "vision",
+        "reasoning",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "qwen3-vl:8b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 6140392576.0,
+          "minRamBytes": 7061451463.0,
+          "minVramBytes": 7061451463.0,
+          "sha256": "ed12a4674d727a74ac4816c906094ea9d3119fbea46ca93288c3ce4ffbe38c55"
+        }
+      ],
+      "kvBytesPerToken": 147456.0
+    },
+    {
+      "id": "qwen3.5:0.8b",
+      "family": "qwen35",
+      "params": "752.39M",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 262144.0,
+      "capabilities": [
+        "chat",
+        "vision",
+        "reasoning",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "qwen3.5:0.8b"
+      },
+      "quantizations": [
+        {
+          "name": "Q8_0",
+          "diskBytes": 1019189824.0,
+          "minRamBytes": 1172068298.0,
+          "minVramBytes": 1172068298.0,
+          "sha256": "889ea3b9143cdc32146c7d530ce5f3d452ec18069086f6f4167ce9ae72a9691f",
+          "projectors": [
+            {
+              "bytes": 207346304,
+              "sha256": "5ba2eb9bf28c5b5ff7a705f07bd9269f0f2dbd6cb2b4c46d5f98ed8d15d18883"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "qwen3.5:122b",
+      "family": "qwen35moe",
+      "params": "125.1B",
+      "architecture": "moe",
+      "activeParams": "12.7B",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 262144.0,
+      "capabilities": [
+        "chat",
+        "vision",
+        "reasoning",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "qwen3.5:122b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 81370024480.0,
+          "minRamBytes": 93575528152.0,
+          "minVramBytes": 93575528152.0,
+          "sha256": "93c83617a40560a61cda911ee327efdb5b5fbd39caa8b777a4ec565c0af1af3d"
+        }
+      ]
+    },
+    {
+      "id": "qwen3.5:27b",
+      "family": "qwen35",
+      "params": "26.9B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 262144.0,
+      "capabilities": [
+        "chat",
+        "vision",
+        "reasoning",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "qwen3.5:27b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 17478544992.0,
+          "minRamBytes": 20100326741.0,
+          "minVramBytes": 20100326741.0,
+          "sha256": "c7e0e920a0948849beb7074d8368cbd5ac6825fcd1f2450cf851276325d8a6a5",
+          "projectors": [
+            {
+              "bytes": 931145984,
+              "sha256": "2abfbdeed2794d147bfa9bfee7b7b1536755c2d79b5a7d3cd911b0104ad011de"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "qwen3.5:2b",
+      "family": "qwen35",
+      "params": "1.9B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 262144.0,
+      "capabilities": [
+        "chat",
+        "vision",
+        "reasoning",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "qwen3.5:2b"
+      },
+      "quantizations": [
+        {
+          "name": "Q8_0",
+          "diskBytes": 2683385216.0,
+          "minRamBytes": 3093641184.0,
+          "minVramBytes": 3093641184.0,
+          "sha256": "e8bf47d40c5ba68baf8f3e503ee36710da6e8641cb0a670a508cff5b3f0cfbf7",
+          "projectors": [
+            {
+              "bytes": 671372768,
+              "sha256": "5ddf560e34046fd958b2576324f2a9b57d70f297afe6526958d60a23f3bfc20b"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "qwen3.5:35b",
+      "family": "qwen35moe",
+      "params": "34.7B",
+      "architecture": "moe",
+      "activeParams": "3.5B",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 262144.0,
+      "capabilities": [
+        "chat",
+        "vision",
+        "reasoning",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "qwen3.5:35b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 22069580576.0,
+          "minRamBytes": 25380017663.0,
+          "minVramBytes": 25380017663.0,
+          "sha256": "82cfd9a4c8343580c87b2557b3b5de744f171d4f077c61f0e519cf0a92a8500b",
+          "projectors": [
+            {
+              "bytes": 902822400,
+              "sha256": "79104874d7ab7b680e6e6abe48b03a040abc63cd73d0e778ea01759118d74f2e"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "qwen3.5:9b",
+      "family": "qwen35",
+      "params": "9.0B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 262144.0,
+      "capabilities": [
+        "chat",
+        "vision",
+        "reasoning",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "qwen3.5:9b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 6550813952.0,
+          "minRamBytes": 7533436045.0,
+          "minVramBytes": 7533436045.0,
+          "sha256": "02d45dc1cf451ba2475ac33b301c2dd8f985abe4c182ce04a1f2f5bf0260278d",
+          "projectors": [
+            {
+              "bytes": 921704832,
+              "sha256": "f836f08f921193f4d6b6a6952dba0a6fb116759d26a757bcb395d570d73976ca"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "qwen3.6:27b",
+      "family": "qwen35",
+      "params": "27.3B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 262144.0,
+      "capabilities": [
+        "chat",
+        "vision",
+        "reasoning",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "qwen3.6:27b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 17769065248.0,
+          "minRamBytes": 20434425036.0,
+          "minVramBytes": 20434425036.0,
+          "sha256": "415aad607fc297a2ad84cda238febbde295f49f17c17ad7784e2246060fb06d0",
+          "projectors": [
+            {
+              "bytes": 931145568,
+              "sha256": "c24919d9eb66eda0af3d7a62ef49bef7948389099de880e0cb5eefe2d3c31769"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "qwen3.8:27b",
+      "family": "qwen35",
+      "params": "27.3B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 262144.0,
+      "capabilities": [
+        "chat",
+        "vision",
+        "reasoning",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "qwen3.8:27b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 17741860480.0,
+          "minRamBytes": 20403139552.0,
+          "minVramBytes": 20403139552.0,
+          "sha256": "f5f1dd8920d417aac2718b0bda3403da274301efdd6760b4f0f4b864ff2ad57d",
+          "projectors": [
+            {
+              "bytes": 931146016,
+              "sha256": "ac3714bfdddeca31351f2752bf1a63f266f4df87c0b68c895e44945ca704448e"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "qwq:32b",
+      "family": "qwen2",
+      "params": "32.8B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 40960.0,
+      "capabilities": [
+        "chat",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "qwq:32b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 19851336480.0,
+          "minRamBytes": 22829036952.0,
+          "minVramBytes": 22829036952.0,
+          "sha256": "7ccc6415b2c7cb61ff8e01fec069d6f2fd6e213c509824d642c8a15c3d002e73"
+        }
+      ],
+      "kvBytesPerToken": 262144.0
+    },
+    {
+      "id": "r1-1776:671b",
+      "family": "deepseek2",
+      "params": "671.0B",
+      "architecture": "moe",
+      "activeParams": "37.6B",
+      "license": "mit",
+      "openWeight": true,
+      "contextLength": 163840.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "r1-1776:671b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 404430186816.0,
+          "minRamBytes": 465094714839.0,
+          "minVramBytes": 465094714839.0,
+          "sha256": "2add5bf3c868ca816cb59ec6797e61c10c5f1587b7b9c13389b7b3b672cc2935"
+        }
+      ]
+    },
+    {
+      "id": "r1-1776:70b",
+      "family": "llama",
+      "params": "70.6B",
+      "architecture": "dense",
+      "license": "mit",
+      "openWeight": true,
+      "contextLength": 131072.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "r1-1776:70b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 42520396064.0,
+          "minRamBytes": 48898455474.0,
+          "minVramBytes": 48898455474.0,
+          "sha256": "2991b8dc69641c55d0861a4158f5411576b7193c99ec8c6f66c9995a62e243a1"
+        }
+      ],
+      "kvBytesPerToken": 327680.0
+    },
+    {
+      "id": "reflection:70b",
+      "family": "llama",
+      "params": "70.6B",
+      "architecture": "dense",
+      "license": "llama-3.1-community",
+      "openWeight": true,
+      "contextLength": 131072.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "reflection:70b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 39969805344.0,
+          "minRamBytes": 47699125000.0,
+          "minVramBytes": 47699125000.0,
+          "sha256": "7db55972654f4bb5efbdf7a6e414a232b658584fc156be0b8c59e5ba5f13efdb"
+        }
+      ],
+      "kvBytesPerToken": 327680.0
+    },
+    {
+      "id": "rnj-1:8b",
+      "family": "gemma3",
+      "params": "8.3B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 32768.0,
+      "capabilities": [
+        "chat",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "rnj-1:8b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 5114427328.0,
+          "minRamBytes": 5881591428.0,
+          "minVramBytes": 5881591428.0,
+          "sha256": "e0785291058ca42a1338fa800e73fa4ec07d8d3176510616dae9af9e83ddc372"
+        }
+      ]
+    },
+    {
+      "id": "sailor2:1b",
+      "family": "qwen2",
+      "params": "988.06M",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 32768.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "sailor2:1b"
+      },
+      "quantizations": [
+        {
+          "name": "Q8_0",
+          "diskBytes": 1056199392.0,
+          "minRamBytes": 1214629301.0,
+          "minVramBytes": 1214629301.0,
+          "sha256": "a115fd518b90ceebe2f06069b17dea6e457723d1dcf95b4ba4e7285bd871ca49"
+        }
+      ],
+      "kvBytesPerToken": 24576.0
+    },
+    {
+      "id": "sailor2:20b",
+      "family": "qwen2",
+      "params": "19.2B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 32768.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "sailor2:20b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 11622380512.0,
+          "minRamBytes": 13365737589.0,
+          "minVramBytes": 13365737589.0,
+          "sha256": "e655180f35457e26c7b258e3c6de5a3e6af3156d2aa65a424df8b6fbca8c8a1b"
+        }
+      ],
+      "kvBytesPerToken": 262144.0
+    },
+    {
+      "id": "sailor2:8b",
+      "family": "qwen2",
+      "params": "8.5B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 32768.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "sailor2:8b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 5242934240.0,
+          "minRamBytes": 6029374376.0,
+          "minVramBytes": 6029374376.0,
+          "sha256": "617bf8228b8d512cb8b7e4aa9d683bb7907eb60fcd1a4c2fe8e32cd22b6e9b39"
+        }
+      ],
+      "kvBytesPerToken": 65536.0
+    },
+    {
+      "id": "shieldgemma:27b",
+      "family": "gemma2",
+      "params": "27.2B",
+      "architecture": "dense",
+      "license": "gemma",
+      "openWeight": true,
+      "contextLength": 8192.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "shieldgemma:27b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 16645382496.0,
+          "minRamBytes": 19142189871.0,
+          "minVramBytes": 19142189871.0,
+          "sha256": "208c1d78ecb965ddd634943419cd90a43a90d6f314a83037c031f0d157afd5da"
+        }
+      ]
+    },
+    {
+      "id": "shieldgemma:2b",
+      "family": "gemma2",
+      "params": "2.6B",
+      "architecture": "dense",
+      "license": "gemma",
+      "openWeight": true,
+      "contextLength": 8192.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "shieldgemma:2b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 1708583328.0,
+          "minRamBytes": 1964870828.0,
+          "minVramBytes": 1964870828.0,
+          "sha256": "76d0eef081fa3855b6667be5957b85fe132672165efca631347a8c03ea69b85a"
+        }
+      ]
+    },
+    {
+      "id": "shieldgemma:9b",
+      "family": "gemma2",
+      "params": "9.2B",
+      "architecture": "dense",
+      "license": "gemma",
+      "openWeight": true,
+      "contextLength": 8192.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "shieldgemma:9b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 5761058560.0,
+          "minRamBytes": 6625217344.0,
+          "minVramBytes": 6625217344.0,
+          "sha256": "0461c50bb48f654268b4beb6ea6161871b0a52f6576eb5969b4b620345d8dcad"
+        }
+      ]
+    },
+    {
+      "id": "smollm:1.7b",
+      "family": "llama",
+      "params": "1.7B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 2048.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "smollm:1.7b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 990729248.0,
+          "minRamBytes": 1148562500.0,
+          "minVramBytes": 1148562500.0,
+          "sha256": "6cafb858555d127ccd7d35ecb42208b021204b8351699685af75fc8f7d8c25d5"
+        }
+      ],
+      "kvBytesPerToken": 196608.0
+    },
+    {
+      "id": "smollm:135m",
+      "family": "llama",
+      "params": "134.52M",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 2048.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "smollm:135m"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 91727296.0,
+          "minRamBytes": 105486391.0,
+          "minVramBytes": 105486391.0,
+          "sha256": "eb2c714d40d4b35ba4b8ee98475a06d51d8080a17d2d2a75a23665985c739b94"
+        }
+      ],
+      "kvBytesPerToken": 23040.0
+    },
+    {
+      "id": "smollm:360m",
+      "family": "llama",
+      "params": "361.82M",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 2048.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "smollm:360m"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 229118944.0,
+          "minRamBytes": 263486786.0,
+          "minVramBytes": 263486786.0,
+          "sha256": "f7ae49f9d598730afa2de96fc7dade47f5850446bf813df2e9d739cc8a6c4f29"
+        }
+      ],
+      "kvBytesPerToken": 40960.0
+    },
+    {
+      "id": "snowflake-arctic-embed2:568m",
+      "family": "bert",
+      "params": "566.70M",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 8192.0,
+      "capabilities": [
+        "embedding"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "snowflake-arctic-embed2:568m"
+      },
+      "quantizations": [
+        {
+          "name": "F16",
+          "diskBytes": 1160285024.0,
+          "minRamBytes": 1344141563.0,
+          "minVramBytes": 1344141563.0,
+          "sha256": "8c625c9569c3c799f5f9595b5a141f91d224233055608189d66746347c14e613"
+        }
+      ]
+    },
+    {
+      "id": "snowflake-arctic-embed:110m",
+      "family": "bert",
+      "params": "109M",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 512.0,
+      "capabilities": [
+        "embedding"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "snowflake-arctic-embed:110m"
+      },
+      "quantizations": [
+        {
+          "name": "F16",
+          "diskBytes": 218667776.0,
+          "minRamBytes": 258534375.0,
+          "minVramBytes": 258534375.0,
+          "sha256": "a0161942122c78867159cab13fc83be9bd0e1d769f005b486ff7c074cf92f0ad"
+        }
+      ]
+    },
+    {
+      "id": "snowflake-arctic-embed:137m",
+      "family": "nomic-bert",
+      "params": "137M",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 2048.0,
+      "capabilities": [
+        "embedding"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "snowflake-arctic-embed:137m"
+      },
+      "quantizations": [
+        {
+          "name": "F16",
+          "diskBytes": 274177792.0,
+          "minRamBytes": 324946875.0,
+          "minVramBytes": 324946875.0,
+          "sha256": "4c5716ded514a70491f8fe29d33fe7787f2b4802db38b5df53e68cb1a108882f"
+        }
+      ]
+    },
+    {
+      "id": "snowflake-arctic-embed:22m",
+      "family": "bert",
+      "params": "23M",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 512.0,
+      "capabilities": [
+        "embedding"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "snowflake-arctic-embed:22m"
+      },
+      "quantizations": [
+        {
+          "name": "F16",
+          "diskBytes": 45827008.0,
+          "minRamBytes": 54553125.0,
+          "minVramBytes": 54553125.0,
+          "sha256": "a83b0493f894772b41e5cfe3e6effc288a94d300cfbbeb900891f8377f358bbf"
+        }
+      ]
+    },
+    {
+      "id": "snowflake-arctic-embed:335m",
+      "family": "bert",
+      "params": "334M",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 512.0,
+      "capabilities": [
+        "embedding"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "snowflake-arctic-embed:335m"
+      },
+      "quantizations": [
+        {
+          "name": "F16",
+          "diskBytes": 669481504.0,
+          "minRamBytes": 792206250.0,
+          "minVramBytes": 792206250.0,
+          "sha256": "fb3b66c7bdf6dabbb2edbc22627f4cb2df021c9e9545b54feafd8a7c09fe8ec5"
+        }
+      ]
+    },
+    {
+      "id": "snowflake-arctic-embed:33m",
+      "family": "bert",
+      "params": "33M",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 512.0,
+      "capabilities": [
+        "embedding"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "snowflake-arctic-embed:33m"
+      },
+      "quantizations": [
+        {
+          "name": "F16",
+          "diskBytes": 67185920.0,
+          "minRamBytes": 78271875.0,
+          "minVramBytes": 78271875.0,
+          "sha256": "3ff46f5b6ce48a6540e1a534db2d7b579d0e251d69abf75fae08cbc03eb3f20b"
+        }
+      ]
+    },
+    {
+      "id": "solar-pro:22b",
+      "family": "solar",
+      "params": "22.1B",
+      "architecture": "dense",
+      "license": "mit",
+      "openWeight": true,
+      "contextLength": 4096.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "solar-pro:22b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 13310220288.0,
+          "minRamBytes": 15306753332.0,
+          "minVramBytes": 15306753332.0,
+          "sha256": "2f3c9151b4e75a9507e04afed86fbd07d9b26686429827bb07f47db18a08215f"
+        }
+      ],
+      "kvBytesPerToken": 327680.0
+    },
+    {
+      "id": "starling-lm:7b",
+      "family": "llama",
+      "params": "7B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 8192.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "starling-lm:7b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 4108928160.0,
+          "minRamBytes": 4729375000.0,
+          "minVramBytes": 4729375000.0,
+          "sha256": "77bf5506c1e863c73d1f7ed41ecbf27929a04144d19a2688148fabb127d2e692"
+        }
+      ],
+      "kvBytesPerToken": 131072.0
+    },
+    {
+      "id": "tev1:0.8b",
+      "family": "qwen35",
+      "params": "752.39M",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 262144.0,
+      "capabilities": [
+        "chat",
+        "reasoning",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "tev1:0.8b"
+      },
+      "quantizations": [
+        {
+          "name": "Q8_0",
+          "diskBytes": 811843424.0,
+          "minRamBytes": 933619938.0,
+          "minVramBytes": 933619938.0,
+          "sha256": "fa9732e3924db99f614181a7a28384a0891ae17f478db228a47c989462b2405a"
+        }
+      ]
+    },
+    {
+      "id": "tev1:4b",
+      "family": "qwen35",
+      "params": "4.2B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 262144.0,
+      "capabilities": [
+        "chat",
+        "reasoning",
+        "tools"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "tev1:4b"
+      },
+      "quantizations": [
+        {
+          "name": "Q8_0",
+          "diskBytes": 4482403072.0,
+          "minRamBytes": 5154763533.0,
+          "minVramBytes": 5154763533.0,
+          "sha256": "35f9281a3df58b566b24091572467001906a5a6aac879fe8005c4db19c8d4a2e"
+        }
+      ]
+    },
+    {
+      "id": "tinydolphin:1.1b",
+      "family": "llama",
+      "params": "1B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 4096.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "tinydolphin:1.1b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 636731488.0,
+          "minRamBytes": 732241212.0,
+          "minVramBytes": 732241212.0,
+          "sha256": "5996bfb2c06d79a65557d1daddaa16e26a1dd9b66dc6a52ae94260a3f0078348"
+        }
+      ],
+      "kvBytesPerToken": 22528.0
+    },
+    {
+      "id": "translategemma:12b",
+      "family": "gemma3",
+      "params": "12.2B",
+      "architecture": "dense",
+      "license": "gemma",
+      "openWeight": true,
+      "contextLength": 131072.0,
+      "capabilities": [
+        "chat",
+        "vision"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "translategemma:12b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 8109818272.0,
+          "minRamBytes": 9326291013.0,
+          "minVramBytes": 9326291013.0,
+          "sha256": "1b2b95e2f0eb9a98a839249ed41dfca71b300f9c389e14581210649fada910ed"
+        }
+      ]
+    },
+    {
+      "id": "translategemma:27b",
+      "family": "gemma3",
+      "params": "27.4B",
+      "architecture": "dense",
+      "license": "gemma",
+      "openWeight": true,
+      "contextLength": 131072.0,
+      "capabilities": [
+        "chat",
+        "vision"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "translategemma:27b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 17358640928.0,
+          "minRamBytes": 19962437068.0,
+          "minVramBytes": 19962437068.0,
+          "sha256": "d87ec9a33af49e86461d8309e28e6bdb663f852c09dfca5ff581bd796cdaf583"
+        }
+      ]
+    },
+    {
+      "id": "translategemma:4b",
+      "family": "gemma3",
+      "params": "4.3B",
+      "architecture": "dense",
+      "license": "gemma",
+      "openWeight": true,
+      "contextLength": 131072.0,
+      "capabilities": [
+        "chat",
+        "vision"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "translategemma:4b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 3298866368.0,
+          "minRamBytes": 3793696324.0,
+          "minVramBytes": 3793696324.0,
+          "sha256": "bdbf939b402e2f88fbe3e918beb777813009335756b4c17be7fe008dfe4815d4"
+        }
+      ]
+    },
+    {
+      "id": "tulu3:70b",
+      "family": "llama",
+      "params": "70.6B",
+      "architecture": "dense",
+      "license": "llama-3.1-community",
+      "openWeight": true,
+      "contextLength": 131072.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "tulu3:70b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 42520485056.0,
+          "minRamBytes": 48898557815.0,
+          "minVramBytes": 48898557815.0,
+          "sha256": "83efd33f0e32e110348685e1ca6ae299f1b4aeac3e0c2b6b60a73e93ca31afd7"
+        }
+      ],
+      "kvBytesPerToken": 327680.0
+    },
+    {
+      "id": "tulu3:8b",
+      "family": "llama",
+      "params": "8.0B",
+      "architecture": "dense",
+      "license": "llama-3.1-community",
+      "openWeight": true,
+      "contextLength": 131072.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "tulu3:8b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 4920780512.0,
+          "minRamBytes": 5658897589.0,
+          "minVramBytes": 5658897589.0,
+          "sha256": "fc9f6f010f223027a69dbe09e147fd96cb322ae959b1ecde5a9f27801d70fb99"
+        }
+      ],
+      "kvBytesPerToken": 131072.0
+    },
+    {
+      "id": "wizardlm2:7b",
+      "family": "llama",
+      "params": "7B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 32768.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "wizardlm2:7b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 4108916416.0,
+          "minRamBytes": 4729375000.0,
+          "minVramBytes": 4729375000.0,
+          "sha256": "431800fe7a30f378018e76cdec8ed5f99e6f81b22fc5f63b0486e326f0b25545"
+        }
+      ],
+      "kvBytesPerToken": 131072.0
+    },
+    {
+      "id": "yi-coder:1.5b",
+      "family": "llama",
+      "params": "1.5B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 131072.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "yi-coder:1.5b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 866156480.0,
+          "minRamBytes": 1013437500.0,
+          "minVramBytes": 1013437500.0,
+          "sha256": "e09fc6a79fda76ab8381f7ef6a66b8a00daae1151d546b7358ac3197ade79083"
+        }
+      ],
+      "kvBytesPerToken": 196608.0
+    },
+    {
+      "id": "yi-coder:9b",
+      "family": "llama",
+      "params": "8.8B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 131072.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "yi-coder:9b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 5036995104.0,
+          "minRamBytes": 5945500000.0,
+          "minVramBytes": 5945500000.0,
+          "sha256": "8169bd33ad1351c56755330bd6f1cf5696de6ac297420024fa8aebae5656b0e2"
+        }
+      ],
+      "kvBytesPerToken": 98304.0
+    },
+    {
+      "id": "zephyr:141b",
+      "family": "llama",
+      "params": "141B",
+      "architecture": "moe",
+      "activeParams": "39.2B",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 65536.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "zephyr:141b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 79509213824.0,
+          "minRamBytes": 95263125000.0,
+          "minVramBytes": 95263125000.0,
+          "sha256": "2d6a2faec328bab4341b6a0d508b6321e9ee9e56740425bfcaceb5f7ab8f23ec"
+        }
+      ],
+      "kvBytesPerToken": 229376.0
+    },
+    {
+      "id": "zephyr:7b",
+      "family": "llama",
+      "params": "7B",
+      "architecture": "dense",
+      "license": "mit",
+      "openWeight": true,
+      "contextLength": 32768.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "source": {
+        "ollama": "zephyr:7b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_0",
+          "diskBytes": 4109853184.0,
+          "minRamBytes": 4729375000.0,
+          "minVramBytes": 4729375000.0,
+          "sha256": "730ebed2578e5be3e25c3ba155b06cb46690426682a38127cb72a9697e4443b4"
+        }
+      ],
+      "kvBytesPerToken": 131072.0
+    },
     {
       "id": "qwen3.6:35b",
       "family": "qwen3.6",
@@ -47,7 +5231,11 @@
       "license": "apache-2.0",
       "openWeight": true,
       "contextLength": 65536.0,
-      "capabilities": ["chat", "code", "tools"],
+      "capabilities": [
+        "chat",
+        "code",
+        "tools"
+      ],
       "releaseDate": "2026-03-31",
       "source": {
         "hf": "prism-ml/Bonsai-8B-gguf",
@@ -58,13 +5246,15 @@
           "sha256": "284a335aa3fb2ced3b1b01fcb40b08aa783e3b70832767f0dd2e3fdfa134bd54"
         }
       },
-      "quantizations": [{
-        "name": "Q1_0",
-        "diskBytes": 1158654496.0,
-        "minRamBytes": 1332452671.0,
-        "minVramBytes": 1332452671.0,
-        "sha256": "284a335aa3fb2ced3b1b01fcb40b08aa783e3b70832767f0dd2e3fdfa134bd54"
-      }]
+      "quantizations": [
+        {
+          "name": "Q1_0",
+          "diskBytes": 1158654496.0,
+          "minRamBytes": 1332452671.0,
+          "minVramBytes": 1332452671.0,
+          "sha256": "284a335aa3fb2ced3b1b01fcb40b08aa783e3b70832767f0dd2e3fdfa134bd54"
+        }
+      ]
     },
     {
       "id": "gemma4:e4b-it-qat",
@@ -126,10 +5316,16 @@
       "quantizations": [
         {
           "name": "Q4_K_M",
-          "diskBytes": 3389971840.0,
-          "minRamBytes": 3898467616.0,
-          "minVramBytes": 3898467616.0,
-          "sha256": "81fb60c7daa80fc1123380b98970b320ae233409f0f71a72ed7b9b0d62f40490"
+          "diskBytes": 3324162336.0,
+          "minRamBytes": 3925316988.0,
+          "minVramBytes": 3925316988.0,
+          "sha256": "a9d0a3e1d8c91732a3812becd31f8d4a8ff57414903f226306069f0437e2ac50",
+          "projectors": [
+            {
+              "bytes": 675569120,
+              "sha256": "e56a899b1540860385465756dd308c84417410b94dbc1c380adffd20a921ca60"
+            }
+          ]
         }
       ]
     },
@@ -609,7 +5805,7 @@
       },
       "quantizations": [
         {
-          "name": "Q4_K_M",
+          "name": "Q4_0",
           "diskBytes": 5455319040.0,
           "minRamBytes": 6273616896.0,
           "minVramBytes": 6273616896.0,
@@ -797,7 +5993,7 @@
       "family": "deepseek-r1",
       "params": "14B",
       "architecture": "dense",
-      "license": "apache-2.0",
+      "license": "mit",
       "openWeight": true,
       "contextLength": 131072.0,
       "capabilities": [
@@ -826,7 +6022,7 @@
       "family": "deepseek-r1",
       "params": "32B",
       "architecture": "dense",
-      "license": "apache-2.0",
+      "license": "mit",
       "openWeight": true,
       "contextLength": 131072.0,
       "capabilities": [
@@ -858,7 +6054,7 @@
       "activeParams": "37B",
       "license": "mit",
       "openWeight": true,
-      "contextLength": 131072.0,
+      "contextLength": 163840.0,
       "capabilities": [
         "reasoning",
         "chat",
@@ -885,7 +6081,7 @@
       "family": "deepseek-r1",
       "params": "70B",
       "architecture": "dense",
-      "license": "llama-3.3-community",
+      "license": "mit",
       "openWeight": true,
       "contextLength": 131072.0,
       "capabilities": [
@@ -914,7 +6110,7 @@
       "family": "deepseek-r1",
       "params": "7B",
       "architecture": "dense",
-      "license": "apache-2.0",
+      "license": "mit",
       "openWeight": true,
       "contextLength": 131072.0,
       "capabilities": [
@@ -943,7 +6139,7 @@
       "family": "deepseek-r1",
       "params": "8B",
       "architecture": "dense",
-      "license": "llama-3.1-community",
+      "license": "mit",
       "openWeight": true,
       "contextLength": 131072.0,
       "capabilities": [
@@ -975,7 +6171,7 @@
       "activeParams": "37B",
       "license": "deepseek",
       "openWeight": true,
-      "contextLength": 131072.0,
+      "contextLength": 163840.0,
       "capabilities": [
         "chat",
         "code",
@@ -1176,7 +6372,7 @@
       "architecture": "dense",
       "license": "apache-2.0",
       "openWeight": true,
-      "contextLength": 131072.0,
+      "contextLength": 32768.0,
       "capabilities": [
         "code",
         "chat",
@@ -1206,7 +6402,7 @@
       "architecture": "dense",
       "license": "apache-2.0",
       "openWeight": true,
-      "contextLength": 131072.0,
+      "contextLength": 32768.0,
       "capabilities": [
         "code",
         "chat",
@@ -1248,7 +6444,7 @@
       },
       "quantizations": [
         {
-          "name": "Q4_K_M",
+          "name": "Q8_0",
           "diskBytes": 1820414656.0,
           "minRamBytes": 2093476855.0,
           "minVramBytes": 2093476855.0,
@@ -1275,10 +6471,10 @@
       },
       "quantizations": [
         {
-          "name": "Q4_K_M",
+          "name": "F16",
           "diskBytes": 270885952.0,
-          "minRamBytes": 311518845.0,
-          "minVramBytes": 311518845.0,
+          "minRamBytes": 320203125.0,
+          "minVramBytes": 320203125.0,
           "sha256": "f535f83ec568d040f88ddc04a199fa6da90923bbb41d4dcaed02caa924d6ef57"
         }
       ],
@@ -1302,10 +6498,10 @@
       },
       "quantizations": [
         {
-          "name": "Q4_K_M",
+          "name": "F16",
           "diskBytes": 725553792.0,
-          "minRamBytes": 834386861.0,
-          "minVramBytes": 834386861.0,
+          "minRamBytes": 853875000.0,
+          "minVramBytes": 853875000.0,
           "sha256": "7d23be4097d67c5c43c3df62ebc19609a25f483c7d0b77d3989e1d94e36ccab6"
         }
       ],
@@ -1359,7 +6555,7 @@
       },
       "quantizations": [
         {
-          "name": "Q4_K_M",
+          "name": "Q8_0",
           "diskBytes": 1321082688.0,
           "minRamBytes": 1519245092.0,
           "minVramBytes": 1519245092.0,
@@ -1545,7 +6741,7 @@
       "architecture": "dense",
       "license": "apache-2.0",
       "openWeight": true,
-      "contextLength": 131072.0,
+      "contextLength": 32768.0,
       "capabilities": [
         "chat",
         "code",
@@ -1575,7 +6771,7 @@
       "architecture": "dense",
       "license": "apache-2.0",
       "openWeight": true,
-      "contextLength": 131072.0,
+      "contextLength": 32768.0,
       "capabilities": [
         "chat",
         "code",
@@ -1634,7 +6830,7 @@
       "architecture": "dense",
       "license": "qwen",
       "openWeight": true,
-      "contextLength": 131072.0,
+      "contextLength": 32768.0,
       "capabilities": [
         "chat",
         "code",
@@ -1664,7 +6860,7 @@
       "architecture": "dense",
       "license": "apache-2.0",
       "openWeight": true,
-      "contextLength": 131072.0,
+      "contextLength": 32768.0,
       "capabilities": [
         "chat",
         "code",
@@ -1707,7 +6903,7 @@
       },
       "quantizations": [
         {
-          "name": "Q4_K_M",
+          "name": "Q4_0",
           "diskBytes": 2176177152.0,
           "minRamBytes": 2567375000.0,
           "minVramBytes": 2567375000.0,
@@ -1734,7 +6930,7 @@
       },
       "quantizations": [
         {
-          "name": "Q4_K_M",
+          "name": "Q4_0",
           "diskBytes": 1629509152.0,
           "minRamBytes": 1873935525.0,
           "minVramBytes": 1873935525.0,
@@ -1810,7 +7006,7 @@
       "architecture": "dense",
       "license": "apache-2.0",
       "openWeight": true,
-      "contextLength": 131072.0,
+      "contextLength": 1024000.0,
       "capabilities": [
         "chat",
         "code",
@@ -1823,7 +7019,7 @@
       },
       "quantizations": [
         {
-          "name": "Q4_K_M",
+          "name": "Q4_0",
           "diskBytes": 7071700672.0,
           "minRamBytes": 8132455773.0,
           "minVramBytes": 8132455773.0,
@@ -1852,7 +7048,7 @@
       },
       "quantizations": [
         {
-          "name": "Q4_K_M",
+          "name": "Q4_0",
           "diskBytes": 15628378336.0,
           "minRamBytes": 18241875000.0,
           "minVramBytes": 18241875000.0,
@@ -1880,7 +7076,7 @@
       },
       "quantizations": [
         {
-          "name": "Q4_K_M",
+          "name": "Q4_0",
           "diskBytes": 5443143296.0,
           "minRamBytes": 6259614791.0,
           "minVramBytes": 6259614791.0,
@@ -1908,7 +7104,7 @@
       },
       "quantizations": [
         {
-          "name": "Q4_K_M",
+          "name": "Q4_0",
           "diskBytes": 19466529344.0,
           "minRamBytes": 22971250000.0,
           "minVramBytes": 22971250000.0,
@@ -1935,7 +7131,7 @@
       },
       "quantizations": [
         {
-          "name": "Q4_K_M",
+          "name": "Q4_0",
           "diskBytes": 3479326560.0,
           "minRamBytes": 4053750000.0,
           "minVramBytes": 4053750000.0,
@@ -1963,7 +7159,7 @@
       },
       "quantizations": [
         {
-          "name": "Q4_K_M",
+          "name": "Q4_0",
           "diskBytes": 5036994816.0,
           "minRamBytes": 6080625000.0,
           "minVramBytes": 6080625000.0,
@@ -1991,7 +7187,7 @@
       },
       "quantizations": [
         {
-          "name": "Q4_K_M",
+          "name": "Q4_0",
           "diskBytes": 2176177120.0,
           "minRamBytes": 2567375000.0,
           "minVramBytes": 2567375000.0,
@@ -2021,7 +7217,7 @@
       },
       "quantizations": [
         {
-          "name": "Q4_K_M",
+          "name": "Q4_0",
           "diskBytes": 79521266688.0,
           "minRamBytes": 95263125000.0,
           "minVramBytes": 95263125000.0,
@@ -2051,7 +7247,7 @@
       },
       "quantizations": [
         {
-          "name": "Q4_K_M",
+          "name": "Q4_0",
           "diskBytes": 26443590560.0,
           "minRamBytes": 31754375000.0,
           "minVramBytes": 31754375000.0,
