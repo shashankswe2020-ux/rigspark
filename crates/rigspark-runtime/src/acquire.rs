@@ -246,6 +246,7 @@ pub struct Acquired {
     pub path: PathBuf,
     pub bytes: u64,
     pub cached: bool,
+    pub rehashed: bool,
 }
 #[derive(Debug, Clone, Copy)]
 pub enum SizePolicy {
@@ -422,7 +423,57 @@ fn private_directory(path: &Path) -> Result<(), String> {
     }
     Ok(())
 }
-pub async fn hash_file(path: &Path, cancel: &CancellationToken) -> Result<(String, u64), String> {
+const VERIFIED_DIRECTORY: &str = ".verified";
+const MAX_STAMP_BYTES: u64 = 4096;
+
+/// File identity that changes on any write, rename, or replacement. `changed` (ctime)
+/// is maintained by the kernel and cannot be set back by an unprivileged process.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct FileIdentity {
+    device: u64,
+    inode: u64,
+    modified: i64,
+    modified_nanos: i64,
+    changed: i64,
+    changed_nanos: i64,
+}
+#[cfg(unix)]
+fn file_identity(metadata: &std::fs::Metadata) -> Option<FileIdentity> {
+    use std::os::unix::fs::MetadataExt;
+    // Whole-second filesystems (HFS+, FAT) report zero nanoseconds; a same-size edit within
+    // that second would keep the identity, so those caches always take the full hash.
+    if metadata.mtime_nsec() == 0 && metadata.ctime_nsec() == 0 {
+        return None;
+    }
+    Some(FileIdentity {
+        device: metadata.dev(),
+        inode: metadata.ino(),
+        modified: metadata.mtime(),
+        modified_nanos: metadata.mtime_nsec(),
+        changed: metadata.ctime(),
+        changed_nanos: metadata.ctime_nsec(),
+    })
+}
+/// Without a kernel-maintained change time every cache hit is fully re-hashed.
+#[cfg(not(unix))]
+fn file_identity(_metadata: &std::fs::Metadata) -> Option<FileIdentity> {
+    None
+}
+
+/// Records that a file with this exact identity already matched its pinned digest.
+/// It lives in the same owner-only cache as the weights, so it adds no trust beyond
+/// the cache itself; any mismatch or unreadable stamp falls back to a full hash.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct VerifiedStamp {
+    file: String,
+    sha256: String,
+    bytes: u64,
+    identity: FileIdentity,
+}
+
+fn open_no_follow(path: &Path) -> std::io::Result<std::fs::File> {
     let mut options = std::fs::OpenOptions::new();
     options.read(true);
     #[cfg(unix)]
@@ -432,7 +483,10 @@ pub async fn hash_file(path: &Path, cancel: &CancellationToken) -> Result<(Strin
             (rustix::fs::OFlags::NOFOLLOW | rustix::fs::OFlags::NONBLOCK).bits() as i32,
         );
     }
-    let file = options.open(path).map_err(|error| error.to_string())?;
+    options.open(path)
+}
+pub async fn hash_file(path: &Path, cancel: &CancellationToken) -> Result<(String, u64), String> {
+    let file = open_no_follow(path).map_err(|error| error.to_string())?;
     if !file
         .metadata()
         .map_err(|error| error.to_string())?
@@ -461,6 +515,82 @@ pub async fn hash_file(path: &Path, cancel: &CancellationToken) -> Result<(Strin
     Ok((format!("{:x}", hash.finalize()), total))
 }
 impl Acquisition {
+    fn stamp(
+        &self,
+        target: &Path,
+        artifact: &Artifact,
+        metadata: &std::fs::Metadata,
+    ) -> Option<(PathBuf, VerifiedStamp)> {
+        let file = target.strip_prefix(&self.root).ok()?.to_str()?.to_owned();
+        let key = format!("{:x}", Sha256::digest(file.as_bytes()));
+        Some((
+            self.root
+                .join(VERIFIED_DIRECTORY)
+                .join(format!("{key}.json")),
+            VerifiedStamp {
+                file,
+                sha256: artifact.sha256.to_ascii_lowercase(),
+                bytes: metadata.len(),
+                identity: file_identity(metadata)?,
+            },
+        ))
+    }
+    fn already_verified(
+        &self,
+        target: &Path,
+        artifact: &Artifact,
+        metadata: &std::fs::Metadata,
+    ) -> bool {
+        let Some((path, expected)) = self.stamp(target, artifact, metadata) else {
+            return false;
+        };
+        let Ok(file) = open_no_follow(&path) else {
+            return false;
+        };
+        if !file.metadata().is_ok_and(|stamp| stamp.is_file()) {
+            return false;
+        }
+        let mut raw = Vec::new();
+        use std::io::Read;
+        if file
+            .take(MAX_STAMP_BYTES + 1)
+            .read_to_end(&mut raw)
+            .is_err()
+            || raw.len() as u64 > MAX_STAMP_BYTES
+        {
+            return false;
+        }
+        serde_json::from_slice::<VerifiedStamp>(&raw).is_ok_and(|stamp| stamp == expected)
+    }
+    /// Best effort: a missing stamp only costs a full hash on the next cache hit.
+    fn record_verified(&self, target: &Path, artifact: &Artifact, verified: Option<FileIdentity>) {
+        let _ = (|| -> Result<(), String> {
+            let metadata = std::fs::symlink_metadata(target).map_err(|error| error.to_string())?;
+            if !metadata.is_file() || metadata.file_type().is_symlink() {
+                return Err("unsafe cached artifact".into());
+            }
+            let (path, stamp) = self
+                .stamp(target, artifact, &metadata)
+                .ok_or("no stable file identity")?;
+            if verified.is_some_and(|identity| identity != stamp.identity) {
+                return Err("artifact changed while it was being verified".into());
+            }
+            let directory = path.parent().ok_or("missing stamp directory")?;
+            private_directory(directory)?;
+            let mut temporary = tempfile::Builder::new()
+                .prefix(".stamp.")
+                .tempfile_in(directory)
+                .map_err(|error| error.to_string())?;
+            use std::io::Write;
+            temporary
+                .write_all(&serde_json::to_vec(&stamp).map_err(|error| error.to_string())?)
+                .map_err(|error| error.to_string())?;
+            temporary
+                .persist(&path)
+                .map_err(|error| error.to_string())?;
+            Ok(())
+        })();
+    }
     fn cache_directory(&self, path: &Path) -> Result<(), String> {
         let relative = path
             .strip_prefix(&self.root)
@@ -580,14 +710,28 @@ impl Acquisition {
             if !metadata.is_file() || metadata.file_type().is_symlink() {
                 return Err("unsafe cached artifact".into());
             }
+            if size.accepts(metadata.len(), artifact.bytes)
+                && self.already_verified(&target, artifact, &metadata)
+            {
+                lock.check()?;
+                self.emit(metadata.len(), artifact);
+                return Ok(Acquired {
+                    path: target,
+                    bytes: metadata.len(),
+                    cached: true,
+                    rehashed: false,
+                });
+            }
             let (sha, bytes) = hash_file(&target, cancel).await?;
             if sha.eq_ignore_ascii_case(&artifact.sha256) && size.accepts(bytes, artifact.bytes) {
                 lock.check()?;
+                self.record_verified(&target, artifact, file_identity(&metadata));
                 self.emit(bytes, artifact);
                 return Ok(Acquired {
                     path: target,
                     bytes,
                     cached: true,
+                    rehashed: true,
                 });
             }
         }
@@ -690,11 +834,13 @@ impl Acquisition {
             temporary
                 .persist(&target)
                 .map_err(|error| error.to_string())?;
+            self.record_verified(&target, artifact, None);
             self.emit(total, artifact);
             Ok(Acquired {
                 path: target.clone(),
                 bytes: total,
                 cached: false,
+                rehashed: false,
             })
         };
         tokio::select! { _=cancel.cancelled()=>Err("cancelled".into()), result=tokio::time::timeout(self.timeout,operation)=>result.map_err(|_|"download timed out".to_owned())? }

@@ -149,7 +149,14 @@ All network/filesystem boundaries are injected (`http::Transport`,
 1. **Readiness** — `GET /system_stats` must return a `system` object.
 2. **Install** — per file, `Acquisition` rooted at
    `<comfyui>/models/<folder>/rigspark` downloads from the pinned HF revision, verifies
-   SHA-256 + exact size, and re-hashes cached files on every run (fail-closed).
+   SHA-256 + exact size, and re-verifies cached files on every run (fail-closed). After a
+   file passes a full hash, a verified-cache stamp in `<root>/.verified/` records its digest,
+   size, device, inode, mtime and kernel-maintained ctime; later runs skip the re-hash only
+   when all of these still match. Any write, replacement, rename, or permission change
+   updates ctime and forces a full hash. A missing, unreadable, or mismatched stamp falls back
+   to a full hash. The stamp sits inside the same owner-only cache as the weights, so it adds no
+   trust beyond that cache; it does not detect silent disk corruption. Platforms without
+   ctime (Windows) and whole-second filesystems (zero mtime/ctime nanoseconds) always re-hash.
 3. **Visibility** — `GET /models/<folder>` must list the installed file (separator-normalised);
    the listed spelling is used in the workflow so Windows paths work.
 4. **Workflow** — built in Rust from the verified graph, then `ensure_local_only`.
