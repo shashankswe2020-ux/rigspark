@@ -208,3 +208,9 @@ save("illustrations/squiggle.svg", svg(1200, 40, f'<path d="{wave}" stroke="{C["
 save("illustrations/bubble.svg", svg(220, 120, f'<path d="M24 4h172a20 20 0 0 1 20 20v52a20 20 0 0 1-20 20H70l-26 20 4-20H24A20 20 0 0 1 4 76V24A20 20 0 0 1 24 4Z" fill="#fff" stroke="{C["ink"]}" stroke-width="3" stroke-linejoin="round"/>'))
 
 print("vectors ok:", sum(1 for _ in ROOT.rglob("*.svg")), "svgs")
+
+# dark-theme variants: lighter graphite body so Sparky reads on dark UI surfaces
+for n in ("yes", "slow", "no", "wink", "wow"):
+    s = (ROOT / f"illustrations/sparky-{n}.svg").read_text()
+    s = s.replace(f'fill="{C["ink"]}"', 'fill="#55555B"', 1)
+    save(f"illustrations/sparky-{n}-dark.svg", s)
