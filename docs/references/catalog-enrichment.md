@@ -1,5 +1,39 @@
 # Catalog Enrichment Workflow
 
+## Automatic admission (weekly)
+
+The `admit` job in the Catalog Freshness workflow keeps the catalog current
+without a human in the loop. Spec: `docs/specs/catalog-auto-admission.md`.
+
+1. `cargo catalog-enrich` refreshes digests of existing entries.
+2. `cargo catalog-admit --correct-curated` crawls `ollama.com/library?sort=newest`,
+   reads each variant's manifest, config, license and GGUF header, and admits it as
+   `provenance: auto` only when every fact is sourced. It writes a cited
+   observation per entry plus the coverage scope, and re-observes curated entries:
+   contradicted facts are corrected and recorded in
+   `docs/references/catalog-corrections.json`, and architecture contradictions stay
+   blockers. Rejections are cached by digest in
+   `docs/references/catalog-admission-state.json`.
+3. `cargo generation-admit` admits Comfy-Org text-to-image and text-to-video
+   releases with open licenses as fit-only entries. Entries whose files match an
+   official ComfyUI example (Wan 2.2 TI2V-5B, Qwen-Image) are runnable.
+4. `cargo catalog-site` regenerates `site/data/latest.js` for Ask Sparky.
+5. The full test suite and `cargo catalog-quality` run. A PR is opened only if every
+   changed path is on the data allow-list. With `CATALOG_MERGE_TOKEN` configured,
+   it is admin-merged after the required checks pass, and `catalog-publish.yml` is
+   dispatched when the quality gate passed. Without the token, the PR waits for
+   review.
+
+Tests use `crates/rigspark-core/fixtures/catalog-baseline.json`, so admission
+never moves goldens. The shipped catalog keeps invariants instead: 69 curated
+entries, bootstrap fidelity except recorded corrections, and reproducible proxies.
+
+Maintainer setup: add a fine-grained `CATALOG_MERGE_TOKEN` (this repository only;
+contents and pull requests: read and write) and remove the required reviewer from
+the `catalog-signing` environment.
+
+## Proposals and review
+
 The Catalog Freshness workflow runs Mondays at 03:17 UTC and can be dispatched
 manually on `main`. It refreshes existing catalog metadata, collects source-backed
 candidate proposals, reports release quality, and opens a review PR. It does not

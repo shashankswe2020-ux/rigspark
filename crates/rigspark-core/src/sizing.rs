@@ -188,6 +188,8 @@ pub fn parse_param_count(label: &str) -> Result<f64, ValidationError> {
 pub fn quant_bits(name: &str) -> Option<f64> {
     let name = name.to_ascii_lowercase();
     [
+        // OCP Microscaling: 4-bit elements plus one shared 8-bit scale per 32-element block.
+        ("mxfp4", 4.25),
         ("iq1", 1.9),
         ("iq2", 2.4),
         ("iq3", 3.4),

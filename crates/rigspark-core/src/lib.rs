@@ -1,3 +1,4 @@
+pub mod admission;
 pub mod advice;
 pub mod bootstrap;
 pub mod catalog;
@@ -6,10 +7,12 @@ pub mod coverage;
 pub mod enrich;
 pub mod freshness;
 pub mod generation;
+pub mod generation_admission;
 pub mod plan;
 pub mod ranking;
 pub mod registry_collector;
 pub mod reports;
+pub mod site_latest;
 pub mod sizing;
 
 /// Curated, cited model catalog bundled into every release.

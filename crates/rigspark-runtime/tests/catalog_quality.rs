@@ -9,7 +9,10 @@ fn fixture() -> (String, Value) {
 }
 
 fn fixture_count(count: usize) -> (String, Value) {
-    let mut catalog = Catalog::parse(rigspark_core::MODELS_JSON).unwrap();
+    let mut catalog = Catalog::parse(include_str!(
+        "../../rigspark-core/fixtures/catalog-baseline.json"
+    ))
+    .unwrap();
     catalog.generated_at = "2026-09-30T00:00:00Z".into();
     let template = catalog.models.remove(0);
     catalog.models = (0..count)
@@ -243,4 +246,103 @@ fn gated_signer_refuses_missing_evidence_and_invalid_documents() {
     let (_, mut evidence) = fixture();
     evidence["policyVersion"] = json!(2);
     assert!(evaluate(&catalog, &evidence.to_string(), NOW).is_err());
+}
+
+/// Turns every full observation into a partial one that checks only the listed facts.
+fn partial(evidence: &mut Value, catalog: &str, fields: &[&str]) {
+    let catalog: Value = serde_json::from_str(catalog).unwrap();
+    for observation in evidence["observations"].as_array_mut().unwrap() {
+        let model = catalog["models"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|model| model["id"] == observation["id"])
+            .unwrap();
+        let mut facts = serde_json::Map::new();
+        for field in fields {
+            let value = if *field == "defaultQuantization" {
+                let mut quant = model["quantizations"][0].clone();
+                for key in ["minRamBytes", "minVramBytes", "digestVerified"] {
+                    quant.as_object_mut().unwrap().remove(key);
+                }
+                quant
+            } else {
+                model[*field].clone()
+            };
+            facts.insert(field.to_string(), value);
+        }
+        let tag = observation["id"]
+            .as_str()
+            .unwrap()
+            .split(':')
+            .nth(1)
+            .unwrap()
+            .to_string();
+        let object = observation.as_object_mut().unwrap();
+        object.remove("model");
+        object.insert("facts".into(), Value::Object(facts));
+        // Partial observations read only Ollama, so they cite only those reads.
+        object.insert(
+            "sources".into(),
+            json!([
+                format!("https://registry.ollama.ai/v2/library/fixture/manifests/{tag}"),
+                format!("https://ollama.com/library/fixture:{tag}")
+            ]),
+        );
+    }
+}
+
+#[test]
+fn partial_observations_verify_only_the_facts_they_check_and_say_so() {
+    let (catalog, mut evidence) = fixture();
+    partial(
+        &mut evidence,
+        &catalog,
+        &["defaultQuantization", "contextLength", "architecture"],
+    );
+    let report = evaluate(&catalog, &evidence.to_string(), NOW).unwrap();
+    assert!(report.passed, "{:?}", report.blockers);
+    let entry = serde_json::to_value(&report.entries[0]).unwrap();
+    assert_eq!(entry["verified"], true);
+    assert_eq!(
+        entry["checkedFields"],
+        json!(["architecture", "contextLength", "defaultQuantization"]),
+        "the report names exactly what was verified"
+    );
+
+    let mut wrong = evidence.clone();
+    wrong["observations"][0]["facts"]["contextLength"] = json!(4096);
+    let report = evaluate(&catalog, &wrong.to_string(), NOW).unwrap();
+    assert!(!report.passed);
+    assert!(
+        report
+            .blockers
+            .iter()
+            .any(|blocker| blocker.contains("contradict"))
+    );
+
+    let mut digest = evidence.clone();
+    digest["observations"][0]["facts"]["defaultQuantization"]["sha256"] = json!("f".repeat(64));
+    assert!(!evaluate(&catalog, &digest.to_string(), NOW).unwrap().passed);
+
+    for invalid in [
+        json!({"params": "8B"}),
+        json!({}),
+        json!({"contextLength": 4096, "releaseDate": "2024-01-01"}),
+        json!({"contextLength": 262144}),
+    ] {
+        let mut bad = evidence.clone();
+        bad["observations"][0]["facts"] = invalid.clone();
+        assert!(
+            evaluate(&catalog, &bad.to_string(), NOW).is_err(),
+            "{invalid}"
+        );
+    }
+    let mut both = evidence.clone();
+    both["observations"][0]["model"] =
+        serde_json::from_str::<Value>(&catalog).unwrap()["models"][0].clone();
+    assert!(
+        evaluate(&catalog, &both.to_string(), NOW).is_err(),
+        "model and facts are exclusive"
+    );
 }

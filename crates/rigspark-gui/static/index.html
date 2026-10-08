@@ -297,6 +297,15 @@
                     <span>Ollama port</span>
                     <input id="installed-port" type="number" min="1" max="65535" step="1" value="11434" />
                   </label>
+                  <label class="model-field">
+                    <span>Released in</span>
+                    <select id="models-recency" aria-label="Show models released or added within">
+                      <option value="">All time</option>
+                      <option value="1">Last month</option>
+                      <option value="2">Last 2 months</option>
+                      <option value="3">Last 3 months</option>
+                    </select>
+                  </label>
                   <label class="model-toggle"><input id="models-fit-only" type="checkbox" /> Known context fit only</label>
                   <label class="model-toggle"><input id="model-bypass" type="checkbox" /> Bypass estimated fit</label>
                   <button id="refresh-models" class="ghost-btn" type="button">Refresh</button>

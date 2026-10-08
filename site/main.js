@@ -139,27 +139,78 @@ document.querySelectorAll(".arrows button").forEach((btn) => {
   });
 });
 
-// Ask Sparky: a preview of RigSpark's memory-fit rule using published Q4_K_M sizes.
+// Ask Sparky: a preview of RigSpark's memory-fit rule. "Popular" uses published Q4_K_M sizes;
+// "New" lists models released or auto-added in the catalog's last month (site/data/latest.js).
 (() => {
   const ramGroup = document.getElementById("ram");
-  const modelGroup = document.getElementById("model");
-  if (!ramGroup || !modelGroup) return;
+  const popularGroup = document.getElementById("model");
+  const newGroup = document.getElementById("model-new");
+  const sourceGroup = document.getElementById("model-source");
+  if (!ramGroup || !popularGroup || !newGroup || !sourceGroup) return;
   const OS_RESERVE_GIB = 2;
   const HEADROOM = 0.15;
+  const latest = globalThis.RIGSPARK_LATEST?.models ?? [];
   const $ = (id) => document.getElementById(id);
   const pressed = (group) => group.querySelector('[aria-pressed="true"]');
+  const kindName = { text: "text", image: "image", video: "video" };
+  let source = "popular";
+
   const copy = {
     yes: ["Runs well.", () => "Fits in memory with headroom. Go for it.", "0"],
     slow: ["Fits. Probably slowly.", (m) => `A dense ${m.params}B model is usually bandwidth-bound on laptop memory. Run can-run for your real tok/s.`, "0"],
     no: ["Won\u2019t fit.", (m, budget) => `Needs ${m.mem} GiB, but only ${budget.toFixed(1)} GiB fits the budget. Skip this download.`, "1"],
   };
+
+  const billions = (label) => {
+    const match = /^(\d+(?:\.\d+)?)([BMT])$/.exec(label || "");
+    if (!match) return 0;
+    return Number(match[1]) * { M: 0.001, B: 1, T: 1000 }[match[2]];
+  };
+
+  const fillNew = (kind) => {
+    newGroup.textContent = "";
+    const items = latest.filter((item) => item.kind === kind);
+    const empty = $("model-empty");
+    empty.hidden = items.length > 0;
+    empty.textContent = items.length ? "" : `No new ${kindName[kind]} models in the last month. Check back after the weekly catalog update.`;
+    items.slice(0, 12).forEach((item, index) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.dataset.v = item.id;
+      button.dataset.mem = String(item.memGiB);
+      button.dataset.params = String(billions(item.activeParams || item.params));
+      button.dataset.dense = item.dense ? "1" : "0";
+      button.dataset.kind = item.kind;
+      button.dataset.runnable = item.runnable ? "1" : "0";
+      button.setAttribute("aria-pressed", String(index === 0));
+      button.textContent = item.id;
+      button.title = `${item.basis === "added" ? "added" : "released"} ${item.date}${item.runnable ? "" : " · workflow coming"}`;
+      newGroup.appendChild(button);
+    });
+    return items.length;
+  };
+
   const render = () => {
     const ram = Number(pressed(ramGroup).dataset.v);
-    const chip = pressed(modelGroup);
+    const group = source === "popular" ? popularGroup : newGroup;
+    const chip = pressed(group);
+    const result = document.querySelector("#ask .result");
+    const tag = document.querySelector("#ask .verdict-tag");
+    if (!chip) {
+      result.hidden = true;
+      tag.hidden = true;
+      return;
+    }
+    result.hidden = false;
+    tag.hidden = false;
+    const generation = chip.dataset.kind === "image" || chip.dataset.kind === "video";
     const model = { id: chip.dataset.v, mem: Number(chip.dataset.mem), params: Number(chip.dataset.params), dense: chip.dataset.dense === "1" };
     const budget = Math.max(0, ram - OS_RESERVE_GIB) * (1 - HEADROOM);
-    const verdict = model.mem > budget ? "no" : model.dense && model.params >= 27 ? "slow" : "yes";
-    const [say, why, exit] = copy[verdict];
+    const verdict = model.mem > budget ? "no" : !generation && model.dense && model.params >= 27 ? "slow" : "yes";
+    let [say, why, exit] = copy[verdict];
+    let reason = why(model, budget);
+    if (generation && verdict === "yes") reason = "The largest weight file fits; ComfyUI loads stages one at a time.";
+    if (generation && chip.dataset.runnable === "0") reason += " Fit only for now: a built-in workflow is coming.";
     const gauge = $("g");
     gauge.style.width = `${Math.min((model.mem / budget) * 100, 100)}%`;
     gauge.className = `gauge-${verdict}`;
@@ -169,16 +220,34 @@ document.querySelectorAll(".arrows button").forEach((btn) => {
     $("t-pill").textContent = verdict;
     $("t-exit").textContent = exit;
     $("t-verdict").textContent = say;
-    $("t-why").textContent = why(model, budget);
+    $("t-why").textContent = reason;
     $("tag-txt").textContent = verdict;
     $("tag-dot").className = `tag-${verdict}`;
+    $("t-cmd").textContent = generation ? "rigspark catalog --generation" : "rigspark can-run";
     document.querySelectorAll(".viewer img").forEach((img) => img.classList.toggle("on", img.dataset.v === verdict));
   };
+
   const select = (group, btn) => {
     group.querySelectorAll("button").forEach((other) => other.setAttribute("aria-pressed", String(other === btn)));
     render();
   };
-  [ramGroup, modelGroup].forEach((group) => {
+
+  sourceGroup.addEventListener("click", (event) => {
+    const btn = event.target.closest("button");
+    if (!btn) return;
+    sourceGroup.querySelectorAll("button").forEach((other) => other.setAttribute("aria-pressed", String(other === btn)));
+    source = btn.dataset.v;
+    const popular = source === "popular";
+    popularGroup.hidden = !popular;
+    newGroup.hidden = popular;
+    $("model-note").textContent = popular
+      ? "Quantized to Q4_K_M at default context."
+      : `Released, or auto-added to the catalog, in the last ${globalThis.RIGSPARK_LATEST?.windowDays ?? 31} days.`;
+    if (popular) $("model-empty").hidden = true;
+    else fillNew(source);
+    render();
+  });
+  [ramGroup, popularGroup, newGroup].forEach((group) => {
     group.addEventListener("click", (event) => {
       const btn = event.target.closest("button");
       if (btn) select(group, btn);

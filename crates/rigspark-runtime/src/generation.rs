@@ -27,7 +27,7 @@ pub const MAX_SEED: u64 = 9_007_199_254_740_991;
 const MAX_OUTPUT_BYTES: u64 = 1024 * 1024 * 1024;
 const WEIGHT_TIMEOUT: Duration = Duration::from_secs(6 * 60 * 60);
 /// Core ComfyUI nodes used by the built-in workflows; anything else is refused.
-pub const LOCAL_NODES: [&str; 19] = [
+pub const LOCAL_NODES: [&str; 21] = [
     "BasicGuider",
     "BasicScheduler",
     "CheckpointLoaderSimple",
@@ -39,6 +39,7 @@ pub const LOCAL_NODES: [&str; 19] = [
     "EmptySD3LatentImage",
     "KSampler",
     "KSamplerSelect",
+    "ModelSamplingAuraFlow",
     "ModelSamplingSD3",
     "RandomNoise",
     "SamplerCustomAdvanced",
@@ -47,6 +48,7 @@ pub const LOCAL_NODES: [&str; 19] = [
     "UNETLoader",
     "VAEDecode",
     "VAELoader",
+    "Wan22ImageToVideoLatent",
 ];
 /// Wan 2.1's published default negative prompt (Apache-2.0), as used by the official
 /// ComfyUI example: https://comfyanonymous.github.io/ComfyUI_examples/wan/
@@ -109,7 +111,8 @@ pub fn output_extension(kind: GenerationKind) -> &'static str {
 fn save_node(workflow: Workflow) -> &'static str {
     match workflow {
         Workflow::FluxCheckpoint | Workflow::FluxSplit => "9",
-        Workflow::WanT2v => "28",
+        Workflow::WanT2v | Workflow::Wan22Ti2v => "28",
+        Workflow::QwenImage => "60",
     }
 }
 
@@ -161,7 +164,10 @@ pub fn workflow(
             .cloned()
             .ok_or(GenerationError::Invalid("missing installed weight name"))
     };
-    Ok(match model.workflow {
+    let workflow = model
+        .runnable()
+        .map_err(|error| GenerationError::Catalog(error.to_string()))?;
+    Ok(match workflow {
         // https://comfyanonymous.github.io/ComfyUI_examples/flux/ (schnell fp8 checkpoint)
         Workflow::FluxCheckpoint => json!({
             "6": {"class_type": "CLIPTextEncode", "inputs": {"text": prompt, "clip": ["30", 1]}},
@@ -215,6 +221,41 @@ pub fn workflow(
             "39": {"class_type": "VAELoader", "inputs": {"vae_name": name(FileRole::Vae)?}},
             "40": {"class_type": "EmptyHunyuanLatentVideo", "inputs": {"width": 832, "height": 480, "length": 49, "batch_size": 1}},
             "48": {"class_type": "ModelSamplingSD3", "inputs": {"shift": 8.0, "model": ["37", 0]}},
+        }),
+        // https://comfyanonymous.github.io/ComfyUI_examples/wan22/ (5B text to video)
+        Workflow::Wan22Ti2v => json!({
+            "3": {"class_type": "KSampler", "inputs": {
+                "seed": seed, "steps": 30, "cfg": 5.0, "sampler_name": wan_sampler(devices), "scheduler": "simple",
+                "denoise": 1.0, "model": ["48", 0], "positive": ["6", 0], "negative": ["7", 0],
+                "latent_image": ["55", 0]}},
+            "6": {"class_type": "CLIPTextEncode", "inputs": {"text": prompt, "clip": ["38", 0]}},
+            "7": {"class_type": "CLIPTextEncode", "inputs": {"text": WAN_NEGATIVE_PROMPT, "clip": ["38", 0]}},
+            "8": {"class_type": "VAEDecode", "inputs": {"samples": ["3", 0], "vae": ["39", 0]}},
+            "28": {"class_type": "SaveAnimatedWEBP", "inputs": {
+                "filename_prefix": "rigspark", "fps": 24.0, "lossless": false, "quality": 90,
+                "method": "default", "images": ["8", 0]}},
+            "37": {"class_type": "UNETLoader", "inputs": {"unet_name": name(FileRole::Diffusion)?, "weight_dtype": "default"}},
+            "38": {"class_type": "CLIPLoader", "inputs": {"clip_name": name(FileRole::TextEncoder)?, "type": "wan", "device": "default"}},
+            "39": {"class_type": "VAELoader", "inputs": {"vae_name": name(FileRole::Vae)?}},
+            "48": {"class_type": "ModelSamplingSD3", "inputs": {"shift": 8.0, "model": ["37", 0]}},
+            "55": {"class_type": "Wan22ImageToVideoLatent", "inputs": {
+                "width": 1280, "height": 704, "length": 41, "batch_size": 1, "vae": ["39", 0]}},
+        }),
+        // https://comfyanonymous.github.io/ComfyUI_examples/qwen_image/ (basic workflow)
+        Workflow::QwenImage => json!({
+            "3": {"class_type": "KSampler", "inputs": {
+                "seed": seed, "steps": 20, "cfg": 2.5, "sampler_name": "euler", "scheduler": "simple",
+                "denoise": 1.0, "model": ["66", 0], "positive": ["6", 0], "negative": ["7", 0],
+                "latent_image": ["58", 0]}},
+            "6": {"class_type": "CLIPTextEncode", "inputs": {"text": prompt, "clip": ["38", 0]}},
+            "7": {"class_type": "CLIPTextEncode", "inputs": {"text": " ", "clip": ["38", 0]}},
+            "8": {"class_type": "VAEDecode", "inputs": {"samples": ["3", 0], "vae": ["39", 0]}},
+            "37": {"class_type": "UNETLoader", "inputs": {"unet_name": name(FileRole::Diffusion)?, "weight_dtype": "default"}},
+            "38": {"class_type": "CLIPLoader", "inputs": {"clip_name": name(FileRole::TextEncoder)?, "type": "qwen_image", "device": "default"}},
+            "39": {"class_type": "VAELoader", "inputs": {"vae_name": name(FileRole::Vae)?}},
+            "58": {"class_type": "EmptySD3LatentImage", "inputs": {"width": 1328, "height": 1328, "batch_size": 1}},
+            "60": {"class_type": "SaveImage", "inputs": {"filename_prefix": "rigspark", "images": ["8", 0]}},
+            "66": {"class_type": "ModelSamplingAuraFlow", "inputs": {"shift": 3.1, "model": ["37", 0]}},
         }),
     })
 }
@@ -504,8 +545,11 @@ impl ComfyUi<'_> {
                 "ComfyUI directory must contain a models/ folder",
             ));
         }
+        let workflow = model
+            .runnable()
+            .map_err(|error| GenerationError::Catalog(error.to_string()))?;
         let mut installed = Vec::new();
-        for role in model.workflow.roles() {
+        for role in workflow.roles() {
             let file = model
                 .file(*role)
                 .ok_or(GenerationError::Invalid("model is missing a workflow file"))?;
@@ -866,7 +910,10 @@ impl ComfyUi<'_> {
         }
         let status = self.ready(request.endpoint, cancel).await?;
         let devices = &status.devices;
-        if model.workflow == Workflow::WanT2v && apple_mps(devices) {
+        let built_in = model
+            .runnable()
+            .map_err(|error| GenerationError::Catalog(error.to_string()))?;
+        if matches!(built_in, Workflow::WanT2v | Workflow::Wan22Ti2v) && apple_mps(devices) {
             self.emit(
                 "ComfyUI reports Apple MPS: using the euler sampler (uni_pc diverges on MPS)"
                     .into(),
@@ -923,7 +970,7 @@ impl ComfyUi<'_> {
             }
         };
         let descriptor = outputs
-            .get(save_node(model.workflow))
+            .get(save_node(built_in))
             .and_then(|node| node.get("images"))
             .and_then(Value::as_array)
             .and_then(|images| images.first())

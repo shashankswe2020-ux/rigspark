@@ -27,6 +27,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const installedPort = document.querySelector("#installed-port");
   const installedPortField = document.querySelector("#installed-port-field");
   const modelsFitOnly = document.querySelector("#models-fit-only");
+  const modelsRecency = document.querySelector("#models-recency");
   const modelBypass = document.querySelector("#model-bypass");
   const kvCache = document.querySelector("#kv-cache");
   const kvCacheField = document.querySelector("#kv-cache-field");
@@ -1365,7 +1366,11 @@ document.addEventListener("DOMContentLoaded", () => {
       detailElement(
         "div",
         "model-detail-kicker",
-        `${model.family} · released ${model.releaseDate || "unknown"}`,
+        model.releaseDate
+          ? `${model.family} · released ${model.releaseDate}`
+          : model.addedAt
+            ? `${model.family} · added ${model.addedAt} · auto-sourced`
+            : `${model.family} · released unknown`,
       ),
     );
     const titleRow = detailElement("div", "model-detail-title-row");
@@ -1727,7 +1732,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!models.length) {
       const empty = document.createElement("div");
       empty.className = "recommended-empty";
-      empty.textContent = "No recommended models for this machine.";
+      empty.textContent = modelsRecency?.value
+        ? `No models released or added in the last ${modelsRecency.value === "1" ? "month" : `${modelsRecency.value} months`}.`
+        : "No recommended models for this machine.";
       recommendedList.appendChild(empty);
       return;
     }
@@ -1761,7 +1768,8 @@ document.addEventListener("DOMContentLoaded", () => {
           ? ` · ${formatTokens(model.contextTokens)} context tokens · context fit unknown`
           : ` · ${formatTokens(model.contextTokens)} context tokens${model.kvPrecision && model.kvPrecision !== "fp16" ? ` · KV ${model.kvPrecision}` : ""}`
         : "";
-      meta.textContent = `${model.params} · ${model.quant} · ${formatSize(model.diskBytes)} · ${formatThroughput(model.throughput)}${context}`;
+      const origin = model.provenance === "auto" ? " · auto-sourced" : "";
+      meta.textContent = `${model.params} · ${model.quant} · ${formatSize(model.diskBytes)} · ${formatThroughput(model.throughput)}${context}${origin}`;
 
       const actions = document.createElement("div");
       actions.className = "model-card-actions";
@@ -1850,6 +1858,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const params = new globalThis.URLSearchParams();
       const installed = modelSource?.value === "installed";
       if (!installed) params.set("limit", "100");
+      if (!installed && modelsRecency?.value) params.set("month", modelsRecency.value);
       if (runtime && !installed) {
         params.set("runtime", runtime);
       }
@@ -2010,7 +2019,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (modelBypass) modelBypass.checked = false;
     loadModels();
   });
-  for (const control of [contextTokens, installedPort, modelsFitOnly, modelBypass, kvCache]) {
+  for (const control of [contextTokens, installedPort, modelsFitOnly, modelsRecency, modelBypass, kvCache]) {
     control?.addEventListener("change", () => loadModels());
   }
 

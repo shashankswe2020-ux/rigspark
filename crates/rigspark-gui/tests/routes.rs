@@ -188,3 +188,43 @@ async fn catalog_browsing_limit_is_bounded_and_default_stays_eight() {
             .collect::<Vec<_>>()
     );
 }
+
+#[tokio::test]
+async fn recency_window_only_narrows_recommendations_and_rejects_bad_values() {
+    let home = tempfile::tempdir().unwrap();
+    let host = Host::new(home.path(), 43210).unwrap();
+    for month in ["0", "4", "x"] {
+        assert_eq!(
+            call(
+                &host,
+                "GET",
+                &format!("/api/models/recommended?month={month}"),
+                json!({})
+            )
+            .await
+            .0,
+            StatusCode::BAD_REQUEST,
+            "{month}"
+        );
+    }
+    let (status, recent) = call(
+        &host,
+        "GET",
+        "/api/models/recommended?limit=100&month=3",
+        json!({}),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    let today = rigspark_runtime::native_chat::timestamp().unwrap();
+    let cutoff = rigspark_core::catalog::months_before(&today[..10], 3)
+        .unwrap()
+        .to_string();
+    for model in recent["models"].as_array().unwrap() {
+        let day = model
+            .get("releaseDate")
+            .or_else(|| model.get("addedAt"))
+            .and_then(|day| day.as_str())
+            .unwrap();
+        assert!(day >= cutoff.as_str(), "{}: {day}", model["id"]);
+    }
+}

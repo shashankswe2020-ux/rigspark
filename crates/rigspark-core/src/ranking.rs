@@ -190,7 +190,10 @@ fn recommend_inner(
             * (4.7 / quant_bits(&quant.name).unwrap_or(4.7)).clamp(0.0, 1.0)
             * (7e9 / parse_param_count(active)?))
         .clamp(0.0, 1.0);
-        let released = date(&model.release_date)?.midnight().assume_utc();
+        let (day, _) = model
+            .recency()
+            .ok_or_else(|| ValidationError("catalog entry has no recency date".into()))?;
+        let released = date(day)?.midnight().assume_utc();
         let age = (reference - released).as_seconds_f64() / 86400.0;
         let recency = (1.0 - age / 730.0).clamp(0.0, 1.0);
         let capability = if options
@@ -217,6 +220,9 @@ fn recommend_inner(
             "requiredBytes":required,"license":model.license,"capabilities":model.capabilities,"score":score,"verdict":verdict,
             "estTokPerSec": if estimate.known { json!({"lowTokPerSec":estimate.low_tok_per_sec,"highTokPerSec":estimate.high_tok_per_sec}) } else { Value::Null },
             "backends":supported,"throughputBackend":backend});
+        if model.provenance == crate::catalog::EntryProvenance::Auto {
+            entry["provenance"] = json!("auto");
+        }
         if detailed {
             entry["throughputEvidence"] = json!({"backend":backend,"source":"offline-estimate","unknownReason":if estimate.known{None}else{Some("no-sourced-performance-profile")}});
             entry["scores"] = json!({"quality":quality,"fit":fit_score,"speed":speed,"recency":recency,"capability":capability});
@@ -252,7 +258,7 @@ fn recommend_inner(
             entry,
             score,
             model.benchmark_proxy.unwrap_or(-1.0),
-            model.release_date.clone(),
+            day.to_string(),
             model.id.clone(),
         ));
     }

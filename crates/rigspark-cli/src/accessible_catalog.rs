@@ -104,18 +104,14 @@ fn validate(catalog: &Catalog, hardware: &Hardware, options: &CatalogOptions) ->
             return Err(invalid("missing catalog quantization"));
         }
         nodes += 32 + model.capabilities.len() + model.quantizations.len() * 8;
-        for value in [
-            &model.id,
-            &model.family,
-            &model.params,
-            &model.license,
-            &model.release_date,
-        ]
-        .into_iter()
-        .chain(model.active_params.iter())
-        .chain(model.capabilities.iter())
-        .chain(model.source.ollama.iter())
-        .chain(model.source.hf.iter())
+        for value in [&model.id, &model.family, &model.params, &model.license]
+            .into_iter()
+            .chain(model.release_date.iter())
+            .chain(model.added_at.iter())
+            .chain(model.active_params.iter())
+            .chain(model.capabilities.iter())
+            .chain(model.source.ollama.iter())
+            .chain(model.source.hf.iter())
         {
             text(value)?;
         }
@@ -272,8 +268,9 @@ pub fn build_catalog(
     let mut models = catalog.models.iter().collect::<Vec<_>>();
     models.sort_by(|left, right| {
         right
-            .release_date
-            .cmp(&left.release_date)
+            .recency()
+            .map(|(day, _)| day)
+            .cmp(&left.recency().map(|(day, _)| day))
             .then_with(|| left.id.cmp(&right.id))
     });
     let mut rows = Vec::new();
@@ -309,7 +306,7 @@ pub fn build_catalog(
             Architecture::Moe => "moe",
         };
         let fit = sizing.fit.reason.unwrap_or("fit");
-        let release = single_line(&model.release_date)?;
+        let release = single_line(&model.recency_label())?;
         let capabilities = lines(&model.capabilities)?;
         let quantizations = model
             .quantizations

@@ -823,3 +823,60 @@ async fn previous_workflow_weights_are_unloaded_on_switch_when_memory_is_shared_
         }
     }
 }
+
+#[test]
+fn wan22_and_qwen_image_graphs_follow_the_official_examples_and_stay_local() {
+    use rigspark_core::generation::Workflow;
+    let catalog = GenerationCatalog::bundled().unwrap();
+    let build = |workflow: Workflow, devices: &[String]| {
+        let mut model = catalog.resolve("video").unwrap().clone();
+        model.workflow = Some(workflow);
+        let names = model
+            .files
+            .iter()
+            .map(|file| (file.role, file.file.clone()))
+            .collect();
+        let graph = workflow_graph(&model, &names, devices);
+        ensure_local_only(&graph).unwrap();
+        graph
+    };
+    let wan = build(Workflow::Wan22Ti2v, &[]);
+    assert_eq!(wan["55"]["class_type"], "Wan22ImageToVideoLatent");
+    assert_eq!(wan["55"]["inputs"]["width"], 1280);
+    assert_eq!(wan["55"]["inputs"]["height"], 704);
+    assert_eq!(wan["3"]["inputs"]["cfg"], 5.0);
+    assert_eq!(wan["3"]["inputs"]["sampler_name"], "uni_pc");
+    assert_eq!(wan["28"]["class_type"], "SaveAnimatedWEBP");
+    assert_eq!(
+        build(Workflow::Wan22Ti2v, &["mps".to_owned()])["3"]["inputs"]["sampler_name"],
+        "euler",
+        "uni_pc diverges on Apple MPS"
+    );
+    let qwen = build(Workflow::QwenImage, &[]);
+    assert_eq!(qwen["66"]["class_type"], "ModelSamplingAuraFlow");
+    assert_eq!(qwen["66"]["inputs"]["shift"], 3.1);
+    assert_eq!(qwen["58"]["inputs"]["width"], 1328);
+    assert_eq!(qwen["38"]["inputs"]["type"], "qwen_image");
+    assert_eq!(qwen["3"]["inputs"]["steps"], 20);
+    assert_eq!(qwen["60"]["class_type"], "SaveImage");
+
+    let mut fit_only = catalog.resolve("video").unwrap().clone();
+    fit_only.workflow = None;
+    let names = fit_only
+        .files
+        .iter()
+        .map(|file| (file.role, file.file.clone()))
+        .collect();
+    let refusal = workflow(&fit_only, &names, "prompt", 1, &[])
+        .unwrap_err()
+        .to_string();
+    assert!(refusal.contains("workflow coming"), "{refusal}");
+}
+
+fn workflow_graph(
+    model: &rigspark_core::generation::GenerationModel,
+    names: &std::collections::HashMap<rigspark_core::generation::FileRole, String>,
+    devices: &[String],
+) -> serde_json::Value {
+    workflow(model, names, "a fox on a volcano", 7, devices).unwrap()
+}

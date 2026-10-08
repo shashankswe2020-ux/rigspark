@@ -90,33 +90,14 @@ impl RawModel {
         let count = parse_param_count(&self.params)?;
         let mut quantizations = Vec::new();
         for quant in &self.quantizations {
-            let bits = quant_bits(&quant.name);
-            require(
-                bits.is_some() || !matches!(self.architecture, Architecture::Moe),
-                "unknown MoE quantization",
-            )?;
-            let projector_bytes = quant
-                .projectors
-                .iter()
-                .map(|projector| projector.bytes as f64)
-                .sum::<f64>();
-            require(
-                projector_bytes < quant.disk_bytes,
-                "projector size exceeds aggregate weights",
-            )?;
-            let resident = (quant.disk_bytes - projector_bytes)
-                .max(bits.map(|bits| (count * bits / 8.0).ceil()).unwrap_or(0.0))
-                + projector_bytes;
-            let memory = resident + (resident * 0.15).ceil();
-            quantizations.push(Quantization {
-                name: strip_control(&quant.name),
-                disk_bytes: quant.disk_bytes,
-                min_ram_bytes: memory,
-                min_vram_bytes: memory,
-                sha256: quant.sha256.as_ref().map(|sha| strip_control(sha)),
-                digest_verified: None,
-                projectors: quant.projectors.clone(),
-            });
+            quantizations.push(sized_quantization(
+                count,
+                &self.architecture,
+                &strip_control(&quant.name),
+                quant.disk_bytes,
+                quant.sha256.as_ref().map(|sha| strip_control(sha)),
+                quant.projectors.clone(),
+            )?);
         }
         let model = CatalogModel {
             id: strip_control(&self.id),
@@ -131,7 +112,9 @@ impl RawModel {
             open_weight: self.open_weight,
             context_length: self.context_length,
             capabilities: self.capabilities.clone(),
-            release_date: self.release_date.clone(),
+            release_date: Some(self.release_date.clone()),
+            added_at: None,
+            provenance: crate::catalog::EntryProvenance::Curated,
             source: Source {
                 ollama: self
                     .source
@@ -148,6 +131,42 @@ impl RawModel {
         model.validate()?;
         Ok(model)
     }
+}
+/// Memory need for one quantization: resident weights (never below the bit-width floor) plus 15% headroom.
+pub fn sized_quantization(
+    params: f64,
+    architecture: &Architecture,
+    name: &str,
+    disk_bytes: f64,
+    sha256: Option<String>,
+    projectors: Vec<crate::sizing::ProjectorArtifact>,
+) -> Result<Quantization, ValidationError> {
+    let bits = quant_bits(name);
+    require(
+        bits.is_some() || !matches!(architecture, Architecture::Moe),
+        "unknown MoE quantization",
+    )?;
+    let projector_bytes = projectors
+        .iter()
+        .map(|projector| projector.bytes as f64)
+        .sum::<f64>();
+    require(
+        projector_bytes < disk_bytes,
+        "projector size exceeds aggregate weights",
+    )?;
+    let resident = (disk_bytes - projector_bytes)
+        .max(bits.map(|bits| (params * bits / 8.0).ceil()).unwrap_or(0.0))
+        + projector_bytes;
+    let memory = resident + (resident * 0.15).ceil();
+    Ok(Quantization {
+        name: name.into(),
+        disk_bytes,
+        min_ram_bytes: memory,
+        min_vram_bytes: memory,
+        sha256,
+        digest_verified: None,
+        projectors,
+    })
 }
 pub fn parse_candidates(raw: &str) -> Result<Vec<RawModel>, ValidationError> {
     let candidates: Vec<RawModel> = parse_document(raw)?;
@@ -181,7 +200,9 @@ pub fn enrich(
     maximum: Option<usize>,
 ) -> Result<EnrichResult, ValidationError> {
     require(
-        existing.schema_version == 2 && maximum != Some(0) && candidates.len() <= 10000,
+        (2..=crate::catalog::SCHEMA_VERSION).contains(&existing.schema_version)
+            && maximum != Some(0)
+            && candidates.len() <= 10000,
         "invalid enrichment options",
     )?;
     require(
@@ -206,7 +227,7 @@ pub fn enrich(
     let newest = existing
         .models
         .iter()
-        .map(|model| model.release_date.as_str())
+        .filter_map(|model| model.recency().map(|(day, _)| day))
         .max()
         .unwrap_or("");
     let mut result: BTreeMap<String, CatalogModel> = existing
@@ -269,9 +290,9 @@ pub fn enrich(
     }
     let mut models: Vec<_> = result.into_values().collect();
     models.sort_by(|left, right| {
-        right
-            .release_date
-            .cmp(&left.release_date)
+        let day = |model: &CatalogModel| model.recency().map(|(day, _)| day.to_string());
+        day(right)
+            .cmp(&day(left))
             .then_with(|| left.id.cmp(&right.id))
     });
     if let Some(maximum) = maximum
@@ -287,7 +308,7 @@ pub fn enrich(
     diff.updated.retain(|id| !diff.capped.contains(id));
     Ok(EnrichResult {
         catalog: Catalog {
-            schema_version: 2,
+            schema_version: crate::catalog::SCHEMA_VERSION,
             generated_at: if changed {
                 stamp
             } else {

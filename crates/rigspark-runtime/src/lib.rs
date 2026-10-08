@@ -1,5 +1,6 @@
 pub mod acquire;
 pub mod adapters;
+pub mod admission;
 pub mod agent;
 pub mod application;
 pub mod cache;
@@ -12,6 +13,7 @@ pub mod context;
 pub mod coverage;
 pub mod diagnostics;
 pub mod generation;
+pub mod generation_admission;
 pub mod hardware;
 pub mod harness;
 pub mod harness_registry;

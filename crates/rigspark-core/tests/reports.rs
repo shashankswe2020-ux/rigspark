@@ -8,7 +8,10 @@ use serde_json::json;
 
 #[test]
 fn formats_existing_advice_contracts() {
-    let catalog = Catalog::parse(include_str!("../../rigspark-core/data/models.json")).unwrap();
+    let catalog = Catalog::parse(include_str!(
+        "../../rigspark-core/fixtures/catalog-baseline.json"
+    ))
+    .unwrap();
     let perf = PerfDataset::parse(include_str!("../../rigspark-core/data/perf.json")).unwrap();
     let hardware: Hardware = serde_json::from_value(json!({"arch":"x64","platform":"linux","totalRamBytes":68719476736_u64,"freeRamBytes":60000000000_u64,"freeDiskBytes":500000000000_u64,"gpu":[{"vendor":"nvidia","vramBytes":25769803776_u64}]})).unwrap();
     let options = AdviceOptions::default();
@@ -27,7 +30,10 @@ fn formats_existing_advice_contracts() {
 
 #[test]
 fn recommendation_text_suppresses_unsafe_or_truncated_commands_without_changing_json() {
-    let mut catalog = Catalog::parse(include_str!("../../rigspark-core/data/models.json")).unwrap();
+    let mut catalog = Catalog::parse(include_str!(
+        "../../rigspark-core/fixtures/catalog-baseline.json"
+    ))
+    .unwrap();
     catalog.models.truncate(1);
     let perf = PerfDataset::parse(include_str!("../../rigspark-core/data/perf.json")).unwrap();
     let hardware: Hardware = serde_json::from_value(json!({"arch":"x64","platform":"linux","totalRamBytes":68719476736_u64,"freeRamBytes":60000000000_u64,"freeDiskBytes":500000000000_u64,"gpu":[]})).unwrap();
@@ -53,7 +59,10 @@ fn recommendation_text_suppresses_unsafe_or_truncated_commands_without_changing_
 
 #[test]
 fn empty_catalogs_are_distinguished_from_catalogs_where_nothing_fits() {
-    let mut catalog = Catalog::parse(include_str!("../../rigspark-core/data/models.json")).unwrap();
+    let mut catalog = Catalog::parse(include_str!(
+        "../../rigspark-core/fixtures/catalog-baseline.json"
+    ))
+    .unwrap();
     let perf = PerfDataset::parse(include_str!("../../rigspark-core/data/perf.json")).unwrap();
     let tiny: Hardware = serde_json::from_value(json!({"arch":"arm64","platform":"darwin","totalRamBytes":1_000_000,"freeRamBytes":1_000_000,"freeDiskBytes":500000000000_u64,"gpu":[]})).unwrap();
     let options = AdviceOptions::default();
@@ -73,4 +82,42 @@ fn empty_catalogs_are_distinguished_from_catalogs_where_nothing_fits() {
         &options,
     );
     assert_eq!(empty, "No models in the catalog.");
+}
+
+#[test]
+fn auto_sourced_entries_are_labelled_and_curated_output_is_unchanged() {
+    let hardware: Hardware = serde_json::from_value(json!({"arch":"x64","platform":"linux","totalRamBytes":68719476736_u64,"freeRamBytes":60000000000_u64,"freeDiskBytes":500000000000_u64,"gpu":[{"vendor":"nvidia","vramBytes":25769803776_u64}]})).unwrap();
+    let perf = PerfDataset::parse(rigspark_core::PERF_JSON).unwrap();
+    let options = AdviceOptions::default();
+    let mut value: serde_json::Value = serde_json::from_str(include_str!(
+        "../../rigspark-core/fixtures/catalog-baseline.json"
+    ))
+    .unwrap();
+    let curated = Catalog::parse(&value.to_string()).unwrap();
+    let id = curated.models[0].id.clone();
+    let (before_json, before_text) = can_run(&curated, &hardware, &perf, &id, &options).unwrap();
+    assert!(before_json.get("provenance").is_none());
+    assert!(!before_text.contains("auto-sourced"));
+
+    let model = value["models"][0].as_object_mut().unwrap();
+    model.remove("releaseDate");
+    model.remove("benchmarkProxy");
+    model.insert("provenance".into(), json!("auto"));
+    model.insert("addedAt".into(), json!("2026-10-07"));
+    let auto = Catalog::parse(&value.to_string()).unwrap();
+    let (json, text) = can_run(&auto, &hardware, &perf, &id, &options).unwrap();
+    assert_eq!(json["provenance"], "auto");
+    assert!(
+        text.contains("Source: auto-sourced from the Ollama library (added 2026-10-07)"),
+        "{text}"
+    );
+    let report = recommend(&auto, &hardware, &perf, &options).unwrap();
+    let entry = report["ranked"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|entry| entry["id"] == id.as_str());
+    if let Some(entry) = entry {
+        assert_eq!(entry["provenance"], "auto");
+    }
 }

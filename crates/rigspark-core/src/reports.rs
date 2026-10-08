@@ -268,6 +268,15 @@ pub fn can_run_report(
     let report = verdict(&model, hardware, perf, options.context, backend)?;
     let supported = backends(&model, hardware);
     let mut output = json!({"model":model.id,"verdict":report["runnable"],"quant":report["quant"]["name"],"reason":report["reason"],"throughput":report["throughput"],"backends":supported,"throughputBackend":backend});
+    let auto_source = (model.provenance == crate::catalog::EntryProvenance::Auto).then(|| {
+        format!(
+            "Source: auto-sourced from the Ollama library ({})",
+            model.recency_label()
+        )
+    });
+    if auto_source.is_some() {
+        output["provenance"] = json!("auto");
+    }
     let mut lines = Vec::new();
     if let Some(context) = options.context {
         output["context"] = json!(context);
@@ -334,6 +343,9 @@ pub fn can_run_report(
             }
         ));
     }
+    if let Some(line) = auto_source {
+        lines.push(line);
+    }
     let unknown_reason = if report["throughput"]["known"] == true {
         Value::Null
     } else if report["runnable"] == "no" {
@@ -361,8 +373,9 @@ pub fn catalog_text(
     let mut models: Vec<_> = catalog.models.iter().collect();
     models.sort_by(|left, right| {
         right
-            .release_date
-            .cmp(&left.release_date)
+            .recency()
+            .map(|(day, _)| day)
+            .cmp(&left.recency().map(|(day, _)| day))
             .then_with(|| left.id.cmp(&right.id))
     });
     let mut rows = Vec::new();
@@ -401,7 +414,7 @@ pub fn catalog_text(
                 sizing.fit.required_bytes.unwrap_or(0.0) / 1073741824.0
             ),
             sizing.fit.reason.unwrap_or("fit").into(),
-            model.release_date.clone(),
+            model.recency_label(),
         ]);
     }
     let header = format!(

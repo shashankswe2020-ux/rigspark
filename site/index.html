@@ -90,8 +90,9 @@
     </script>
     <link rel="stylesheet" href="brand/fonts/fonts.css" />
     <link rel="stylesheet" href="brand/tokens/tokens.css" />
-    <link rel="stylesheet" href="styles.css?v=2.3.0-sparky" />
-    <script src="main.js?v=2.3.0-sparky" defer></script>
+    <link rel="stylesheet" href="styles.css?v=2.3.0-latest1" />
+    <script src="data/latest.js?v=2.3.0-latest1" defer></script>
+    <script src="main.js?v=2.3.0-latest1" defer></script>
   </head>
   <body>
     <a class="skip" href="#main">Skip to content</a>
@@ -183,7 +184,15 @@
               </div>
               <div class="step">
                 <h3 id="model-label">Model.</h3>
-                <p class="muted">Quantized to Q4_K_M at default context.</p>
+                <div class="seg" id="model-source" role="group" aria-label="Model list">
+                  <button type="button" data-v="popular" aria-pressed="true">Popular</button>
+                  <button type="button" data-v="text" aria-pressed="false">New: text</button>
+                  <button type="button" data-v="image" aria-pressed="false">New: image</button>
+                  <button type="button" data-v="video" aria-pressed="false">New: video</button>
+                </div>
+                <p class="muted" id="model-note">Quantized to Q4_K_M at default context.</p>
+                <p class="muted empty-new" id="model-empty" hidden></p>
+                <div class="chips" id="model-new" role="group" aria-labelledby="model-label" hidden></div>
                 <div class="chips" id="model" role="group" aria-labelledby="model-label">
                   <button type="button" data-v="llama3.1:8b" data-mem="5.3" data-params="8" data-dense="1" aria-pressed="false">Llama 3.1 8B</button>
                   <button type="button" data-v="qwen3:14b" data-mem="9.9" data-params="14" data-dense="1" aria-pressed="true">Qwen3 14B</button>
@@ -198,7 +207,7 @@
                 <p class="why" id="t-why">Fits in memory with headroom.</p>
                 <div class="gauge" aria-hidden="true"><i id="g"></i></div>
                 <div class="legend"><span id="need">needs 9.9 GiB</span><span id="usable">18.7 GiB budget</span></div>
-                <p class="cli"><b>$</b> rigspark can-run <span id="t-model">qwen3:14b</span> &rarr; <span id="t-pill">yes</span>, exit <span id="t-exit">0</span></p>
+                <p class="cli"><b>$</b> <span id="t-cmd">rigspark can-run</span> <span id="t-model">qwen3:14b</span> &rarr; <span id="t-pill">yes</span>, exit <span id="t-exit">0</span></p>
               </div>
               <p class="fine">Preview only. Fit uses RigSpark&rsquo;s rule: memory minus a 2&nbsp;GiB OS reserve, with 15% headroom. Speed depends on your memory bandwidth, so &ldquo;slow&rdquo; here is a rule of thumb for dense 27B+ models; <code>rigspark can-run</code> gives your real estimate.</p>
             </div>

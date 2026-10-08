@@ -7,7 +7,10 @@ fn key() -> SigningKey {
 }
 
 fn fixture_catalog() -> String {
-    let mut catalog: Value = serde_json::from_str(rigspark_core::MODELS_JSON).unwrap();
+    let mut catalog: Value = serde_json::from_str(include_str!(
+        "../../rigspark-core/fixtures/catalog-baseline.json"
+    ))
+    .unwrap();
     catalog["generatedAt"] = json!("2026-09-30T00:00:00Z");
     catalog.to_string()
 }

@@ -607,6 +607,39 @@ html:not(.js) .spin .cap,
   font-weight: 600;
 }
 
+/* Author display rules otherwise override the hidden attribute. */
+#ask [hidden] {
+  display: none !important;
+}
+.seg {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
+  margin: 6px 0 10px;
+  background: var(--paper-100);
+  border-radius: var(--radius-pill);
+}
+.seg button {
+  cursor: pointer;
+  border: 0;
+  background: none;
+  font: 500 13px var(--font-ui);
+  padding: 7px 12px;
+  border-radius: var(--radius-pill);
+  color: var(--ink-700);
+}
+.seg button[aria-pressed="true"] {
+  background: #fff;
+  color: var(--ink-900);
+  box-shadow: var(--shadow-card);
+}
+.empty-new {
+  padding: 14px 16px;
+  border: 1.5px dashed var(--paper-300);
+  border-radius: var(--radius-sm);
+}
+
 /* Night sections */
 .night {
   background: #000;

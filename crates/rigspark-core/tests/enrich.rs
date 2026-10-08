@@ -53,8 +53,10 @@ fn frozen_typescript_oracle_matches_complete_native_catalogs_and_diffs() {
             input["maxModels"].as_u64().map(|value| value as usize),
         )
         .unwrap();
-        let expected_catalog: Catalog =
+        let mut expected_catalog: Catalog =
             serde_json::from_value(case["expected"]["catalog"].clone()).unwrap();
+        // The frozen oracle predates schema v3; the version stamp is the only intended change.
+        expected_catalog.schema_version = rigspark_core::catalog::SCHEMA_VERSION;
         assert_eq!(
             serde_json::to_value(&result.catalog).unwrap(),
             serde_json::to_value(expected_catalog).unwrap(),

@@ -1,0 +1,241 @@
+{
+ "granite4.2:30b": {
+  "config": {
+   "architecture": "amd64",
+   "file_type": "Q4_K_M",
+   "model_families": [
+    "granite"
+   ],
+   "model_family": "granite",
+   "model_format": "gguf",
+   "model_type": "29.3B",
+   "os": "linux",
+   "rootfs": {
+    "diff_ids": [
+     "sha256:f299dace85d77ee0e24ca0b6720bd211b1f4cd1f65b9c0a2111e79692e29c9be",
+     "sha256:58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd",
+     "sha256:02897ca0d6a33881b1581b775af2884e9eed3ea9b7db8141e0dc0ef2e707fd18"
+    ],
+    "type": "layers"
+   }
+  },
+  "licenseHead": "\n                                 Apache License\n                           Version 2.0, January 2004\n                        http://www.apache.org/licenses/\n\n   TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION\n\n   1. Definitions.\n\n      \"License\" shall mean the terms and conditions for use, reproduction,\n      and distribution as defined by Sections 1 through 9 of this document.\n\n      \"Licensor\" shall mean the copyright owner or entity authorized by\n      the copyright owner that is granting the License.\n\n      \"Legal Entity\" shall mean the union of the acting entity and all\n      other entities that control, are controlled by, or are under common\n      control with that entity. For the purposes of this definition,\n      \"control\" means (i) the power, direct or indirect, to cause the\n      direction or management of such entity, whether by contract or\n      otherwise, or (ii) ownership of fifty percent (50%) or more of the\n      outstanding shares, or (iii) beneficial ownership of such entity.\n\n      \"You\" (or \"Your\") shall mean an individual or Legal Entity\n      exercising permissions granted by this License.\n\n      \"Source\" form shall mean the preferred form for making modifications,\n      including but not limited to software source code, documentation\n      source, and configuration files.\n\n      \"Object\" form shall mean any form resulting from mechanical\n      transformation or translation of a Source form, including but\n      not limited to compiled object code, generated documentation,\n      and conversions to other media types.\n\n      \"Work\" shall mean the work of authorship, whether in Source or\n      Object form, made available under the License, as indicated by a\n      copyright notice that is included in or attached to the work\n      (an example is provided in the Appendix below).\n\n      \"Derivative Works\" shall mean any work, whether in Source or Object\n      form, that is based on (or derived from) the Work and for which the\n      editorial revisions, annotations, elaborations, or oth",
+  "manifest": {
+   "config": {
+    "digest": "sha256:d02aafe432dea49f6b7ab74f67819691d2ef29b99bfb1529b56d1a68ea9ddf20",
+    "mediaType": "application/vnd.docker.container.image.v1+json",
+    "size": 418
+   },
+   "layers": [
+    {
+     "digest": "sha256:f299dace85d77ee0e24ca0b6720bd211b1f4cd1f65b9c0a2111e79692e29c9be",
+     "from": "/Users/runner/.ollama/models/blobs/sha256-f299dace85d77ee0e24ca0b6720bd211b1f4cd1f65b9c0a2111e79692e29c9be",
+     "mediaType": "application/vnd.ollama.image.model",
+     "size": 17721455328
+    },
+    {
+     "digest": "sha256:58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd",
+     "mediaType": "application/vnd.ollama.image.license",
+     "size": 11357
+    },
+    {
+     "digest": "sha256:02897ca0d6a33881b1581b775af2884e9eed3ea9b7db8141e0dc0ef2e707fd18",
+     "mediaType": "application/vnd.ollama.image.params",
+     "size": 31
+    }
+   ],
+   "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
+   "schemaVersion": 2
+  }
+ },
+ "nimble:9b": {
+  "config": {
+   "capabilities": [
+    "decision"
+   ],
+   "file_type": "Q8_0",
+   "model_families": [
+    "qwen35"
+   ],
+   "model_family": "qwen35",
+   "model_format": "gguf",
+   "model_type": "9.0B",
+   "requires": "0.35.0"
+  },
+  "licenseHead": "\nApache License 2.0\n\nThis model fuses two artifacts, both released under Apache-2.0:\n- Bespoke-Nimble-9B LoRA adapter (bespokelabs/Bespoke-Nimble-9B)\n- Qwen3.5-9B base (Qwen/Qwen3.5-9B, revision c202236235762e1c871ad0ccb60c8ee5ba337b9a)\n\nFull texts:\n- Adapter: https://huggingface.co/bespokelabs/Bespoke-Nimble-9B/blob/main/LICENSE\n- Base:    https://huggingface.co/Qwen/Qwen3.5-9B/blob/main/LICENSE\n",
+  "manifest": {
+   "config": {
+    "digest": "sha256:2c26ca580a1a2f29728af87c30258cfc12c0fe010ad4dc8fc5db5afcdfb406c3",
+    "mediaType": "application/vnd.docker.container.image.v1+json",
+    "size": 163
+   },
+   "format": "gguf",
+   "layers": [
+    {
+     "digest": "sha256:bbf1d6fc03bb0ed24d88f4c214ed7b5d1768aeb43d5cf433fb69eff0c8578013",
+     "from": "Bespoke-Nimble-9B-merged-current-Q8_0.gguf",
+     "mediaType": "application/vnd.ollama.image.model",
+     "size": 9527501312
+    },
+    {
+     "digest": "sha256:47bec4463a2ae8ca4223cd9da803232e93f3e2c3c1990b17d79019133ad344a6",
+     "mediaType": "application/vnd.ollama.image.system",
+     "size": 385
+    },
+    {
+     "digest": "sha256:d0c0372065bbe3b1a9931ec5ed842e7ddce6d1308bb3d3bbd9edd27724e5cdd7",
+     "mediaType": "application/vnd.ollama.image.license",
+     "size": 400
+    },
+    {
+     "digest": "sha256:7892eb6262be941f7a3278cb307efebaadef0fbd35dea0837dc50533a4df6c89",
+     "mediaType": "application/vnd.ollama.image.params",
+     "size": 17
+    }
+   ],
+   "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
+   "runner": "llamacpp",
+   "schemaVersion": 2
+  }
+ },
+ "ornith-1.5:35b": {
+  "config": {
+   "architecture": "amd64",
+   "file_type": "Q4_K_M",
+   "model_families": [
+    "qwen35moe"
+   ],
+   "model_family": "qwen35moe",
+   "model_format": "gguf",
+   "model_type": "35.5B",
+   "os": "linux"
+  },
+  "licenseHead": null,
+  "manifest": {
+   "config": {
+    "digest": "sha256:939144b8925669fddafbb36f9624959d4ac36955f9654af808d43dc87a613834",
+    "mediaType": "application/vnd.docker.container.image.v1+json",
+    "size": 160
+   },
+   "layers": [
+    {
+     "digest": "sha256:aaeb640f98a892980ef54876024293cc8d6987a86523aa1b947ffa9274ef800a",
+     "mediaType": "application/vnd.ollama.image.model",
+     "size": 21713462848
+    },
+    {
+     "digest": "sha256:d9ce31026d1cb1f3f8d5152e2e2a014d9d2b302b6c93a7dc07bb0a0487f52837",
+     "from": "mmproj-Ornith-1.5-35B-BF16.gguf",
+     "mediaType": "application/vnd.ollama.image.projector",
+     "size": 902822016
+    }
+   ],
+   "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
+   "schemaVersion": 2
+  }
+ },
+ "qwen3.8-flash-next:125b-a6b-q4_K_M": {
+  "config": {
+   "architecture": "amd64",
+   "file_type": "Q4_K_M",
+   "model_families": [
+    "qwen4exp"
+   ],
+   "model_family": "qwen4exp",
+   "model_format": "gguf",
+   "model_type": "176.9B",
+   "os": "linux",
+   "parser": "qwen3.5",
+   "renderer": "qwen3.8",
+   "requires": "0.33.3"
+  },
+  "licenseHead": "Qwen Community License 1.0\n\nCopyright (c) 2026 Qwen\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software, including the model weights, parameters, configuration files, inference code and associated documentation files (collectively, the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, sell, deploy, host, fine-tune, and create derivative works from (collectively, \"Use\" or \"Using\") copies of the Software; and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\n1. The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software. If the Software (or any derivative works thereof) is Used for any of the licensee's commercial products or services that have more than 100,000,000 monthly active users or US$ 20,000,000 (or equivalent in other currencies) monthly revenue, respective model name must be prominently displayed on the user interface of such product or service; and,\n\n2. If the licensee or any of its affiliates conducts a Model as a Service or AI Work Assistant business, the licensee shall obtain a separate license from Qwen before Using the Software or its derivative works for any commercial purpose. The foregoing requirement shall not apply to the licensee's internal Use of the Software, provided that such Use does not make the Software, its outputs, or its underlying model capabilities available to any third party.\n\n\"Model as a Service\" means giving a third party access to language model inference or fine-tuning (e.g., via API or a hosted endpoint) in a manner that allows such third parties to exercise meaningful control over the inputs, parameters, or training data. This does not include the mere relaying of requests to models hosted by other third parties.\n\u201cAI Work Assistant\u201d means an independent AI-powered product primarily designed for AI-assiste",
+  "manifest": {
+   "config": {
+    "digest": "sha256:4634fd1a9e1fa11fbdd6558552755189f3db28463b46f661e191815f460e3e53",
+    "mediaType": "application/vnd.docker.container.image.v1+json",
+    "size": 219
+   },
+   "layers": [
+    {
+     "digest": "sha256:89059c880c2f000b24520919d4ba2edd2a8101327c7f8ab33b2280e01addda75",
+     "from": "qwen3.8-flash-next:125b-a6b-q4_K_M",
+     "mediaType": "application/vnd.ollama.image.model",
+     "size": 119150722112
+    },
+    {
+     "digest": "sha256:375f156fdc1232f994c42f43813861fac4fdc791f0440a36c85e87b6907a7eee",
+     "from": "qwen3.8-flash-next:125b-a6b-q4_K_M",
+     "mediaType": "application/vnd.ollama.image.projector",
+     "size": 907542784
+    },
+    {
+     "digest": "sha256:9fc8eea719a230d8eae622605f56b5f094183df8b8d446c57eeb2628bc988313",
+     "from": "qwen3.8-flash-next:125b-a6b-q4_K_M",
+     "mediaType": "application/vnd.ollama.image.license",
+     "size": 3220
+    },
+    {
+     "digest": "sha256:448d29437397713495b408d51b4ccbc5ba95240a7583643efb2304921950b111",
+     "mediaType": "application/vnd.ollama.image.params",
+     "size": 92
+    }
+   ],
+   "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
+   "schemaVersion": 2
+  }
+ },
+ "qwen3.8:27b": {
+  "config": {
+   "architecture": "amd64",
+   "file_type": "Q4_K_M",
+   "model_families": [
+    "qwen35"
+   ],
+   "model_family": "qwen35",
+   "model_format": "gguf",
+   "model_type": "27.3B",
+   "os": "linux",
+   "parser": "qwen3.5",
+   "renderer": "qwen3.8",
+   "requires": "0.32.12"
+  },
+  "licenseHead": "\n\n                                 Apache License\n                           Version 2.0, January 2004\n                        http://www.apache.org/licenses/\n\n   TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION\n\n   1. Definitions.\n\n      \"License\" shall mean the terms and conditions for use, reproduction,\n      and distribution as defined by Sections 1 through 9 of this document.\n\n      \"Licensor\" shall mean the copyright owner or entity authorized by\n      the copyright owner that is granting the License.\n\n      \"Legal Entity\" shall mean the union of the acting entity and all\n      other entities that control, are controlled by, or are under common\n      control with that entity. For the purposes of this definition,\n      \"control\" means (i) the power, direct or indirect, to cause the\n      direction or management of such entity, whether by contract or\n      otherwise, or (ii) ownership of fifty percent (50%) or more of the\n      outstanding shares, or (iii) beneficial ownership of such entity.\n\n      \"You\" (or \"Your\") shall mean an individual or Legal Entity\n      exercising permissions granted by this License.\n\n      \"Source\" form shall mean the preferred form for making modifications,\n      including but not limited to software source code, documentation\n      source, and configuration files.\n\n      \"Object\" form shall mean any form resulting from mechanical\n      transformation or translation of a Source form, including but\n      not limited to compiled object code, generated documentation,\n      and conversions to other media types.\n\n      \"Work\" shall mean the work of authorship, whether in Source or\n      Object form, made available under the License, as indicated by a\n      copyright notice that is included in or attached to the work\n      (an example is provided in the Appendix below).\n\n      \"Derivative Works\" shall mean any work, whether in Source or Object\n      form, that is based on (or derived from) the Work and for which the\n      editorial revisions, annotations, elaborations, or ot",
+  "manifest": {
+   "config": {
+    "digest": "sha256:492b2922d38e553cabc2d319345644ed482874fbf5e5c9e4495cbf8e17b0cf5f",
+    "mediaType": "application/vnd.docker.container.image.v1+json",
+    "size": 215
+   },
+   "format": "gguf",
+   "layers": [
+    {
+     "digest": "sha256:ac3714bfdddeca31351f2752bf1a63f266f4df87c0b68c895e44945ca704448e",
+     "from": "qwen3.8:27b-q4_K_M",
+     "mediaType": "application/vnd.ollama.image.projector",
+     "size": 931146016
+    },
+    {
+     "digest": "sha256:f5f1dd8920d417aac2718b0bda3403da274301efdd6760b4f0f4b864ff2ad57d",
+     "from": "qwen3.8:27b-q4_K_M",
+     "mediaType": "application/vnd.ollama.image.model",
+     "size": 16810714464
+    },
+    {
+     "digest": "sha256:4c6a8e842ef0d8504549facfb03f1273a8d0022991519bc1888522cc1a5517d1",
+     "from": "qwen3.8:27b-q4_K_M",
+     "mediaType": "application/vnd.ollama.image.license",
+     "size": 11345
+    },
+    {
+     "digest": "sha256:906ee87bde6cff7bf3c3b1550f55cbbec261e027187fbb9f511f908ffc418334",
+     "mediaType": "application/vnd.ollama.image.params",
+     "size": 114
+    }
+   ],
+   "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
+   "runner": "llamacpp",
+   "schemaVersion": 2
+  }
+ }
+}

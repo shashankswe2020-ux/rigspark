@@ -89,6 +89,8 @@ pub struct ModelRow {
     search: String,
     evidence: String,
     need_bytes: Option<f64>,
+    /// Release date, else auto-admission date (YYYY-MM-DD), for the month filter.
+    recency: Option<String>,
 }
 
 fn bounded_text(value: &str, limit: usize) -> io::Result<String> {
@@ -112,6 +114,7 @@ impl ModelRow {
             search: bounded_text(search, MAX_TEXT)?.to_lowercase(),
             evidence: bounded_evidence(evidence)?,
             need_bytes: None,
+            recency: None,
         })
     }
 
@@ -194,6 +197,9 @@ pub struct ModelView {
     priority: Vec<usize>,
     sort: Option<(usize, bool)>,
     verdict_filter: Option<Verdict>,
+    /// Earliest recency date shown for the 1, 2 and 3 month windows.
+    month_cutoffs: Option<[String; 3]>,
+    month_filter: Option<u8>,
     usable_bytes: Option<f64>,
     areas: HitAreas,
 }
@@ -253,6 +259,8 @@ impl ModelView {
             priority: Vec::new(),
             sort: None,
             verdict_filter: None,
+            month_cutoffs: None,
+            month_filter: None,
             usable_bytes: None,
             areas: HitAreas::default(),
         })
@@ -270,6 +278,24 @@ impl ModelView {
             row.need_bytes = (need.is_finite() && need >= 0.0).then_some(need);
         }
         self
+    }
+
+    /// Enables the `m` month filter using each model's release or auto-admission date.
+    pub fn with_recency(
+        mut self,
+        dates: &std::collections::BTreeMap<String, String>,
+        today: &str,
+    ) -> io::Result<Self> {
+        let cutoff = |months| {
+            rigspark_core::catalog::months_before(today, months)
+                .map(|day| day.to_string())
+                .map_err(io::Error::other)
+        };
+        self.month_cutoffs = Some([cutoff(1)?, cutoff(2)?, cutoff(3)?]);
+        for row in &mut self.rows {
+            row.recency = dates.get(&row.label).cloned();
+        }
+        Ok(self)
     }
 
     pub fn from_catalog(presentation: &CatalogPresentation, color: bool) -> io::Result<Self> {
@@ -395,6 +421,13 @@ impl ModelView {
             .filter(|(_, row)| {
                 self.verdict_filter
                     .is_none_or(|wanted| row.verdict() == Some(wanted))
+            })
+            .filter(|(_, row)| {
+                let cutoff = self
+                    .month_filter
+                    .zip(self.month_cutoffs.as_ref())
+                    .map(|(months, cutoffs)| cutoffs[usize::from(months) - 1].as_str());
+                cutoff.is_none_or(|cutoff| row.recency.as_deref().is_some_and(|day| day >= cutoff))
             })
             .filter_map(|(index, row)| {
                 if let Some(positions) = tui_theme::fuzzy(&row.label, &needle) {
@@ -609,6 +642,7 @@ pub fn handle_key(view: &mut ModelView, key: KeyEvent) -> Option<ModelOutcome> {
             KeyCode::Char('u') if view.focus != Focus::Help => {
                 view.query.clear();
                 view.verdict_filter = None;
+                view.month_filter = None;
                 view.filter();
             }
             _ => (),
@@ -722,6 +756,14 @@ pub fn handle_key(view: &mut ModelView, key: KeyEvent) -> Option<ModelOutcome> {
                 view.sort = Some((column, !descending));
                 view.filter();
             }
+        }
+        KeyCode::Char('m') if view.focus == Focus::List && view.month_cutoffs.is_some() => {
+            view.month_filter = match view.month_filter {
+                None => Some(1),
+                Some(months) if months < 3 => Some(months + 1),
+                Some(_) => None,
+            };
+            view.filter();
         }
         KeyCode::Char('v') if view.focus == Focus::List && !view.columns.is_empty() => {
             view.verdict_filter = match view.verdict_filter {
@@ -1035,6 +1077,9 @@ fn render_detail(frame: &mut Frame<'_>, view: &mut ModelView, area: Rect, theme:
         if !view.columns.is_empty() {
             help.push("v: cycle verdict filter (yes, slow, no, unknown, all)");
         }
+        if view.month_cutoffs.is_some() {
+            help.push("m: cycle recency filter (released or added in 1, 2, 3 months, all)");
+        }
         if view.command.is_some() {
             help.push("p: finish and print existing top-pick command; never execute");
         }
@@ -1242,7 +1287,7 @@ fn render_table(frame: &mut Frame<'_>, view: &mut ModelView, area: Rect, theme: 
     view.areas.rows = Rect::default();
     if view.visible.is_empty() {
         let mut lines = vec![Line::styled("No results", theme.muted())];
-        if !view.query.is_empty() || view.verdict_filter.is_some() {
+        if !view.query.is_empty() || view.verdict_filter.is_some() || view.month_filter.is_some() {
             lines.push(Line::styled("Ctrl+U resets the filter", theme.muted()));
         }
         frame.render_widget(Paragraph::new(lines), inner);
@@ -1522,6 +1567,9 @@ pub fn render(frame: &mut Frame<'_>, view: &mut ModelView) {
     if view.comparison {
         position.push_str(&format!(" · Marked {}/{MAX_MARKED}", view.marked.len()));
     }
+    if let Some(months) = view.month_filter {
+        position.insert_str(0, &format!("last {months} mo · "));
+    }
     if let Some(verdict) = view.verdict_filter {
         position.insert_str(
             0,
@@ -1574,6 +1622,9 @@ pub fn render(frame: &mut Frame<'_>, view: &mut ModelView) {
         if !view.columns.is_empty() {
             hints.push(("v", "verdict"));
         }
+        if view.month_cutoffs.is_some() {
+            hints.push(("m", "recent"));
+        }
         hints.push(("y", "copy"));
         if view.comparison {
             hints.extend([("Space", "mark"), ("c", "compare")]);
@@ -1608,5 +1659,46 @@ pub async fn show_models(mut view: ModelView) -> io::Result<ModelOutcome> {
         if let Some(text) = view.take_clipboard() {
             tui_theme::copy_to_clipboard(&text)?;
         }
+    }
+}
+
+#[cfg(test)]
+mod recency_tests {
+    use super::*;
+
+    #[test]
+    fn m_cycles_month_windows_over_release_or_added_dates() {
+        let rows = ["new:8b", "older:8b", "undated:8b"]
+            .iter()
+            .map(|id| ModelRow::new(id, id, "evidence"))
+            .collect::<io::Result<Vec<_>>>()
+            .unwrap();
+        let dates = [("new:8b", "2026-09-30"), ("older:8b", "2026-08-01")]
+            .into_iter()
+            .map(|(id, day)| (id.to_string(), day.to_string()))
+            .collect();
+        let mut view = ModelView::new("Catalog", Vec::new(), rows, false)
+            .unwrap()
+            .with_recency(&dates, "2026-10-07")
+            .unwrap();
+        let key = KeyEvent::new(KeyCode::Char('m'), KeyModifiers::NONE);
+        let shown = |view: &ModelView| {
+            view.visible
+                .iter()
+                .map(|index| view.rows[*index].label.clone())
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(shown(&view).len(), 3);
+        handle_key(&mut view, key);
+        assert_eq!(shown(&view), ["new:8b"], "1 month");
+        handle_key(&mut view, key);
+        handle_key(&mut view, key);
+        assert_eq!(
+            shown(&view),
+            ["new:8b", "older:8b"],
+            "3 months; undated is never assumed recent"
+        );
+        handle_key(&mut view, key);
+        assert_eq!(shown(&view).len(), 3, "back to all");
     }
 }

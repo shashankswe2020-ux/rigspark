@@ -207,6 +207,22 @@ signature, incompatible schema, or network failure leaves the current snapshot
 unchanged. Recovery falls back through the previous verified snapshot and then
 the bundled catalog, with visible warnings.
 
+New models arrive weekly. A scheduled pipeline admits every new Ollama library
+model whose facts it can read from the shipped artifact (size, digest, context,
+architecture, open license), plus Comfy-Org image and video releases, and
+publishes a signed catalog once the quality gate passes. These entries are marked
+**auto-sourced**, keep fail-closed digest verification, and show `unknown` for
+anything that could not be sourced. Image and video models without a built-in
+workflow yet get a fit verdict and are labelled *workflow coming*.
+
+```bash
+rigspark recommend --month 1        # only models released or added in the last month
+rigspark catalog --all --month 3
+```
+
+In the terminal UI, `m` cycles the same 1, 2 and 3 month windows; the browser
+workspace has a **Released in** selector.
+
 `rigspark catalog --refresh` is a maintainer preview of enrichment against the
 bundled registry snapshot; it does not install a published catalog.
 
