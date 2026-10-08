@@ -4,7 +4,7 @@
 use crate::{
     catalog::{
         EntryProvenance, LICENSES, RecencyBasis, coordinates, date, digest, model_file,
-        parse_document, recency, recency_label, require, timestamp,
+        parameter_label, parse_document, recency, recency_label, require, timestamp,
     },
     reports::{strip_control, table},
     sizing::{HEADROOM, Hardware, ValidationError, memory_capacity},
@@ -195,10 +195,7 @@ impl GenerationModel {
             !self.family.is_empty() && self.family.len() <= 128,
             "empty text field",
         )?;
-        require(
-            regex::Regex::new(r"^\d+(\.\d+)?[BMT]$").is_ok_and(|re| re.is_match(&self.params)),
-            "invalid parameter label",
-        )?;
+        require(parameter_label(&self.params), "invalid parameter label")?;
         require(
             self.open_weight && LICENSES.contains(&self.license.as_str()),
             "generation catalog requires an allowlisted open-weight license",
