@@ -1,6 +1,6 @@
 [package]
 name = "rigspark-desktop"
-version = "2.3.0"
+version = "2.4.0"
 edition = "2024"
 rust-version = "1.98"
 publish = false

@@ -1,5 +1,45 @@
 # Changelog
 
+## 2.4.0 - 2026-10-08
+
+### Image and video models
+
+- Pick the active Text, Image, and Video model in separate Models tabs; Chat
+  generates with the selected image or video model directly. The separate
+  Create view is retired, ComfyUI is detected automatically, and finished
+  images and videos have a Download action.
+- Run FLUX.1 schnell FP16 through ComfyUI's official split workflow (UNET,
+  T5, CLIP-L, and VAE as separate pinned files). The previous single-file
+  entry could not load, because that file holds only the diffusion model.
+- Add a Wan 2.1 T2V 1.3B BF16 variant, and lengthen Wan videos from 33 to 49
+  frames (about 3 seconds at 16 fps).
+- Add Qwen-Image and Wan 2.2 TI2V-5B built-in workflows, following ComfyUI's
+  official example graphs.
+- Skip re-hashing cached weights that are unchanged since their last full
+  SHA-256 check (same device, inode, size, mtime, and ctime). Any change still
+  forces a full hash; Windows and whole-second filesystems always re-hash.
+
+### Catalog
+
+- Admit the latest open local models every week. Text models are admitted only
+  when every fact comes from the shipped artifact; image and video releases
+  without a built-in workflow are fit-only and labelled *workflow coming*.
+  Auto-admitted entries are marked *auto-sourced*, and unsourced facts stay
+  `unknown`.
+- Filter by recency with `--month 1|2|3` on `recommend` and `catalog`, `m` in
+  the terminal UI, and "Released in" in the GUI.
+- Add review-gated weekly image and video enrichment from Hugging Face,
+  including current LFS metadata (`lfs.sha256`).
+- Cut `recommend`, `can-run`, and `catalog` startup to about 10 ms by
+  compiling validation patterns once instead of per model.
+
+### Distribution and docs
+
+- Publish a multi-platform container image (`ghcr.io/shashankswe2020-ux/rigspark`)
+  built from the verified release archives. Linux release binaries need glibc
+  2.39 or newer.
+- Rewrite the README and site around Sparky.
+
 ## 2.3.0 - 2026-10-05
 
 ### Local image and video generation
