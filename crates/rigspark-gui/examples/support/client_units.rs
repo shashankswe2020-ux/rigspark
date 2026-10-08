@@ -149,7 +149,7 @@ function calculatorSuite() {
   check("calculator evaluates", operation?.text.includes('data-action="evaluate"'));
 }
 
-function telemetryFixture() {
+function telemetryFixture({ events: withEvents = true } = {}) {
   let now = 1_700_000_000_000;
   let handles = 0;
   const timers = new Map();
@@ -187,8 +187,15 @@ function telemetryFixture() {
   const fetch = { calls: 0 };
   let ticks = 0;
   let disconnects = 0;
+  const dispatched = [];
   const scope = {
     AbortController,
+    ...(withEvents
+      ? {
+          CustomEvent: class { constructor(type, init) { this.type = type; this.detail = init?.detail; } },
+          dispatchEvent: (event) => { dispatched.push(event); return true; },
+        }
+      : {}),
     fetch: async () => {
       fetch.calls += 1;
       const override = overrides.shift();
@@ -204,7 +211,7 @@ function telemetryFixture() {
   };
   new Function("document", "globalThis", "Date", telemetrySource)(document, scope, { now: () => now });
   const text = (selector) => elements.get(selector)?.textContent;
-  return { clock, drawing, document, events, fetch, overrides, payload, text, elements, now: () => now, disconnects: () => disconnects };
+  return { clock, drawing, document, events, fetch, overrides, payload, text, elements, dispatched, now: () => now, disconnects: () => disconnects };
 }
 
 async function telemetrySuite() {
@@ -229,8 +236,13 @@ async function telemetrySuite() {
   t.overrides.push(async () => { throw new Error("offline"); });
   await t.clock.advance(2000);
   same("failure clears readings", [t.elements.get("#metrics-state")?.dataset.state, t.text("#metric-cpu-value")], ["offline", "—"]);
+  same("memory pressure is announced, unknown when offline", t.dispatched.map((event) => [event.type, event.detail?.memory]), [["rigspark:telemetry", 50], ["rigspark:telemetry", null]]);
   await t.clock.advance(2000);
   same("next sample recovers", t.elements.get("#metrics-state")?.dataset.state, "live");
+
+  t = telemetryFixture({ events: false });
+  await t.clock.advance(0);
+  same("hosts without events still render readings", t.text("#metric-memory-value"), "50.0%");
 
   t = telemetryFixture();
   await t.clock.advance(0);

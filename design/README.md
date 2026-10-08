@@ -105,3 +105,7 @@ Scripts use absolute paths from the build box (`/home/claude/...`), so update th
 - **3D renders:** made in the cloud with Blender 5.2 because the Blender add-on on your Mac wasn't running. The `.blend` files are included.
 - **Unused fonts:** v2 used Bricolage Grotesque, and v3 is Inter-only. Delete any stale `site/brand/fonts/bricolage-*` files.
 - **Prototype:** `landing.html` is the design prototype. The production page is `site/index.html` with `site/styles.css` and `site/main.js`: same design, but CSP-safe (no inline styles or scripts), with the tested install and FAQ content kept and a lighter mobile layout. "Ask Sparky" there uses the engine's real fit rule (memory − 2 GiB OS reserve, 15% headroom) instead of the prototype's 75% rule.
+
+## Workspace GUI redesign
+
+The minimal, progressive-disclosure redesign of the `rigspark-gui` workspace (Chat · Models · Connectors · Library · Runtime, light + dark, Sparky status companion) lives in [`design/gui/`](gui/README.md): open `design/gui/app.html`. Figma page: **App — Workspace (GUI)**. The GUI's current static files are in `crates/rigspark-gui/static/`.

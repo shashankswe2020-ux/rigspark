@@ -17,8 +17,8 @@ bin-dir = "rigspark-{ target }/{ bin }{ binary-ext }"
 pkg-fmt = "tgz"
 
 [dependencies]
-rigspark-runtime = { path = "../rigspark-runtime", version = "2.4.0" }
-rigspark-core = { path = "../rigspark-core", version = "2.4.0" }
+rigspark-runtime = { path = "../rigspark-runtime", version = "3.0.0" }
+rigspark-core = { path = "../rigspark-core", version = "3.0.0" }
 axum = { version = "0.8", features = ["json", "query", "tokio", "http1"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "sync", "signal"] }
 tokio-util = { version = "0.7", features = ["rt"] }

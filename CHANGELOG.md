@@ -1,5 +1,70 @@
 # Changelog
 
+## 3.0.0 - 2026-10-08
+
+### A redesigned workspace
+
+`rigspark gui` and the desktop app have a new, minimal interface. Every feature
+is still there, but each control now appears where and when you need it.
+
+- **Model chip.** One chip in the top bar holds the model, runtime, harness, and
+  agent pickers, the endpoint/turns/context status, and Refresh.
+- **Inspector.** Live RAM/CPU/disk/latency, the latest call's token usage, and
+  hardware move into a panel you open from the top bar, with ⌘I, or by clicking
+  Sparky.
+- **Sparky status companion.** The sidebar's Sparky and memory ring follow real
+  RAM pressure (*All good*, *Getting busy*, *Memory is tight*). When telemetry
+  is unavailable it says *Metrics offline* instead of guessing.
+- **Chat.** A 3D Sparky welcome with suggestion pills; a composer **+** menu for
+  context, skills, and the system prompt; a Text/Image/Video switch; an agent
+  chip; and a round Send button. Sparky is the assistant's avatar.
+- **Models.** A ranked list with a Sparky face per verdict, search, and
+  *All / Runs well / Slow / Won't fit* filters. A memory bar appears only when
+  both required and usable memory are known. Context window, KV cache, and fit
+  toggles move into a **Fit settings** popover, and the per-model runtime
+  picker appears on hover.
+- **Full catalog.** Models now loads the whole ranked catalog (up to 1,000
+  entries; 253 today) instead of the top 100, so search and filters reach every
+  model. The top results are unchanged.
+- **Connectors.** An empty state with Filesystem, Git, and Custom templates that
+  open a pre-filled *Add connector* sheet. The JSON editor is a collapsible
+  section.
+- **Library.** Agents and Skills are tabs, with starter templates that pre-fill
+  the form.
+- **Runtime.** System Settings-style grouped lists for this machine and the
+  inference runtimes. No hardware score is shown, because none is sourced.
+- **Light and dark themes**, remembered across launches; ⌘1–⌘5 switch views and
+  Esc closes popovers and sheets.
+- Refreshing an empty chat keeps the welcome instead of a blank pane.
+
+### Desktop app
+
+- New app icon from the Sparky brand kit, with transparent corners.
+- The window opens on the dark workspace colour instead of flashing white.
+
+### Site
+
+- The site's model count now comes from the shipped catalog (253 models, up
+  from a hand-written 69). `cargo catalog-site` stamps it into the page, so the
+  weekly admission keeps it current, and CI fails if it drifts.
+- **Ask Sparky** now takes your graphics (Apple Silicon, NVIDIA, AMD/Intel, or
+  CPU only), memory or VRAM, and free disk. It applies the CLI's own fit rule,
+  marks downloads that won't fit on disk as *no*, and shows estimated tok/s only
+  for hardware classes with sourced bandwidth data, otherwise *unknown*. Model
+  sizes and hardware classes are generated from the catalog and `perf.json`
+  instead of being typed into the page; across 1,008 combinations the preview
+  matches `rigspark can-run` exactly.
+
+### Breaking changes
+
+- The GUI layout and markup changed. Element IDs used by the app's own scripts
+  are kept, but anything that automates the old layout (for example, expecting
+  the model pickers, fit controls, or metrics to be visible without opening
+  their popover or panel) needs updating.
+- `/static/mascot-avatar.jpg` and `/static/mascot-welcome.jpg` are removed.
+  Brand assets are now served from `/static/brand/` and fonts from
+  `/static/fonts/`. SVGs are served with a sandboxed Content-Security-Policy.
+
 ## 2.4.0 - 2026-10-08
 
 ### Image and video models

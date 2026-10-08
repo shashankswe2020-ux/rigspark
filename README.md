@@ -30,6 +30,11 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg" alt="MIT License"></a>
 </p>
 
+> **New in 3.0:** a redesigned browser workspace. Every feature is still there,
+> but each control appears only when you need it, and the Models view now loads
+> the full ranked catalog.
+> [See what changed →](CHANGELOG.md#300---2026-10-08)
+
 ---
 
 ## Let Sparky check your rig
@@ -132,8 +137,16 @@ rigspark gui
 Choose a model, inspect the same hardware verdicts, chat, and use agents, skills,
 and MCP tools from the loopback-only browser workspace.
 
+- **One model chip** in the top bar holds the model, runtime, harness, and agent
+  pickers.
+- **Models** lists the whole ranked catalog with search, *Runs well / Slow /
+  Won't fit* filters, and a **Fit settings** popover for context and KV cache.
+- **The inspector** (⌘I, or click Sparky) shows live memory, CPU, disk, and the
+  latest call's token usage. Sparky's mood follows real RAM pressure.
+- **Light and dark themes**, with ⌘1–⌘5 to switch views.
+
 <p align="center">
-  <img src="site/brand/screens/screenshot-gui.webp" alt="RigSpark browser workspace showing local model fit verdicts" width="820">
+  <img src="site/brand/screens/screenshot-gui.webp" alt="The RigSpark workspace Models view ranking local models with yes and slow verdicts, memory fit bars, and estimated tokens per second" width="820">
 </p>
 
 Local chat stays on your machine. Cloud harnesses and external tools can send

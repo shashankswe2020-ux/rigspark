@@ -15,6 +15,9 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use std::{collections::BTreeMap, io::Read, sync::Arc};
 
+/// Upper bound for one ranked-catalog page; covers the whole bundled catalog with headroom.
+const MAX_RECOMMENDED_LIMIT: usize = 1000;
+
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct AdviceRequest {
@@ -234,7 +237,7 @@ pub async fn dispatch(host: Arc<Host>, request: Request) -> ApiResult {
             .map(|value| value.parse::<usize>().map_err(|_| bad()))
             .transpose()?
             .unwrap_or(8);
-        if !(1..=100).contains(&limit) {
+        if !(1..=MAX_RECOMMENDED_LIMIT).contains(&limit) {
             return Err(bad());
         }
         let models = recommended(&catalog, &hardware, &perf, &options, limit).map_err(|_| bad())?;

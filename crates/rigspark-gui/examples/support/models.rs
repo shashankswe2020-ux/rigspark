@@ -76,6 +76,22 @@ async fn open_models(client: &Client, origin: &str) -> TestResult {
     .await
 }
 
+// Fit controls live in a popover; open it before interacting with them.
+async fn open_fit_settings(client: &Client) -> TestResult {
+    if client
+        .execute("return document.querySelector('#fit-pop').hidden;", vec![])
+        .await?
+        == json!(true)
+    {
+        click(client, "#fit-settings").await?;
+    }
+    wait_for(
+        client,
+        &format!("{VISIBLE}(document.querySelector('#models-fit-only'))"),
+    )
+    .await
+}
+
 async fn open_first_detail(client: &Client) -> TestResult {
     click(
         client,
@@ -166,7 +182,7 @@ pub async fn bonsai(
     artifacts: &std::path::Path,
 ) -> TestResult {
     open_models(client, origin).await?;
-    let advice = fetch_json(client, "/api/models/recommended?limit=100&context=mid").await?;
+    let advice = fetch_json(client, "/api/models/recommended?limit=1000&context=mid").await?;
     let model = advice["models"]
         .as_array()
         .and_then(|models| models.iter().find(|model| model["id"] == "bonsai:8b"))
@@ -248,6 +264,7 @@ pub async fn bonsai(
     }
     if width == 1440 {
         click(client, "#model-detail-back").await?;
+        open_fit_settings(client).await?;
         client
             .find(fantoccini::Locator::Css(
                 "#context-window option[value='65536']",
@@ -274,6 +291,7 @@ pub async fn bonsai(
         )
         .await?;
         open_models(client, origin).await?;
+        open_fit_settings(client).await?;
         client
             .find(fantoccini::Locator::Css(
                 "#context-window option[value='mid']",
@@ -329,6 +347,7 @@ pub async fn installed(
         .await?;
     click(client, "#refresh-models").await?;
     wait_for(client, &format!("[...document.querySelectorAll('#recommended-list .model-card-title')].some((node) => node.textContent === 'gemma4:e4b-it-qat' && {VISIBLE}(node)) && document.querySelector('#recommended-list').textContent.includes('Context fit unknown')")).await?;
+    open_fit_settings(client).await?;
     click(client, "#models-fit-only").await?;
     wait_for(
         client,
@@ -337,6 +356,8 @@ pub async fn installed(
     .await?;
     click(client, "#models-fit-only").await?;
     click(client, "#model-bypass").await?;
+    client.active_element().await?.send_keys("\u{e00c}").await?;
+    wait_for(client, "document.querySelector('#fit-pop').hidden && document.activeElement?.id === 'fit-settings'").await?;
     wait_for(client, "(() => { const start = [...document.querySelectorAll('#recommended-list button')].find((node) => node.textContent === 'Start'); return start && !start.disabled && document.documentElement.scrollWidth <= innerWidth; })()").await?;
     std::fs::write(
         artifacts.join(format!("installed-{width}.png")),
@@ -393,9 +414,12 @@ pub async fn workspace(client: &Client, origin: &str) -> TestResult {
     let path = fetch_json(client, "/__fixture/workspace").await?;
     let path = path.as_str().ok_or("fixture workspace path unavailable")?;
     fresh_session(client).await?;
+    // The paperclip only appears once workspace context is available (the bar is layout-only).
     wait_for(
         client,
-        &format!("{VISIBLE}(document.querySelector('#context-bar'))"),
+        &format!(
+            "!document.querySelector('#context-bar').hidden && {VISIBLE}(document.querySelector('#context-add'))"
+        ),
     )
     .await?;
     click(client, "#context-add").await?;

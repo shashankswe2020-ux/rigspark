@@ -117,6 +117,8 @@ fn main() {
             if smoke { tauri::async_runtime::spawn(async move { tokio::time::sleep(std::time::Duration::from_secs(if dialog_smoke { 60 } else { 20 })).await; smoke_app.exit(1); }); }
             tauri::WebviewWindowBuilder::new(app,"main",tauri::WebviewUrl::External(entry.parse()?))
                 .title("RigSpark").inner_size(1280.0,840.0).min_inner_size(760.0,540.0)
+                // Matches the workspace's dark window colour so there is no white flash before paint.
+                .background_color(tauri::window::Color(28,28,30,255))
                 .initialization_script(script)
                 .on_navigation(move |url| {
                     if smoke && url.origin().ascii_serialization()==allowed && url.path().starts_with("/__native_smoke/") {

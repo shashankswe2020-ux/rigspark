@@ -597,6 +597,14 @@ html:not(.js) .spin .cap,
   font: 500 12px var(--font-mono);
   color: var(--ink-500);
 }
+.legend + .legend {
+  margin-top: 4px;
+}
+.result .speed {
+  margin-top: 12px;
+  font: 500 13px/1.5 var(--font-mono);
+  color: var(--ink-700);
+}
 .cli {
   margin-top: 14px;
   font: 500 13px/1.7 var(--font-mono);

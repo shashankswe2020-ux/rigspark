@@ -9,7 +9,17 @@ use tower::ServiceExt;
 fn gui_uses_rigspark_branding() {
     let index = include_str!("../static/index.html");
     assert!(index.contains("<title>RigSpark</title>"));
-    assert!(index.contains("/static/mascot-avatar.jpg"));
+    assert!(index.contains("/static/brand/favicon.svg"));
+    assert!(index.contains("/static/brand/mark-dark.svg"));
+    assert!(!index.contains("mascot-"));
+    for face in ["yes", "slow", "no", "wink", "wow"] {
+        for variant in ["", "-dark"] {
+            let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join(format!("static/brand/sparky-{face}{variant}.svg"));
+            let svg = std::fs::read_to_string(&path).unwrap();
+            assert!(!svg.to_ascii_lowercase().contains("<script"), "{path:?}");
+        }
+    }
     let config: serde_json::Value = serde_json::from_str(include_str!(
         "../../../apps/desktop/src-tauri/tauri.conf.json"
     ))
@@ -63,11 +73,15 @@ async fn artifacts_are_sandboxed_and_vendor_assets_are_embedded() {
         "/static/calculator-runtime.js",
         "/static/calculator-template.js",
         "/static/markdown.js",
-        "/static/mascot-avatar.jpg",
-        "/static/mascot-welcome.jpg",
+        "/static/brand/favicon.svg",
+        "/static/brand/mark-dark.svg",
+        "/static/brand/sparky-yes-dark.svg",
+        "/static/brand/3d/sparky-studio.webp",
+        "/static/fonts/inter-400.woff2",
         "/static/run-reducer.js",
         "/static/sse.js",
         "/static/telemetry.js",
+        "/static/workspace.js",
         "/static/styles.css",
     ] {
         let response = router(host.clone())
@@ -92,6 +106,16 @@ async fn artifacts_are_sandboxed_and_vendor_assets_are_embedded() {
         if path.ends_with(".woff2") {
             assert_eq!(response.headers()["content-type"], "font/woff2");
         }
+        if path.ends_with(".webp") {
+            assert_eq!(response.headers()["content-type"], "image/webp");
+        }
+        if path.starts_with("/static/") && path.ends_with(".svg") {
+            assert_eq!(response.headers()["content-type"], "image/svg+xml");
+            assert_eq!(
+                response.headers()["content-security-policy"],
+                "default-src 'none'; style-src 'unsafe-inline'; sandbox"
+            );
+        }
         if path.starts_with("/api/images/") {
             assert_eq!(
                 response.headers()["content-security-policy"],
@@ -108,6 +132,7 @@ async fn artifacts_are_sandboxed_and_vendor_assets_are_embedded() {
     for path in [
         "/api/images/%2e%2e%2fchart.svg",
         "/static/%2e%2e/package.json",
+        "/static/fonts/LICENSE-OFL.txt",
         "/vendor/unknown.js",
     ] {
         let response = router(host.clone())

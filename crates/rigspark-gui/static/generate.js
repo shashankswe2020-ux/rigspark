@@ -247,10 +247,6 @@ document.addEventListener("DOMContentLoaded", () => {
     messages.querySelector(".messages-empty")?.remove();
     const row = document.createElement("div");
     row.className = `message ${role}`;
-    const avatar = document.createElement("img");
-    avatar.className = "message-avatar";
-    avatar.src = role === "assistant" ? "/static/mascot-avatar.jpg" : "/static/mascot-welcome.jpg";
-    avatar.alt = "";
     const content = document.createElement("div");
     content.className = "message-content";
     const roleLabel = document.createElement("div");
@@ -259,7 +255,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const body = document.createElement("div");
     body.className = "message-body";
     content.append(roleLabel, body);
-    row.append(avatar, content);
+    if (role === "assistant" && globalThis.RigSparkUI) {
+      row.append(globalThis.RigSparkUI.faceImage("yes", "message-avatar"), content);
+    } else {
+      row.append(content);
+    }
     messages.appendChild(row);
     row.scrollIntoView({ block: "end" });
     return body;
