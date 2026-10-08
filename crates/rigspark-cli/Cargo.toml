@@ -81,6 +81,11 @@ path = "src/catalog_admit.rs"
 required-features = ["maintainer-tools"]
 
 [[bin]]
+name = "llmup-catalog-site"
+path = "src/catalog_site.rs"
+required-features = ["maintainer-tools"]
+
+[[bin]]
 name = "llmup-generation-admit"
 path = "src/generation_admit.rs"
 required-features = ["maintainer-tools"]

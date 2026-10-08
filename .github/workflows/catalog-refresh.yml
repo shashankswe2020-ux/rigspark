@@ -256,3 +256,116 @@ jobs:
         run: |
           echo "Collection or extraction failed for some candidates. Review the persisted report and diagnostics before retrying; publication remains independently gated."
           exit 2
+
+  admit:
+    name: Admit latest local models
+    needs: pending-review
+    if: github.ref == 'refs/heads/main' && needs.pending-review.outputs.proceed == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Fetch main history without an action runtime
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git init .
+          git remote add origin "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git"
+          AUTH=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\r\n')
+          export GIT_CONFIG_COUNT=1
+          export GIT_CONFIG_KEY_0="http.${GITHUB_SERVER_URL}/.extraheader"
+          export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $AUTH"
+          git fetch --no-tags origin "$GITHUB_SHA"
+          unset AUTH GIT_CONFIG_COUNT GIT_CONFIG_KEY_0 GIT_CONFIG_VALUE_0 GH_TOKEN
+          git checkout --detach FETCH_HEAD
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+
+      - name: Verify admission before trusting it
+        run: |
+          set -euo pipefail
+          cargo test --locked -p rigspark-core --test admission --test generation_admission
+          cargo test --locked -p rigspark-runtime --test catalog_admission --test generation_admission --test catalog_quality
+          cargo build --locked -p rigspark-cli --bin llmup-catalog-admit --bin llmup-generation-admit
+
+      - name: Admit sourced text models and correct contradicted curated facts
+        run: |
+          set -euo pipefail
+          cargo catalog-enrich
+          cargo catalog-admit --correct-curated > "$RUNNER_TEMP/admit.json"
+
+      - name: Admit sourced image and video releases
+        run: |
+          set -euo pipefail
+          cargo generation-admit > "$RUNNER_TEMP/generation-admit.json"
+
+      - name: Regenerate last-month site data
+        run: cargo catalog-site
+
+      - name: Gate on the full suite and publication quality
+        id: gate
+        run: |
+          set -euo pipefail
+          cargo test --workspace --locked -- --test-threads=2
+          if cargo catalog-quality > docs/references/catalog-quality-latest-report.json; then
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          fi
+          jq -r '"Admitted: \(.added | length); corrected: \(.corrections | length); rejected: \(.rejected | length); complete: \(.complete)"' "$RUNNER_TEMP/admit.json" >> "$GITHUB_STEP_SUMMARY"
+          jq -r '"Image/video admitted: \(.added | length); removed: \(.removed | length)"' "$RUNNER_TEMP/generation-admit.json" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Open, verify and merge the data-only admission PR
+        id: merge
+        env:
+          MERGE_TOKEN: ${{ secrets.CATALOG_MERGE_TOKEN }}
+          FALLBACK_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          ALLOWED='^(crates/rigspark-core/data/models\.json|crates/rigspark-core/data/generation\.json|docs/references/catalog-quality-evidence\.json|docs/references/catalog-quality-latest-report\.json|docs/references/catalog-admission-state\.json|docs/references/generation-admission-state\.json|docs/references/catalog-corrections\.json|site/data/latest\.js)$'
+          CHANGED=$(git status --porcelain --untracked-files=all | cut -c4-)
+          if [ -z "$CHANGED" ]; then
+            echo "Nothing new upstream." >> "$GITHUB_STEP_SUMMARY"
+            echo "merged=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if printf '%s\n' "$CHANGED" | grep -Ev "$ALLOWED"; then
+            echo "Admission touched files outside the data allow-list; refusing." >&2
+            exit 1
+          fi
+          # A maintainer token makes the PR start the required CI; GITHUB_TOKEN pushes cannot.
+          export GH_TOKEN="${MERGE_TOKEN:-$FALLBACK_TOKEN}"
+          BRANCH="catalog/auto-admit-${GITHUB_RUN_ID}"
+          TITLE="chore(catalog): admit latest local models"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          printf '%s\n' "$CHANGED" | xargs git add --
+          git commit -q -m "$TITLE"
+          AUTH=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\r\n')
+          git -c "http.${GITHUB_SERVER_URL}/.extraheader=AUTHORIZATION: basic $AUTH" push origin "$BRANCH"
+          unset AUTH
+          BODY=$(printf 'Automated, source-backed admission. Every auto entry is digest-pinned and cited; curated corrections are recorded in docs/references/catalog-corrections.json.\n\n%s' "$(cat "$GITHUB_STEP_SUMMARY")")
+          URL=$(gh pr create --base main --head "$BRANCH" --title "$TITLE" --body "$BODY")
+          if [ -z "${MERGE_TOKEN:-}" ]; then
+            echo "CATALOG_MERGE_TOKEN is not configured; left $URL for review." >> "$GITHUB_STEP_SUMMARY"
+            echo "merged=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          sleep 60
+          gh pr checks "$URL" --watch --interval 60 --fail-fast --required
+          if gh pr diff "$URL" --name-only | grep -Ev "$ALLOWED"; then
+            echo "PR diff left the data allow-list; refusing to merge." >&2
+            exit 1
+          fi
+          gh pr merge "$URL" --admin --squash --delete-branch
+          echo "merged=true" >> "$GITHUB_OUTPUT"
+
+      - name: Publish the signed catalog when the quality gate passes
+        if: steps.merge.outputs.merged == 'true' && steps.gate.outputs.publish == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.CATALOG_MERGE_TOKEN }}
+        run: gh workflow run catalog-publish.yml --ref main
+

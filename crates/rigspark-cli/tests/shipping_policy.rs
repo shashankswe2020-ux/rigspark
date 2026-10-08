@@ -72,6 +72,7 @@ fn ci_runs_every_native_gate_read_only() {
     for step in [
         "test \"$(git rev-parse HEAD)\" = \"$GITHUB_SHA\"",
         "cargo native-retirement",
+        "cargo catalog-site --check",
         "cargo fmt --all -- --check",
         "cargo clippy --workspace --all-targets --locked -- -D warnings",
         "cargo test --workspace --locked",
@@ -103,6 +104,56 @@ fn write_capable_workflows_never_push_to_main() {
         "event data must reach the shell through env"
     );
     assert!(backlog.contains("gh project item-add"));
+}
+
+#[test]
+fn automatic_admission_merges_only_verified_data_only_changes() {
+    let workflow = read(".github/workflows/catalog-refresh.yml");
+    let admit = workflow
+        .split("\n  admit:\n")
+        .nth(1)
+        .expect("admission job");
+    for required in [
+        "needs.pending-review.outputs.proceed == 'true'",
+        "cargo catalog-admit --correct-curated",
+        "cargo generation-admit",
+        "cargo catalog-site",
+        "cargo test --workspace --locked",
+        "cargo catalog-quality",
+        "Admission touched files outside the data allow-list; refusing.",
+        "gh pr checks \"$URL\" --watch --interval 60 --fail-fast --required",
+        "PR diff left the data allow-list; refusing to merge.",
+        "gh pr merge \"$URL\" --admin --squash --delete-branch",
+        "MERGE_TOKEN: ${{ secrets.CATALOG_MERGE_TOKEN }}",
+        "steps.merge.outputs.merged == 'true' && steps.gate.outputs.publish == 'true'",
+        "gh workflow run catalog-publish.yml --ref main",
+    ] {
+        assert!(admit.contains(required), "{required}");
+    }
+    // The checks gate precedes the merge, and the publish dispatch follows it.
+    assert!(admit.find("gh pr checks").unwrap() < admit.find("gh pr merge").unwrap());
+    let allowed = admit
+        .lines()
+        .find(|line| line.trim_start().starts_with("ALLOWED="))
+        .unwrap();
+    for path in ["\\.rs", "Cargo", ".github", "main\\.js", "index\\.html"] {
+        assert!(!allowed.contains(path), "{path} must never be auto-merged");
+    }
+    let script: String = admit
+        .lines()
+        .filter(|line| {
+            !line.trim_start().starts_with("MERGE_TOKEN:")
+                && !line.trim_start().starts_with("GH_TOKEN:")
+                && !line.trim_start().starts_with("FALLBACK_TOKEN:")
+        })
+        .collect();
+    assert!(
+        !script.contains("${{ secrets."),
+        "secrets reach the shell only through env"
+    );
+    for forbidden in ["push origin main", "HEAD:main", "push --force", "push -f"] {
+        assert!(!admit.contains(forbidden), "{forbidden}");
+    }
 }
 
 #[test]

@@ -42,6 +42,8 @@ jobs:
         run: rustup show active-toolchain
       - name: Require complete retirement
         run: cargo native-retirement
+      - name: Site data matches the shipped catalogs
+        run: cargo catalog-site --check
       - name: Format
         run: cargo fmt --all -- --check
       - name: Lint

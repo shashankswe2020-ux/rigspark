@@ -76,12 +76,16 @@ fn workflow_enrichment_scopes_credentials_and_keeps_review_and_signing_separate(
     ] {
         assert!(workflow.contains(required), "{required}");
     }
+    // Signing never happens here; publication is a separate workflow.
     assert!(!workflow.contains("CATALOG_SIGNING_SEED"));
     assert!(!workflow.contains("cargo catalog-sign"));
-    assert!(!workflow.contains("gh pr merge"));
+    // The proposal job only opens review PRs. Merging is confined to the admission job,
+    // whose own policy test requires CI and a data-only diff.
+    let proposals = workflow.split("\n  admit:\n").next().unwrap();
+    assert!(!proposals.contains("gh pr merge"));
     assert!(!workflow.contains("gh pr close"));
-    assert!(!workflow.contains("--delete-branch"));
-    assert!(!workflow.contains("git add docs/references/catalog-quality-evidence.json"));
+    assert!(!proposals.contains("--delete-branch"));
+    assert!(!proposals.contains("git add docs/references/catalog-quality-evidence.json"));
     assert!(
         workflow
             .find("cargo build --locked -p rigspark-cli --bin llmup-catalog-propose")

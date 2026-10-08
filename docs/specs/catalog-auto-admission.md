@@ -1,6 +1,6 @@
 # Spec: Automatic catalog admission of the latest local models
 
-Status: draft for review · Owner: catalog pipeline · Related: #254 (coverage gap), #278 (stalled refresh PR)
+Status: implemented (feat/catalog-auto-admission) · Owner: catalog pipeline · Related: #254 (coverage gap), #278 (stalled refresh PR)
 
 ## Objective
 
@@ -260,7 +260,9 @@ the same `provenance` and `addedAt` fields as the text catalog, plus a `runnable
   roles match that workflow's `roles()`, the entry gets `workflow` set and runs. When a
   new workflow ships, the next run promotes matching fit-only entries automatically.
 - **New built-in workflows** (implemented and tested against ComfyUI's published
-  example graphs): `wan22-t2v` (Wan 2.2 TI2V-5B), `qwen-image`, `flux2` and `ltx-video`.
+  example graphs): `wan22-ti2v` (Wan 2.2 TI2V-5B) and `qwen-image`. FLUX.2-dev and
+  LTX-2 ship under non-open licenses, so the open-weight gate rejects them and no
+  workflow is built for them (decided 2026-10-08).
   Each cites its `workflowSource`.
 - **Never:** guess a file role, a revision or a digest; admit gated or non-open
   licenses; run a fit-only entry.
@@ -284,7 +286,7 @@ it up. The auto-merge allow-list includes `site/data/latest.js`.
 11. **Generation admission** from Comfy-Org: discovery, file roles from repository
     layouts, digests from LFS metadata, license gate, and promotion when a workflow
     exists.
-12. **Workflows:** `wan22-t2v`, `qwen-image`, `flux2` and `ltx-video` graphs with tests.
+12. **Workflows:** `wan22-ti2v` and `qwen-image` graphs with tests.
 13. **`catalog-site` generator, plus Ask Sparky** Text/Image/Video switch and empty
     state.
 14. **Workflow wiring** for generation admission and the site data in the auto-merge

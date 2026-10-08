@@ -47,4 +47,8 @@ impl File {
         self.directory
             .write(&self.name, encoded.as_bytes(), !exists, exists)
     }
+    /// Replaces the file in place, or creates it when `exists` is false.
+    pub fn write_bytes(&self, bytes: &[u8], exists: bool) -> io::Result<()> {
+        self.directory.write(&self.name, bytes, !exists, exists)
+    }
 }
