@@ -1,4 +1,7 @@
-use rigspark_core::{GENERATION_JSON, generation::GenerationCatalog};
+use rigspark_core::generation::GenerationCatalog;
+
+/// Frozen curated catalog: weekly admission adds entries this legacy enricher rejects.
+const GENERATION_JSON: &str = include_str!("../../rigspark-core/fixtures/generation-baseline.json");
 use std::{fs, process::Command};
 
 #[test]

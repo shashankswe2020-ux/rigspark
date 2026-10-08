@@ -146,7 +146,8 @@ fn fit_only_entries_use_each_diffusion_file_with_the_smallest_companions() {
     );
 
     // Every entry validates inside a v2 generation catalog alongside the curated defaults.
-    let mut catalog: Value = serde_json::from_str(rigspark_core::GENERATION_JSON).unwrap();
+    let mut catalog: Value =
+        serde_json::from_str(include_str!("../fixtures/generation-baseline.json")).unwrap();
     catalog["schemaVersion"] = json!(2);
     catalog["models"].as_array_mut().unwrap().extend(
         entries
@@ -259,7 +260,8 @@ fn official_recipes_promote_exactly_the_documented_files_to_runnable() {
             .any(|file| file.file.ends_with("qwen_image_vae.safetensors"))
     );
 
-    let mut catalog: Value = serde_json::from_str(rigspark_core::GENERATION_JSON).unwrap();
+    let mut catalog: Value =
+        serde_json::from_str(include_str!("../fixtures/generation-baseline.json")).unwrap();
     catalog["schemaVersion"] = json!(2);
     catalog["models"].as_array_mut().unwrap().extend(
         wan.iter()

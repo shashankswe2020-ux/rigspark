@@ -1,10 +1,9 @@
-use rigspark_core::{
-    GENERATION_JSON,
-    generation::{GenerationCatalog, GenerationKind, GenerationModel, enrich_generation_catalog},
+use rigspark_core::generation::{
+    GenerationCatalog, GenerationKind, GenerationModel, enrich_generation_catalog,
 };
 
 fn catalog() -> GenerationCatalog {
-    GenerationCatalog::parse(GENERATION_JSON).unwrap()
+    GenerationCatalog::parse(include_str!("../fixtures/generation-baseline.json")).unwrap()
 }
 
 fn candidate(id: &str, kind: GenerationKind) -> GenerationModel {

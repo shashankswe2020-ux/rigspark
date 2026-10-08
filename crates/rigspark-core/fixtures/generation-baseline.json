@@ -1,0 +1,165 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-05T21:23:19Z",
+  "models": [
+    {
+      "id": "flux1-schnell:fp16",
+      "family": "flux1-schnell",
+      "kind": "image",
+      "params": "12B",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "releaseDate": "2024-08-01",
+      "default": false,
+      "source": "https://huggingface.co/black-forest-labs/FLUX.1-schnell",
+      "workflow": "flux-split",
+      "workflowSource": "https://comfyanonymous.github.io/ComfyUI_examples/flux/",
+      "files": [
+        {
+          "role": "diffusion",
+          "folder": "diffusion_models",
+          "repo": "Comfy-Org/flux1-schnell",
+          "revision": "c2b683ea00713d6feadcd54b39e3725bbc78638b",
+          "file": "flux1-schnell.safetensors",
+          "sha256": "9403429e0052277ac2a87ad800adece5481eecefd9ed334e1f348723621d2a0a",
+          "bytes": 23782506688
+        },
+        {
+          "role": "text-encoder",
+          "folder": "text_encoders",
+          "repo": "comfyanonymous/flux_text_encoders",
+          "revision": "6af2a98e3f615bdfa612fbd85da93d1ed5f69ef5",
+          "file": "t5xxl_fp8_e4m3fn_scaled.safetensors",
+          "sha256": "a498f0485dc9536735258018417c3fd7758dc3bccc0a645feaa472b34955557a",
+          "bytes": 5157348688
+        },
+        {
+          "role": "clip",
+          "folder": "text_encoders",
+          "repo": "comfyanonymous/flux_text_encoders",
+          "revision": "6af2a98e3f615bdfa612fbd85da93d1ed5f69ef5",
+          "file": "clip_l.safetensors",
+          "sha256": "660c6f5b1abae9dc498ac2d21e1347d2abdb0cf6c0c0c8576cd796491d9a6cdd",
+          "bytes": 246144152
+        },
+        {
+          "role": "vae",
+          "folder": "vae",
+          "repo": "Comfy-Org/Lumina_Image_2.0_Repackaged",
+          "revision": "5b072540ef86570fecb8249c505f23d5bdeb88cd",
+          "file": "split_files/vae/ae.safetensors",
+          "sha256": "afc8e28272cd15db3919bacdb6918ce9c1ed22e96cb12c4d5ed0fba823529e38",
+          "bytes": 335304388
+        }
+      ]
+    },
+    {
+      "id": "flux1-schnell:fp8",
+      "family": "flux1-schnell",
+      "kind": "image",
+      "params": "12B",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "releaseDate": "2024-08-01",
+      "default": true,
+      "source": "https://huggingface.co/black-forest-labs/FLUX.1-schnell",
+      "workflow": "flux-checkpoint",
+      "workflowSource": "https://comfyanonymous.github.io/ComfyUI_examples/flux/",
+      "files": [
+        {
+          "role": "checkpoint",
+          "folder": "checkpoints",
+          "repo": "Comfy-Org/flux1-schnell",
+          "revision": "c2b683ea00713d6feadcd54b39e3725bbc78638b",
+          "file": "flux1-schnell-fp8.safetensors",
+          "sha256": "ead426278b49030e9da5df862994f25ce94ab2ee4df38b556ddddb3db093bf72",
+          "bytes": 17236328572
+        }
+      ]
+    },
+    {
+      "id": "wan2.1-t2v:1.3b",
+      "family": "wan2.1-t2v",
+      "kind": "video",
+      "params": "1.3B",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "releaseDate": "2025-02-25",
+      "default": true,
+      "source": "https://huggingface.co/Wan-AI/Wan2.1-T2V-1.3B",
+      "workflow": "wan-t2v",
+      "workflowSource": "https://comfyanonymous.github.io/ComfyUI_examples/wan/",
+      "files": [
+        {
+          "role": "diffusion",
+          "folder": "diffusion_models",
+          "repo": "Comfy-Org/Wan_2.1_ComfyUI_repackaged",
+          "revision": "123acf1cc74bccbb9bfff8ac1ee72edc08c2341d",
+          "file": "split_files/diffusion_models/wan2.1_t2v_1.3B_fp16.safetensors",
+          "sha256": "be531024cd9018cb5b48c40cfbb6a6191645b1c792eb8bf4f8c1c6e10f924dc5",
+          "bytes": 2838303560
+        },
+        {
+          "role": "text-encoder",
+          "folder": "text_encoders",
+          "repo": "Comfy-Org/Wan_2.1_ComfyUI_repackaged",
+          "revision": "123acf1cc74bccbb9bfff8ac1ee72edc08c2341d",
+          "file": "split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+          "sha256": "c3355d30191f1f066b26d93fba017ae9809dce6c627dda5f6a66eaa651204f68",
+          "bytes": 6735906897
+        },
+        {
+          "role": "vae",
+          "folder": "vae",
+          "repo": "Comfy-Org/Wan_2.1_ComfyUI_repackaged",
+          "revision": "123acf1cc74bccbb9bfff8ac1ee72edc08c2341d",
+          "file": "split_files/vae/wan_2.1_vae.safetensors",
+          "sha256": "2fc39d31359a4b0a64f55876d8ff7fa8d780956ae2cb13463b0223e15148976b",
+          "bytes": 253815318
+        }
+      ]
+    },
+    {
+      "id": "wan2.1-t2v:1.3b-bf16",
+      "family": "wan2.1-t2v",
+      "kind": "video",
+      "params": "1.3B",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "releaseDate": "2025-02-25",
+      "default": false,
+      "source": "https://huggingface.co/Wan-AI/Wan2.1-T2V-1.3B",
+      "workflow": "wan-t2v",
+      "workflowSource": "https://comfyanonymous.github.io/ComfyUI_examples/wan/",
+      "files": [
+        {
+          "role": "diffusion",
+          "folder": "diffusion_models",
+          "repo": "Comfy-Org/Wan_2.1_ComfyUI_repackaged",
+          "revision": "123acf1cc74bccbb9bfff8ac1ee72edc08c2341d",
+          "file": "split_files/diffusion_models/wan2.1_t2v_1.3B_bf16.safetensors",
+          "sha256": "6f999b0d6cb9a72b3d98ac386ed96f57f8cecae13994a69232514ea4974ad5fd",
+          "bytes": 2838104528
+        },
+        {
+          "role": "text-encoder",
+          "folder": "text_encoders",
+          "repo": "Comfy-Org/Wan_2.1_ComfyUI_repackaged",
+          "revision": "123acf1cc74bccbb9bfff8ac1ee72edc08c2341d",
+          "file": "split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+          "sha256": "c3355d30191f1f066b26d93fba017ae9809dce6c627dda5f6a66eaa651204f68",
+          "bytes": 6735906897
+        },
+        {
+          "role": "vae",
+          "folder": "vae",
+          "repo": "Comfy-Org/Wan_2.1_ComfyUI_repackaged",
+          "revision": "123acf1cc74bccbb9bfff8ac1ee72edc08c2341d",
+          "file": "split_files/vae/wan_2.1_vae.safetensors",
+          "sha256": "2fc39d31359a4b0a64f55876d8ff7fa8d780956ae2cb13463b0223e15148976b",
+          "bytes": 253815318
+        }
+      ]
+    }
+  ]
+}
