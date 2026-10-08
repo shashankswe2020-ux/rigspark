@@ -7,6 +7,7 @@ const BROWSER_SCRIPTS: &[&str] = &[
     "crates/rigspark-gui/static/run-reducer.js",
     "crates/rigspark-gui/static/sse.js",
     "crates/rigspark-gui/static/telemetry.js",
+    "crates/rigspark-gui/static/workspace.js",
     "site/main.js",
     // Generated, inert catalog data (`cargo catalog-site`); `--check` keeps it reproducible.
     "site/data/latest.js",

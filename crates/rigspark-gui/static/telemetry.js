@@ -140,6 +140,10 @@
       );
       draw(metric, now);
     }
+    // Lets the sidebar companion reflect real RAM pressure; null means unknown.
+    if (typeof globalThis.dispatchEvent === "function" && typeof globalThis.CustomEvent === "function") {
+      globalThis.dispatchEvent(new globalThis.CustomEvent("rigspark:telemetry", { detail: { memory: readings.memory } }));
+    }
   }
   async function sample() {
     if (disposed || document.hidden || pending) return;

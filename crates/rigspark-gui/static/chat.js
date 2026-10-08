@@ -166,18 +166,25 @@ document.addEventListener("DOMContentLoaded", () => {
     if (role === "assistant" || role === "user") {
       messageContent.appendChild(buildMessageActions(body, role));
     }
-    if (role === "assistant" || role === "user") {
-      const avatar = document.createElement("img");
-      avatar.className = "message-avatar";
-      avatar.src = role === "assistant" ? "/static/mascot-avatar.jpg" : "/static/mascot-welcome.jpg";
-      avatar.alt = "";
-      row.append(avatar, messageContent);
+    if (role === "assistant") {
+      row.append(sparkyAvatar(), messageContent);
     } else {
       row.appendChild(messageContent);
     }
     messages.appendChild(row);
     updateContextUsage();
     return body;
+  }
+
+  function sparkyAvatar() {
+    if (globalThis.RigSparkUI) {
+      return globalThis.RigSparkUI.faceImage("yes", "message-avatar");
+    }
+    const avatar = document.createElement("img");
+    avatar.className = "message-avatar";
+    avatar.src = "/static/brand/sparky-yes-dark.svg";
+    avatar.alt = "";
+    return avatar;
   }
 
   // A rough, clearly-labelled estimate of tokens held in the current thread.
@@ -261,10 +268,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const row = document.createElement("div");
     row.className = "run-thinking";
     row.setAttribute("role", "status");
-    const avatar = document.createElement("img");
-    avatar.className = "message-avatar";
-    avatar.src = "/static/mascot-avatar.jpg";
-    avatar.alt = "";
+    const avatar = sparkyAvatar();
     const dots = document.createElement("span");
     dots.className = "run-thinking-dots";
     for (let i = 0; i < 3; i += 1) {
@@ -1205,6 +1209,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
     prompt.value = "";
+    prompt.style.height = "";
     sendPrompt(value, { retry: false });
   });
 
@@ -1253,7 +1258,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function switchView(view) {
-    const titles = { chat: "Chat", models: "Models", create: "Create", connectors: "Connectors", library: "Agents & Skills", tools: "Runtime" };
+    const titles = { chat: "Chat", models: "Models", create: "Create", connectors: "Connectors", library: "Library", tools: "Runtime" };
     for (const item of navItems) {
       item.classList.toggle("active", item.dataset.view === view);
     }
@@ -1614,7 +1619,15 @@ document.addEventListener("DOMContentLoaded", () => {
     if (activeBanner) {
       if (active) {
         activeBanner.hidden = false;
-        activeBanner.textContent = `${active.modelId} is running on ${active.backend} at ${active.endpoint}${active.runtimeModelId ? ` · Runtime model: ${active.runtimeModelId}` : ""}${active.context ? ` · Context: ${active.context}` : ""}${active.cache ? ` · Cache: ${cacheLabel(active.cache)}` : ""}`;
+        const strong = document.createElement("b");
+        strong.textContent = active.modelId;
+        const detail = document.createElement("span");
+        detail.className = "running-banner-detail";
+        detail.textContent = ` on ${active.backend} at ${active.endpoint}${active.runtimeModelId ? ` · Runtime model: ${active.runtimeModelId}` : ""}${active.context ? ` · Context: ${active.context}` : ""}${active.cache ? ` · Cache: ${cacheLabel(active.cache)}` : ""}`;
+        const text = document.createElement("span");
+        text.className = "running-banner-text";
+        text.append(strong, " is running", detail);
+        activeBanner.replaceChildren(modelFace("yes"), text);
       } else {
         activeBanner.hidden = true;
       }
@@ -1743,6 +1756,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const isActive = active && active.modelId === model.id;
       const card = document.createElement("article");
       card.className = "model-card-item";
+      card.dataset.verdict = model.verdict;
 
       const open = document.createElement("button");
       open.type = "button";
@@ -1750,18 +1764,14 @@ document.addEventListener("DOMContentLoaded", () => {
       open.setAttribute("aria-label", `View performance details for ${model.id}`);
       open.addEventListener("click", () => renderModelDetail(model, active));
 
-      const head = document.createElement("div");
+      const face = modelFace(model.verdict === "yes" ? "yes" : model.verdict === "slow" ? "slow" : "no");
+
+      const head = document.createElement("span");
       head.className = "model-card-head";
-      const title = document.createElement("div");
+      const title = document.createElement("span");
       title.className = "model-card-title";
       title.textContent = model.id;
-      const badge = document.createElement("span");
-      badge.className = `verdict-badge verdict-${model.verdict}`;
-      badge.textContent = verdictLabel(model.verdict, model.throughput);
-      head.appendChild(title);
-      head.appendChild(badge);
-
-      const meta = document.createElement("div");
+      const meta = document.createElement("span");
       meta.className = "model-card-meta";
       const context = model.contextTokens
         ? model.contextFitKnown === false
@@ -1769,7 +1779,30 @@ document.addEventListener("DOMContentLoaded", () => {
           : ` · ${formatTokens(model.contextTokens)} context tokens${model.kvPrecision && model.kvPrecision !== "fp16" ? ` · KV ${model.kvPrecision}` : ""}`
         : "";
       const origin = model.provenance === "auto" ? " · auto-sourced" : "";
-      meta.textContent = `${model.params} · ${model.quant} · ${formatSize(model.diskBytes)} · ${formatThroughput(model.throughput)}${context}${origin}`;
+      meta.textContent = `${model.params} · ${model.quant} · ${formatSize(model.diskBytes)}${context}${origin}`;
+      head.append(title, meta);
+
+      const fit = document.createElement("span");
+      fit.className = "model-card-fit";
+      const badge = document.createElement("span");
+      badge.className = `verdict-badge verdict-${model.verdict}`;
+      badge.textContent = verdictLabel(model.verdict, model.throughput);
+      fit.appendChild(badge);
+      // Only draw the memory bar when both figures are sourced; never guess a fill level.
+      if (Number.isFinite(model.requiredBytes) && Number.isFinite(model.usableBytes) && model.usableBytes > 0) {
+        const share = model.requiredBytes / model.usableBytes;
+        const bar = document.createElement("span");
+        bar.className = "fit-bar";
+        bar.title = `${Math.round(share * 100)}% of usable memory`;
+        const fill = document.createElement("i");
+        fill.style.width = `${Math.min(Math.max(share, 0), 1) * 100}%`;
+        bar.appendChild(fill);
+        fit.appendChild(bar);
+      }
+
+      const speed = document.createElement("span");
+      speed.className = "model-card-speed";
+      speed.textContent = formatThroughput(model.throughput);
 
       const actions = document.createElement("div");
       actions.className = "model-card-actions";
@@ -1795,6 +1828,7 @@ document.addEventListener("DOMContentLoaded", () => {
       button.type = "button";
       if (isActive && model.contextTokens === undefined && selectedContext() === undefined && (active.cache ? active.cache.kvK : "f16") === (selectedKvCache() ?? "f16")) {
         button.textContent = "Running";
+        button.className = "is-running";
         button.disabled = true;
       } else {
         button.textContent = model.verdict === "no" ? "Start anyway" : "Start";
@@ -1804,12 +1838,22 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       actions.appendChild(button);
 
-      open.appendChild(head);
-      open.appendChild(meta);
+      open.append(face, head, fit, speed);
       card.appendChild(open);
       card.appendChild(actions);
       recommendedList.appendChild(card);
     }
+  }
+
+  function modelFace(name) {
+    if (globalThis.RigSparkUI) {
+      return globalThis.RigSparkUI.faceImage(name, "model-face");
+    }
+    const image = document.createElement("img");
+    image.className = "model-face";
+    image.src = `/static/brand/sparky-${name}-dark.svg`;
+    image.alt = "";
+    return image;
   }
 
   if (modelDetailBack) {
@@ -1987,7 +2031,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const visible = modelsFitOnly?.checked ? models.filter((model) => model.fit === "yes") : models;
     for (const model of visible) {
       const row = document.createElement("article");
-      row.className = "model-card-item";
+      row.className = "model-card-item model-card-installed";
+      if (model.fit === "yes" || model.fit === "no") row.dataset.verdict = model.fit;
+      const head = document.createElement("div");
+      head.className = "model-card-head";
       const title = document.createElement("h3");
       title.className = "model-card-title";
       title.textContent = model.id;
@@ -1995,6 +2042,7 @@ document.addEventListener("DOMContentLoaded", () => {
       details.className = "model-card-meta";
       const fit = model.fit === "unknown" ? "Context fit unknown" : model.fit === "yes" ? "Estimated context fits" : "Estimated context exceeds limits";
       details.textContent = `${model.quant ?? "Unknown quant"} · ${formatSize(model.sizeBytes)} weights · ${model.weightsFit ? "weights fit" : "weights exceed budget"} · ${model.context ?? "default"} context · ${fit} · ${model.memoryKind.toUpperCase()} budget ${formatSize(model.usableBytes)} · Throughput unknown`;
+      head.append(title, details);
       const button = document.createElement("button");
       button.type = "button";
       button.textContent = "Start";
@@ -2004,7 +2052,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const actions = document.createElement("div");
       actions.className = "model-card-actions";
       actions.append(button);
-      row.append(title, details, actions);
+      row.append(modelFace(model.fit === "yes" ? "yes" : model.fit === "no" ? "no" : "wow"), head, actions);
       recommendedList.append(row);
     }
     if (visible.length === 0) recommendedList.textContent = "No installed models match.";
@@ -2372,6 +2420,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         connectorForm.reset();
         updateConnectorFields();
+        globalThis.dispatchEvent(new CustomEvent("rigspark:connector-added"));
         await loadConnectors();
       } catch (error) {
         if (connectorError) {
@@ -2704,16 +2753,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const mark = document.createElement("img");
     mark.className = "welcome-mark";
-    mark.src = "/static/mascot-welcome.jpg";
+    mark.src = "/static/brand/3d/sparky-studio.webp";
     mark.alt = "";
+    mark.decoding = "async";
 
     const title = document.createElement("h2");
     title.className = "welcome-title";
-    title.textContent = "Ready when you are";
+    title.textContent = "Ready when you are.";
 
     const sub = document.createElement("p");
     sub.className = "welcome-sub";
-    sub.textContent = "Chat with a model running entirely on your machine. Nothing leaves this device.";
+    sub.textContent = "Chat with a model running entirely on this machine. Nothing leaves the device.";
 
     const grid = document.createElement("div");
     grid.className = "welcome-suggestions";
@@ -2721,13 +2771,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "suggestion";
-      const label = document.createElement("span");
-      label.className = "suggestion-title";
-      label.textContent = item.title;
-      const hint = document.createElement("span");
-      hint.className = "suggestion-hint";
-      hint.textContent = item.prompt;
-      btn.append(label, hint);
+      btn.title = item.prompt;
+      btn.textContent = item.title;
       btn.addEventListener("click", () => {
         prompt.value = item.prompt;
         prompt.dispatchEvent(new globalThis.Event("input", { bubbles: true }));

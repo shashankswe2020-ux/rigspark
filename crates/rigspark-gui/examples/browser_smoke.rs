@@ -167,7 +167,7 @@ async fn journeys(client: &Client, origin: &str, artifacts: &std::path::Path) ->
     new_session(client).await?;
     send(client, "checkpoint five").await?;
     wait_for(client, "document.querySelector('.message.assistant')?.textContent.includes('Native reply: checkpoint five') && document.querySelector('#a11y-status')?.textContent === 'Response ready.'").await?;
-    wait_for(client, "document.title === 'RigSpark' && [['assistant', 'mascot-avatar.jpg'], ['user', 'mascot-welcome.jpg']].every(([role, file]) => { const image = document.querySelector('.message.' + role + ' .message-avatar'); return image && image.getAttribute('src') === '/static/' + file && image.complete && image.naturalWidth > 0; })").await?;
+    wait_for(client, "document.title === 'RigSpark' && (() => { const image = document.querySelector('.message.assistant .message-avatar'); return image && /^\\/static\\/brand\\/sparky-yes(-dark)?\\.svg$/.test(image.getAttribute('src')) && image.complete && image.naturalWidth > 0; })() && !document.querySelector('.message.user .message-avatar')").await?;
     client.refresh().await?;
     wait_for(client, "document.querySelector('.message.assistant')?.textContent.includes('Native reply: checkpoint five') && document.querySelectorAll('.message.user').length === 1").await?;
 

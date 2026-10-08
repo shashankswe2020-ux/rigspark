@@ -423,11 +423,27 @@ rigspark gui --no-open       # start the server without opening a browser
 <img src="../../assets/screenshot-workspace.png" alt="rigspark browser workspace" width="800" />
 </div>
 
+The workspace keeps every control but shows each one only where it is needed:
+
+- **Model chip** (top bar) opens the model, runtime, harness and agent pickers,
+  the endpoint/turns/context status, and **Refresh**.
+- **Inspector** (top-bar toggle, ⌘I, or click Sparky in the sidebar) shows the
+  active model, live RAM/CPU/disk/latency, the latest call's token usage, and
+  hardware. Sparky's mood and ring follow real RAM pressure, or say
+  **Metrics offline** when telemetry is unavailable.
+- **Composer +** adds context, a skill, or a system prompt; Text/Image/Video and
+  the agent chip sit beside Send.
+- **Shortcuts:** ⌘1–⌘5 switch views, ⌘I toggles the inspector, Esc closes
+  popovers and sheets. A light/dark toggle sits in the top bar.
+
 The **Models** view ranks models that fit your hardware with the same
-`yes / slow / no` verdicts and estimated tok/s as the CLI, a per-model **runtime
-picker** for reaching any backend directly, a **context-window picker**, and a
-**Start** button that brings your chosen model online through the verified `up`
-lifecycle. Context presets re-rank every model at a percentage of its own
+`yes / slow / no` verdicts and estimated tok/s as the CLI, with search and
+**All / Runs well / Slow / Won't fit** filters. Each row has a per-model
+**runtime picker** (on hover) for reaching any backend directly and a **Start**
+button that brings your chosen model online through the verified `up`
+lifecycle. A memory bar appears only when both required and usable memory are
+known. **Fit settings** holds the source, **context-window picker**, KV cache,
+and fit toggles. Context presets re-rank every model at a percentage of its own
 advertised maximum:
 
 | Preset | Model context used | Best for |
