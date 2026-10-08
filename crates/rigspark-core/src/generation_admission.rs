@@ -3,7 +3,7 @@
 
 use crate::{
     catalog::{EntryProvenance, LICENSES, require},
-    generation::{FileRole, GenerationFile, GenerationKind, GenerationModel},
+    generation::{FileRole, GenerationFile, GenerationKind, GenerationModel, Workflow},
     sizing::ValidationError,
 };
 use serde::Deserialize;
@@ -95,11 +95,17 @@ impl HfModel {
             && matches!(self.gated, Value::Null | Value::Bool(false))
     }
     pub fn base_model(&self) -> Option<String> {
+        self.base_models().into_iter().next()
+    }
+    /// Direct base models (not `base_model:finetune:…` relations), at most four.
+    pub fn base_models(&self) -> Vec<String> {
         self.tags
             .iter()
             .filter_map(|tag| tag.strip_prefix("base_model:"))
-            .find(|value| repository(value))
+            .filter(|value| repository(value))
+            .take(4)
             .map(str::to_string)
+            .collect()
     }
 }
 
@@ -186,6 +192,48 @@ pub struct FitOnlyInput<'a> {
     pub today: &'a str,
 }
 
+/// A built-in workflow and the exact files ComfyUI's official example runs it with.
+pub struct Recipe {
+    pub repository: &'static str,
+    pub kind: GenerationKind,
+    pub workflow: Workflow,
+    pub source: &'static str,
+    /// Diffusion files the example uses (and same-architecture precision siblings).
+    pub diffusion: &'static [&'static str],
+    pub text_encoder: &'static str,
+    pub vae: &'static str,
+}
+
+pub const RECIPES: [Recipe; 2] = [
+    Recipe {
+        repository: "Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
+        kind: GenerationKind::Video,
+        workflow: Workflow::Wan22Ti2v,
+        source: "https://comfyanonymous.github.io/ComfyUI_examples/wan22/",
+        diffusion: &["wan2.2_ti2v_5B_fp16.safetensors"],
+        text_encoder: "umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+        vae: "wan2.2_vae.safetensors",
+    },
+    Recipe {
+        repository: "Comfy-Org/Qwen-Image_ComfyUI",
+        kind: GenerationKind::Image,
+        workflow: Workflow::QwenImage,
+        source: "https://comfyanonymous.github.io/ComfyUI_examples/qwen_image/",
+        diffusion: &[
+            "qwen_image_fp8_e4m3fn.safetensors",
+            "qwen_image_bf16.safetensors",
+        ],
+        text_encoder: "qwen_2.5_vl_7b_fp8_scaled.safetensors",
+        vae: "qwen_image_vae.safetensors",
+    },
+];
+
+pub fn recipe(repository: &str) -> Option<&'static Recipe> {
+    RECIPES
+        .iter()
+        .find(|recipe| recipe.repository == repository)
+}
+
 /// The model family from a Comfy-Org repository name, without packaging suffixes.
 pub fn family(repository: &str) -> String {
     let mut name = repository
@@ -223,6 +271,7 @@ fn stem(path: &str) -> &str {
 /// Variants that condition on something other than a text prompt.
 fn text_prompted(path: &str) -> bool {
     let name = stem(path).to_ascii_lowercase();
+    // `ti2v` stays: it takes a text-only prompt.
     ![
         "edit",
         "lora",
@@ -232,6 +281,12 @@ fn text_prompted(path: &str) -> bool {
         "fill",
         "depth",
         "canny",
+        "animate",
+        "fun_",
+        "_i2v",
+        "s2v",
+        "vace",
+        "camera",
     ]
     .iter()
     .any(|marker| name.contains(marker))
@@ -306,8 +361,36 @@ pub fn fit_only_entries(input: &FitOnlyInput) -> Result<Vec<GenerationModel>, Va
             continue;
         };
         let id = format!("{family}:{}", stem(&sibling.rfilename).to_ascii_lowercase());
+        let file_name = sibling.rfilename.rsplit('/').next().unwrap_or_default();
+        let exact = |role: FileRole, name: &str| {
+            files
+                .iter()
+                .find(|(candidate, candidate_role)| {
+                    *candidate_role == role && candidate.rfilename.rsplit('/').next() == Some(name)
+                })
+                .and_then(|(candidate, _)| generation_file(model, candidate, role))
+        };
+        // Runnable only when every file the official example names is published here.
+        let runnable = recipe(&model.id)
+            .filter(|recipe| recipe.kind == input.kind && recipe.diffusion.contains(&file_name))
+            .and_then(|recipe| {
+                Some((
+                    recipe,
+                    exact(FileRole::TextEncoder, recipe.text_encoder)?,
+                    exact(FileRole::Vae, recipe.vae)?,
+                ))
+            });
         let mut entry_files = vec![diffusion];
-        entry_files.extend(companions.iter().cloned());
+        let (workflow, workflow_source) = match runnable {
+            Some((recipe, encoder, vae)) => {
+                entry_files.extend([encoder, vae]);
+                (Some(recipe.workflow), Some(recipe.source.to_string()))
+            }
+            None => {
+                entry_files.extend(companions.iter().cloned());
+                (None, None)
+            }
+        };
         entries.push(GenerationModel {
             id,
             family: family.clone(),
@@ -320,8 +403,8 @@ pub fn fit_only_entries(input: &FitOnlyInput) -> Result<Vec<GenerationModel>, Va
             provenance: EntryProvenance::Auto,
             default: false,
             source: format!("https://huggingface.co/{}", model.id),
-            workflow: None,
-            workflow_source: None,
+            workflow,
+            workflow_source,
             files: entry_files,
         });
     }

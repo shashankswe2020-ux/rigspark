@@ -43,12 +43,17 @@ pub enum Workflow {
     FluxCheckpoint,
     FluxSplit,
     WanT2v,
+    /// Wan 2.2 TI2V-5B text-to-video (https://comfyanonymous.github.io/ComfyUI_examples/wan22/).
+    #[serde(rename = "wan22-ti2v")]
+    Wan22Ti2v,
+    /// Qwen-Image text-to-image (https://comfyanonymous.github.io/ComfyUI_examples/qwen_image/).
+    QwenImage,
 }
 impl Workflow {
     pub fn kind(self) -> GenerationKind {
         match self {
-            Self::FluxCheckpoint | Self::FluxSplit => GenerationKind::Image,
-            Self::WanT2v => GenerationKind::Video,
+            Self::FluxCheckpoint | Self::FluxSplit | Self::QwenImage => GenerationKind::Image,
+            Self::WanT2v | Self::Wan22Ti2v => GenerationKind::Video,
         }
     }
     /// Exact file roles the workflow loads, in a stable order.
@@ -61,7 +66,9 @@ impl Workflow {
                 FileRole::Clip,
                 FileRole::Vae,
             ],
-            Self::WanT2v => &[FileRole::Diffusion, FileRole::TextEncoder, FileRole::Vae],
+            Self::WanT2v | Self::Wan22Ti2v | Self::QwenImage => {
+                &[FileRole::Diffusion, FileRole::TextEncoder, FileRole::Vae]
+            }
         }
     }
 }

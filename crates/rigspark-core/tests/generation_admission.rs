@@ -177,3 +177,103 @@ fn fit_only_entries_use_each_diffusion_file_with_the_smallest_companions() {
     .unwrap();
     assert!(skipped.is_empty());
 }
+
+fn entries_for(repo: &str) -> Vec<rigspark_core::generation::GenerationModel> {
+    let model = model(repo);
+    let recipe = rigspark_core::generation_admission::recipe(&model.id).unwrap();
+    fit_only_entries(&FitOnlyInput {
+        model: &model,
+        kind: recipe.kind,
+        license: "apache-2.0",
+        params: &|_| Some(5_000_000_000),
+        today: "2026-10-07",
+    })
+    .unwrap()
+}
+
+#[test]
+fn official_recipes_promote_exactly_the_documented_files_to_runnable() {
+    let wan = entries_for("Comfy-Org/Wan_2.2_ComfyUI_Repackaged");
+    let ti2v = wan
+        .iter()
+        .find(|entry| entry.id == "wan_2.2:wan2.2_ti2v_5b_fp16")
+        .unwrap();
+    assert_eq!(ti2v.kind, GenerationKind::Video);
+    assert_eq!(ti2v.workflow, Some(Workflow::Wan22Ti2v));
+    assert_eq!(
+        ti2v.workflow_source.as_deref(),
+        Some("https://comfyanonymous.github.io/ComfyUI_examples/wan22/")
+    );
+    let names: Vec<&str> = ti2v
+        .files
+        .iter()
+        .map(|file| file.file.rsplit('/').next().unwrap())
+        .collect();
+    assert_eq!(
+        names,
+        [
+            "wan2.2_ti2v_5B_fp16.safetensors",
+            "umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+            "wan2.2_vae.safetensors"
+        ],
+        "the official example's text encoder and VAE, not the smallest ones"
+    );
+    for excluded in ["animate", "fun_", "_i2v_", "s2v", "vace", "camera"] {
+        assert!(
+            !wan.iter().any(|entry| entry.id.contains(excluded)),
+            "{excluded}"
+        );
+    }
+    assert!(
+        wan.iter()
+            .filter(|entry| entry.id != ti2v.id)
+            .all(|entry| entry.workflow.is_none()),
+        "other Wan files stay fit-only"
+    );
+
+    let qwen = entries_for("Comfy-Org/Qwen-Image_ComfyUI");
+    let runnable: Vec<&str> = qwen
+        .iter()
+        .filter(|entry| entry.workflow == Some(Workflow::QwenImage))
+        .map(|entry| entry.id.as_str())
+        .collect();
+    assert_eq!(
+        runnable,
+        [
+            "qwen-image:qwen_image_bf16",
+            "qwen-image:qwen_image_fp8_e4m3fn"
+        ]
+    );
+    let fp8 = qwen
+        .iter()
+        .find(|entry| entry.id == "qwen-image:qwen_image_fp8_e4m3fn")
+        .unwrap();
+    assert!(
+        fp8.files
+            .iter()
+            .any(|file| file.file.ends_with("qwen_2.5_vl_7b_fp8_scaled.safetensors"))
+    );
+    assert!(
+        fp8.files
+            .iter()
+            .any(|file| file.file.ends_with("qwen_image_vae.safetensors"))
+    );
+
+    let mut catalog: Value = serde_json::from_str(rigspark_core::GENERATION_JSON).unwrap();
+    catalog["schemaVersion"] = json!(2);
+    catalog["models"].as_array_mut().unwrap().extend(
+        wan.iter()
+            .chain(qwen.iter())
+            .map(|entry| serde_json::to_value(entry).unwrap()),
+    );
+    let parsed = GenerationCatalog::parse(&catalog.to_string()).unwrap();
+    assert_eq!(
+        parsed
+            .resolve("wan_2.2:wan2.2_ti2v_5b_fp16")
+            .unwrap()
+            .runnable()
+            .unwrap(),
+        Workflow::Wan22Ti2v
+    );
+    assert!(rigspark_core::generation_admission::recipe("Comfy-Org/Ming-Image").is_none());
+}

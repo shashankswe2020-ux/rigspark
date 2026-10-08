@@ -7,7 +7,7 @@ use rigspark_core::{
     generation_admission::{
         FitOnlyInput, HfModel, MAX_METADATA_BYTES, MAX_SAFETENSORS_HEADER_BYTES, SafetensorsError,
         diffusion_files, fit_only_entries, kind_from_pipeline, license_from_tags, parse_listing,
-        safetensors_params,
+        recipe, safetensors_params,
     },
 };
 use serde::{Deserialize, Serialize};
@@ -189,8 +189,16 @@ pub async fn admit_generation(
                 continue;
             }
         };
-        let pipeline = match model.base_model() {
-            Some(base) => match get(
+        // Official recipes define their kind; otherwise any base model's pipeline decides.
+        let mut kind = recipe(&model.id).map(|recipe| recipe.kind);
+        if kind.is_none() {
+            kind = kind_from_pipeline(model.pipeline_tag.as_deref());
+        }
+        for base in model.base_models() {
+            if kind.is_some() {
+                break;
+            }
+            match get(
                 transport,
                 cancel,
                 &format!("https://huggingface.co/api/models/{base}"),
@@ -199,15 +207,16 @@ pub async fn admit_generation(
             )
             .await
             {
-                Ok(raw) => serde_json::from_slice::<serde_json::Value>(&raw)
-                    .ok()
-                    .and_then(|base| base["pipeline_tag"].as_str().map(str::to_string)),
+                Ok(raw) => {
+                    kind = serde_json::from_slice::<serde_json::Value>(&raw)
+                        .ok()
+                        .and_then(|base| kind_from_pipeline(base["pipeline_tag"].as_str()));
+                }
                 Err(error) if interrupted(&error) => return Err(error),
-                Err(_) => None,
-            },
-            None => model.pipeline_tag.clone(),
-        };
-        let Some(kind) = kind_from_pipeline(pipeline.as_deref()) else {
+                Err(_) => {}
+            }
+        }
+        let Some(kind) = kind else {
             continue;
         };
         let Some(license) = license_from_tags(&model.tags) else {
@@ -274,8 +283,6 @@ pub async fn admit_generation(
             }
             if let Some(previous) = prior.get(entry.id.as_str()) {
                 entry.added_at = previous.added_at.clone();
-                entry.workflow = previous.workflow;
-                entry.workflow_source = previous.workflow_source.clone();
             }
             admitted.insert(entry.id.clone(), entry);
         }
