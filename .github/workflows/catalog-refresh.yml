@@ -43,6 +43,7 @@ jobs:
       pull-requests: read
     outputs:
       proceed: ${{ steps.check.outputs.proceed }}
+      admit: ${{ steps.check.outputs.admit }}
     steps:
       - name: Preserve pending catalog review
         id: check
@@ -56,6 +57,14 @@ jobs:
             printf 'Catalog collection paused: review or close the existing PR before another run.\n%s\n' "$PENDING" >> "$GITHUB_STEP_SUMMARY"
           else
             echo "proceed=true" >> "$GITHUB_OUTPUT"
+          fi
+          # Admission merges its own PRs; only a stuck one of those pauses it.
+          STUCK=$(gh pr list --repo "$GITHUB_REPOSITORY" --base main --state open --limit 100 --json headRefName,url --jq '.[] | select(.headRefName | startswith("catalog/auto-admit-")) | .url')
+          if [ -n "$STUCK" ]; then
+            echo "admit=false" >> "$GITHUB_OUTPUT"
+            printf 'Admission paused: an earlier admission PR is still open.\n%s\n' "$STUCK" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "admit=true" >> "$GITHUB_OUTPUT"
           fi
 
   refresh:
@@ -164,8 +173,10 @@ jobs:
       - name: Detect catalog changes
         id: diff
         run: |
-          if git diff --quiet -- crates/rigspark-core/data/models.json docs/references/catalog-proposals.json docs/references/catalog-quality-latest-report.json &&
-             [ -z "$(git ls-files --others --exclude-standard -- docs/references/catalog-proposals.json docs/references/catalog-quality-latest-report.json)" ]; then
+          # Catalog data and the quality report are owned by the admit job; this job
+          # publishes only the advisory proposal report, so the two never conflict.
+          if git diff --quiet -- docs/references/catalog-proposals.json &&
+             [ -z "$(git ls-files --others --exclude-standard -- docs/references/catalog-proposals.json)" ]; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
@@ -193,8 +204,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -b "$BRANCH"
-          git add crates/rigspark-core/data/models.json
-          git add docs/references/catalog-proposals.json docs/references/catalog-quality-latest-report.json
+          git add docs/references/catalog-proposals.json
           git commit -m "$TITLE"
           AUTH=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\r\n')
           git -c "http.${GITHUB_SERVER_URL}/.extraheader=AUTHORIZATION: basic $AUTH" push origin "$BRANCH"
@@ -260,7 +270,7 @@ jobs:
   admit:
     name: Admit latest local models
     needs: pending-review
-    if: github.ref == 'refs/heads/main' && needs.pending-review.outputs.proceed == 'true'
+    if: github.ref == 'refs/heads/main' && needs.pending-review.outputs.admit == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     defaults:
