@@ -294,7 +294,7 @@ jobs:
         run: |
           set -euo pipefail
           cargo catalog-enrich
-          cargo catalog-admit --correct-curated > "$RUNNER_TEMP/admit.json"
+          cargo catalog-admit --correct-curated --max-new 400 > "$RUNNER_TEMP/admit.json"
 
       - name: Admit sourced image and video releases
         run: |

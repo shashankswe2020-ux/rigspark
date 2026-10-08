@@ -19,7 +19,13 @@ fn hardware(ram_gib: f64) -> Hardware {
     .unwrap()
 }
 fn rows(ram_gib: f64) -> Vec<ModelRow> {
-    model_rows(&GenerationCatalog::bundled().unwrap(), &hardware(ram_gib))
+    model_rows(
+        &GenerationCatalog::parse(include_str!(
+            "../../rigspark-core/fixtures/generation-baseline.json"
+        ))
+        .unwrap(),
+        &hardware(ram_gib),
+    )
 }
 fn key(code: KeyCode) -> std::io::Result<Event> {
     Ok(Event::Key(KeyEvent::new(code, KeyModifiers::NONE)))

@@ -155,7 +155,10 @@ async fn models_endpoint_reports_memory_fit_and_unknown_speed() {
     for model in models {
         assert!(["yes", "slow", "no"].contains(&model["fit"]["verdict"].as_str().unwrap()));
         assert_eq!(model["fit"]["speed"], "unknown");
-        assert_eq!(model["license"], "apache-2.0");
+        assert!(!model["license"].as_str().unwrap().is_empty());
+        if model["provenance"] != "auto" {
+            assert_eq!(model["license"], "apache-2.0");
+        }
     }
     assert_eq!(value["defaults"]["port"], 8188);
 }

@@ -1,11 +1,15 @@
 use rigspark_core::{
-    GENERATION_JSON,
     generation::{FitVerdict, GenerationCatalog, GenerationKind, catalog_text, fit},
     sizing::Hardware,
 };
 use serde_json::{Value, json};
 
 const GIB: f64 = 1073741824.0;
+/// Frozen curated catalog for fixture-style tests; weekly admission grows the shipped one.
+const GENERATION_JSON: &str = include_str!("../fixtures/generation-baseline.json");
+fn baseline() -> GenerationCatalog {
+    GenerationCatalog::parse(GENERATION_JSON).unwrap()
+}
 
 fn hardware(value: Value) -> Hardware {
     serde_json::from_value(value).unwrap()
@@ -59,7 +63,10 @@ fn bundled_catalog_has_pinned_apache_image_and_video_models() {
     assert_eq!(video.id, "wan2.1-t2v:1.3b");
     assert_eq!(video.kind, GenerationKind::Video);
     for model in &catalog.models {
-        assert_eq!(model.license, "apache-2.0");
+        // Curated entries are Apache-2.0; admitted ones carry any allow-listed open license.
+        if model.provenance == rigspark_core::catalog::EntryProvenance::Curated {
+            assert_eq!(model.license, "apache-2.0");
+        }
         assert!(model.open_weight);
         for file in &model.files {
             assert_eq!(file.revision.len(), 40);
@@ -212,7 +219,7 @@ fn validation_fails_closed_on_untrusted_dataset_fields() {
 
 #[test]
 fn fit_is_memory_only_and_never_claims_speed() {
-    let catalog = GenerationCatalog::bundled().unwrap();
+    let catalog = baseline();
     let flux = catalog.resolve("image").unwrap();
     let wan = catalog.resolve("video").unwrap();
 
@@ -239,7 +246,7 @@ fn fit_is_memory_only_and_never_claims_speed() {
 
 #[test]
 fn catalog_text_lists_both_kinds_with_unknown_speed() {
-    let catalog = GenerationCatalog::bundled().unwrap();
+    let catalog = baseline();
     let text = catalog_text(&catalog, &apple(16.0));
     assert!(text.contains("flux1-schnell:fp8"));
     assert!(text.contains("wan2.1-t2v:1.3b"));

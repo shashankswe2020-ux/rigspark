@@ -105,7 +105,10 @@ fn upstream(metadata_ok: bool) -> Counting {
 
 #[tokio::test]
 async fn admits_fit_only_image_entries_skips_other_pipelines_and_keeps_curated() {
-    let catalog = GenerationCatalog::bundled().unwrap();
+    let catalog = GenerationCatalog::parse(include_str!(
+        "../../rigspark-core/fixtures/generation-baseline.json"
+    ))
+    .unwrap();
     let transport = upstream(true);
     let outcome = admit_generation(
         &catalog,
@@ -156,7 +159,10 @@ async fn admits_fit_only_image_entries_skips_other_pipelines_and_keeps_curated()
 
 #[tokio::test]
 async fn reruns_reuse_cached_headers_and_unreadable_repos_keep_their_entries() {
-    let catalog = GenerationCatalog::bundled().unwrap();
+    let catalog = GenerationCatalog::parse(include_str!(
+        "../../rigspark-core/fixtures/generation-baseline.json"
+    ))
+    .unwrap();
     let first = admit_generation(
         &catalog,
         &upstream(true),
@@ -217,7 +223,10 @@ async fn reruns_reuse_cached_headers_and_unreadable_repos_keep_their_entries() {
 
 #[tokio::test]
 async fn a_failed_listing_or_cancellation_changes_nothing() {
-    let catalog = GenerationCatalog::bundled().unwrap();
+    let catalog = GenerationCatalog::parse(include_str!(
+        "../../rigspark-core/fixtures/generation-baseline.json"
+    ))
+    .unwrap();
     let empty = RecordedAdmissionTransport::new(BTreeMap::new()).unwrap();
     assert!(
         admit_generation(
