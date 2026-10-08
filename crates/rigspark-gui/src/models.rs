@@ -116,7 +116,7 @@ pub fn recommended(
         let source=catalog.models.iter().find(|model|entry["id"]==model.id).ok_or_else(||rigspark_core::sizing::ValidationError("ranked model absent".into()))?;
         let source=serde_json::to_value(source).map_err(|_|rigspark_core::sizing::ValidationError("invalid model".into()))?;
         let mut model=json!({});
-        for key in ["id","family","params","architecture","activeParams","license","openWeight","contextLength","capabilities","releaseDate","source","quantizations","kvBytesPerToken","benchmarkProxy"] {if let Some(value)=source.get(key){model[key]=value.clone();}}
+        for key in ["id","family","params","architecture","activeParams","license","openWeight","contextLength","capabilities","releaseDate","addedAt","provenance","source","quantizations","kvBytesPerToken","benchmarkProxy"] {if let Some(value)=source.get(key){model[key]=value.clone();}}
         for key in ["verdict","requiredBytes","usableBytes","score","scores","throughput","throughputEvidence","backends"] {model[key]=entry[key].clone();}
         model["quant"]=entry["quant"].clone();
         model["diskBytes"]=source["quantizations"].as_array().and_then(|quants|quants.iter().find(|quant|quant["name"]==entry["quant"])).map(|quant|quant["diskBytes"].clone()).unwrap_or(Value::Null);
@@ -220,6 +220,14 @@ pub async fn dispatch(host: Arc<Host>, request: Request) -> ApiResult {
             ..Default::default()
         };
         options.validate().map_err(|_| bad())?;
+        let mut catalog = catalog;
+        if let Some(months) = query.get("month") {
+            let months = months.parse::<u8>().map_err(|_| bad())?;
+            let today = rigspark_runtime::native_chat::timestamp().map_err(|_| bad())?;
+            catalog
+                .retain_recent(&today[..10], months)
+                .map_err(|_| bad())?;
+        }
         let perf = PerfDataset::parse(rigspark_core::PERF_JSON).map_err(|_| bad())?;
         let limit = query
             .get("limit")
