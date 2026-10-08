@@ -42,6 +42,12 @@ is still there, but each control now appears where and when you need it.
 - New app icon from the Sparky brand kit, with transparent corners.
 - The window opens on the dark workspace colour instead of flashing white.
 
+### Site
+
+- The site's model count now comes from the shipped catalog (253 models, up
+  from a hand-written 69). `cargo catalog-site` stamps it into the page, so the
+  weekly admission keeps it current, and CI fails if it drifts.
+
 ### Breaking changes
 
 - The GUI layout and markup changed. Element IDs used by the app's own scripts

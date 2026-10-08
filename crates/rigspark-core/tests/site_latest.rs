@@ -1,7 +1,7 @@
 use rigspark_core::{
     catalog::Catalog,
     generation::GenerationCatalog,
-    site_latest::{latest_items, latest_script},
+    site_latest::{latest_items, latest_script, stamp_catalog_counts},
 };
 use serde_json::{Value, json};
 
@@ -84,4 +84,44 @@ fn the_script_is_deterministic_inert_data_for_a_self_only_csp() {
     let json_end = script.rfind(");").unwrap();
     let data: Value = serde_json::from_str(&script[json_start..json_end]).unwrap();
     assert_eq!(data["generatedAt"], "2026-10-07T03:17:00.000Z");
+}
+
+#[test]
+fn catalog_counts_are_stamped_into_every_marker_and_nothing_else() {
+    let text = text_catalog();
+    let total = text.models.len();
+    let html = "<p>Ranks all <span data-catalog-count=\"text\">69</span> models.</p>\n<dt><span data-catalog-count=\"text\">1</span></dt><dd>69 other</dd>";
+    let stamped = stamp_catalog_counts(html, &text).unwrap();
+    assert_eq!(
+        stamped,
+        format!(
+            "<p>Ranks all <span data-catalog-count=\"text\">{total}</span> models.</p>\n<dt><span data-catalog-count=\"text\">{total}</span></dt><dd>69 other</dd>"
+        )
+    );
+    assert_eq!(stamp_catalog_counts(&stamped, &text).unwrap(), stamped);
+}
+
+#[test]
+fn catalog_count_stamping_fails_closed_on_missing_or_malformed_markers() {
+    let text = text_catalog();
+    for html in [
+        "<p>Ranks all 69 models.</p>",
+        "<span data-catalog-count=\"image\">3</span>",
+        "<span data-catalog-count=\"text\">sixty</span>",
+        "<span data-catalog-count=\"text\"></span>",
+        "<span data-catalog-count=\"text\">69",
+    ] {
+        assert!(stamp_catalog_counts(html, &text).is_err(), "{html}");
+    }
+}
+
+#[test]
+fn the_published_site_states_the_shipped_catalog_size() {
+    let text = Catalog::parse(rigspark_core::MODELS_JSON).unwrap();
+    let site = include_str!("../../../site/index.html");
+    assert_eq!(
+        stamp_catalog_counts(site, &text).unwrap(),
+        site,
+        "site/index.html model counts are stale; run `cargo catalog-site`"
+    );
 }
