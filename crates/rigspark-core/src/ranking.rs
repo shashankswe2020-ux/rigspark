@@ -220,6 +220,9 @@ fn recommend_inner(
             "requiredBytes":required,"license":model.license,"capabilities":model.capabilities,"score":score,"verdict":verdict,
             "estTokPerSec": if estimate.known { json!({"lowTokPerSec":estimate.low_tok_per_sec,"highTokPerSec":estimate.high_tok_per_sec}) } else { Value::Null },
             "backends":supported,"throughputBackend":backend});
+        if model.provenance == crate::catalog::EntryProvenance::Auto {
+            entry["provenance"] = json!("auto");
+        }
         if detailed {
             entry["throughputEvidence"] = json!({"backend":backend,"source":"offline-estimate","unknownReason":if estimate.known{None}else{Some("no-sourced-performance-profile")}});
             entry["scores"] = json!({"quality":quality,"fit":fit_score,"speed":speed,"recency":recency,"capability":capability});

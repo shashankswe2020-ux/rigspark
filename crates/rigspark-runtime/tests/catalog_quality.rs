@@ -9,7 +9,10 @@ fn fixture() -> (String, Value) {
 }
 
 fn fixture_count(count: usize) -> (String, Value) {
-    let mut catalog = Catalog::parse(rigspark_core::MODELS_JSON).unwrap();
+    let mut catalog = Catalog::parse(include_str!(
+        "../../rigspark-core/fixtures/catalog-baseline.json"
+    ))
+    .unwrap();
     catalog.generated_at = "2026-09-30T00:00:00Z".into();
     let template = catalog.models.remove(0);
     catalog.models = (0..count)

@@ -268,6 +268,15 @@ pub fn can_run_report(
     let report = verdict(&model, hardware, perf, options.context, backend)?;
     let supported = backends(&model, hardware);
     let mut output = json!({"model":model.id,"verdict":report["runnable"],"quant":report["quant"]["name"],"reason":report["reason"],"throughput":report["throughput"],"backends":supported,"throughputBackend":backend});
+    let auto_source = (model.provenance == crate::catalog::EntryProvenance::Auto).then(|| {
+        format!(
+            "Source: auto-sourced from the Ollama library ({})",
+            model.recency_label()
+        )
+    });
+    if auto_source.is_some() {
+        output["provenance"] = json!("auto");
+    }
     let mut lines = Vec::new();
     if let Some(context) = options.context {
         output["context"] = json!(context);
@@ -333,6 +342,9 @@ pub fn can_run_report(
                 supported.join(", ")
             }
         ));
+    }
+    if let Some(line) = auto_source {
+        lines.push(line);
     }
     let unknown_reason = if report["throughput"]["known"] == true {
         Value::Null

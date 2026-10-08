@@ -207,8 +207,6 @@ async fn recency_window_only_narrows_recommendations_and_rejects_bad_values() {
             "{month}"
         );
     }
-    let (status, all) = call(&host, "GET", "/api/models/recommended?limit=100", json!({})).await;
-    assert_eq!(status, StatusCode::OK);
     let (status, recent) = call(
         &host,
         "GET",
@@ -217,19 +215,16 @@ async fn recency_window_only_narrows_recommendations_and_rejects_bad_values() {
     )
     .await;
     assert_eq!(status, StatusCode::OK);
-    let all: Vec<_> = all["models"]
-        .as_array()
+    let today = rigspark_runtime::native_chat::timestamp().unwrap();
+    let cutoff = rigspark_core::catalog::months_before(&today[..10], 3)
         .unwrap()
-        .iter()
-        .map(|model| &model["id"])
-        .collect();
+        .to_string();
     for model in recent["models"].as_array().unwrap() {
-        assert!(all.contains(&&model["id"]), "{}", model["id"]);
-        assert!(
-            model
-                .get("releaseDate")
-                .or_else(|| model.get("addedAt"))
-                .is_some()
-        );
+        let day = model
+            .get("releaseDate")
+            .or_else(|| model.get("addedAt"))
+            .and_then(|day| day.as_str())
+            .unwrap();
+        assert!(day >= cutoff.as_str(), "{}: {day}", model["id"]);
     }
 }

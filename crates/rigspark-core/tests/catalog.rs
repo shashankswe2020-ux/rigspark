@@ -2,11 +2,21 @@ use rigspark_core::catalog::{Catalog, EntryProvenance, PerfDataset, RecencyBasis
 use serde_json::{Value, json};
 
 fn catalog() -> Value {
-    serde_json::from_str(include_str!("../../rigspark-core/data/models.json")).unwrap()
+    serde_json::from_str(include_str!(
+        "../../rigspark-core/fixtures/catalog-baseline.json"
+    ))
+    .unwrap()
 }
 
 #[test]
 fn loads_shipped_catalog_and_performance_evidence() {
+    let shipped = Catalog::parse(rigspark_core::MODELS_JSON).unwrap();
+    let curated = shipped
+        .models
+        .iter()
+        .filter(|model| model.provenance == EntryProvenance::Curated)
+        .count();
+    assert_eq!(curated, 69, "admission never adds or drops curated entries");
     let loaded = Catalog::parse(&catalog().to_string()).unwrap();
     assert_eq!(loaded.models.len(), 69);
     assert!(

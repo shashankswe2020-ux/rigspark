@@ -177,8 +177,10 @@ impl AdmissionTransport for Counting {
 const APACHE: &str = "                                 Apache License\n                           Version 2.0, January 2004\n";
 
 fn curated() -> Catalog {
-    let mut value: Value =
-        serde_json::from_str(include_str!("../../rigspark-core/data/models.json")).unwrap();
+    let mut value: Value = serde_json::from_str(include_str!(
+        "../../rigspark-core/fixtures/catalog-baseline.json"
+    ))
+    .unwrap();
     let mistral = value["models"]
         .as_array()
         .unwrap()

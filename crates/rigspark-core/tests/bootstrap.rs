@@ -35,10 +35,50 @@ fn snapshot_entries_build_independently_and_have_pinned_family_offsets() {
 }
 
 #[test]
-fn committed_curated_fields_match_bootstrap_without_overwriting_live_quant_facts() {
+fn committed_curated_fields_match_bootstrap_except_recorded_corrections() {
     let candidates = parse_candidates(include_str!("../fixtures/registry-snapshot.json")).unwrap();
-    let actual = build_catalog(&candidates, BOOTSTRAP_CLOCK).unwrap();
-    let committed = Catalog::parse(include_str!("../../rigspark-core/data/models.json")).unwrap();
+    let mut actual = build_catalog(&candidates, BOOTSTRAP_CLOCK).unwrap();
+    let mut committed =
+        Catalog::parse(include_str!("../../rigspark-core/data/models.json")).unwrap();
+    // Auto-admitted entries are not bootstrap output; curated ones may only differ by a
+    // recorded, cited correction of what the shipped artifact contains.
+    committed
+        .models
+        .retain(|model| model.provenance == rigspark_core::catalog::EntryProvenance::Curated);
+    let record: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../docs/references/catalog-corrections.json"
+    ))
+    .unwrap();
+    for correction in record["corrections"].as_array().unwrap() {
+        assert!(
+            correction["sources"]
+                .as_array()
+                .is_some_and(|sources| !sources.is_empty())
+        );
+        let model = actual
+            .models
+            .iter_mut()
+            .find(|model| model.id == correction["id"])
+            .unwrap();
+        let to = &correction["to"];
+        match correction["field"].as_str().unwrap() {
+            "contextLength" => model.context_length = to.as_f64().unwrap(),
+            "license" => model.license = to.as_str().unwrap().into(),
+            "kvBytesPerToken" => model.kv_bytes_per_token = to.as_f64(),
+            "defaultQuantization" => {
+                let index = rigspark_core::registry_collector::pulled_quantization(model).unwrap();
+                let name = to["name"].as_str().unwrap().to_string();
+                model.quantizations[index].name = name.clone();
+                let mut position = 0;
+                model.quantizations.retain(|quant| {
+                    let keep = position == index || quant.name != name;
+                    position += 1;
+                    keep
+                });
+            }
+            other => panic!("unexpected correction field {other}"),
+        }
+    }
     let skeleton = |catalog: Catalog| {
         let mut value = serde_json::to_value(catalog).unwrap();
         value.as_object_mut().unwrap().remove("generatedAt");
@@ -139,7 +179,20 @@ fn preserves_exact_geometry_and_unknown_attention_honesty_gate() {
 
 #[test]
 fn includes_the_official_qwen35_4b_ollama_artifact() {
-    let catalog = Catalog::parse(include_str!("../../rigspark-core/data/models.json")).unwrap();
+    // The frozen baseline pins the reviewed artifact; the shipped entry keeps its identity.
+    let shipped = Catalog::parse(include_str!("../../rigspark-core/data/models.json")).unwrap();
+    let live = shipped
+        .models
+        .iter()
+        .find(|model| model.id == "qwen3.5:4b")
+        .unwrap();
+    assert_eq!(live.source.ollama.as_deref(), Some("qwen3.5:4b"));
+    assert!(
+        live.quantizations
+            .iter()
+            .all(|quant| quant.sha256.is_some())
+    );
+    let catalog = Catalog::parse(include_str!("../fixtures/catalog-baseline.json")).unwrap();
     let model = catalog
         .models
         .iter()
@@ -164,7 +217,11 @@ fn includes_the_official_qwen35_4b_ollama_artifact() {
 #[test]
 fn reproduces_every_curated_catalog_proxy() {
     let catalog = Catalog::parse(include_str!("../../rigspark-core/data/models.json")).unwrap();
-    for model in catalog.models {
+    for model in catalog
+        .models
+        .into_iter()
+        .filter(|model| model.provenance == rigspark_core::catalog::EntryProvenance::Curated)
+    {
         assert_eq!(
             rigspark_core::bootstrap::family_quality_offset(&model.family)
                 .map(|_| derive_benchmark_proxy(&model.family, &model.params).unwrap()),

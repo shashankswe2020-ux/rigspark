@@ -167,11 +167,26 @@ async fn run(args: Args) -> Result<(), Box<dyn Error>> {
         state_file.write_json(&outcome.state, state_raw.is_some())?;
         if !outcome.corrections.is_empty() {
             let corrections_file = File::open(&args.corrections_path)?;
-            let exists = corrections_file.read_optional()?.is_some();
-            corrections_file.write_json(
-                &serde_json::json!({"correctedAt": options.now, "corrections": outcome.corrections}),
-                exists,
-            )?;
+            let previous = corrections_file.read_optional()?;
+            let mut record: Value = match &previous {
+                Some(raw) => serde_json::from_slice(raw)?,
+                None => serde_json::json!({"corrections": []}),
+            };
+            let list = record["corrections"]
+                .as_array_mut()
+                .ok_or_else(|| io::Error::other("corrections record is invalid"))?;
+            // One record per (id, field): the latest observation replaces an earlier one.
+            for correction in &outcome.corrections {
+                list.retain(|item| {
+                    item["id"] != correction.id.as_str()
+                        || item["field"] != correction.field.as_str()
+                });
+                let mut item = serde_json::to_value(correction)?;
+                item["correctedAt"] = Value::String(options.now.clone());
+                list.push(item);
+            }
+            list.sort_by_key(|item| (item["id"].to_string(), item["field"].to_string()));
+            corrections_file.write_json(&record, previous.is_some())?;
         }
     }
     println!("{}", serde_json::to_string_pretty(&outcome)?);

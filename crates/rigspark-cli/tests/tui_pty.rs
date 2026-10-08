@@ -5,6 +5,12 @@ use std::{
     time::{Duration, Instant},
 };
 
+/// A frozen catalog, so terminal goldens do not move when the shipped catalog grows.
+const BASELINE: &str = concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../rigspark-core/fixtures/catalog-baseline.json"
+);
+
 const HARDWARE: &str = r#"{"arch":"x64","platform":"linux","totalRamBytes":68719476736,"freeRamBytes":60000000000,"freeDiskBytes":500000000000,"gpu":[{"vendor":"nvidia","vramBytes":25769803776}]}"#;
 fn final_output(output: &str) -> &str {
     let marker = if cfg!(windows) {
@@ -20,6 +26,7 @@ fn plain_recommendation(json: bool) -> String {
     let home = tempfile::tempdir().unwrap();
     let mut command = std::process::Command::new(env!("CARGO_BIN_EXE_llmup-native"));
     command.args(["recommend", "--no-tui", "--hardware-json", HARDWARE]);
+    command.args(["--catalog-path", BASELINE]);
     if json {
         command.arg("--json");
     }
@@ -130,6 +137,7 @@ fn run_session(
     command.arg(name);
     if ["recommend", "can-run", "catalog", "doctor", "up", "switch"].contains(&name) {
         command.args(["--hardware-json", HARDWARE]);
+        command.args(["--catalog-path", BASELINE]);
     }
     command.args(extra);
     command.env("TERM", "xterm-256color");
@@ -845,7 +853,7 @@ fn accessible_can_run_preserves_evidence_plain_result_and_verdict_exit() {
 #[test]
 fn accessible_can_run_picker_and_report_share_input_and_allow_cancel() {
     let catalog = rigspark_core::catalog::Catalog::parse(include_str!(
-        "../../rigspark-core/data/models.json"
+        "../../rigspark-core/fixtures/catalog-baseline.json"
     ))
     .unwrap();
     let index = catalog
