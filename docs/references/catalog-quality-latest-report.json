@@ -1,19 +1,19 @@
 {
   "policyVersion": 1,
-  "evaluatedAt": "2026-10-01T19:32:26.435263Z",
-  "catalogSha256": "1d465423f9d6d64e4b761d0a4ad9750333a82f95a0a24b7ce3b22ed7b300156a",
+  "evaluatedAt": "2026-10-08T09:55:59.419594211Z",
+  "catalogSha256": "f2acde6faf09f7de73a6624b8be463fcdc727ca632a5cdd207eafd7783ca898a",
   "evidenceSha256": "25c688c41c5e7b0e078f248ab18d528f148e51ce27c4dc39e13307a512dc00e6",
   "minimumPercent": 90,
   "evidenceMaxAgeDays": 7,
   "catalogEntries": 69,
-  "freshEntries": 2,
-  "verifiedEntries": 2,
+  "freshEntries": 1,
+  "verifiedEntries": 1,
   "eligibleVariants": 9,
   "coveredVariants": 2,
   "coveragePercent": null,
-  "recencyPercent": 2.898550724637681,
+  "recencyPercent": 1.4492753623188406,
   "freshnessPercent": null,
-  "correctnessPercent": 2.898550724637681,
+  "correctnessPercent": 1.4492753623188406,
   "passed": false,
   "blockers": [
     "Upstream variant inventory is missing, incomplete, empty, or older than 7 days."
@@ -56,9 +56,9 @@
         "https://ollama.com/library/qwen3.6:35b",
         "https://registry.ollama.ai/v2/library/qwen3.6/manifests/35b"
       ],
-      "fresh": true,
-      "verified": true,
-      "reason": "verified"
+      "fresh": false,
+      "verified": false,
+      "reason": "verification evidence older than 7 days"
     },
     {
       "id": "bonsai:8b",
