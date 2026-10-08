@@ -1643,10 +1643,22 @@ async fn execute(mut args: Args) -> Result<u8, Box<dyn std::error::Error>> {
     if let Some(list) = accessible_list {
         let presentation_exit = if let Some(selection) = visual {
             use rigspark_cli::tui_models::ModelView;
+            let dates: std::collections::BTreeMap<String, String> = catalog
+                .models
+                .iter()
+                .filter_map(|model| Some((model.id.clone(), model.recency()?.0.to_string())))
+                .collect();
+            let today = match &args.today {
+                Some(day) => day.clone(),
+                None => rigspark_runtime::native_chat::timestamp()?[..10].to_string(),
+            };
             let view = match &list {
-                AccessibleList::Catalog(view) => ModelView::from_catalog(view, selection.color)?,
+                AccessibleList::Catalog(view) => {
+                    ModelView::from_catalog(view, selection.color)?.with_recency(&dates, &today)?
+                }
                 AccessibleList::Recommend(view) => {
                     ModelView::from_recommendation(view, selection.color)?
+                        .with_recency(&dates, &today)?
                 }
                 AccessibleList::Installed(view) => {
                     ModelView::from_installed(view, selection.color)?
