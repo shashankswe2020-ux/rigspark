@@ -157,7 +157,7 @@
         <div class="wrap center reveal">
           <p class="eyebrow amber">Try it here</p>
           <h2 class="h2" id="ask-title">Ask Sparky.</h2>
-          <p class="lead narrow">Pick your memory and a model. This preview uses RigSpark&rsquo;s published Q4_K_M sizes and its memory-fit rule. The real CLI measures your hardware.</p>
+          <p class="lead narrow">Pick your graphics, memory, free disk and a model. This preview uses RigSpark&rsquo;s catalog sizes, fit rule and sourced speed data. The real CLI measures your hardware.</p>
         </div>
         <div class="wide">
           <div class="config reveal">
@@ -169,8 +169,17 @@
             </div>
             <div>
               <div class="step">
+                <h3 id="gpu-label">Graphics.</h3>
+                <div class="seg" id="gpu" role="group" aria-labelledby="gpu-label">
+                  <button type="button" data-v="apple" aria-pressed="true">Apple Silicon</button>
+                  <button type="button" data-v="nvidia" aria-pressed="false">NVIDIA GPU</button>
+                  <button type="button" data-v="amd" aria-pressed="false">AMD / Intel GPU</button>
+                  <button type="button" data-v="cpu" aria-pressed="false">CPU only</button>
+                </div>
+              </div>
+              <div class="step">
                 <h3 id="ram-label">Memory.</h3>
-                <p class="muted">Unified memory on Apple Silicon.</p>
+                <p class="muted" id="ram-note">Unified memory on Apple Silicon.</p>
                 <div class="chips" id="ram" role="group" aria-labelledby="ram-label">
                   <button type="button" data-v="8" aria-pressed="false">8 GB</button>
                   <button type="button" data-v="16" aria-pressed="false">16 GB</button>
@@ -181,6 +190,26 @@
                   <button type="button" data-v="96" aria-pressed="false">96 GB</button>
                   <button type="button" data-v="128" aria-pressed="false">128 GB</button>
                 </div>
+                <div class="chips" id="vram" role="group" aria-labelledby="ram-label" hidden>
+                  <button type="button" data-v="8" aria-pressed="false">8 GB</button>
+                  <button type="button" data-v="12" aria-pressed="false">12 GB</button>
+                  <button type="button" data-v="16" aria-pressed="true">16 GB</button>
+                  <button type="button" data-v="24" aria-pressed="false">24 GB</button>
+                  <button type="button" data-v="32" aria-pressed="false">32 GB</button>
+                  <button type="button" data-v="48" aria-pressed="false">48 GB</button>
+                </div>
+              </div>
+              <div class="step">
+                <h3 id="disk-label">Free disk.</h3>
+                <p class="muted">The download has to fit before anything runs.</p>
+                <div class="chips" id="disk" role="group" aria-labelledby="disk-label">
+                  <button type="button" data-v="10" aria-pressed="false">10 GB</button>
+                  <button type="button" data-v="25" aria-pressed="false">25 GB</button>
+                  <button type="button" data-v="50" aria-pressed="false">50 GB</button>
+                  <button type="button" data-v="100" aria-pressed="true">100 GB</button>
+                  <button type="button" data-v="250" aria-pressed="false">250 GB</button>
+                  <button type="button" data-v="500" aria-pressed="false">500 GB</button>
+                </div>
               </div>
               <div class="step">
                 <h3 id="model-label">Model.</h3>
@@ -190,16 +219,16 @@
                   <button type="button" data-v="image" aria-pressed="false">New: image</button>
                   <button type="button" data-v="video" aria-pressed="false">New: video</button>
                 </div>
-                <p class="muted" id="model-note">Quantized to Q4_K_M at default context.</p>
+                <p class="muted" id="model-note">At the quantization <code>rigspark up</code> installs, default context.</p>
                 <p class="muted empty-new" id="model-empty" hidden></p>
                 <div class="chips" id="model-new" role="group" aria-labelledby="model-label" hidden></div>
                 <div class="chips" id="model" role="group" aria-labelledby="model-label">
-                  <button type="button" data-v="llama3.1:8b" data-mem="5.3" data-params="8" data-dense="1" aria-pressed="false">Llama 3.1 8B</button>
-                  <button type="button" data-v="qwen3:14b" data-mem="9.9" data-params="14" data-dense="1" aria-pressed="true">Qwen3 14B</button>
-                  <button type="button" data-v="gemma3:27b" data-mem="18.6" data-params="27" data-dense="1" aria-pressed="false">Gemma 3 27B</button>
-                  <button type="button" data-v="qwen3:30b-a3b" data-mem="19.9" data-params="30" data-dense="0" aria-pressed="false">Qwen3 30B-A3B (MoE)</button>
-                  <button type="button" data-v="qwen3:32b" data-mem="21.6" data-params="32" data-dense="1" aria-pressed="false">Qwen3 32B</button>
-                  <button type="button" data-v="llama3.3:70b" data-mem="45.5" data-params="70" data-dense="1" aria-pressed="false">Llama 3.3 70B</button>
+                  <button type="button" data-v="llama3.1:8b" data-popular="llama3.1:8b" aria-pressed="false">Llama 3.1 8B</button>
+                  <button type="button" data-v="qwen3:14b" data-popular="qwen3:14b" aria-pressed="true">Qwen3 14B</button>
+                  <button type="button" data-v="gemma3:27b" data-popular="gemma3:27b" aria-pressed="false">Gemma 3 27B</button>
+                  <button type="button" data-v="qwen3:30b-a3b" data-popular="qwen3:30b-a3b" aria-pressed="false">Qwen3 30B-A3B (MoE)</button>
+                  <button type="button" data-v="qwen3:32b" data-popular="qwen3:32b" aria-pressed="false">Qwen3 32B</button>
+                  <button type="button" data-v="llama3.3:70b" data-popular="llama3.3:70b" aria-pressed="false">Llama 3.3 70B</button>
                 </div>
               </div>
               <div class="result" aria-live="polite">
@@ -207,9 +236,11 @@
                 <p class="why" id="t-why">Fits in memory with headroom.</p>
                 <div class="gauge" aria-hidden="true"><i id="g"></i></div>
                 <div class="legend"><span id="need">needs 9.9 GiB</span><span id="usable">18.7 GiB budget</span></div>
+                <div class="legend"><span id="download">download 8.6 GiB</span><span id="free">100 GB free</span></div>
+                <p class="speed" id="t-speed">About 7&ndash;13 tok/s on Apple silicon Pro (estimate for Ollama)</p>
                 <p class="cli"><b>$</b> <span id="t-cmd">rigspark can-run</span> <span id="t-model">qwen3:14b</span> &rarr; <span id="t-pill">yes</span>, exit <span id="t-exit">0</span></p>
               </div>
-              <p class="fine">Preview only. Fit uses RigSpark&rsquo;s rule: memory minus a 2&nbsp;GiB OS reserve, with 15% headroom. Speed depends on your memory bandwidth, so &ldquo;slow&rdquo; here is a rule of thumb for dense 27B+ models; <code>rigspark can-run</code> gives your real estimate.</p>
+              <p class="fine">Preview only. Fit uses RigSpark&rsquo;s rule: usable memory (unified or system RAM minus a 2&nbsp;GiB OS reserve, or the GPU&rsquo;s VRAM) with 15% headroom, and the download must fit on disk. Speed comes from RigSpark&rsquo;s sourced bandwidth classes; hardware without one shows <em>unknown</em> rather than a guess. <code>rigspark can-run</code> measures your real machine.</p>
             </div>
           </div>
         </div>

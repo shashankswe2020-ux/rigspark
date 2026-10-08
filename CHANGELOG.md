@@ -47,6 +47,13 @@ is still there, but each control now appears where and when you need it.
 - The site's model count now comes from the shipped catalog (253 models, up
   from a hand-written 69). `cargo catalog-site` stamps it into the page, so the
   weekly admission keeps it current, and CI fails if it drifts.
+- **Ask Sparky** now takes your graphics (Apple Silicon, NVIDIA, AMD/Intel, or
+  CPU only), memory or VRAM, and free disk. It applies the CLI's own fit rule,
+  marks downloads that won't fit on disk as *no*, and shows estimated tok/s only
+  for hardware classes with sourced bandwidth data, otherwise *unknown*. Model
+  sizes and hardware classes are generated from the catalog and `perf.json`
+  instead of being typed into the page; across 1,008 combinations the preview
+  matches `rigspark can-run` exactly.
 
 ### Breaking changes
 
