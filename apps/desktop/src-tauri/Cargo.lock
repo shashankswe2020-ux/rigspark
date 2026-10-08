@@ -3511,7 +3511,7 @@ dependencies = [
 
 [[package]]
 name = "rigspark-core"
-version = "2.4.0"
+version = "3.0.0"
 dependencies = [
  "regex",
  "serde",
@@ -3523,7 +3523,7 @@ dependencies = [
 
 [[package]]
 name = "rigspark-desktop"
-version = "2.4.0"
+version = "3.0.0"
 dependencies = [
  "rfd",
  "rigspark-gui",
@@ -3538,7 +3538,7 @@ dependencies = [
 
 [[package]]
 name = "rigspark-gui"
-version = "2.4.0"
+version = "3.0.0"
 dependencies = [
  "async-trait",
  "axum",
@@ -3558,7 +3558,7 @@ dependencies = [
 
 [[package]]
 name = "rigspark-runtime"
-version = "2.4.0"
+version = "3.0.0"
 dependencies = [
  "async-trait",
  "bytes",
