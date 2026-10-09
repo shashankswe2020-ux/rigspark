@@ -370,9 +370,10 @@ jobs:
             echo "PR diff left the data allow-list; refusing to merge." >&2
             exit 1
           fi
-          gh pr merge "$URL" --admin --squash
+          # Merge from outside the checkout: in it, gh switches the local PR branch back to main
+          # after merging, which this shallow runner cannot do. The branch is kept (rulesets).
+          (cd "$RUNNER_TEMP" && gh pr merge "$URL" --repo "$GITHUB_REPOSITORY" --admin --squash)
           echo "merged=true" >> "$GITHUB_OUTPUT"
-          # The branch is kept: rulesets block deletion, and gh would check out main to delete it.
 
       - name: Publish the signed catalog when the quality gate passes
         if: steps.merge.outputs.merged == 'true' && steps.gate.outputs.publish == 'true'
