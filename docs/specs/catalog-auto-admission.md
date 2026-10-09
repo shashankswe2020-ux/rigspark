@@ -2,6 +2,10 @@
 
 Status: implemented (feat/catalog-auto-admission) · Owner: catalog pipeline · Related: #254 (coverage gap), #278 (stalled refresh PR)
 
+Artificial Analysis Open Weights coverage is specified separately in
+`artificial-analysis-catalog-coverage.md`. That extension broadens discovery beyond Ollama
+and introduces advisory-only entries for verified weights unsupported by current backends.
+
 ## Objective
 
 Users want to try the newest local models as soon as Ollama publishes them. Today the
