@@ -107,8 +107,9 @@ jobs:
           fi
       - name: Native HTTP and browser journeys
         # Prefers the runner image's preinstalled ChromeDriver. CHROMEWEBDRIVER has been seen
-        # unset on windows-2022, so fall back to the image default, then PATH, then the official
-        # Chrome for Testing driver for the installed Chrome build.
+        # unset on windows-2022, and macOS Chrome can self-update past the preinstalled driver,
+        # so a missing or major-mismatched driver falls back to the official Chrome for Testing
+        # driver for the Chrome build that will actually launch.
         run: |
           set -euo pipefail
           exe=""
@@ -122,7 +123,8 @@ jobs:
             platform=win64 default_dir="C:/SeleniumWebDrivers/ChromeDriver" exe=.exe
           else
             chrome="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-            version=$("$chrome" --version | grep -oE '[0-9]+(\.[0-9]+){3}')
+            # A staged update is what launches; `--version` can still report the old build.
+            version=$(defaults read "/Applications/Google Chrome.app/Contents/Info" CFBundleShortVersionString)
             platform=mac-arm64 default_dir=""
           fi
           driver=""
@@ -134,6 +136,10 @@ jobs:
           done
           if [[ -z "$driver" ]] && command -v "chromedriver$exe" > /dev/null; then
             driver=$(command -v "chromedriver$exe")
+          fi
+          if [[ -n "$driver" ]] && [[ "$("$driver" --version | awk '{split($2, v, "."); print v[1]}')" != "${version%%.*}" ]]; then
+            echo "Ignoring $driver: $("$driver" --version) does not match Chrome $version"
+            driver=""
           fi
           if [[ -z "$driver" ]]; then
             url=$(curl -fsSL https://googlechromelabs.github.io/chrome-for-testing/latest-patch-versions-per-build-with-downloads.json \
