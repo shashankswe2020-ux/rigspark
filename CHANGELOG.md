@@ -1,11 +1,24 @@
 # Changelog
 
-## Unreleased
+## 3.0.2 - 2026-10-09
+
+### Support the project
+
+- `brew install` now ends with a short note: if Sparky helps you, please
+  consider sponsoring the project at <https://buymeacoffee.com/shashanksw9>.
+  Cargo can't print messages after an install, so `rigspark --help` ends with
+  the same note. The README, guide and site link to it too, and the repository
+  shows a Sponsor button.
 
 ### Fixes
 
 - GUI: the "Skills this agent loads" checkboxes in the Library agent editor no
   longer stretch to half the row and squeeze each skill name onto several lines.
+
+### Tests
+
+- The `gui_launcher` process tests no longer time out under parallel load on
+  macOS.
 
 ### Docs
 

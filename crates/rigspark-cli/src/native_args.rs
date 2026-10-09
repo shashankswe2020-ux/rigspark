@@ -376,7 +376,10 @@ pub(super) fn parse() -> Result<Option<Args>, clap::Error> {
                 .bin_name("rigspark")
                 .disable_help_subcommand(true)
                 .about("Hardware-aware local model advice, runtime management, and chat")
-                .after_help("With no command, runs recommend. Use rigspark <command> --help for command options.");
+                .after_help(format!(
+                    "With no command, runs recommend. Use rigspark <command> --help for command options.\n\n{}",
+                    rigspark_cli::distribution::SPONSOR_HELP
+                ));
             for entry in COMMANDS {
                 root = root.subcommand(help_command(entry, &flat));
             }

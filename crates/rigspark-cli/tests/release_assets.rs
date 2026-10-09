@@ -94,6 +94,9 @@ fn homebrew_formula_pins_every_unix_archive_and_installs_the_trio() {
     }
     assert!(formula.contains("bin.install \"llmup\", \"rigspark\", \"rigspark-gui\"\n"));
     assert!(formula.contains("shell_output(\"#{bin}/llmup --version\")"));
+    assert!(formula.contains(
+        "  def caveats\n    <<~EOS\n      If Sparky helps you, please consider sponsoring the project:\n      https://buymeacoffee.com/shashanksw9\n    EOS\n  end\n"
+    ));
     assert!(!formula.contains("windows"));
 }
 
@@ -106,4 +109,10 @@ fn homebrew_formula_refuses_missing_archives_and_unsafe_versions() {
     for version in ["1.0", "1.0.0-rc.1", "v1.0.0", "1.0.0\"; system \"x"] {
         assert!(homebrew_formula(version, &complete).is_err(), "{version}");
     }
+}
+
+#[test]
+fn sponsor_help_matches_the_formula_caveat() {
+    use rigspark_cli::distribution::{SPONSOR_HELP, SPONSOR_MESSAGE, SPONSOR_URL};
+    assert_eq!(SPONSOR_HELP, format!("{SPONSOR_MESSAGE}\n{SPONSOR_URL}"));
 }
