@@ -156,7 +156,7 @@ async fn local_benchmark_report_is_not_exposed_by_gui() {
 async fn catalog_browsing_limit_is_bounded_and_default_stays_eight() {
     let home = tempfile::tempdir().unwrap();
     let host = Host::new(home.path(), 43210).unwrap();
-    for limit in ["0", "101", "-1", "invalid"] {
+    for limit in ["0", "1001", "-1", "invalid"] {
         assert_eq!(
             call(
                 &host,
@@ -175,18 +175,49 @@ async fn catalog_browsing_limit_is_bounded_and_default_stays_eight() {
     let (status, expanded) =
         call(&host, "GET", "/api/models/recommended?limit=100", json!({})).await;
     assert_eq!(status, StatusCode::OK);
-    let default = default["models"].as_array().unwrap();
-    let expanded = expanded["models"].as_array().unwrap();
-    assert!(expanded.len() <= 100);
-    assert!(expanded.len() >= default.len());
-    assert_eq!(
-        default.iter().map(|model| &model["id"]).collect::<Vec<_>>(),
-        expanded
-            .iter()
-            .take(default.len())
-            .map(|model| &model["id"])
+    assert!(expanded["models"].as_array().unwrap().len() <= 100);
+    // Ordering across limits is checked with fixed hardware below: each request re-detects
+    // live memory, which shifts between calls on non-unified machines (seen on Windows CI).
+    let (status, full) = call(
+        &host,
+        "GET",
+        "/api/models/recommended?limit=1000",
+        json!({}),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert!(full["models"].as_array().unwrap().len() <= 1000);
+}
+
+#[test]
+fn full_catalog_ranking_extends_the_top_results_unchanged() {
+    let catalog = rigspark_core::catalog::Catalog::parse(rigspark_core::MODELS_JSON).unwrap();
+    let perf = rigspark_core::catalog::PerfDataset::parse(rigspark_core::PERF_JSON).unwrap();
+    let gib = 1024_u64.pow(3);
+    let hardware: rigspark_core::sizing::Hardware = serde_json::from_value(json!({
+        "arch": "arm64", "platform": "darwin", "totalRamBytes": 64 * gib,
+        "freeRamBytes": 48 * gib, "freeDiskBytes": 2000 * gib,
+        "gpu": [{"vendor": "apple", "vramBytes": 0}]
+    }))
+    .unwrap();
+    let options = rigspark_core::ranking::AdviceOptions::default();
+    let rank = |limit| {
+        rigspark_gui::models::recommended(&catalog, &hardware, &perf, &options, limit)
+            .unwrap()
+            .into_iter()
+            .map(|model| model["id"].as_str().unwrap().to_owned())
             .collect::<Vec<_>>()
-    );
+    };
+    let default = rank(8);
+    let top = rank(100);
+    let full = rank(1000);
+    assert_eq!(default.len(), 8);
+    assert_eq!(default, top[..8]);
+    assert_eq!(top.len(), 100);
+    assert!(full.len() > 100, "only {} models ranked", full.len());
+    assert!(full.len() <= catalog.models.len());
+    assert!(full.iter().any(|id| id == "bonsai:8b"));
+    assert_eq!(top, full[..100]);
 }
 
 #[tokio::test]

@@ -260,10 +260,26 @@ async fn asset(axum::extract::Path(path): axum::extract::Path<String>) -> Respon
         "text/css"
     } else if path.ends_with(".jpg") || path.ends_with(".jpeg") {
         "image/jpeg"
+    } else if path.ends_with(".webp") {
+        "image/webp"
+    } else if path.ends_with(".svg") {
+        "image/svg+xml"
+    } else if path.ends_with(".woff2") {
+        "font/woff2"
     } else {
         return error(StatusCode::NOT_FOUND, "not found");
     };
-    ([(header::CONTENT_TYPE, mime)], file.contents()).into_response()
+    let mut response = ([(header::CONTENT_TYPE, mime)], file.contents()).into_response();
+    if mime == "image/svg+xml" {
+        // Brand SVGs are images; never let a directly opened one run script or load resources.
+        response.headers_mut().insert(
+            "content-security-policy",
+            "default-src 'none'; style-src 'unsafe-inline'; sandbox"
+                .parse()
+                .unwrap(),
+        );
+    }
+    response
 }
 async fn vendor(axum::extract::Path(path): axum::extract::Path<String>) -> Response {
     if path.contains(['\\', '%']) || path.split('/').any(|part| part == ".." || part == ".") {

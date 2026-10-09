@@ -60,6 +60,9 @@ fn public_help_lists_commands_and_scopes_flags() {
     for flag in ["--tui", "--no-tui", "--accessible", "--no-color"] {
         assert!(!help.contains(flag), "unexpected UI flag {flag}");
     }
+    assert!(help.ends_with(
+        "If Sparky helps you, please consider sponsoring the project:\nhttps://buymeacoffee.com/shashanksw9\n"
+    ));
     for command in [
         "recommend",
         "can-run",

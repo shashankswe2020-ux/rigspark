@@ -37,8 +37,22 @@ pub fn require(ok: bool, message: &str) -> Result<(), ValidationError> {
         Err(ValidationError(message.into()))
     }
 }
-fn matches(value: &str, pattern: &str) -> bool {
-    Regex::new(pattern).is_ok_and(|regex| regex.is_match(value))
+/// Patterns are compiled once per process: catalog validation runs them per model at startup.
+fn matches(value: &str, pattern: &'static str) -> bool {
+    static COMPILED: std::sync::LazyLock<
+        std::sync::Mutex<std::collections::HashMap<&'static str, Option<Regex>>>,
+    > = std::sync::LazyLock::new(Default::default);
+    let Ok(mut compiled) = COMPILED.lock() else {
+        return Regex::new(pattern).is_ok_and(|regex| regex.is_match(value));
+    };
+    compiled
+        .entry(pattern)
+        .or_insert_with(|| Regex::new(pattern).ok())
+        .as_ref()
+        .is_some_and(|regex| regex.is_match(value))
+}
+pub(crate) fn parameter_label(value: &str) -> bool {
+    matches(value, r"^\d+(\.\d+)?[BMT]$")
 }
 fn integer(value: f64, minimum: f64) -> bool {
     value.is_finite()
@@ -246,10 +260,7 @@ impl CatalogModel {
     pub(crate) fn validate(&self) -> Result<(), ValidationError> {
         nonempty(&self.id)?;
         nonempty(&self.family)?;
-        require(
-            matches(&self.params, r"^\d+(\.\d+)?[BMT]$"),
-            "invalid parameter label",
-        )?;
+        require(parameter_label(&self.params), "invalid parameter label")?;
         require(
             self.open_weight
                 && !self.license.is_empty()
@@ -293,10 +304,7 @@ impl CatalogModel {
             "activeParams must exist only for MoE",
         )?;
         if let Some(active) = &self.active_params {
-            require(
-                matches(active, r"^\d+(\.\d+)?[BMT]$"),
-                "invalid activeParams",
-            )?;
+            require(parameter_label(active), "invalid activeParams")?;
         }
         if let Some(rate) = self.kv_bytes_per_token {
             require(integer(rate, 1.0), "invalid KV geometry")?;

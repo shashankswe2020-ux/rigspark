@@ -14,3 +14,14 @@ Upstream license notices are retained beside them. Include these notices with
 native distributions. Any update requires security review, hash updates, and
 browser rendering/sanitization regression checks. These are browser scripts,
 not a JavaScript backend or an npm launcher.
+
+## Fonts
+
+`rigspark-gui` embeds these WOFF2 fonts for its workspace UI. They are licensed
+under the SIL Open Font License 1.1; the full license and copyright notices ship
+as `fonts.OFL.txt` (source: `crates/rigspark-gui/static/fonts/LICENSE-OFL.txt`).
+
+| Font | Version | Upstream | License |
+| --- | --- | --- | --- |
+| Inter | 4.001 | https://github.com/rsms/inter | OFL-1.1 |
+| JetBrains Mono | 2.211 | https://github.com/JetBrains/JetBrainsMono | OFL-1.1 |

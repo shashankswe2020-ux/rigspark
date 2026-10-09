@@ -126,13 +126,15 @@ fn automatic_admission_merges_only_verified_data_only_changes() {
         "Admission touched files outside the data allow-list; refusing.",
         "gh pr checks \"$URL\" --watch --interval 60 --fail-fast --required",
         "PR diff left the data allow-list; refusing to merge.",
-        "gh pr merge \"$URL\" --admin --squash --delete-branch",
+        "gh pr merge \"$URL\" --admin --squash\n          echo \"merged=true\" >> \"$GITHUB_OUTPUT\"",
         "MERGE_TOKEN: ${{ secrets.CATALOG_MERGE_TOKEN }}",
         "steps.merge.outputs.merged == 'true' && steps.gate.outputs.publish == 'true'",
         "gh workflow run catalog-publish.yml --ref main",
     ] {
         assert!(admit.contains(required), "{required}");
     }
+    // Deleting the branch would check out main in the detached runner and fail after merging.
+    assert!(!admit.contains("--delete-branch"));
     // The checks gate precedes the merge, and the publish dispatch follows it.
     assert!(admit.find("gh pr checks").unwrap() < admit.find("gh pr merge").unwrap());
     let allowed = admit
@@ -251,6 +253,20 @@ fn vendored_browser_libraries_match_their_pinned_hashes_and_licenses() {
                 .is_empty()
         );
     }
+}
+
+#[test]
+fn guide_media_references_exist() {
+    let guide = read("docs/references/guide.md");
+    let mut found = 0;
+    for (index, _) in guide.match_indices("src=\"../../assets/") {
+        let start = index + "src=\"../../".len();
+        let end = start + guide[start..].find('"').unwrap();
+        let path = &guide[start..end];
+        assert!(root().join(path).is_file(), "{path}");
+        found += 1;
+    }
+    assert!(found > 0);
 }
 
 #[test]

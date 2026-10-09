@@ -1,4 +1,4 @@
-use super::{TestResult, click, fresh_session, send, wait_for};
+use super::{TestResult, choose, click, fresh_session, press_focused, send, type_into, wait_for};
 use fantoccini::Client;
 use serde_json::{Value, json};
 use std::time::Duration;
@@ -72,6 +72,22 @@ async fn open_models(client: &Client, origin: &str) -> TestResult {
     wait_for(
         client,
         &format!("{VISIBLE}(document.querySelector('.model-card-item'))"),
+    )
+    .await
+}
+
+// Fit controls live in a popover; open it before interacting with them.
+async fn open_fit_settings(client: &Client) -> TestResult {
+    if client
+        .execute("return document.querySelector('#fit-pop').hidden;", vec![])
+        .await?
+        == json!(true)
+    {
+        click(client, "#fit-settings").await?;
+    }
+    wait_for(
+        client,
+        &format!("{VISIBLE}(document.querySelector('#models-fit-only'))"),
     )
     .await
 }
@@ -166,7 +182,7 @@ pub async fn bonsai(
     artifacts: &std::path::Path,
 ) -> TestResult {
     open_models(client, origin).await?;
-    let advice = fetch_json(client, "/api/models/recommended?limit=100&context=mid").await?;
+    let advice = fetch_json(client, "/api/models/recommended?limit=1000&context=mid").await?;
     let model = advice["models"]
         .as_array()
         .and_then(|models| models.iter().find(|model| model["id"] == "bonsai:8b"))
@@ -211,13 +227,11 @@ pub async fn bonsai(
         }
     }
     wait_for(client, "document.documentElement.scrollWidth <= innerWidth && [...document.querySelectorAll('#model-detail .model-backend-select option')].every(option => !['ollama', 'mlx'].includes(option.value)) && [...document.querySelectorAll('.model-detail-metric')].find(node => node.textContent.includes('Decode speed'))?.textContent.includes('unknown')").await?;
-    client
-        .find(fantoccini::Locator::Css(
-            "#model-detail .model-backend-select option[value='llamacpp']",
-        ))
-        .await?
-        .click()
-        .await?;
+    choose(
+        client,
+        "#model-detail .model-backend-select option[value='llamacpp']",
+    )
+    .await?;
     let overflow = client.execute("const parent = document.querySelector('#model-detail').getBoundingClientRect(); return [...document.querySelectorAll('.model-detail-header, .model-detail-actions > *')].filter(node => {const rect = node.getBoundingClientRect(); return rect.right > parent.right + 1 || rect.left < parent.left - 1;}).map(node => ({tag:node.tagName, width:node.getBoundingClientRect().width, parent:parent.width}));", vec![]).await?;
     if overflow != json!([]) {
         return Err(format!("Bonsai action overflow at {width}: {overflow}").into());
@@ -248,23 +262,16 @@ pub async fn bonsai(
     }
     if width == 1440 {
         click(client, "#model-detail-back").await?;
-        client
-            .find(fantoccini::Locator::Css(
-                "#context-window option[value='65536']",
-            ))
-            .await?
-            .click()
-            .await?;
+        open_fit_settings(client).await?;
+        choose(client, "#context-window option[value='65536']").await?;
         click(client, "#refresh-models").await?;
         wait_for(client, "[...document.querySelectorAll('.model-card-item')].find(node => node.querySelector('.model-card-title')?.textContent === 'bonsai:8b')?.textContent.includes('65,536 context tokens')").await?;
         click(client, selector).await?;
-        client
-            .find(fantoccini::Locator::Css(
-                "#model-detail .model-backend-select option[value='llamacpp']",
-            ))
-            .await?
-            .click()
-            .await?;
+        choose(
+            client,
+            "#model-detail .model-backend-select option[value='llamacpp']",
+        )
+        .await?;
         click(client, "#model-detail .model-detail-actions button").await?;
         accept_confirm(client).await?;
         wait_for_start(
@@ -274,13 +281,8 @@ pub async fn bonsai(
         )
         .await?;
         open_models(client, origin).await?;
-        client
-            .find(fantoccini::Locator::Css(
-                "#context-window option[value='mid']",
-            ))
-            .await?
-            .click()
-            .await?;
+        open_fit_settings(client).await?;
+        choose(client, "#context-window option[value='mid']").await?;
         click(client, "#refresh-models").await?;
         click(client, selector).await?;
     }
@@ -329,6 +331,7 @@ pub async fn installed(
         .await?;
     click(client, "#refresh-models").await?;
     wait_for(client, &format!("[...document.querySelectorAll('#recommended-list .model-card-title')].some((node) => node.textContent === 'gemma4:e4b-it-qat' && {VISIBLE}(node)) && document.querySelector('#recommended-list').textContent.includes('Context fit unknown')")).await?;
+    open_fit_settings(client).await?;
     click(client, "#models-fit-only").await?;
     wait_for(
         client,
@@ -337,6 +340,8 @@ pub async fn installed(
     .await?;
     click(client, "#models-fit-only").await?;
     click(client, "#model-bypass").await?;
+    press_focused(client, "\u{e00c}").await?;
+    wait_for(client, "document.querySelector('#fit-pop').hidden && document.activeElement?.id === 'fit-settings'").await?;
     wait_for(client, "(() => { const start = [...document.querySelectorAll('#recommended-list button')].find((node) => node.textContent === 'Start'); return start && !start.disabled && document.documentElement.scrollWidth <= innerWidth; })()").await?;
     std::fs::write(
         artifacts.join(format!("installed-{width}.png")),
@@ -393,9 +398,12 @@ pub async fn workspace(client: &Client, origin: &str) -> TestResult {
     let path = fetch_json(client, "/__fixture/workspace").await?;
     let path = path.as_str().ok_or("fixture workspace path unavailable")?;
     fresh_session(client).await?;
+    // The paperclip only appears once workspace context is available (the bar is layout-only).
     wait_for(
         client,
-        &format!("{VISIBLE}(document.querySelector('#context-bar'))"),
+        &format!(
+            "!document.querySelector('#context-bar').hidden && {VISIBLE}(document.querySelector('#context-add'))"
+        ),
     )
     .await?;
     click(client, "#context-add").await?;
@@ -404,22 +412,14 @@ pub async fn workspace(client: &Client, origin: &str) -> TestResult {
         &format!("{VISIBLE}(document.querySelector('#context-root-path'))"),
     )
     .await?;
-    let root = client
-        .find(fantoccini::Locator::Css("#context-root-path"))
-        .await?;
-    root.clear().await?;
-    root.send_keys(path).await?;
+    type_into(client, "#context-root-path", path, true).await?;
     click(client, "#context-root-add").await?;
     wait_for(
         client,
         &format!("{VISIBLE}(document.querySelector('#context-search'))"),
     )
     .await?;
-    client
-        .find(fantoccini::Locator::Css("#context-search"))
-        .await?
-        .send_keys("app")
-        .await?;
+    type_into(client, "#context-search", "app", false).await?;
     wait_for(client, &format!("(() => {{ const result = [...document.querySelectorAll('.context-result')].find((node) => node.textContent.includes('src/app.ts')); if (result && {VISIBLE}(result)) result.dataset.fixtureResult = 'true'; return Boolean(result?.dataset.fixtureResult); }})()")).await?;
     click(client, ".context-result[data-fixture-result]").await?;
     wait_for(client, &format!("[...document.querySelectorAll('.context-chip')].some((node) => node.textContent.includes('app.ts') && {VISIBLE}(node))")).await?;

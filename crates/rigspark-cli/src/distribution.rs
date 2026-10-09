@@ -27,6 +27,7 @@ const FILES: &[&str] = &[
     "dompurify.LICENSE",
     "katex.LICENSE",
     "crossterm.LICENSE",
+    "fonts.OFL.txt",
     "CROSSTERM-PATCH.md",
     "THIRD-PARTY.md",
 ];
@@ -218,6 +219,9 @@ pub fn verify_directory(directory: &Path) -> io::Result<Manifest> {
 }
 
 const REPOSITORY: &str = "https://github.com/shashankswe2020-ux/rigspark";
+pub const SPONSOR_URL: &str = "https://buymeacoffee.com/shashanksw9";
+pub const SPONSOR_MESSAGE: &str = "If Sparky helps you, please consider sponsoring the project:";
+pub const SPONSOR_HELP: &str = "If Sparky helps you, please consider sponsoring the project:\nhttps://buymeacoffee.com/shashanksw9";
 const MAX_CHECKSUMS: usize = 64 * 1024;
 
 fn release_version(version: &str) -> io::Result<()> {
@@ -271,7 +275,7 @@ pub fn homebrew_formula(
         ))
     };
     Ok(format!(
-        "class Rigspark < Formula\n  desc \"Hardware-aware CLI for choosing and running local LLMs\"\n  homepage \"{REPOSITORY}\"\n  license \"MIT\"\n\n  on_macos do\n    on_arm do\n{}    end\n    on_intel do\n{}    end\n  end\n\n  on_linux do\n    on_arm do\n{}    end\n    on_intel do\n{}    end\n  end\n\n  def install\n    bin.install \"llmup\", \"rigspark\", \"rigspark-gui\"\n  end\n\n  test do\n    assert_match version.to_s, shell_output(\"#{{bin}}/llmup --version\")\n  end\nend\n",
+        "class Rigspark < Formula\n  desc \"Hardware-aware CLI for choosing and running local LLMs\"\n  homepage \"{REPOSITORY}\"\n  license \"MIT\"\n\n  on_macos do\n    on_arm do\n{}    end\n    on_intel do\n{}    end\n  end\n\n  on_linux do\n    on_arm do\n{}    end\n    on_intel do\n{}    end\n  end\n\n  def install\n    bin.install \"llmup\", \"rigspark\", \"rigspark-gui\"\n  end\n\n  def caveats\n    <<~EOS\n      {SPONSOR_MESSAGE}\n      {SPONSOR_URL}\n    EOS\n  end\n\n  test do\n    assert_match version.to_s, shell_output(\"#{{bin}}/llmup --version\")\n  end\nend\n",
         asset("aarch64-apple-darwin")?,
         asset("x86_64-apple-darwin")?,
         asset("aarch64-unknown-linux-gnu")?,

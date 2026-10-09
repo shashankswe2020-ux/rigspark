@@ -37,7 +37,7 @@
         "description": "Hardware-aware CLI, terminal UI and browser workspace that tells you which local LLMs will run on your machine, with yes / slow / no verdicts and estimated tokens per second, then verifies, serves and chats with them. It also generates images and short videos locally through your own ComfyUI.",
         "applicationCategory": "DeveloperApplication",
         "operatingSystem": "macOS, Linux, Windows",
-        "softwareVersion": "2.3.0",
+        "softwareVersion": "3.0.2",
         "license": "https://opensource.org/licenses/MIT",
         "url": "https://www.rigspark.si/",
         "downloadUrl": "https://github.com/shashankswe2020-ux/rigspark/releases/latest",
@@ -90,9 +90,9 @@
     </script>
     <link rel="stylesheet" href="brand/fonts/fonts.css" />
     <link rel="stylesheet" href="brand/tokens/tokens.css" />
-    <link rel="stylesheet" href="styles.css?v=2.3.0-latest1" />
-    <script src="data/latest.js?v=2.3.0-latest1" defer></script>
-    <script src="main.js?v=2.3.0-latest1" defer></script>
+    <link rel="stylesheet" href="styles.css?v=3.0.2" />
+    <script src="data/latest.js?v=3.0.2" defer></script>
+    <script src="main.js?v=3.0.2" defer></script>
   </head>
   <body>
     <a class="skip" href="#main">Skip to content</a>
@@ -118,7 +118,7 @@
     <main id="main">
       <section class="hero">
         <div class="wrap">
-          <a class="newchip" href="https://github.com/shashankswe2020-ux/rigspark/releases/latest"><b>New</b> Local image &amp; video in RigSpark 2.3</a>
+          <a class="newchip" href="https://github.com/shashankswe2020-ux/rigspark/releases/tag/v3.0.0"><b>New</b> A redesigned workspace in RigSpark 3.0</a>
           <p class="eyebrow">Meet Sparky.</p>
           <h1 class="display">Knows before<br />you download.</h1>
           <p class="lead">Sparky reads your RAM, GPU and disk, then gives every local model a <b>yes</b>, <b>slow</b> or <b>no</b> with estimated tok/s. Advice runs fully offline.</p>
@@ -134,7 +134,7 @@
         <div class="stick">
           <p class="cap top on" data-from="0" data-to=".3">Hi, I&rsquo;m Sparky.<small>RigSpark&rsquo;s hardware-aware sidekick.</small></p>
           <p class="cap top" data-from=".3" data-to=".62">Reads your rig.<small>RAM, VRAM, unified memory, bandwidth and free disk. Locally.</small></p>
-          <p class="cap top" data-from=".62" data-to="1.01">Ranks all 69 models.<small>A verdict and a binding reason, before a single byte downloads.</small></p>
+          <p class="cap top" data-from=".62" data-to="1.01">Ranks all <span data-catalog-count="text">253</span> models.<small>A verdict and a binding reason, before a single byte downloads.</small></p>
           <div class="stage"><img id="spinimg" src="brand/3d/turntable/sparky-00.webp" alt="Sparky, a graphite robot with an amber visor" width="799" height="629" fetchpriority="high" /></div>
         </div>
       </section>
@@ -157,7 +157,7 @@
         <div class="wrap center reveal">
           <p class="eyebrow amber">Try it here</p>
           <h2 class="h2" id="ask-title">Ask Sparky.</h2>
-          <p class="lead narrow">Pick your memory and a model. This preview uses RigSpark&rsquo;s published Q4_K_M sizes and its memory-fit rule. The real CLI measures your hardware.</p>
+          <p class="lead narrow">Pick your graphics, memory, free disk and a model. This preview uses RigSpark&rsquo;s catalog sizes, fit rule and sourced speed data. The real CLI measures your hardware.</p>
         </div>
         <div class="wide">
           <div class="config reveal">
@@ -169,8 +169,17 @@
             </div>
             <div>
               <div class="step">
+                <h3 id="gpu-label">Graphics.</h3>
+                <div class="seg" id="gpu" role="group" aria-labelledby="gpu-label">
+                  <button type="button" data-v="apple" aria-pressed="true">Apple Silicon</button>
+                  <button type="button" data-v="nvidia" aria-pressed="false">NVIDIA GPU</button>
+                  <button type="button" data-v="amd" aria-pressed="false">AMD / Intel GPU</button>
+                  <button type="button" data-v="cpu" aria-pressed="false">CPU only</button>
+                </div>
+              </div>
+              <div class="step">
                 <h3 id="ram-label">Memory.</h3>
-                <p class="muted">Unified memory on Apple Silicon.</p>
+                <p class="muted" id="ram-note">Unified memory on Apple Silicon.</p>
                 <div class="chips" id="ram" role="group" aria-labelledby="ram-label">
                   <button type="button" data-v="8" aria-pressed="false">8 GB</button>
                   <button type="button" data-v="16" aria-pressed="false">16 GB</button>
@@ -181,6 +190,26 @@
                   <button type="button" data-v="96" aria-pressed="false">96 GB</button>
                   <button type="button" data-v="128" aria-pressed="false">128 GB</button>
                 </div>
+                <div class="chips" id="vram" role="group" aria-labelledby="ram-label" hidden>
+                  <button type="button" data-v="8" aria-pressed="false">8 GB</button>
+                  <button type="button" data-v="12" aria-pressed="false">12 GB</button>
+                  <button type="button" data-v="16" aria-pressed="true">16 GB</button>
+                  <button type="button" data-v="24" aria-pressed="false">24 GB</button>
+                  <button type="button" data-v="32" aria-pressed="false">32 GB</button>
+                  <button type="button" data-v="48" aria-pressed="false">48 GB</button>
+                </div>
+              </div>
+              <div class="step">
+                <h3 id="disk-label">Free disk.</h3>
+                <p class="muted">The download has to fit before anything runs.</p>
+                <div class="chips" id="disk" role="group" aria-labelledby="disk-label">
+                  <button type="button" data-v="10" aria-pressed="false">10 GB</button>
+                  <button type="button" data-v="25" aria-pressed="false">25 GB</button>
+                  <button type="button" data-v="50" aria-pressed="false">50 GB</button>
+                  <button type="button" data-v="100" aria-pressed="true">100 GB</button>
+                  <button type="button" data-v="250" aria-pressed="false">250 GB</button>
+                  <button type="button" data-v="500" aria-pressed="false">500 GB</button>
+                </div>
               </div>
               <div class="step">
                 <h3 id="model-label">Model.</h3>
@@ -190,16 +219,16 @@
                   <button type="button" data-v="image" aria-pressed="false">New: image</button>
                   <button type="button" data-v="video" aria-pressed="false">New: video</button>
                 </div>
-                <p class="muted" id="model-note">Quantized to Q4_K_M at default context.</p>
+                <p class="muted" id="model-note">At the quantization <code>rigspark up</code> installs, default context.</p>
                 <p class="muted empty-new" id="model-empty" hidden></p>
                 <div class="chips" id="model-new" role="group" aria-labelledby="model-label" hidden></div>
                 <div class="chips" id="model" role="group" aria-labelledby="model-label">
-                  <button type="button" data-v="llama3.1:8b" data-mem="5.3" data-params="8" data-dense="1" aria-pressed="false">Llama 3.1 8B</button>
-                  <button type="button" data-v="qwen3:14b" data-mem="9.9" data-params="14" data-dense="1" aria-pressed="true">Qwen3 14B</button>
-                  <button type="button" data-v="gemma3:27b" data-mem="18.6" data-params="27" data-dense="1" aria-pressed="false">Gemma 3 27B</button>
-                  <button type="button" data-v="qwen3:30b-a3b" data-mem="19.9" data-params="30" data-dense="0" aria-pressed="false">Qwen3 30B-A3B (MoE)</button>
-                  <button type="button" data-v="qwen3:32b" data-mem="21.6" data-params="32" data-dense="1" aria-pressed="false">Qwen3 32B</button>
-                  <button type="button" data-v="llama3.3:70b" data-mem="45.5" data-params="70" data-dense="1" aria-pressed="false">Llama 3.3 70B</button>
+                  <button type="button" data-v="llama3.1:8b" data-popular="llama3.1:8b" aria-pressed="false">Llama 3.1 8B</button>
+                  <button type="button" data-v="qwen3:14b" data-popular="qwen3:14b" aria-pressed="true">Qwen3 14B</button>
+                  <button type="button" data-v="gemma3:27b" data-popular="gemma3:27b" aria-pressed="false">Gemma 3 27B</button>
+                  <button type="button" data-v="qwen3:30b-a3b" data-popular="qwen3:30b-a3b" aria-pressed="false">Qwen3 30B-A3B (MoE)</button>
+                  <button type="button" data-v="qwen3:32b" data-popular="qwen3:32b" aria-pressed="false">Qwen3 32B</button>
+                  <button type="button" data-v="llama3.3:70b" data-popular="llama3.3:70b" aria-pressed="false">Llama 3.3 70B</button>
                 </div>
               </div>
               <div class="result" aria-live="polite">
@@ -207,9 +236,11 @@
                 <p class="why" id="t-why">Fits in memory with headroom.</p>
                 <div class="gauge" aria-hidden="true"><i id="g"></i></div>
                 <div class="legend"><span id="need">needs 9.9 GiB</span><span id="usable">18.7 GiB budget</span></div>
+                <div class="legend"><span id="download">download 8.6 GiB</span><span id="free">100 GB free</span></div>
+                <p class="speed" id="t-speed">About 7&ndash;13 tok/s on Apple silicon Pro (estimate for Ollama)</p>
                 <p class="cli"><b>$</b> <span id="t-cmd">rigspark can-run</span> <span id="t-model">qwen3:14b</span> &rarr; <span id="t-pill">yes</span>, exit <span id="t-exit">0</span></p>
               </div>
-              <p class="fine">Preview only. Fit uses RigSpark&rsquo;s rule: memory minus a 2&nbsp;GiB OS reserve, with 15% headroom. Speed depends on your memory bandwidth, so &ldquo;slow&rdquo; here is a rule of thumb for dense 27B+ models; <code>rigspark can-run</code> gives your real estimate.</p>
+              <p class="fine">Preview only. Fit uses RigSpark&rsquo;s rule: usable memory (unified or system RAM minus a 2&nbsp;GiB OS reserve, or the GPU&rsquo;s VRAM) with 15% headroom, and the download must fit on disk. Speed comes from RigSpark&rsquo;s sourced bandwidth classes; hardware without one shows <em>unknown</em> rather than a guess. <code>rigspark can-run</code> measures your real machine.</p>
             </div>
           </div>
         </div>
@@ -258,7 +289,7 @@ Run the top pick:  <span class="t-acc">rigspark up qwen3:30b-a3b</span>
         <div class="wrap center reveal">
           <h2 class="h2" id="nums-title">Small robot. Big numbers.</h2>
           <dl class="grid">
-            <div><dt>69</dt><dd>curated models</dd></div>
+            <div><dt><span data-catalog-count="text">253</span></dt><dd>catalog models</dd></div>
             <div><dt>4</dt><dd>native runtimes</dd></div>
             <div><dt>0</dt><dd>network calls for advice</dd></div>
             <div><dt>MIT</dt><dd>native Rust, free forever</dd></div>
@@ -275,17 +306,18 @@ Run the top pick:  <span class="t-acc">rigspark up qwen3:30b-a3b</span>
           <img class="shot" src="brand/screens/tui-recommend.webp" alt="RigSpark terminal UI ranking models in a sortable table with a memory fit gauge" width="1400" height="900" loading="lazy" />
         </article>
         <article class="tile night reveal">
-          <span class="badge-new">New in 2.3</span>
+          <span class="badge-new">Since 2.3</span>
           <h3>Local image &amp; video</h3>
           <p>FLUX.1 schnell and Wan&nbsp;2.1 through your own ComfyUI. Nothing leaves 127.0.0.1.</p>
           <div class="ctas"><a class="more" href="https://github.com/shashankswe2020-ux/rigspark/blob/main/CHANGELOG.md">Read the changelog</a></div>
           <img class="shot" src="brand/screens/chat-image-generation.webp" alt="The prompt create mount fuji returning a locally generated image of Mount Fuji in the RigSpark chat" width="1200" height="1908" loading="lazy" />
         </article>
         <article class="tile night reveal">
+          <span class="badge-new">New in 3.0</span>
           <h3>Workspace</h3>
-          <p>Verify, serve and chat. On loopback only.</p>
-          <div class="ctas"><a class="more" href="#install">Get started</a></div>
-          <img class="shot" src="brand/screens/screenshot-workspace.webp" alt="RigSpark browser workspace ready to chat with a selected model" width="1440" height="857" loading="lazy" />
+          <p>Redesigned and quieter: one model chip, an inspector on demand, light and dark. Still loopback only.</p>
+          <div class="ctas"><a class="more" href="https://github.com/shashankswe2020-ux/rigspark/blob/main/CHANGELOG.md">What&rsquo;s new</a></div>
+          <img class="shot" src="brand/screens/screenshot-workspace.webp" alt="The redesigned RigSpark workspace: Sparky's welcome, a single composer and an inspector with live memory, CPU and disk metrics" width="1440" height="857" loading="lazy" />
         </article>
         <article class="tile amber reveal">
           <h3>AI Hardware Score</h3>
@@ -404,6 +436,7 @@ Run the top pick:  <span class="t-acc">rigspark up qwen3:30b-a3b</span>
             <div class="cmd" data-copy="cargo install rigspark-cli --locked --bin llmup --bin rigspark &amp;&amp; cargo install rigspark-gui --locked"><small>From source</small><code>cargo install rigspark-cli --locked --bin llmup --bin rigspark &amp;&amp; cargo install rigspark-gui --locked</code><button class="copy-btn" type="button" aria-label="Copy cargo install command"><span class="i"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="8.5" y="8.5" width="12" height="12" rx="2.5"/><path d="M15.5 8.5V6A2.5 2.5 0 0 0 13 3.5H6A2.5 2.5 0 0 0 3.5 6v7A2.5 2.5 0 0 0 6 15.5h2.5"/></svg></span></button></div>
             <div class="cmd" data-copy="docker pull ghcr.io/shashankswe2020-ux/rigspark:latest"><small>Container</small><code>docker pull ghcr.io/shashankswe2020-ux/rigspark:latest</code><button class="copy-btn" type="button" aria-label="Copy docker pull command"><span class="i"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="8.5" y="8.5" width="12" height="12" rx="2.5"/><path d="M15.5 8.5V6A2.5 2.5 0 0 0 13 3.5H6A2.5 2.5 0 0 0 3.5 6v7A2.5 2.5 0 0 0 6 15.5h2.5"/></svg></span></button></div>
           </div>
+          <p class="fine center">If Sparky helps you, please consider sponsoring the project: <a href="https://buymeacoffee.com/shashanksw9" rel="noopener">buymeacoffee.com/shashanksw9</a></p>
           <p class="fine center">Archives are unsigned. Verify them against <a href="https://github.com/shashankswe2020-ux/rigspark/releases/latest/download/SHA256SUMS">SHA256SUMS</a>. On macOS, clear quarantine with <code>xattr -dr com.apple.quarantine rigspark-*</code>. The container is an older CLI image that sees only the container&rsquo;s resources.</p>
         </div>
       </section>
@@ -448,7 +481,7 @@ Run the top pick:  <span class="t-acc">rigspark up qwen3:30b-a3b</span>
           <p class="eyebrow">RigSpark</p>
           <h2 class="display cta-title" id="cta-title">Let Sparky check your rig.</h2>
           <p class="lead">Free and open source. MIT licensed. Native Rust.</p>
-          <div class="ctas"><a class="pill" href="#install">Download</a><a class="more" href="https://github.com/shashankswe2020-ux/rigspark">Star on GitHub</a></div>
+          <div class="ctas"><a class="pill" href="#install">Download</a><a class="more" href="https://github.com/shashankswe2020-ux/rigspark">Star on GitHub</a><a class="more" href="https://buymeacoffee.com/shashanksw9" rel="noopener">Buy me a coffee</a></div>
         </div>
         <img class="art reveal" src="brand/3d/sparky-cheer.webp" alt="Sparky with arms out, ta-da" width="1093" height="868" loading="lazy" />
       </section>
@@ -463,9 +496,9 @@ Run the top pick:  <span class="t-acc">rigspark up qwen3:30b-a3b</span>
           <div><b>Resources</b><a href="https://github.com/shashankswe2020-ux/rigspark#readme">Docs</a><a href="https://github.com/shashankswe2020-ux/rigspark/blob/main/CHANGELOG.md">Changelog</a><a href="https://github.com/shashankswe2020-ux/rigspark/releases/latest">Releases</a><a href="https://crates.io/crates/rigspark-cli">crates.io</a></div>
           <div><b>Guides</b><a href="#faq">VRAM for 8B&ndash;70B</a><a href="#faq">LLMs on Apple Silicon</a><a href="#faq">Local image &amp; video</a></div>
           <div><b>Compare</b><a href="#compare">RigSpark vs a runtime alone</a></div>
-          <div><b>Community</b><a href="https://github.com/shashankswe2020-ux/rigspark">GitHub</a><a href="https://github.com/shashankswe2020-ux/rigspark/issues">Issues</a><a href="https://github.com/shashankswe2020-ux/rigspark/blob/main/LICENSE">MIT License</a></div>
+          <div><b>Community</b><a href="https://github.com/shashankswe2020-ux/rigspark">GitHub</a><a href="https://github.com/shashankswe2020-ux/rigspark/issues">Issues</a><a href="https://buymeacoffee.com/shashanksw9" rel="noopener">Buy me a coffee</a><a href="https://github.com/shashankswe2020-ux/rigspark/blob/main/LICENSE">MIT License</a></div>
         </nav>
-        <div class="legal"><span>RigSpark v2.3.0 &middot; MIT &middot; Native Rust</span><span>Made for machines you already own.</span></div>
+        <div class="legal"><span>RigSpark v3.0.2 &middot; MIT &middot; Native Rust</span><span>Made for machines you already own.</span></div>
       </div>
     </footer>
   </body>

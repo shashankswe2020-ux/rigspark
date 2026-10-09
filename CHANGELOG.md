@@ -1,5 +1,151 @@
 # Changelog
 
+## 3.0.2 - 2026-10-09
+
+### Support the project
+
+- `brew install` now ends with a short note: if Sparky helps you, please
+  consider sponsoring the project at <https://buymeacoffee.com/shashanksw9>.
+  Cargo can't print messages after an install, so `rigspark --help` ends with
+  the same note. The README, guide and site link to it too, and the repository
+  shows a Sponsor button.
+
+### Fixes
+
+- GUI: the "Skills this agent loads" checkboxes in the Library agent editor no
+  longer stretch to half the row and squeeze each skill name onto several lines.
+
+### Tests
+
+- The `gui_launcher` process tests no longer time out under parallel load on
+  macOS.
+
+### Docs
+
+- The guide's agents/skills and connectors recordings show the 3.0 interface.
+
+## 3.0.1 - 2026-10-09
+
+### Licensing
+
+- Release archives now include `fonts.OFL.txt`, the SIL Open Font License 1.1
+  for the Inter and JetBrains Mono fonts that `rigspark-gui` has embedded since
+  3.0.0. `THIRD-PARTY.md` lists both fonts with their versions and upstreams.
+- Correct the copyright notices in the font license shipped with the GUI and
+  the site: they named Bricolage Grotesque instead of the fonts RigSpark
+  actually ships (Inter 4.001 and JetBrains Mono 2.211).
+
+### Tests
+
+- The full-catalog ranking test no longer depends on the CI runner's live
+  memory. Route tests check the limit bounds, and the full-catalog properties
+  are checked against fixed hardware.
+
+## 3.0.0 - 2026-10-08
+
+### A redesigned workspace
+
+`rigspark gui` and the desktop app have a new, minimal interface. Every feature
+is still there, but each control now appears where and when you need it.
+
+- **Model chip.** One chip in the top bar holds the model, runtime, harness, and
+  agent pickers, the endpoint/turns/context status, and Refresh.
+- **Inspector.** Live RAM/CPU/disk/latency, the latest call's token usage, and
+  hardware move into a panel you open from the top bar, with ⌘I, or by clicking
+  Sparky.
+- **Sparky status companion.** The sidebar's Sparky and memory ring follow real
+  RAM pressure (*All good*, *Getting busy*, *Memory is tight*). When telemetry
+  is unavailable it says *Metrics offline* instead of guessing.
+- **Chat.** A 3D Sparky welcome with suggestion pills; a composer **+** menu for
+  context, skills, and the system prompt; a Text/Image/Video switch; an agent
+  chip; and a round Send button. Sparky is the assistant's avatar.
+- **Models.** A ranked list with a Sparky face per verdict, search, and
+  *All / Runs well / Slow / Won't fit* filters. A memory bar appears only when
+  both required and usable memory are known. Context window, KV cache, and fit
+  toggles move into a **Fit settings** popover, and the per-model runtime
+  picker appears on hover.
+- **Full catalog.** Models now loads the whole ranked catalog (up to 1,000
+  entries; 253 today) instead of the top 100, so search and filters reach every
+  model. The top results are unchanged.
+- **Connectors.** An empty state with Filesystem, Git, and Custom templates that
+  open a pre-filled *Add connector* sheet. The JSON editor is a collapsible
+  section.
+- **Library.** Agents and Skills are tabs, with starter templates that pre-fill
+  the form.
+- **Runtime.** System Settings-style grouped lists for this machine and the
+  inference runtimes. No hardware score is shown, because none is sourced.
+- **Light and dark themes**, remembered across launches; ⌘1–⌘5 switch views and
+  Esc closes popovers and sheets.
+- Refreshing an empty chat keeps the welcome instead of a blank pane.
+
+### Desktop app
+
+- New app icon from the Sparky brand kit, with transparent corners.
+- The window opens on the dark workspace colour instead of flashing white.
+
+### Site
+
+- The site's model count now comes from the shipped catalog (253 models, up
+  from a hand-written 69). `cargo catalog-site` stamps it into the page, so the
+  weekly admission keeps it current, and CI fails if it drifts.
+- **Ask Sparky** now takes your graphics (Apple Silicon, NVIDIA, AMD/Intel, or
+  CPU only), memory or VRAM, and free disk. It applies the CLI's own fit rule,
+  marks downloads that won't fit on disk as *no*, and shows estimated tok/s only
+  for hardware classes with sourced bandwidth data, otherwise *unknown*. Model
+  sizes and hardware classes are generated from the catalog and `perf.json`
+  instead of being typed into the page; across 1,008 combinations the preview
+  matches `rigspark can-run` exactly.
+
+### Breaking changes
+
+- The GUI layout and markup changed. Element IDs used by the app's own scripts
+  are kept, but anything that automates the old layout (for example, expecting
+  the model pickers, fit controls, or metrics to be visible without opening
+  their popover or panel) needs updating.
+- `/static/mascot-avatar.jpg` and `/static/mascot-welcome.jpg` are removed.
+  Brand assets are now served from `/static/brand/` and fonts from
+  `/static/fonts/`. SVGs are served with a sandboxed Content-Security-Policy.
+
+## 2.4.0 - 2026-10-08
+
+### Image and video models
+
+- Pick the active Text, Image, and Video model in separate Models tabs; Chat
+  generates with the selected image or video model directly. The separate
+  Create view is retired, ComfyUI is detected automatically, and finished
+  images and videos have a Download action.
+- Run FLUX.1 schnell FP16 through ComfyUI's official split workflow (UNET,
+  T5, CLIP-L, and VAE as separate pinned files). The previous single-file
+  entry could not load, because that file holds only the diffusion model.
+- Add a Wan 2.1 T2V 1.3B BF16 variant, and lengthen Wan videos from 33 to 49
+  frames (about 3 seconds at 16 fps).
+- Add Qwen-Image and Wan 2.2 TI2V-5B built-in workflows, following ComfyUI's
+  official example graphs.
+- Skip re-hashing cached weights that are unchanged since their last full
+  SHA-256 check (same device, inode, size, mtime, and ctime). Any change still
+  forces a full hash; Windows and whole-second filesystems always re-hash.
+
+### Catalog
+
+- Admit the latest open local models every week. Text models are admitted only
+  when every fact comes from the shipped artifact; image and video releases
+  without a built-in workflow are fit-only and labelled *workflow coming*.
+  Auto-admitted entries are marked *auto-sourced*, and unsourced facts stay
+  `unknown`.
+- Filter by recency with `--month 1|2|3` on `recommend` and `catalog`, `m` in
+  the terminal UI, and "Released in" in the GUI.
+- Add review-gated weekly image and video enrichment from Hugging Face,
+  including current LFS metadata (`lfs.sha256`).
+- Cut `recommend`, `can-run`, and `catalog` startup to about 10 ms by
+  compiling validation patterns once instead of per model.
+
+### Distribution and docs
+
+- Publish a multi-platform container image (`ghcr.io/shashankswe2020-ux/rigspark`)
+  built from the verified release archives. Linux release binaries need glibc
+  2.39 or newer.
+- Rewrite the README and site around Sparky.
+
 ## 2.3.0 - 2026-10-05
 
 ### Local image and video generation

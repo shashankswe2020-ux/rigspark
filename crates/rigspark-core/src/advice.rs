@@ -142,30 +142,42 @@ pub fn throughput(
     let Some(efficiency) = efficiency else {
         return Ok(Throughput::unknown());
     };
-    let label = if matches!(model.architecture, Architecture::Moe) {
-        model.active_params.as_deref()
-    } else {
-        Some(model.params.as_str())
-    };
-    let Some(label) = label else {
+    let Some(bytes) = decode_bytes(model, quant)? else {
         return Ok(Throughput::unknown());
     };
-    let bytes = if let Some(bits) = quant_bits(&quant.name) {
-        (parse_param_count(label)? * bits / 8.0).ceil()
-    } else if matches!(model.architecture, Architecture::Moe) {
-        return Ok(Throughput::unknown());
-    } else {
-        quant.disk_bytes
-    };
-    if bytes <= 0.0 {
-        return Ok(Throughput::unknown());
-    }
     let point = class.mem_bandwidth_gbps * 1e9 * efficiency / bytes;
     Ok(Throughput {
         low_tok_per_sec: (point * 0.7 * 10.0).round() / 10.0,
         high_tok_per_sec: (point * 1.3 * 10.0).round() / 10.0,
         known: true,
     })
+}
+
+/// Bytes read per decoded token (active weights at the quantization's bit width), or `None`
+/// when no sourced estimate exists (1-bit quants, MoE without active params or known bits).
+pub fn decode_bytes(
+    model: &CatalogModel,
+    quant: &Quantization,
+) -> Result<Option<f64>, ValidationError> {
+    if quant.name.eq_ignore_ascii_case("Q1_0") {
+        return Ok(None);
+    }
+    let label = if matches!(model.architecture, Architecture::Moe) {
+        model.active_params.as_deref()
+    } else {
+        Some(model.params.as_str())
+    };
+    let Some(label) = label else {
+        return Ok(None);
+    };
+    let bytes = if let Some(bits) = quant_bits(&quant.name) {
+        (parse_param_count(label)? * bits / 8.0).ceil()
+    } else if matches!(model.architecture, Architecture::Moe) {
+        return Ok(None);
+    } else {
+        quant.disk_bytes
+    };
+    Ok((bytes > 0.0).then_some(bytes))
 }
 
 pub fn verdict(

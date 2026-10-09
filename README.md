@@ -28,7 +28,13 @@
   <a href="https://docs.rs/rigspark-core"><img src="https://img.shields.io/docsrs/rigspark-core?label=docs.rs" alt="docs.rs"></a>
   <a href="rust-toolchain.toml"><img src="https://img.shields.io/badge/rust-1.98%2B-orange.svg?logo=rust" alt="Rust 1.98 or newer"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg" alt="MIT License"></a>
+  <a href="https://buymeacoffee.com/shashanksw9"><img src="https://img.shields.io/badge/Buy%20me%20a%20coffee-support-FFDD00?logo=buymeacoffee&logoColor=black" alt="Buy me a coffee"></a>
 </p>
+
+> **New in 3.0:** a redesigned browser workspace. Every feature is still there,
+> but each control appears only when you need it, and the Models view now loads
+> the full ranked catalog.
+> [See what changed →](CHANGELOG.md#300---2026-10-08)
 
 ---
 
@@ -57,6 +63,9 @@ extract it, and add the folder to `PATH`. Keep `rigspark`, `llmup`, and
 
 The RigSpark binaries need no Node.js, Python, or compiler. Inference backends
 have their own requirements.
+
+> If Sparky helps you, please consider sponsoring the project:
+> [https://buymeacoffee.com/shashanksw9](https://buymeacoffee.com/shashanksw9)
 
 [Cargo, checksums, unsigned macOS archives, and upgrades →](docs/references/guide.md#install)
 · [Docker caveats →](docs/references/guide.md#docker)
@@ -132,8 +141,16 @@ rigspark gui
 Choose a model, inspect the same hardware verdicts, chat, and use agents, skills,
 and MCP tools from the loopback-only browser workspace.
 
+- **One model chip** in the top bar holds the model, runtime, harness, and agent
+  pickers.
+- **Models** lists the whole ranked catalog with search, *Runs well / Slow /
+  Won't fit* filters, and a **Fit settings** popover for context and KV cache.
+- **The inspector** (⌘I, or click Sparky) shows live memory, CPU, disk, and the
+  latest call's token usage. Sparky's mood follows real RAM pressure.
+- **Light and dark themes**, with ⌘1–⌘5 to switch views.
+
 <p align="center">
-  <img src="site/brand/screens/screenshot-gui.webp" alt="RigSpark browser workspace showing local model fit verdicts" width="820">
+  <img src="site/brand/screens/screenshot-gui.webp" alt="The RigSpark workspace Models view ranking local models with yes and slow verdicts, memory fit bars, and estimated tokens per second" width="820">
 </p>
 
 Local chat stays on your machine. Cloud harnesses and external tools can send
@@ -299,8 +316,15 @@ No Node.js or TypeScript tooling is part of the project.
 <p align="center">
   <strong>Let Sparky check your rig.</strong><br>
   <a href="https://github.com/shashankswe2020-ux/rigspark/releases/latest">Download RigSpark</a> ·
-  <a href="https://github.com/shashankswe2020-ux/rigspark">Star on GitHub</a>
+  <a href="https://github.com/shashankswe2020-ux/rigspark">Star on GitHub</a> ·
+  <a href="https://buymeacoffee.com/shashanksw9">Buy me a coffee</a>
 </p>
+
+## Support RigSpark
+
+RigSpark is free, MIT-licensed, and built in spare time. If it saved you a
+download that would never have run, you can
+[buy me a coffee ☕](https://buymeacoffee.com/shashanksw9).
 
 ---
 
