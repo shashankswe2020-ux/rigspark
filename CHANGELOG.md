@@ -1,5 +1,22 @@
 # Changelog
 
+## 3.0.1 - 2026-10-09
+
+### Licensing
+
+- Release archives now include `fonts.OFL.txt`, the SIL Open Font License 1.1
+  for the Inter and JetBrains Mono fonts that `rigspark-gui` has embedded since
+  3.0.0. `THIRD-PARTY.md` lists both fonts with their versions and upstreams.
+- Correct the copyright notices in the font license shipped with the GUI and
+  the site: they named Bricolage Grotesque instead of the fonts RigSpark
+  actually ships (Inter 4.001 and JetBrains Mono 2.211).
+
+### Tests
+
+- The full-catalog ranking test no longer depends on the CI runner's live
+  memory. Route tests check the limit bounds, and the full-catalog properties
+  are checked against fixed hardware.
+
 ## 3.0.0 - 2026-10-08
 
 ### A redesigned workspace

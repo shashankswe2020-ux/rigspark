@@ -102,6 +102,10 @@ fn native_package_files(root: &Path, release: &Path, extension: &str) -> Vec<(St
             root.join("vendor/crossterm/LICENSE"),
         ),
         (
+            "fonts.OFL.txt".into(),
+            root.join("crates/rigspark-gui/static/fonts/LICENSE-OFL.txt"),
+        ),
+        (
             "CROSSTERM-PATCH.md".into(),
             root.join("vendor/crossterm/RIGSPARK-PATCH.md"),
         ),
@@ -352,7 +356,7 @@ mod tests {
         let release = root.join("release");
         for extension in ["", ".exe"] {
             let files = native_package_files(&root, &release, extension);
-            assert_eq!(files.len(), 10);
+            assert_eq!(files.len(), 11);
             for (index, name) in ["llmup", "rigspark", "rigspark-gui"].iter().enumerate() {
                 let name = format!("{name}{extension}");
                 assert_eq!(files[index], (name.clone(), release.join(name)));
@@ -365,6 +369,11 @@ mod tests {
             assert!(files.contains(&(
                 "crossterm.LICENSE".into(),
                 root.join("vendor/crossterm/LICENSE")
+            )));
+            // rigspark-gui embeds Inter and JetBrains Mono; OFL-1.1 must travel with them.
+            assert!(files.contains(&(
+                "fonts.OFL.txt".into(),
+                root.join("crates/rigspark-gui/static/fonts/LICENSE-OFL.txt")
             )));
             assert!(files.contains(&(
                 "CROSSTERM-PATCH.md".into(),

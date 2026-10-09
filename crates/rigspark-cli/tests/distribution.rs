@@ -170,6 +170,33 @@ fn patched_terminal_dependency_license_can_be_packaged_and_verified() {
 }
 
 #[test]
+fn embedded_font_license_can_be_packaged_and_verified() {
+    let directory = tempfile::tempdir().unwrap();
+    let source = directory.path().join("binary");
+    executable_fixture(&source, b"native fixture");
+    let license = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../rigspark-gui/static/fonts/LICENSE-OFL.txt");
+    let output = directory.path().join("package");
+    package_directory(
+        &output,
+        env!("CARGO_PKG_VERSION"),
+        "aarch64-apple-darwin",
+        &[
+            ("llmup", source.as_path()),
+            ("rigspark", source.as_path()),
+            ("rigspark-gui", source.as_path()),
+            ("fonts.OFL.txt", license.as_path()),
+        ],
+    )
+    .unwrap();
+    verify_directory(&output).unwrap();
+    assert_eq!(
+        fs::read(output.join("fonts.OFL.txt")).unwrap(),
+        fs::read(license).unwrap()
+    );
+}
+
+#[test]
 fn public_binaries_and_gui_round_trip_unsigned_on_unix_and_windows() {
     for (target, names) in [
         (

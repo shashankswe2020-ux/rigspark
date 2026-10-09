@@ -1,6 +1,10 @@
-Copyright 2022 The Bricolage Grotesque Project Authors (https://github.com/ateliertriay/bricolage)
+Inter (Version 4.001)
+Copyright 2016 The Inter Project Authors (https://github.com/rsms/inter)
 
-This Font Software is licensed under the SIL Open Font License, Version 1.1.
+JetBrains Mono (Version 2.211)
+Copyright 2020 The JetBrains Mono Project Authors (https://github.com/JetBrains/JetBrainsMono)
+
+This Font Software (both families above) is licensed under the SIL Open Font License, Version 1.1.
 This license is copied below, and is also available with a FAQ at:
 http://scripts.sil.org/OFL
 

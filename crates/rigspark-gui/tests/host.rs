@@ -28,6 +28,34 @@ fn gui_uses_rigspark_branding() {
 }
 
 #[test]
+fn embedded_fonts_carry_their_own_ofl_copyright_notices() {
+    // Copyright strings from the name table of the shipped Inter 4.001 and JetBrains Mono 2.211.
+    for license in [
+        include_str!("../static/fonts/LICENSE-OFL.txt"),
+        include_str!("../../../site/brand/fonts/LICENSE-OFL.txt"),
+    ] {
+        assert!(
+            license.contains(
+                "Copyright 2016 The Inter Project Authors (https://github.com/rsms/inter)"
+            )
+        );
+        assert!(license.contains(
+            "Copyright 2020 The JetBrains Mono Project Authors (https://github.com/JetBrains/JetBrainsMono)"
+        ));
+        assert!(license.contains("SIL OPEN FONT LICENSE Version 1.1"));
+        assert!(
+            !license.contains("Bricolage"),
+            "names a font we do not ship"
+        );
+    }
+    let notice = include_str!("../vendor/README.md");
+    for font in ["Inter | 4.001", "JetBrains Mono | 2.211"] {
+        assert!(notice.contains(font), "THIRD-PARTY.md missing {font}");
+    }
+    assert!(notice.contains("fonts.OFL.txt"));
+}
+
+#[test]
 fn models_and_chat_are_the_only_generation_surfaces() {
     let index = include_str!("../static/index.html");
     let generation = include_str!("../static/generate.js");
