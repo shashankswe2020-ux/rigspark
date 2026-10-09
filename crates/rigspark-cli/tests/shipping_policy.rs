@@ -256,6 +256,20 @@ fn vendored_browser_libraries_match_their_pinned_hashes_and_licenses() {
 }
 
 #[test]
+fn guide_media_references_exist() {
+    let guide = read("docs/references/guide.md");
+    let mut found = 0;
+    for (index, _) in guide.match_indices("src=\"../../assets/") {
+        let start = index + "src=\"../../".len();
+        let end = start + guide[start..].find('"').unwrap();
+        let path = &guide[start..end];
+        assert!(root().join(path).is_file(), "{path}");
+        found += 1;
+    }
+    assert!(found > 0);
+}
+
+#[test]
 fn readme_documents_native_install_and_primary_workflows() {
     let readme = read("README.md");
     for required in [

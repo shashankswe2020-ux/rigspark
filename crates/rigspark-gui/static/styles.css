@@ -4443,6 +4443,13 @@ input.switch:checked::after {
   border-radius: 8px;
 }
 
+/* `.field input` stretches inputs to the row; keep picker checkboxes natural. */
+.field .agent-skill-option input {
+  flex: none;
+  width: auto;
+  padding: 0;
+}
+
 .glass-form .ghost-btn {
   background: var(--sel);
 }

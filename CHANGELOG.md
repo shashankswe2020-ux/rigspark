@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- GUI: the "Skills this agent loads" checkboxes in the Library agent editor no
+  longer stretch to half the row and squeeze each skill name onto several lines.
+
+### Docs
+
+- The guide's agents/skills and connectors recordings show the 3.0 interface.
+
 ## 3.0.1 - 2026-10-09
 
 ### Licensing
