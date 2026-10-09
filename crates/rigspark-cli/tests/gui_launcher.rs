@@ -165,18 +165,58 @@ async fn missing_sibling_fails_closed_without_echoing_install_path() {
 mod processes {
     use super::*;
     use gui_launcher::{GuiSignal, launch_with};
-    use std::{future::pending, os::unix::fs::PermissionsExt, time::Duration};
+    use std::{
+        future::pending, io::Write, os::unix::fs::PermissionsExt, path::Path, sync::OnceLock,
+        time::Duration,
+    };
+
+    const DISPATCHER: &str = "#!/bin/sh\n. \"$0.body\"\n";
+
+    // macOS assesses every newly created executable on first exec, serialized
+    // system-wide; a fresh script per fixture made spawn latency (not the
+    // launcher) consume the bounded test budgets under parallel load. Fixtures
+    // therefore hard-link one pre-warmed dispatcher that sources `$0.body`.
+    fn dispatcher() -> &'static Path {
+        static DISPATCHER_PATH: OnceLock<PathBuf> = OnceLock::new();
+        DISPATCHER_PATH.get_or_init(|| {
+            let root = Path::new(env!("CARGO_TARGET_TMPDIR"));
+            let path = root.join("gui-launcher-dispatcher.sh");
+            let current = std::fs::read(&path).is_ok_and(|bytes| bytes == DISPATCHER.as_bytes())
+                && std::fs::metadata(&path)
+                    .is_ok_and(|metadata| metadata.permissions().mode() & 0o777 == 0o700);
+            if !current {
+                let mut file = tempfile::NamedTempFile::new_in(root).unwrap();
+                file.write_all(DISPATCHER.as_bytes()).unwrap();
+                file.as_file()
+                    .set_permissions(std::fs::Permissions::from_mode(0o700))
+                    .unwrap();
+                file.persist(&path).unwrap();
+            }
+            let warm = tempfile::tempdir_in(root).unwrap();
+            let link = warm.path().join("warm");
+            std::fs::hard_link(&path, &link).unwrap();
+            std::fs::write(warm.path().join("warm.body"), "exit 0\n").unwrap();
+            assert!(
+                std::process::Command::new(&link)
+                    .status()
+                    .unwrap()
+                    .success()
+            );
+            path
+        })
+    }
 
     fn fixture(body: &str, no_open: bool) -> (tempfile::TempDir, LaunchSpec) {
         fixture_with_options(body, GuiOptions::new(None, no_open).unwrap())
     }
 
     fn fixture_with_options(body: &str, options: GuiOptions) -> (tempfile::TempDir, LaunchSpec) {
-        let directory = tempfile::tempdir().unwrap();
+        let directory = tempfile::tempdir_in(env!("CARGO_TARGET_TMPDIR")).unwrap();
         let spec = LaunchSpec::new(&directory.path().join("llmup"), options).unwrap();
-        std::fs::write(spec.executable(), format!("#!/bin/sh\n{body}\n")).unwrap();
-        std::fs::set_permissions(spec.executable(), std::fs::Permissions::from_mode(0o700))
-            .unwrap();
+        std::fs::hard_link(dispatcher(), spec.executable()).unwrap();
+        let mut script = spec.executable().as_os_str().to_owned();
+        script.push(".body");
+        std::fs::write(script, format!("{body}\n")).unwrap();
         (directory, spec)
     }
 
@@ -442,6 +482,9 @@ mod processes {
     #[tokio::test]
     async fn non_executable_files_directories_and_symlinks_fail_closed() {
         let (directory, spec) = fixture("exit 0", true);
+        // Replace the shared hard link so the dispatcher keeps its mode.
+        std::fs::remove_file(spec.executable()).unwrap();
+        std::fs::write(spec.executable(), "#!/bin/sh\nexit 0\n").unwrap();
         std::fs::set_permissions(spec.executable(), std::fs::Permissions::from_mode(0o600))
             .unwrap();
         assert_eq!(
