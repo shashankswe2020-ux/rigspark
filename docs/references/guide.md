@@ -482,7 +482,7 @@ short agentic loop, and generated **images and graphs render inline** in the
 panel (served from a validated, loopback-only artifacts endpoint).
 
 <div align="center">
-<img src="../../assets/equation-solver-graph.gif" alt="An Equation Solver agent solving a quadratic with a code tool and rendering the graph inline" width="800" />
+<img src="../../assets/gui-library.gif" alt="Library view: saving the Explain-like-I'm-new starter skill, then a Code reviewer agent that loads it" width="800" />
 </div>
 
 Attach **Model Context Protocol** servers under **Connectors** — local `stdio`
@@ -490,7 +490,7 @@ commands or loopback HTTP/SSE only. Enable a connector and its tools become
 available to the model:
 
 <div align="center">
-<img src="../../assets/connectors.gif" alt="Approving a live read-only WHOOP MCP call and rendering a health briefing" width="800" />
+<img src="../../assets/gui-connectors.gif" alt="An attached MCP connector, then approving its tool call in chat before the result is used (recorded against a deterministic demo connector)" width="800" />
 </div>
 
 ---

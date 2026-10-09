@@ -218,6 +218,41 @@ async fn journeys(client: &Client, origin: &str, artifacts: &std::path::Path) ->
     Ok(())
 }
 
+async fn library(client: &Client, origin: &str) -> TestResult {
+    client.goto(origin).await?;
+    click(client, ".rail-item[data-view=library]").await?;
+    click(client, "[data-library-tab=skills]").await?;
+    click(client, "[data-starter='skill:explain']").await?;
+    wait_for(client, "!document.querySelector('#skill-form').hidden && document.querySelector('#skill-name').value === \"Explain like I'm new\"").await?;
+    click(client, "#skill-form button[type=submit]").await?;
+    wait_for(client, "document.querySelector('#skill-form').hidden && document.querySelector('#skill-list')?.textContent.includes(\"Explain like I'm new\")").await?;
+    click(client, "[data-library-tab=agents]").await?;
+    click(client, "[data-starter='agent:reviewer']").await?;
+    wait_for(client, "!document.querySelector('#agent-form').hidden && document.querySelector('#agent-skills .agent-skill-option input[type=checkbox]')").await?;
+    // The generic `.field input` sizing must not stretch the picker checkbox.
+    wait_for(client, "(() => { const option = document.querySelector('#agent-skills .agent-skill-option'); const box = option.querySelector('input').getBoundingClientRect(); return box.width <= 20 && option.getBoundingClientRect().height <= 28; })()")
+        .await
+        .map_err(|error| format!("agent skill picker layout is broken: {error}"))?;
+    click(client, "#agent-skills .agent-skill-option input").await?;
+    click(client, "#agent-form button[type=submit]").await?;
+    wait_for(client, "document.querySelector('#agent-form').hidden && document.querySelector('#agent-list')?.textContent.includes('Code reviewer')").await?;
+    // Later viewports share the fixture home; leave the library empty again.
+    click(client, "#agent-list .connector-remove").await?;
+    wait_for(
+        client,
+        "!document.querySelector('#agent-list .library-card')",
+    )
+    .await?;
+    click(client, "[data-library-tab=skills]").await?;
+    click(client, "#skill-list .connector-remove").await?;
+    wait_for(
+        client,
+        "!document.querySelector('#skill-list .library-card')",
+    )
+    .await?;
+    Ok(())
+}
+
 async fn mobile_layout(client: &Client, origin: &str, artifacts: &std::path::Path) -> TestResult {
     client.goto(origin).await?;
     wait_for(client, "innerWidth === 390 && innerHeight === 844 && document.documentElement.scrollWidth <= innerWidth").await?;
@@ -425,6 +460,7 @@ async fn main() -> TestResult {
                     models::bonsai(&client, origin.as_str(), 1440, &artifacts).await?;
                     models::tools(&client, origin.as_str()).await?;
                     models::workspace(&client, origin.as_str()).await?;
+                    library(&client, origin.as_str()).await?;
                     client.set_window_size(1280, 900).await?;
                     models::installed(&client, origin.as_str(), 1280, &artifacts).await?;
                 }
