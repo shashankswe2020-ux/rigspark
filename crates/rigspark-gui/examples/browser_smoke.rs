@@ -35,21 +35,106 @@ async fn wait_for_within(client: &Client, expression: &str, limit: Duration) -> 
     Ok(())
 }
 
+// WebDriver rejects elements that are mid-animation (popovers open from opacity 0), still
+// moving, off-screen or covered (e.g. by the sticky header). Under load those windows outlast a plain visibility check, so
+// interactions wait until the element is settled and, for clicks, actually receives the hit.
+const READY: &str = "((node, hit) => { if (!node || !node.isConnected || node.disabled || !node.getClientRects().length || getComputedStyle(node).visibility !== 'visible') return false; for (let n = node; n; n = n.parentElement) { const style = getComputedStyle(n); if (style.display === 'none' || style.opacity === '0') return false; } if (document.getAnimations().some((a) => a.playState === 'running' && a.effect?.getComputedTiming().endTime !== Infinity && a.effect.target instanceof Element && a.effect.target.contains(node))) return false; const r = node.getBoundingClientRect(); const x = r.left + r.width / 2, y = r.top + r.height / 2; if (x < 0 || y < 0 || x > innerWidth || y > innerHeight) { node.scrollIntoView({block: 'center', inline: 'nearest'}); return false; } const key = [r.left, r.top, r.width, r.height].join(); const stable = node.__fixtureRect === key; node.__fixtureRect = key; if (!stable || !hit) return stable; const target = document.elementFromPoint(x, y); if (target === node || node.contains(target)) return true; node.scrollIntoView({block: 'center', inline: 'nearest'}); return false; })";
+
+async fn ready(client: &Client, node: &str, hit: bool) -> TestResult {
+    wait_for(client, &format!("{READY}({node}, {hit})")).await
+}
+
+fn retryable(error: &fantoccini::error::CmdError) -> bool {
+    let text = error.to_string();
+    text.contains("not interactable") || text.contains("click intercepted")
+}
+
+// Chromedriver checks interactability before dispatching input, so a rejected attempt is safe to
+// repeat once the element settles again.
+async fn interact<F, Fut>(
+    client: &Client,
+    node: &str,
+    hit: bool,
+    label: &str,
+    action: F,
+) -> TestResult
+where
+    F: Fn() -> Fut,
+    Fut: std::future::Future<Output = Result<(), fantoccini::error::CmdError>>,
+{
+    for attempt in 1..=5 {
+        ready(client, node, hit)
+            .await
+            .map_err(|error| format!("{label}: {error}"))?;
+        match action().await {
+            Ok(()) => return Ok(()),
+            Err(error) if attempt < 5 && retryable(&error) => {}
+            Err(error) => return Err(format!("{label}: {error}").into()),
+        }
+    }
+    unreachable!()
+}
+
+fn query(css: &str) -> String {
+    format!("document.querySelector({})", json!(css))
+}
+
 async fn click(client: &Client, css: &str) -> TestResult {
-    let selector = json!(css);
-    wait_for(
+    interact(
         client,
-        &format!("(() => {{ const node = document.querySelector({selector}); return node && node.getClientRects().length > 0 && !node.disabled; }})()"),
+        &query(css),
+        true,
+        &format!("click {css}"),
+        || async {
+            client.find(Locator::Css(css)).await?.click().await?;
+            Ok(())
+        },
     )
     .await
-    .map_err(|error| format!("click {css}: {error}"))?;
-    client
-        .find(Locator::Css(css))
-        .await?
-        .click()
-        .await
-        .map_err(|error| format!("click {css}: {error}"))?;
-    Ok(())
+}
+
+// Options have no layout box, so readiness is checked on their select.
+async fn choose(client: &Client, option_css: &str) -> TestResult {
+    let select = format!("{}?.closest('select')", query(option_css));
+    interact(
+        client,
+        &select,
+        true,
+        &format!("choose {option_css}"),
+        || async {
+            client.find(Locator::Css(option_css)).await?.click().await?;
+            Ok(())
+        },
+    )
+    .await
+}
+
+async fn type_into(client: &Client, css: &str, keys: &str, clear: bool) -> TestResult {
+    interact(
+        client,
+        &query(css),
+        false,
+        &format!("type into {css}"),
+        || async {
+            let field = client.find(Locator::Css(css)).await?;
+            if clear {
+                field.clear().await?;
+            }
+            field.send_keys(keys).await
+        },
+    )
+    .await
+}
+
+async fn press_focused(client: &Client, keys: &str) -> TestResult {
+    interact(
+        client,
+        "document.activeElement",
+        false,
+        "press on focused element",
+        || async { client.active_element().await?.send_keys(keys).await },
+    )
+    .await
 }
 
 async fn new_session(client: &Client) -> TestResult {
@@ -144,16 +229,13 @@ async fn fresh_session(client: &Client) -> TestResult {
 
 async fn send(client: &Client, message: &str) -> TestResult {
     let typed = async {
-        let prompt = client.find(Locator::Css("#prompt")).await?;
-        prompt.clear().await?;
-        prompt.send_keys(message).await?;
+        type_into(client, "#prompt", message, true).await?;
         client.execute(MARK_RUN, vec![]).await?;
-        prompt.send_keys("\u{e007}").await
+        type_into(client, "#prompt", "\u{e007}", false).await
     };
     typed
         .await
-        .map_err(|error| format!("send {message:?}: {error}"))?;
-    Ok(())
+        .map_err(|error| format!("send {message:?}: {error}").into())
 }
 
 async fn journeys(client: &Client, origin: &str, artifacts: &std::path::Path) -> TestResult {
@@ -181,7 +263,7 @@ async fn journeys(client: &Client, origin: &str, artifacts: &std::path::Path) ->
     )
     .await
     .map_err(|error| format!("refresh blanked the empty chat: {error}"))?;
-    client.active_element().await?.send_keys("\u{e00c}").await?;
+    press_focused(client, "\u{e00c}").await?;
     wait_for(client, "document.querySelector('#model-pop').hidden").await?;
     send(client, "checkpoint five").await?;
     wait_for(client, "document.querySelector('.message.assistant')?.textContent.includes('Native reply: checkpoint five') && document.querySelector('#a11y-status')?.textContent === 'Response ready.'").await?;
@@ -207,7 +289,7 @@ async fn journeys(client: &Client, origin: &str, artifacts: &std::path::Path) ->
         "document.querySelector('#context-picker')?.getClientRects().length > 0",
     )
     .await?;
-    client.active_element().await?.send_keys("\u{e00c}").await?;
+    press_focused(client, "\u{e00c}").await?;
     wait_for(client, "document.activeElement?.id === 'context-add' && document.querySelector('#context-picker')?.getClientRects().length === 0").await?;
     wait_for(client, "document.documentElement.scrollWidth <= innerWidth").await?;
     wait_for(client, "document.querySelector('#metrics-state')?.dataset.state === 'live' && document.querySelectorAll('.metric-chart').length === 7").await?;
@@ -256,12 +338,7 @@ async fn library(client: &Client, origin: &str) -> TestResult {
 async fn mobile_layout(client: &Client, origin: &str, artifacts: &std::path::Path) -> TestResult {
     client.goto(origin).await?;
     wait_for(client, "innerWidth === 390 && innerHeight === 844 && document.documentElement.scrollWidth <= innerWidth").await?;
-    let prompt = client
-        .wait()
-        .at_most(Duration::from_secs(15))
-        .for_element(Locator::Css("#prompt"))
-        .await?;
-    prompt.click().await?;
+    click(client, "#prompt").await?;
     wait_for(
         client,
         "document.querySelector('button[aria-label=\"Send\"]')?.getClientRects().length > 0",
@@ -293,11 +370,7 @@ async fn chat_lifecycle(client: &Client, origin: &str) -> TestResult {
             vec![json!("Formatting\n\n# Result\n\n- first\n- second\n\n```ts\nconst value = 1;\n```")],
         )
         .await?;
-    client
-        .find(Locator::Css("#prompt"))
-        .await?
-        .send_keys("\u{e009}\u{e007}\u{e000}")
-        .await?;
+    type_into(client, "#prompt", "\u{e009}\u{e007}\u{e000}", false).await?;
     let structured = "(() => { const body = [...document.querySelectorAll('.message.assistant .message-body')].at(-1); const heading = body && [...body.querySelectorAll('h1,h2,h3,h4,h5,h6')].find((node) => node.textContent.trim() === 'Result'); return heading && heading.getClientRects().length > 0 && body.querySelectorAll('li').length === 2 && body.querySelector('pre code')?.textContent.includes('const value = 1;'); })()";
     wait_for(client, structured).await?;
     client.refresh().await?;

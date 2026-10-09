@@ -1,5 +1,5 @@
-use super::{TestResult, click, fresh_session, send, wait_for};
-use fantoccini::{Client, Locator};
+use super::{TestResult, click, fresh_session, send, type_into, wait_for};
+use fantoccini::Client;
 use serde_json::json;
 
 const LAST_REPLY: &str =
@@ -9,11 +9,19 @@ async fn failures(client: &Client, label: &str, checks: &str) -> TestResult {
     let script = format!(
         "const body = {LAST_REPLY}; const failed = []; const check = (name, ok) => {{ if (!ok) failed.push(name); }}; const count = (selector) => body.querySelectorAll(selector).length; {checks}; return failed;"
     );
-    let failed = client.execute(&script, vec![]).await?;
-    if failed != json!([]) {
-        return Err(format!("{label} failed: {failed}").into());
+    // Late layout work (image decode, math, wrapping) can trail the settled reply under load, so a
+    // check only fails if it is still failing after a bounded settle window.
+    let deadline = tokio::time::Instant::now() + std::time::Duration::from_secs(10);
+    loop {
+        let failed = client.execute(&script, vec![]).await?;
+        if failed == json!([]) {
+            return Ok(());
+        }
+        if tokio::time::Instant::now() >= deadline {
+            return Err(format!("{label} failed: {failed}").into());
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(200)).await;
     }
-    Ok(())
 }
 
 async fn number(client: &Client, expression: &str) -> Result<f64, Box<dyn std::error::Error>> {
@@ -47,7 +55,8 @@ async fn stress_affordances(client: &Client, viewport: &str) -> TestResult {
         check('long code', count('pre code') === 1 && body.querySelector('pre').scrollWidth > body.querySelector('pre').clientWidth);
         check('display math', count('.katex-display') === 1 && body.querySelector('.katex-display').textContent.includes('π'));
         const inlineImage = body.querySelector('img.chat-image[src^="data:image/png;base64,"]');
-        check('inline image', inlineImage && inlineImage.getBoundingClientRect().width >= 32 && inlineImage.getBoundingClientRect().height >= 32);
+        const imageBox = inlineImage?.getBoundingClientRect();
+        check(inlineImage ? `inline image ${imageBox.width}x${imageBox.height} complete=${inlineImage.complete}` : `inline image missing (${count('img')} img)`, inlineImage && imageBox.width >= 32 && imageBox.height >= 32);
         check('unsafe nodes', count('iframe, [onclick], #stressXss') === 0 && globalThis.__stressXss !== true);
         const rawHtml = [...body.querySelectorAll('code.raw-html')];
         check('unsafe source formatting', rawHtml.length >= 2 && rawHtml.every((node) => /<\/?(?:iframe|div)/u.test(node.textContent)));
@@ -266,13 +275,11 @@ pub async fn viewport(client: &Client, origin: &str, width: u32) -> TestResult {
     )
     .await?;
 
-    let prompt = client.find(Locator::Css("#prompt")).await?;
-    prompt.clear().await?;
-    prompt.send_keys("FORMAT_MARKDOWN_SCROLL").await?;
+    type_into(client, "#prompt", "FORMAT_MARKDOWN_SCROLL", true).await?;
     client
         .execute("window.scrollTo(0, document.documentElement.scrollHeight); window.__llmupTestRun = true;", vec![])
         .await?;
-    prompt.send_keys("\u{e007}").await?;
+    type_into(client, "#prompt", "\u{e007}", false).await?;
     wait_for(client, "[...document.querySelectorAll('.message.assistant')].at(-1)?.classList.contains('streaming')").await?;
     wait_for(client, "(() => { const scroller = document.scrollingElement; return scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight < 8; })()").await?;
     client.execute("window.scrollTo(0, 200);", vec![]).await?;
