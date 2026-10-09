@@ -106,10 +106,10 @@ jobs:
             target/debug/examples/dialog-smoke.exe
           fi
       - name: Native HTTP and browser journeys
-        # Prefers the runner image's preinstalled ChromeDriver. CHROMEWEBDRIVER has been seen
-        # unset on windows-2022, and macOS Chrome can self-update past the preinstalled driver,
-        # so a missing or major-mismatched driver falls back to the official Chrome for Testing
-        # driver for the Chrome build that will actually launch.
+        # Linux and Windows use the image's Chrome; CHROMEWEBDRIVER has been seen unset on
+        # windows-2022, so a missing or mismatched driver falls back to the official Chrome for
+        # Testing driver for that build. macOS Chrome self-updates between the version check and
+        # launch, so macOS uses a pinned Chrome for Testing browser and driver pair instead.
         run: |
           set -euo pipefail
           exe=""
@@ -122,10 +122,17 @@ jobs:
             version=$(powershell -NoProfile -Command "(Get-Item '$chrome').VersionInfo.ProductVersion" | tr -d '\r')
             platform=win64 default_dir="C:/SeleniumWebDrivers/ChromeDriver" exe=.exe
           else
-            chrome="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-            # A staged update is what launches; `--version` can still report the old build.
-            version=$(defaults read "/Applications/Google Chrome.app/Contents/Info" CFBundleShortVersionString)
-            platform=mac-arm64 default_dir=""
+            platform=mac-arm64
+            stable=$(curl -fsSL https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json | jq -e '.channels.Stable')
+            version=$(jq -er '.version' <<< "$stable")
+            for kind in chrome chromedriver; do
+              url=$(jq -er --arg kind "$kind" --arg platform "$platform" '.downloads[$kind][] | select(.platform == $platform) | .url' <<< "$stable")
+              case "$url" in https://storage.googleapis.com/chrome-for-testing-public/*) ;; *) echo "unexpected $kind URL: $url" >&2; exit 1 ;; esac
+              curl -fsSL "$url" -o "$RUNNER_TEMP/$kind.zip"
+              ditto -x -k "$RUNNER_TEMP/$kind.zip" "$RUNNER_TEMP"
+            done
+            chrome="$RUNNER_TEMP/chrome-$platform/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing"
+            CHROMEWEBDRIVER="$RUNNER_TEMP/chromedriver-$platform" default_dir=""
           fi
           driver=""
           for dir in "${CHROMEWEBDRIVER:-}" "$default_dir"; do
