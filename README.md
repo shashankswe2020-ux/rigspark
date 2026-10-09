@@ -28,6 +28,7 @@
   <a href="https://docs.rs/rigspark-core"><img src="https://img.shields.io/docsrs/rigspark-core?label=docs.rs" alt="docs.rs"></a>
   <a href="rust-toolchain.toml"><img src="https://img.shields.io/badge/rust-1.98%2B-orange.svg?logo=rust" alt="Rust 1.98 or newer"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg" alt="MIT License"></a>
+  <a href="https://buymeacoffee.com/shashanksw9"><img src="https://img.shields.io/badge/Buy%20me%20a%20coffee-support-FFDD00?logo=buymeacoffee&logoColor=black" alt="Buy me a coffee"></a>
 </p>
 
 > **New in 3.0:** a redesigned browser workspace. Every feature is still there,
@@ -312,8 +313,15 @@ No Node.js or TypeScript tooling is part of the project.
 <p align="center">
   <strong>Let Sparky check your rig.</strong><br>
   <a href="https://github.com/shashankswe2020-ux/rigspark/releases/latest">Download RigSpark</a> ·
-  <a href="https://github.com/shashankswe2020-ux/rigspark">Star on GitHub</a>
+  <a href="https://github.com/shashankswe2020-ux/rigspark">Star on GitHub</a> ·
+  <a href="https://buymeacoffee.com/shashanksw9">Buy me a coffee</a>
 </p>
+
+## Support RigSpark
+
+RigSpark is free, MIT-licensed, and built in spare time. If it saved you a
+download that would never have run, you can
+[buy me a coffee ☕](https://buymeacoffee.com/shashanksw9).
 
 ---
 
