@@ -3,7 +3,7 @@ name: Rust Desktop Verification
 on:
   workflow_dispatch:
   push:
-    branches: [feature/rust-backend-migration, feature/rust-migration-follow-up]
+    branches: [main]
     paths:
       - .github/workflows/rust-desktop-verification.yml
       - rust-toolchain.toml
@@ -72,7 +72,7 @@ jobs:
       - name: Native tests
         timeout-minutes: 15
         run: |
-          cargo test --workspace --locked --no-fail-fast -- --nocapture
+          cargo test --workspace --locked --no-fail-fast -- --nocapture --test-threads=2
           cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --locked
       - name: Native build
         run: |
@@ -106,18 +106,57 @@ jobs:
             target/debug/examples/dialog-smoke.exe
           fi
       - name: Native HTTP and browser journeys
-        # Uses the runner image's preinstalled Chrome and matching ChromeDriver.
+        # Linux and Windows use the image's Chrome; CHROMEWEBDRIVER has been seen unset on
+        # windows-2022, so a missing or mismatched driver falls back to the official Chrome for
+        # Testing driver for that build. macOS Chrome self-updates between the version check and
+        # launch, so macOS uses a pinned Chrome for Testing browser and driver pair instead.
         run: |
+          set -euo pipefail
+          exe=""
           if [[ "$RUNNER_OS" == "Linux" ]]; then
             chrome=$(command -v google-chrome)
-            driver="$CHROMEWEBDRIVER/chromedriver"
+            version=$("$chrome" --version | grep -oE '[0-9]+(\.[0-9]+){3}')
+            platform=linux64 default_dir=""
           elif [[ "$RUNNER_OS" == "Windows" ]]; then
             chrome="C:/Program Files/Google/Chrome/Application/chrome.exe"
-            driver="$(cygpath -u "$CHROMEWEBDRIVER")/chromedriver.exe"
+            version=$(powershell -NoProfile -Command "(Get-Item '$chrome').VersionInfo.ProductVersion" | tr -d '\r')
+            platform=win64 default_dir="C:/SeleniumWebDrivers/ChromeDriver" exe=.exe
           else
-            chrome="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-            driver="$CHROMEWEBDRIVER/chromedriver"
+            platform=mac-arm64
+            stable=$(curl -fsSL https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json | jq -e '.channels.Stable')
+            version=$(jq -er '.version' <<< "$stable")
+            for kind in chrome chromedriver; do
+              url=$(jq -er --arg kind "$kind" --arg platform "$platform" '.downloads[$kind][] | select(.platform == $platform) | .url' <<< "$stable")
+              case "$url" in https://storage.googleapis.com/chrome-for-testing-public/*) ;; *) echo "unexpected $kind URL: $url" >&2; exit 1 ;; esac
+              curl -fsSL "$url" -o "$RUNNER_TEMP/$kind.zip"
+              ditto -x -k "$RUNNER_TEMP/$kind.zip" "$RUNNER_TEMP"
+            done
+            chrome="$RUNNER_TEMP/chrome-$platform/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing"
+            CHROMEWEBDRIVER="$RUNNER_TEMP/chromedriver-$platform" default_dir=""
           fi
+          driver=""
+          for dir in "${CHROMEWEBDRIVER:-}" "$default_dir"; do
+            if [[ -n "$dir" ]]; then
+              [[ "$RUNNER_OS" == "Windows" ]] && dir=$(cygpath -u "$dir")
+              if [[ -x "$dir/chromedriver$exe" ]]; then driver="$dir/chromedriver$exe"; break; fi
+            fi
+          done
+          if [[ -z "$driver" ]] && command -v "chromedriver$exe" > /dev/null; then
+            driver=$(command -v "chromedriver$exe")
+          fi
+          if [[ -n "$driver" ]] && [[ "$("$driver" --version | awk '{split($2, v, "."); print v[1]}')" != "${version%%.*}" ]]; then
+            echo "Ignoring $driver: $("$driver" --version) does not match Chrome $version"
+            driver=""
+          fi
+          if [[ -z "$driver" ]]; then
+            url=$(curl -fsSL https://googlechromelabs.github.io/chrome-for-testing/latest-patch-versions-per-build-with-downloads.json \
+              | jq -er --arg build "${version%.*}" --arg platform "$platform" '.builds[$build].downloads.chromedriver[] | select(.platform == $platform) | .url')
+            case "$url" in https://storage.googleapis.com/chrome-for-testing-public/*) ;; *) echo "unexpected driver URL: $url" >&2; exit 1 ;; esac
+            curl -fsSL "$url" -o "$RUNNER_TEMP/chromedriver.zip"
+            unzip -q -o "$RUNNER_TEMP/chromedriver.zip" -d "$RUNNER_TEMP"
+            driver="$RUNNER_TEMP/chromedriver-$platform/chromedriver$exe"
+          fi
+          echo "Chrome $version; driver $driver ($("$driver" --version))"
           bash scripts/native-browser-journeys.sh "$chrome" "$driver" "$RUNNER_TEMP/rust-browser"
       - name: Verification summary
         if: always()

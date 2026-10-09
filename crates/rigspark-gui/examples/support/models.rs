@@ -1,4 +1,7 @@
-use super::{TestResult, choose, click, fresh_session, press_focused, send, type_into, wait_for};
+use super::{
+    TestResult, choose, click, click_within, fresh_session, press_focused, send, type_into,
+    wait_for,
+};
 use fantoccini::Client;
 use serde_json::{Value, json};
 use std::time::Duration;
@@ -420,8 +423,21 @@ pub async fn workspace(client: &Client, origin: &str) -> TestResult {
     )
     .await?;
     type_into(client, "#context-search", "app", false).await?;
-    wait_for(client, &format!("(() => {{ const result = [...document.querySelectorAll('.context-result')].find((node) => node.textContent.includes('src/app.ts')); if (result && {VISIBLE}(result)) result.dataset.fixtureResult = 'true'; return Boolean(result?.dataset.fixtureResult); }})()")).await?;
-    click(client, ".context-result[data-fixture-result]").await?;
+    // Results re-render while the search settles, replacing a tagged node; tag and click again.
+    let mut picked: TestResult = Err("context result never clickable".into());
+    for _ in 0..5 {
+        wait_for(client, &format!("(() => {{ const result = [...document.querySelectorAll('.context-result')].find((node) => node.textContent.includes('src/app.ts')); if (result && {VISIBLE}(result)) result.dataset.fixtureResult = 'true'; return Boolean(result?.dataset.fixtureResult); }})()")).await?;
+        picked = click_within(
+            client,
+            ".context-result[data-fixture-result]",
+            Duration::from_secs(3),
+        )
+        .await;
+        if picked.is_ok() {
+            break;
+        }
+    }
+    picked?;
     wait_for(client, &format!("[...document.querySelectorAll('.context-chip')].some((node) => node.textContent.includes('app.ts') && {VISIBLE}(node))")).await?;
     send(client, "review this file").await?;
     wait_for(

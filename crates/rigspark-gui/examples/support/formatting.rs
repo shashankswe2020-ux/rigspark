@@ -2,6 +2,9 @@ use super::{TestResult, click, fresh_session, send, type_into, wait_for};
 use fantoccini::Client;
 use serde_json::json;
 
+// Mirrors chat.js `messageScroller()`: the log scrolls itself once it overflows.
+const SCROLLER: &str = "(() => { const log = document.querySelector('#messages'); return log.scrollHeight > log.clientHeight + 1 ? log : document.scrollingElement; })()";
+
 const LAST_REPLY: &str =
     "[...document.querySelectorAll('.message.assistant .message-body')].at(-1)";
 
@@ -66,6 +69,9 @@ async fn stress_affordances(client: &Client, viewport: &str) -> TestResult {
         check('actions', body.closest('.message').querySelectorAll('.msg-action').length === 2);
         check('metrics width', Math.abs(body.closest('.message').querySelector('.msg-metrics').clientWidth - body.clientWidth) < 2);
         check('page overflow', document.documentElement.scrollWidth <= innerWidth);
+        // Visually hidden role labels must stay inside their message, or they escape the log's
+        // clipping and stretch the page (seen as phantom page scroll on slow runners).
+        check('role labels contained', [...document.querySelectorAll('.message .message-role')].every((node) => getComputedStyle(node).position !== 'absolute' || node.offsetParent === node.closest('.message')));
         const bodyRect = body.getBoundingClientRect();
         check('message body bounds', bodyRect.left >= 0 && bodyRect.right <= innerWidth + 1);
         for (const selector of ['.markdown-table-wrap', 'pre', '.katex-display', '.chat-image']) {
@@ -277,13 +283,15 @@ pub async fn viewport(client: &Client, origin: &str, width: u32) -> TestResult {
 
     type_into(client, "#prompt", "FORMAT_MARKDOWN_SCROLL", true).await?;
     client
-        .execute("window.scrollTo(0, document.documentElement.scrollHeight); window.__llmupTestRun = true;", vec![])
+        .execute(&format!("const scroller = {SCROLLER}; scroller.scrollTop = scroller.scrollHeight; window.__llmupTestRun = true;"), vec![])
         .await?;
     type_into(client, "#prompt", "\u{e007}", false).await?;
     wait_for(client, "[...document.querySelectorAll('.message.assistant')].at(-1)?.classList.contains('streaming')").await?;
-    wait_for(client, "(() => { const scroller = document.scrollingElement; return scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight < 8; })()").await?;
-    client.execute("window.scrollTo(0, 200);", vec![]).await?;
-    let held = number(client, "window.scrollY").await?;
+    wait_for(client, &format!("(() => {{ const scroller = {SCROLLER}; return scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight < 8; }})()")).await?;
+    client
+        .execute(&format!("{SCROLLER}.scrollTop = 200;"), vec![])
+        .await?;
+    let held = number(client, &format!("{SCROLLER}.scrollTop")).await?;
     wait_for(
         client,
         "!document.querySelector('.message.assistant.streaming')",
@@ -291,7 +299,13 @@ pub async fn viewport(client: &Client, origin: &str, width: u32) -> TestResult {
     .await?;
     near(
         "reader position",
-        number(client, "window.scrollY").await?,
+        number(client, &format!("{SCROLLER}.scrollTop")).await?,
         held,
+    )?;
+    failures(
+        client,
+        "narrow page scroll",
+        "check('page scroll', document.scrollingElement.scrollHeight <= document.scrollingElement.clientHeight + 1)",
     )
+    .await
 }

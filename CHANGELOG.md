@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- GUI: on narrow screens a long conversation could make the whole page
+  scrollable, adding blank space under the chat and stopping the reply from
+  following new text. The screen-reader-only "You"/"Assistant" labels now stay
+  inside their message.
+
+### CI
+
+- Desktop verification runs on `main` again (it only targeted retired migration
+  branches), uses the same `--test-threads=2` as CI, and finds ChromeDriver even
+  when the runner image doesn't set `CHROMEWEBDRIVER`.
+- Browser journeys retry clicks on list items that were re-rendered, and the
+  narrow-screen scroll checks use the chat's real scroller.
+
 ## 3.0.2 - 2026-10-09
 
 ### Support the project

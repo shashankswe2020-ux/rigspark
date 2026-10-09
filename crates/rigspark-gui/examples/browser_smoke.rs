@@ -40,22 +40,25 @@ async fn wait_for_within(client: &Client, expression: &str, limit: Duration) -> 
 // interactions wait until the element is settled and, for clicks, actually receives the hit.
 const READY: &str = "((node, hit) => { if (!node || !node.isConnected || node.disabled || !node.getClientRects().length || getComputedStyle(node).visibility !== 'visible') return false; for (let n = node; n; n = n.parentElement) { const style = getComputedStyle(n); if (style.display === 'none' || style.opacity === '0') return false; } if (document.getAnimations().some((a) => a.playState === 'running' && a.effect?.getComputedTiming().endTime !== Infinity && a.effect.target instanceof Element && a.effect.target.contains(node))) return false; const r = node.getBoundingClientRect(); const x = r.left + r.width / 2, y = r.top + r.height / 2; if (x < 0 || y < 0 || x > innerWidth || y > innerHeight) { node.scrollIntoView({block: 'center', inline: 'nearest'}); return false; } const key = [r.left, r.top, r.width, r.height].join(); const stable = node.__fixtureRect === key; node.__fixtureRect = key; if (!stable || !hit) return stable; const target = document.elementFromPoint(x, y); if (target === node || node.contains(target)) return true; node.scrollIntoView({block: 'center', inline: 'nearest'}); return false; })";
 
-async fn ready(client: &Client, node: &str, hit: bool) -> TestResult {
-    wait_for(client, &format!("{READY}({node}, {hit})")).await
+async fn ready(client: &Client, node: &str, hit: bool, limit: Duration) -> TestResult {
+    wait_for_within(client, &format!("{READY}({node}, {hit})"), limit).await
 }
 
 fn retryable(error: &fantoccini::error::CmdError) -> bool {
     let text = error.to_string();
-    text.contains("not interactable") || text.contains("click intercepted")
+    text.contains("not interactable")
+        || text.contains("click intercepted")
+        || text.contains("stale element")
 }
 
-// Chromedriver checks interactability before dispatching input, so a rejected attempt is safe to
-// repeat once the element settles again.
+// Chromedriver checks interactability and staleness (a re-rendered list) before dispatching input,
+// so a rejected attempt is safe to repeat once the element settles again.
 async fn interact<F, Fut>(
     client: &Client,
     node: &str,
     hit: bool,
     label: &str,
+    limit: Duration,
     action: F,
 ) -> TestResult
 where
@@ -63,7 +66,7 @@ where
     Fut: std::future::Future<Output = Result<(), fantoccini::error::CmdError>>,
 {
     for attempt in 1..=5 {
-        ready(client, node, hit)
+        ready(client, node, hit, limit)
             .await
             .map_err(|error| format!("{label}: {error}"))?;
         match action().await {
@@ -80,11 +83,16 @@ fn query(css: &str) -> String {
 }
 
 async fn click(client: &Client, css: &str) -> TestResult {
+    click_within(client, css, Duration::from_secs(15)).await
+}
+
+async fn click_within(client: &Client, css: &str, limit: Duration) -> TestResult {
     interact(
         client,
         &query(css),
         true,
         &format!("click {css}"),
+        limit,
         || async {
             client.find(Locator::Css(css)).await?.click().await?;
             Ok(())
@@ -101,6 +109,7 @@ async fn choose(client: &Client, option_css: &str) -> TestResult {
         &select,
         true,
         &format!("choose {option_css}"),
+        Duration::from_secs(15),
         || async {
             client.find(Locator::Css(option_css)).await?.click().await?;
             Ok(())
@@ -115,6 +124,7 @@ async fn type_into(client: &Client, css: &str, keys: &str, clear: bool) -> TestR
         &query(css),
         false,
         &format!("type into {css}"),
+        Duration::from_secs(15),
         || async {
             let field = client.find(Locator::Css(css)).await?;
             if clear {
@@ -132,6 +142,7 @@ async fn press_focused(client: &Client, keys: &str) -> TestResult {
         "document.activeElement",
         false,
         "press on focused element",
+        Duration::from_secs(15),
         || async { client.active_element().await?.send_keys(keys).await },
     )
     .await
