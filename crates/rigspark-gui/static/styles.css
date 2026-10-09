@@ -3230,6 +3230,9 @@ input.switch:checked::after {
 }
 
 .message {
+  /* Contains the visually hidden role label; otherwise it escapes the log's clipping and adds
+     phantom page scroll. */
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 6px;
