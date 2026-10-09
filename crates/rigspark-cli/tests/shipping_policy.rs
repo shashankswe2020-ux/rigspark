@@ -126,14 +126,15 @@ fn automatic_admission_merges_only_verified_data_only_changes() {
         "Admission touched files outside the data allow-list; refusing.",
         "gh pr checks \"$URL\" --watch --interval 60 --fail-fast --required",
         "PR diff left the data allow-list; refusing to merge.",
-        "gh pr merge \"$URL\" --admin --squash\n          echo \"merged=true\" >> \"$GITHUB_OUTPUT\"",
+        "(cd \"$RUNNER_TEMP\" && gh pr merge \"$URL\" --repo \"$GITHUB_REPOSITORY\" --admin --squash)\n          echo \"merged=true\" >> \"$GITHUB_OUTPUT\"",
         "MERGE_TOKEN: ${{ secrets.CATALOG_MERGE_TOKEN }}",
         "steps.merge.outputs.merged == 'true' && steps.gate.outputs.publish == 'true'",
         "gh workflow run catalog-publish.yml --ref main",
     ] {
         assert!(admit.contains(required), "{required}");
     }
-    // Deleting the branch would check out main in the detached runner and fail after merging.
+    // Inside the checkout, gh switches the local PR branch back to main after merging, which
+    // fails in the shallow runner (run 37774747796) and skips the publish dispatch.
     assert!(!admit.contains("--delete-branch"));
     // The checks gate precedes the merge, and the publish dispatch follows it.
     assert!(admit.find("gh pr checks").unwrap() < admit.find("gh pr merge").unwrap());
