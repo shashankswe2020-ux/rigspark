@@ -27,6 +27,7 @@ const FILES: &[&str] = &[
     "dompurify.LICENSE",
     "katex.LICENSE",
     "crossterm.LICENSE",
+    "fonts.OFL.txt",
     "CROSSTERM-PATCH.md",
     "THIRD-PARTY.md",
 ];
