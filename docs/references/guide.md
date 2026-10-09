@@ -123,6 +123,12 @@ cargo install rigspark-gui --locked
 Install both crates into the same Cargo `bin` directory (the default) so the CLI
 can find the GUI beside it.
 
+> If Sparky helps you, please consider sponsoring the project:
+> [https://buymeacoffee.com/shashanksw9](https://buymeacoffee.com/shashanksw9)
+>
+> Homebrew prints this after `brew install`; Cargo installs see it at the end
+> of `rigspark --help`.
+
 From a checkout, use the same pinned toolchain:
 
 ```bash

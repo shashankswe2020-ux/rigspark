@@ -64,6 +64,9 @@ extract it, and add the folder to `PATH`. Keep `rigspark`, `llmup`, and
 The RigSpark binaries need no Node.js, Python, or compiler. Inference backends
 have their own requirements.
 
+> If Sparky helps you, please consider sponsoring the project:
+> [https://buymeacoffee.com/shashanksw9](https://buymeacoffee.com/shashanksw9)
+
 [Cargo, checksums, unsigned macOS archives, and upgrades →](docs/references/guide.md#install)
 · [Docker caveats →](docs/references/guide.md#docker)
 
