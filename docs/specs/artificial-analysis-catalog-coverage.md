@@ -120,6 +120,28 @@ runtime and HTTP boundaries use the repository's existing error presentation.
 
 ## Continuous Coverage Gate
 
+### Identity matching contract
+
+An explicit `PublisherMapping` associates an exact Artificial Analysis creator slug and
+release slug with one repository. Names, suffixes and reasoning settings never select a
+repository. Identical mappings are idempotent; conflicting repositories for the same pair
+are an error. Missing mappings remain unmatched, and proprietary rows are separately excluded.
+These associations alone do not verify publisher authority, license, or downloadability.
+
+After publisher resolution, each observation names its original index row ID and pinned
+source. Unknown, unmatched, proprietary or wrong-repository observations are rejected.
+Artifact identity comprises the exact repository, lowercase immutable revision, and sorted
+multiset of lowercase SHA-256/byte-size pairs. Order and file aliases do not affect identity;
+distinct repositories, revisions or weight digests do. Shards are compared individually,
+without inventing an aggregate digest. The same digest with conflicting byte sizes is an
+error. Rows and groups are deterministically sorted, and duplicate observations do not
+inflate group membership.
+
+Inputs are bounded to 10,000 rows, mappings and observations each, with the shared catalog
+weight-manifest validator enforcing file-level constraints. Grouping an empty observation
+set produces no artifacts, not a claim of complete coverage. The publication report must
+reconcile every in-scope row against these groups and report unresolved rows.
+
 The catalog workflow captures a versioned Artificial Analysis inventory before admission,
 then emits a machine-readable report with:
 

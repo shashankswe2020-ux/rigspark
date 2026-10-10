@@ -116,6 +116,33 @@ pub struct PinnedFileSource {
 }
 pub type MlxFile = PinnedFile;
 pub type MlxSource = PinnedFileSource;
+
+impl PinnedFileSource {
+    pub(crate) fn validate_weights(&self) -> Result<f64, ValidationError> {
+        coordinates(&self.repo, &self.revision)?;
+        require(
+            (1..=256).contains(&self.files.len()),
+            "invalid weight manifest cardinality",
+        )?;
+        let mut paths = HashSet::new();
+        let mut total = 0.0;
+        for file in &self.files {
+            model_file(&file.file, 512)?;
+            digest(&file.sha256)?;
+            require(
+                file.file.ends_with(".safetensors") || file.file.ends_with(".gguf"),
+                "weight manifest must contain only safetensors or GGUF weights",
+            )?;
+            require(
+                integer(file.bytes, 1.0) && paths.insert(file.file.as_str()),
+                "invalid or duplicate weight file",
+            )?;
+            total += file.bytes;
+            require(integer(total, 1.0), "weight total overflows")?;
+        }
+        Ok(total)
+    }
+}
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Source {
@@ -209,7 +236,7 @@ pub struct Catalog {
     pub models: Vec<CatalogModel>,
 }
 
-pub(crate) fn coordinates(repo: &str, revision: &str) -> Result<(), ValidationError> {
+pub(crate) fn repository(repo: &str) -> Result<(), ValidationError> {
     require(
         repo.len() <= 200
             && matches(
@@ -217,7 +244,10 @@ pub(crate) fn coordinates(repo: &str, revision: &str) -> Result<(), ValidationEr
                 r"^[a-zA-Z0-9][a-zA-Z0-9._-]*/[a-zA-Z0-9][a-zA-Z0-9._-]*$",
             ),
         "invalid source repository",
-    )?;
+    )
+}
+pub(crate) fn coordinates(repo: &str, revision: &str) -> Result<(), ValidationError> {
+    repository(repo)?;
     require(
         matches(revision, r"^[0-9a-fA-F]{40}$"),
         "invalid pinned source revision",
@@ -445,29 +475,11 @@ impl CatalogModel {
             )?;
         }
         if let Some(weights) = &source.weights {
-            coordinates(&weights.repo, &weights.revision)?;
             require(
-                self.is_advisory_only()
-                    && (1..=256).contains(&weights.files.len())
-                    && self.quantizations.len() == 1,
+                self.is_advisory_only() && self.quantizations.len() == 1,
                 "weight manifests require one advisory-only artifact",
             )?;
-            let mut paths = HashSet::new();
-            let mut total = 0.0;
-            for file in &weights.files {
-                model_file(&file.file, 512)?;
-                digest(&file.sha256)?;
-                require(
-                    file.file.ends_with(".safetensors") || file.file.ends_with(".gguf"),
-                    "weight manifest must contain only safetensors or GGUF weights",
-                )?;
-                require(
-                    integer(file.bytes, 1.0) && paths.insert(file.file.as_str()),
-                    "invalid or duplicate weight file",
-                )?;
-                total += file.bytes;
-                require(integer(total, 1.0), "weight total overflows")?;
-            }
+            let total = weights.validate_weights()?;
             require(
                 total == self.quantizations[0].disk_bytes,
                 "weight manifest size mismatch",
