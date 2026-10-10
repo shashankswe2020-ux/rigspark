@@ -52,6 +52,9 @@ pub fn allowed_request(url: &Url) -> bool {
         return false;
     }
     let segments: Vec<&str> = url.path().trim_start_matches('/').split('/').collect();
+    if url.as_str() == rigspark_core::artificial_analysis::INDEX_URL {
+        return true;
+    }
     match (url.host_str(), url.query(), segments.as_slice()) {
         (Some("ollama.com"), Some("sort=newest"), ["library"]) => true,
         (Some("ollama.com"), None, ["library", repo, "tags"]) => name(repo),

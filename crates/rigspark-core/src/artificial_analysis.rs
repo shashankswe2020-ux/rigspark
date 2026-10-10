@@ -13,15 +13,18 @@ use std::{
 
 pub const MAX_INDEX_HTML_BYTES: usize = 4 * 1024 * 1024;
 pub const MAX_IDENTITY_RECORDS: usize = 10_000;
+pub const INDEX_URL: &str =
+    "https://artificialanalysis.ai/evaluations/artificial-analysis-intelligence-index";
+pub mod coverage;
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct IndexRelease {
     pub slug: String,
     pub name: String,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct IndexCreator {
     pub id: String,
@@ -29,7 +32,7 @@ pub struct IndexCreator {
     pub name: String,
 }
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct IndexModel {
     pub id: String,
@@ -448,25 +451,15 @@ pub fn artifact_groups(
                 observation.model_id
             ),
         )?;
-        observation.source.validate_weights()?;
-        let mut files = Vec::new();
-        for file in &observation.source.files {
-            let sha256 = file.sha256.to_ascii_lowercase();
-            let bytes = file.bytes as u64;
-            if let Some(previous) = sizes.insert(sha256.clone(), bytes) {
+        let identity = artifact_identity(&observation.source)?;
+        for file in &identity.files {
+            if let Some(previous) = sizes.insert(file.sha256.clone(), file.bytes) {
                 require(
-                    previous == bytes,
+                    previous == file.bytes,
                     "conflicting sizes for the same weight digest",
                 )?;
             }
-            files.push(WeightDigest { sha256, bytes });
         }
-        files.sort();
-        let identity = ArtifactIdentity {
-            repo: observation.source.repo.clone(),
-            revision: observation.source.revision.to_ascii_lowercase(),
-            files,
-        };
         groups
             .entry(identity)
             .or_default()
@@ -479,4 +472,22 @@ pub fn artifact_groups(
             model_ids: model_ids.into_iter().collect(),
         })
         .collect())
+}
+
+fn artifact_identity(source: &PinnedFileSource) -> Result<ArtifactIdentity, ValidationError> {
+    source.validate_weights()?;
+    let mut files: Vec<_> = source
+        .files
+        .iter()
+        .map(|file| WeightDigest {
+            sha256: file.sha256.to_ascii_lowercase(),
+            bytes: file.bytes as u64,
+        })
+        .collect();
+    files.sort();
+    Ok(ArtifactIdentity {
+        repo: source.repo.clone(),
+        revision: source.revision.to_ascii_lowercase(),
+        files,
+    })
 }
