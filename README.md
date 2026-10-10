@@ -253,7 +253,7 @@ The tour runs `rigspark recommend`, shows models that do and do not fit, then
 opens the same verdicts and a local chat in `rigspark gui`.
 
 [Watch in 1080p with sound](assets/rigspark.mp4) ·
-[Earlier demo on YouTube](https://youtu.be/MI2wfI1eeCM?si=QA2teeDmeT_fNIqf)
+[Earlier demo on YouTube](https://youtu.be/UdzSAJJlM3w?si=eWOuRJXVVnDZSAU4)
 
 ## Find your next command
 
