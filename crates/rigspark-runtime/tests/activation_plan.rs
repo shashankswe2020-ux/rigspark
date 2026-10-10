@@ -69,6 +69,89 @@ fn error(result: Result<impl std::fmt::Debug, rigspark_runtime::adapters::Backen
 }
 
 #[test]
+fn advisory_only_is_never_auto_selected_or_activated_even_with_bypass() {
+    use rigspark_core::catalog::{AdvisoryReason, Availability};
+    let mut model = universal();
+    model.availability = Some(Availability::AdvisoryOnly {
+        reason: AdvisoryReason::BackendFormatUnsupported,
+    });
+    assert!(auto_backend_order(&model, &roomy()).is_empty());
+    for backend in ["ollama", "llamacpp", "mlx", "lmstudio"] {
+        assert!(
+            error(check_backend(&model, backend, &roomy(), true)).contains("not yet installable")
+        );
+        for bypass in [false, true] {
+            assert!(
+                error(plan_quantization(
+                    &model,
+                    None,
+                    backend,
+                    &roomy(),
+                    options(bypass, None)
+                ))
+                .contains("not yet installable")
+            );
+        }
+    }
+}
+
+#[tokio::test]
+async fn advisory_activation_fails_before_state_access_or_installed_fallback() {
+    use rigspark_core::catalog::{AdvisoryReason, Availability};
+    use rigspark_runtime::{
+        application::{LifecycleOptions, run_native_with_config},
+        state::Config,
+    };
+    let temp = tempfile::tempdir().unwrap();
+    let home = temp.path().join("uncreated-home");
+    let mut config = Config::from_home(&home).unwrap();
+    // If preflight reads state first, this invalid state file produces a different error.
+    config.state = temp.path().join("invalid-state.json");
+    std::fs::write(&config.state, "not a state file").unwrap();
+    let mut model = universal();
+    model.availability = Some(Availability::AdvisoryOnly {
+        reason: AdvisoryReason::BackendFormatUnsupported,
+    });
+    let source_alias = model.source.ollama.clone().unwrap();
+    model.id = "advisory:example".into();
+    let mut catalog = catalog();
+    catalog.models = vec![model];
+    for command in ["up", "switch"] {
+        for query in ["advisory:example", source_alias.as_str()] {
+            for installed in [false, true] {
+                let options = LifecycleOptions {
+                    command: command.into(),
+                    model: Some(query.into()),
+                    backend: None,
+                    port: None,
+                    context: None,
+                    installed,
+                    bypass: installed,
+                    cache: Default::default(),
+                };
+                let result = run_native_with_config(
+                    &options,
+                    &catalog,
+                    None,
+                    &tokio_util::sync::CancellationToken::new(),
+                    config.clone(),
+                )
+                .await;
+                assert!(
+                    error(result).contains("not yet installable"),
+                    "{command} {query}"
+                );
+                assert!(!home.exists());
+                assert_eq!(
+                    std::fs::read_to_string(&config.state).unwrap(),
+                    "not a state file"
+                );
+            }
+        }
+    }
+}
+
+#[test]
 fn backend_preference_is_flag_then_environment_then_user_config() {
     assert_eq!(
         preferred_backend(Some("mlx"), Some("llamacpp"), Some("lmstudio")).as_deref(),

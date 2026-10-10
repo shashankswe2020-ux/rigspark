@@ -1251,6 +1251,7 @@ async fn execute(mut args: Args) -> Result<u8, Box<dyn std::error::Error>> {
     }
     if ["up", "switch", "down"].contains(&args.command.as_str()) && !args.parity {
         let options = args.lifecycle_options()?;
+        rigspark_runtime::application::check_selection_availability(&options, &catalog)?;
         if let Some(selection) = &presentation
             && !(options.command == "down" && args.yes)
             && matches!(

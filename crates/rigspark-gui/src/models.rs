@@ -182,16 +182,22 @@ pub async fn dispatch(host: Arc<Host>, request: Request) -> ApiResult {
         }
         return Err(bad());
     }
-    let (hardware, _) = rigspark_runtime::hardware::detect()
-        .await
-        .map_err(|_| bad())?;
     if path == "/api/hardware" && method == "GET" {
+        let (hardware, _) = rigspark_runtime::hardware::detect()
+            .await
+            .map_err(|_| bad())?;
         return Ok(json_response(json!({"hardware":hardware})));
     }
     let catalog = rigspark_runtime::catalog_update::CatalogStore::official(&host.home)
         .load()
         .map_err(|_| bad())?
         .catalog;
+    if path == "/api/models/up" && method == "POST" {
+        return activate_model(host, request, &catalog).await;
+    }
+    let (hardware, _) = rigspark_runtime::hardware::detect()
+        .await
+        .map_err(|_| bad())?;
     if path == "/api/models/recommended" && method == "GET" {
         let query: BTreeMap<String, String> = url
             .query_pairs()
@@ -273,55 +279,111 @@ pub async fn dispatch(host: Arc<Host>, request: Request) -> ApiResult {
             json!({"models":report["models"],"source":"local-runtime-metadata"}),
         ));
     }
-    if path == "/api/models/up" && method == "POST" {
-        #[derive(Deserialize)]
-        #[serde(rename_all = "camelCase", deny_unknown_fields)]
-        struct Up {
-            model: String,
-            backend: Option<String>,
-            port: Option<u16>,
-            context: Option<u32>,
-            #[serde(default)]
-            installed: bool,
-            #[serde(default)]
-            bypass: bool,
-            kv_cache: Option<rigspark_core::sizing::KvCacheType>,
-            flash_attention: Option<rigspark_runtime::cache::FlashAttention>,
-            prompt_cache: Option<rigspark_runtime::cache::PromptReuse>,
-        }
-        let input: Up = body(request, crate::MAX_REQUEST_BYTES).await?;
-        let options = LifecycleOptions {
-            command: "up".into(),
-            model: Some(input.model),
-            backend: input.backend,
-            port: input.port,
-            context: input.context,
-            installed: input.installed,
-            bypass: input.bypass,
-            cache: rigspark_runtime::cache::CacheFlags {
-                kv: input.kv_cache,
-                flash_attention: input.flash_attention,
-                prompt_reuse: input.prompt_cache,
-            },
-        };
-        if let Err(error) = run_native_with_config(
-            &options,
-            &catalog,
-            Some(&hardware),
-            &host.shutdown,
-            Config::from_home(&host.home).map_err(|_| bad())?,
-        )
-        .await
-        {
-            let message: String = rigspark_core::reports::strip_control(&error.0)
-                .chars()
-                .take(400)
-                .collect();
-            return Ok(crate::error(axum::http::StatusCode::BAD_REQUEST, &message));
-        }
-        let active = active(&host)?;
-        host.ui.lock().await.model = active["modelId"].as_str().unwrap_or("local").into();
-        return Ok(json_response(json!({"active":active})));
-    }
     Err(crate::routes::missing())
+}
+
+async fn activate_model(host: Arc<Host>, request: Request, catalog: &Catalog) -> ApiResult {
+    #[derive(Deserialize)]
+    #[serde(rename_all = "camelCase", deny_unknown_fields)]
+    struct Up {
+        model: String,
+        backend: Option<String>,
+        port: Option<u16>,
+        context: Option<u32>,
+        #[serde(default)]
+        installed: bool,
+        #[serde(default)]
+        bypass: bool,
+        kv_cache: Option<rigspark_core::sizing::KvCacheType>,
+        flash_attention: Option<rigspark_runtime::cache::FlashAttention>,
+        prompt_cache: Option<rigspark_runtime::cache::PromptReuse>,
+    }
+    let input: Up = body(request, crate::MAX_REQUEST_BYTES).await?;
+    let options = LifecycleOptions {
+        command: "up".into(),
+        model: Some(input.model),
+        backend: input.backend,
+        port: input.port,
+        context: input.context,
+        installed: input.installed,
+        bypass: input.bypass,
+        cache: rigspark_runtime::cache::CacheFlags {
+            kv: input.kv_cache,
+            flash_attention: input.flash_attention,
+            prompt_reuse: input.prompt_cache,
+        },
+    };
+    if let Err(error) =
+        rigspark_runtime::application::check_selection_availability(&options, catalog)
+    {
+        return Ok(crate::error(
+            axum::http::StatusCode::BAD_REQUEST,
+            &error.to_string(),
+        ));
+    }
+    let (hardware, _) = rigspark_runtime::hardware::detect()
+        .await
+        .map_err(|_| bad())?;
+    if let Err(error) = run_native_with_config(
+        &options,
+        catalog,
+        Some(&hardware),
+        &host.shutdown,
+        Config::from_home(&host.home).map_err(|_| bad())?,
+    )
+    .await
+    {
+        let message: String = rigspark_core::reports::strip_control(&error.0)
+            .chars()
+            .take(400)
+            .collect();
+        return Ok(crate::error(axum::http::StatusCode::BAD_REQUEST, &message));
+    }
+    let active = active(&host)?;
+    host.ui.lock().await.model = active["modelId"].as_str().unwrap_or("local").into();
+    Ok(json_response(json!({"active":active})))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn advisory_activation_returns_explicit_error_without_touching_state() {
+        use rigspark_core::catalog::{AdvisoryReason, Availability};
+        let directory = tempfile::tempdir().unwrap();
+        let host = Host::new(directory.path(), 4000).unwrap();
+        let config = Config::from_home(directory.path()).unwrap();
+        std::fs::write(&config.state, "invalid state").unwrap();
+        let mut catalog = Catalog::parse(rigspark_core::MODELS_JSON).unwrap();
+        catalog.models.truncate(1);
+        catalog.models[0].availability = Some(Availability::AdvisoryOnly {
+            reason: AdvisoryReason::BackendFormatUnsupported,
+        });
+        let request = Request::builder()
+            .method("POST")
+            .uri("/api/models/up")
+            .header("content-type", "application/json")
+            .body(axum::body::Body::from(
+                json!({"model":catalog.models[0].id,"bypass":true}).to_string(),
+            ))
+            .unwrap();
+        let response = activate_model(host, request, &catalog)
+            .await
+            .unwrap_or_else(|error| panic!("{}: {}", error.0, error.1));
+        assert_eq!(response.status(), axum::http::StatusCode::BAD_REQUEST);
+        let bytes = axum::body::to_bytes(response.into_body(), 4096)
+            .await
+            .unwrap();
+        assert!(
+            std::str::from_utf8(&bytes)
+                .unwrap()
+                .contains("not yet installable")
+        );
+        assert_eq!(
+            std::fs::read_to_string(&config.state).unwrap(),
+            "invalid state"
+        );
+        assert!(!directory.path().join("cache").exists());
+    }
 }

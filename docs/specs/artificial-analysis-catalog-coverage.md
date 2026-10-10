@@ -1,6 +1,6 @@
 # Spec: Artificial Analysis Open-Weights Catalog Coverage
 
-Status: proposed, pending approval · Owner: catalog pipeline · Extends:
+Status: approved, implementation in progress · Owner: catalog pipeline · Extends:
 `catalog-auto-admission.md`
 
 ## Objective
@@ -92,6 +92,31 @@ Rules:
   digest. Distinct parameter sizes or distinct weight revisions remain separate entries.
 - Removal from the current index does not immediately delete a catalog entry. It leaves the
   coverage scope and follows the existing reviewed retirement policy.
+
+### Staged availability rollout
+
+The first availability increment adds schema-v4 reading and lifecycle preflight, without
+republishing or rewriting the bundled schema-v3 catalog. `SCHEMA_VERSION` remains the existing
+maintenance writer version; `MAX_SCHEMA_VERSION` is the highest reader-supported version.
+Publication switches to v4 only when admission and all presentation surfaces support it.
+V4 fields are forbidden in legacy documents, and v4 documents must give every model explicit
+availability. Legacy entries retain their existing source selection; no runnable backend is
+invented for an old Hugging Face-only entry.
+
+For weights that are not installable by a current backend, `source.weights` stores an immutable
+publisher repository/revision and a list of pinned files (`file`, `bytes`, `sha256`). It is
+accepted only for advisory-only entries, with one quantization whose disk size exactly equals
+the manifest sum. This increment supports safetensors and GGUF weight files only; unknown
+formats remain unresolved, not implicitly accepted. Configs and executable repository code
+are not weight files. Manifests are bounded to 256 unique safe paths, and every file has a
+positive integral size and SHA-256. Sharded weights have per-file digests, not a fabricated
+aggregate weight digest.
+
+The guard is shared by CLI and GUI activation and the native runtime application. It runs
+before hardware/backend probing and runtime state access, including explicit installed-model
+selection, source-reference aliases, bypass and already-active/switch shortcuts. Down and
+doctor remain usable for existing runtime state. `ModelUnavailable` is the typed core error;
+runtime and HTTP boundaries use the repository's existing error presentation.
 
 ## Continuous Coverage Gate
 

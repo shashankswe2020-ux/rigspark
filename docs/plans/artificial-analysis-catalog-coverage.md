@@ -11,6 +11,20 @@ catalog publication whenever verified downloadable coverage is incomplete.
 No production catalog publication is part of this plan. Each increment must leave the
 workspace buildable and testable.
 
+## Implementation progress
+
+- Task 1: complete; parser restored on the continuation branch because its original commit
+  was not included in the merge to main.
+- Tasks 2-3: complete; schema-v4 reader, pinned advisory manifests, legacy compatibility,
+  and shared activation preflight verified with full workspace tests, build, strict Clippy,
+  formatting, and native-retirement.
+- Tasks 4-11: pending. No Artificial Analysis models have been imported yet.
+- Rollout detail: production writers and bundled data stay on v3 until admission and
+  presentation are ready. The v4 reader and activation safety ship together.
+- Actual regression targets for tasks 2-3: core `catalog_availability`, runtime
+  `activation_plan` and `catalog_updates`, CLI `public_cli`, and GUI library activation tests.
+  The activation boundary is in runtime `application.rs`, not low-level `lifecycle.rs`.
+
 ## Architecture Decisions
 
 - Artificial Analysis supplies inventory membership and Open Weights classification only.

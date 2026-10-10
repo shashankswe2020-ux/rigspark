@@ -115,6 +115,7 @@ impl RawModel {
             release_date: Some(self.release_date.clone()),
             added_at: None,
             provenance: crate::catalog::EntryProvenance::Curated,
+            availability: prior.and_then(|model| model.availability),
             source: Source {
                 ollama: self
                     .source

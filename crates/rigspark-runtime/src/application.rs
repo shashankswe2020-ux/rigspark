@@ -109,6 +109,39 @@ impl LifecycleOptions {
         Ok(())
     }
 }
+/// Rejects advisory selections before callers probe hardware, confirm activation, or access state.
+pub fn check_selection_availability(
+    options: &LifecycleOptions,
+    catalog: &Catalog,
+) -> Result<(), BackendError> {
+    options.validate()?;
+    if !["up", "switch"].contains(&options.command.as_str()) {
+        return Ok(());
+    }
+    let Some(query) = options.model.as_deref() else {
+        return Ok(());
+    };
+    if let Ok(resolved) = resolve(catalog, query) {
+        resolved
+            .model
+            .ensure_runnable()
+            .map_err(|error| BackendError(error.to_string()))?;
+    }
+    // Installed/bypass selection can use the Ollama reference instead of the catalog ID.
+    let normalized = query.trim().to_ascii_lowercase();
+    for model in &catalog.models {
+        if let Some(reference) = &model.source.ollama
+            && rigspark_core::registry_collector::parse_reference(&reference.to_ascii_lowercase())
+                == rigspark_core::registry_collector::parse_reference(&normalized)
+        {
+            model
+                .ensure_runnable()
+                .map_err(|error| BackendError(error.to_string()))?;
+        }
+    }
+    Ok(())
+}
+
 struct CheckedHttp<'runtime> {
     inner: &'runtime dyn Transport,
     probe: &'runtime NativeProcessProbe,
@@ -226,6 +259,9 @@ impl Activation for ContextActivation<'_> {
     }
 }
 fn compatible(model: &CatalogModel, backend: &str) -> bool {
+    if model.is_advisory_only() {
+        return false;
+    }
     match backend {
         "ollama" => model.source.ollama.is_some(),
         "llamacpp" => model.source.gguf.is_some(),
@@ -302,6 +338,9 @@ pub fn check_backend(
     hardware: &Hardware,
     installed: bool,
 ) -> Result<(), BackendError> {
+    model
+        .ensure_runnable()
+        .map_err(|error| BackendError(error.to_string()))?;
     if !rigspark_core::catalog::BACKENDS.contains(&backend) {
         return Err(BackendError("invalid backend selection".into()));
     }
@@ -337,6 +376,9 @@ pub fn plan_quantization(
     hardware: &Hardware,
     options: PlanOptions,
 ) -> Result<QuantPlan, BackendError> {
+    model
+        .ensure_runnable()
+        .map_err(|error| BackendError(error.to_string()))?;
     if options.simple_switch && backend != "ollama" {
         return Err(BackendError(
             "single-model and delegated runtimes require up to replace models".into(),
@@ -491,6 +533,8 @@ pub async fn run_native_observed(
     cancel: &CancellationToken,
     observer: Option<&LifecycleObserver>,
 ) -> Result<(Value, String), BackendError> {
+    options.validate()?;
+    check_selection_availability(options, catalog)?;
     let config = Config::load().map_err(|error| BackendError(error.to_string()))?;
     run_native_with_config_observed(options, catalog, hardware, cancel, config, observer).await
 }
@@ -539,6 +583,7 @@ pub async fn run_native_with_config_observed(
     observer: Option<&LifecycleObserver>,
 ) -> Result<(Value, String), BackendError> {
     options.validate()?;
+    check_selection_availability(options, catalog)?;
     let observer = observer.filter(|_| options.command != "doctor");
     let store = StateStore::new(config.clone());
     let prior = store

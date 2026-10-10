@@ -102,18 +102,20 @@ pub struct GgufSource {
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
-pub struct MlxFile {
+pub struct PinnedFile {
     pub file: String,
     pub sha256: String,
     pub bytes: f64,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
-pub struct MlxSource {
+pub struct PinnedFileSource {
     pub repo: String,
     pub revision: String,
-    pub files: Vec<MlxFile>,
+    pub files: Vec<PinnedFile>,
 }
+pub type MlxFile = PinnedFile;
+pub type MlxSource = PinnedFileSource;
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Source {
@@ -125,7 +127,31 @@ pub struct Source {
     pub gguf: Option<GgufSource>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub mlx: Option<MlxSource>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub weights: Option<PinnedFileSource>,
 }
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum CatalogBackend {
+    Ollama,
+    Llamacpp,
+    Mlx,
+    Lmstudio,
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum AdvisoryReason {
+    BackendFormatUnsupported,
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(tag = "status", rename_all = "kebab-case", deny_unknown_fields)]
+pub enum Availability {
+    Runnable { backend: CatalogBackend },
+    AdvisoryOnly { reason: AdvisoryReason },
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
+#[error("backend support unavailable: model is advisory-only, not yet installable")]
+pub struct ModelUnavailable;
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum EntryProvenance {
@@ -145,6 +171,8 @@ pub enum RecencyBasis {
     Added,
 }
 pub const SCHEMA_VERSION: u8 = 3;
+/// Reader support precedes the publication rollout; maintenance still emits schema v3.
+pub const MAX_SCHEMA_VERSION: u8 = 4;
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct CatalogModel {
@@ -164,6 +192,8 @@ pub struct CatalogModel {
     pub added_at: Option<String>,
     #[serde(default, skip_serializing_if = "EntryProvenance::is_curated")]
     pub provenance: EntryProvenance,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub availability: Option<Availability>,
     pub source: Source,
     pub quantizations: Vec<Quantization>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -232,6 +262,16 @@ pub fn recency_label(recency: Option<(&str, RecencyBasis)>) -> String {
 }
 
 impl CatalogModel {
+    pub fn is_advisory_only(&self) -> bool {
+        matches!(self.availability, Some(Availability::AdvisoryOnly { .. }))
+    }
+    pub fn ensure_runnable(&self) -> Result<(), ModelUnavailable> {
+        if self.is_advisory_only() {
+            Err(ModelUnavailable)
+        } else {
+            Ok(())
+        }
+    }
     pub fn recency(&self) -> Option<(&str, RecencyBasis)> {
         recency(self.release_date.as_deref(), self.added_at.as_deref())
     }
@@ -291,12 +331,16 @@ impl CatalogModel {
             EntryProvenance::Auto => require(
                 self.added_at.is_some()
                     && self.benchmark_proxy.is_none()
-                    && self.source.ollama.is_some()
-                    && self
-                        .quantizations
-                        .iter()
-                        .all(|quant| quant.sha256.is_some()),
-                "auto entry needs addedAt, a pinned Ollama digest and no benchmarkProxy",
+                    && if self.availability.is_some() {
+                        self.integrity_pinned()
+                    } else {
+                        self.source.ollama.is_some()
+                            && self
+                                .quantizations
+                                .iter()
+                                .all(|quant| quant.sha256.is_some())
+                    },
+                "auto entry needs addedAt, integrity-pinned weights and no benchmarkProxy",
             )?,
         }
         require(
@@ -355,7 +399,8 @@ impl CatalogModel {
             source.ollama.is_some()
                 || source.hf.is_some()
                 || source.gguf.is_some()
-                || source.mlx.is_some(),
+                || source.mlx.is_some()
+                || source.weights.is_some(),
             "missing model source",
         )?;
         for text in [&source.ollama, &source.hf].into_iter().flatten() {
@@ -399,7 +444,75 @@ impl CatalogModel {
                 "MLX manifest size mismatch",
             )?;
         }
+        if let Some(weights) = &source.weights {
+            coordinates(&weights.repo, &weights.revision)?;
+            require(
+                self.is_advisory_only()
+                    && (1..=256).contains(&weights.files.len())
+                    && self.quantizations.len() == 1,
+                "weight manifests require one advisory-only artifact",
+            )?;
+            let mut paths = HashSet::new();
+            let mut total = 0.0;
+            for file in &weights.files {
+                model_file(&file.file, 512)?;
+                digest(&file.sha256)?;
+                require(
+                    file.file.ends_with(".safetensors") || file.file.ends_with(".gguf"),
+                    "weight manifest must contain only safetensors or GGUF weights",
+                )?;
+                require(
+                    integer(file.bytes, 1.0) && paths.insert(file.file.as_str()),
+                    "invalid or duplicate weight file",
+                )?;
+                total += file.bytes;
+                require(integer(total, 1.0), "weight total overflows")?;
+            }
+            require(
+                total == self.quantizations[0].disk_bytes,
+                "weight manifest size mismatch",
+            )?;
+            if let Some(sha) = &self.quantizations[0].sha256 {
+                require(
+                    weights.files.len() == 1 && sha.eq_ignore_ascii_case(&weights.files[0].sha256),
+                    "weight digest must match the single file; sharded weights have per-file digests",
+                )?;
+            }
+        }
+        if let Some(availability) = self.availability {
+            let pinned = match availability {
+                Availability::AdvisoryOnly { .. } => self.integrity_pinned(),
+                Availability::Runnable { backend } => match backend {
+                    CatalogBackend::Ollama => {
+                        self.source.ollama.is_some()
+                            && self
+                                .quantizations
+                                .iter()
+                                .all(|quant| quant.sha256.is_some())
+                    }
+                    CatalogBackend::Llamacpp => self.source.gguf.is_some(),
+                    CatalogBackend::Mlx => self.source.mlx.is_some(),
+                    CatalogBackend::Lmstudio => {
+                        self.source.gguf.is_some() || self.source.mlx.is_some()
+                    }
+                },
+            };
+            require(
+                pinned,
+                "availability requires a matching integrity-pinned source",
+            )?;
+        }
         Ok(())
+    }
+    fn integrity_pinned(&self) -> bool {
+        self.source.weights.is_some()
+            || self.source.gguf.is_some()
+            || self.source.mlx.is_some()
+            || (self.source.ollama.is_some()
+                && self
+                    .quantizations
+                    .iter()
+                    .all(|quant| quant.sha256.is_some()))
     }
 }
 /// The calendar date `months` (1–3) before `today`, clamped to the end of shorter months.
@@ -436,11 +549,19 @@ impl Catalog {
     pub fn parse(raw: &str) -> Result<Self, ValidationError> {
         let mut result: Self = parse_document(raw)?;
         require(
-            (2..=SCHEMA_VERSION).contains(&result.schema_version) && !result.models.is_empty(),
+            (2..=MAX_SCHEMA_VERSION).contains(&result.schema_version) && !result.models.is_empty(),
             "unsupported or empty catalog",
         )?;
         timestamp(&result.generated_at)?;
         for model in &result.models {
+            require(
+                if result.schema_version >= 4 {
+                    model.availability.is_some()
+                } else {
+                    model.availability.is_none() && model.source.weights.is_none()
+                },
+                "schema v4 requires availability; legacy schemas cannot carry v4 fields",
+            )?;
             require(
                 result.schema_version >= 3
                     || (model.provenance.is_curated() && model.added_at.is_none()),

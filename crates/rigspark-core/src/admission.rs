@@ -622,6 +622,7 @@ pub fn build_entry(input: &AdmissionInput) -> Result<CatalogModel, Rejection> {
         release_date: None,
         added_at: Some(input.today.into()),
         provenance: EntryProvenance::Auto,
+        availability: None,
         source: Source {
             ollama: Some(strip_control(&id)),
             ..Default::default()
