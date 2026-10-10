@@ -134,3 +134,50 @@ fn inventory_transport_allowlist_accepts_only_the_exact_public_index() {
         assert!(!allowed_request(&Url::parse(&url).unwrap()));
     }
 }
+
+#[tokio::test]
+async fn admission_collects_verified_weights_and_blocks_activation_of_new_entries() {
+    use rigspark_runtime::artificial_analysis::collect_admission;
+    let mut catalog = Catalog::parse(rigspark_core::MODELS_JSON).unwrap();
+    catalog.models.retain(|model| {
+        model.source.ollama.is_some()
+            && model
+                .quantizations
+                .iter()
+                .all(|quant| quant.sha256.is_some())
+    });
+    catalog.models.truncate(1);
+    let before = serde_json::to_value(&catalog).unwrap();
+    let report = collect_admission(
+        &catalog,
+        &[selection()],
+        &upstream(200),
+        NOW,
+        &CancellationToken::new(),
+    )
+    .await
+    .unwrap();
+    assert!(report.coverage.complete);
+    assert_eq!(report.coverage.covered_advisory_only, 1);
+    let admitted = report.catalog.unwrap();
+    let model = admitted
+        .models
+        .iter()
+        .find(|model| model.is_advisory_only())
+        .unwrap();
+    assert!(model.ensure_runnable().is_err());
+    assert_eq!(model.params, "unknown");
+    assert!(model.context_length.is_none());
+    assert_eq!(serde_json::to_value(&catalog).unwrap(), before);
+    assert!(
+        collect_admission(
+            &catalog,
+            &[selection()],
+            &upstream(403),
+            NOW,
+            &CancellationToken::new()
+        )
+        .await
+        .is_err()
+    );
+}

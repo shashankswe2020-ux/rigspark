@@ -14,6 +14,7 @@ pub struct ValidationError(pub String);
 pub enum Architecture {
     Dense,
     Moe,
+    Unknown,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
@@ -98,7 +99,7 @@ pub struct Model {
     pub id: String,
     pub params: String,
     pub architecture: Architecture,
-    pub context_length: f64,
+    pub context_length: Option<f64>,
     pub kv_bytes_per_token: Option<f64>,
     pub quantizations: Vec<Quantization>,
 }
@@ -293,8 +294,12 @@ fn validate(request: &SizingRequest) -> Result<(), ValidationError> {
     if model.id.is_empty() || model.id.len() > 256 {
         return Err(invalid("invalid model id length"));
     }
-    parse_param_count(&model.params)?;
-    safe_number(model.context_length, 1.0, "contextLength")?;
+    if model.params != "unknown" {
+        parse_param_count(&model.params)?;
+    }
+    if let Some(context) = model.context_length {
+        safe_number(context, 1.0, "contextLength")?;
+    }
     if let Some(context) = request.context {
         safe_number(context, 1.0, "context")?;
         if context > 10_000_000.0 {
@@ -365,7 +370,11 @@ pub fn evaluate(request: &SizingRequest) -> Result<SizingResult, ValidationError
     let hardware = &request.hardware;
     let (memory_kind, usable_bytes) = memory_capacity(hardware);
     let budget = usable_bytes * (1.0 - HEADROOM);
-    let params = parse_param_count(&model.params)?;
+    let params = if model.params == "unknown" {
+        None
+    } else {
+        Some(parse_param_count(&model.params)?)
+    };
     let mut weights = Vec::new();
     let mut required = Vec::new();
     let mut at_context = Vec::new();
@@ -377,9 +386,10 @@ pub fn evaluate(request: &SizingRequest) -> Result<SizingResult, ValidationError
         if bits.is_none() && matches!(model.architecture, Architecture::Moe) {
             return Err(invalid("cannot size MoE with unknown quantization"));
         }
-        let weight = quant
-            .disk_bytes
-            .max(bits.map_or(0.0, |bits| (params * bits / 8.0).ceil()));
+        let weight = quant.disk_bytes.max(
+            bits.zip(params)
+                .map_or(0.0, |(bits, params)| (params * bits / 8.0).ceil()),
+        );
         let legacy = weight + (weight * 0.15).ceil();
         safe_number(legacy, 1.0, "required memory")?;
         let slack = (weight * 0.05).ceil();
@@ -425,7 +435,8 @@ pub fn evaluate(request: &SizingRequest) -> Result<SizingResult, ValidationError
     }
     let fit = if request
         .context
-        .is_some_and(|context| context > model.context_length)
+        .zip(model.context_length)
+        .is_some_and(|(context, limit)| context > limit)
     {
         FitResult {
             fits: false,

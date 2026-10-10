@@ -62,7 +62,7 @@ fn committed_curated_fields_match_bootstrap_except_recorded_corrections() {
             .unwrap();
         let to = &correction["to"];
         match correction["field"].as_str().unwrap() {
-            "contextLength" => model.context_length = to.as_f64().unwrap(),
+            "contextLength" => model.context_length = Some(to.as_f64().unwrap()),
             "license" => model.license = to.as_str().unwrap().into(),
             "kvBytesPerToken" => model.kv_bytes_per_token = to.as_f64(),
             "defaultQuantization" => {
@@ -200,7 +200,7 @@ fn includes_the_official_qwen35_4b_ollama_artifact() {
         .unwrap();
     assert_eq!(model.family, "qwen3.5");
     assert_eq!(model.params, "4.66B");
-    assert_eq!(model.context_length, 262_144.0);
+    assert_eq!(model.context_length, Some(262_144.0));
     assert_eq!(model.source.ollama.as_deref(), Some("qwen3.5:4b"));
     assert_eq!(model.source.hf.as_deref(), Some("Qwen/Qwen3.5-4B"));
     assert_eq!(model.kv_bytes_per_token, None);

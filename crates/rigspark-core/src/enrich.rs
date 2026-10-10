@@ -110,7 +110,7 @@ impl RawModel {
                 .map(|value| strip_control(value)),
             license: self.license.clone(),
             open_weight: self.open_weight,
-            context_length: self.context_length,
+            context_length: Some(self.context_length),
             capabilities: self.capabilities.clone(),
             release_date: Some(self.release_date.clone()),
             added_at: None,

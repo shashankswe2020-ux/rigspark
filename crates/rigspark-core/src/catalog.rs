@@ -169,6 +169,7 @@ pub enum CatalogBackend {
 #[serde(rename_all = "kebab-case")]
 pub enum AdvisoryReason {
     BackendFormatUnsupported,
+    BackendSupportUnverified,
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(tag = "status", rename_all = "kebab-case", deny_unknown_fields)]
@@ -211,7 +212,8 @@ pub struct CatalogModel {
     pub active_params: Option<String>,
     pub license: String,
     pub open_weight: bool,
-    pub context_length: f64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub context_length: Option<f64>,
     pub capabilities: Vec<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub release_date: Option<String>,
@@ -330,7 +332,14 @@ impl CatalogModel {
     pub(crate) fn validate(&self) -> Result<(), ValidationError> {
         nonempty(&self.id)?;
         nonempty(&self.family)?;
-        require(parameter_label(&self.params), "invalid parameter label")?;
+        require(
+            parameter_label(&self.params) || (self.is_advisory_only() && self.params == "unknown"),
+            "invalid parameter label",
+        )?;
+        require(
+            self.is_advisory_only() || !matches!(self.architecture, Architecture::Unknown),
+            "unknown architecture requires advisory-only availability",
+        )?;
         require(
             self.open_weight
                 && !self.license.is_empty()
@@ -338,8 +347,9 @@ impl CatalogModel {
             "catalog requires open-weight license",
         )?;
         require(
-            integer(self.context_length, 1.0)
-                && !self.capabilities.is_empty()
+            self.context_length
+                .map_or(self.is_advisory_only(), |context| integer(context, 1.0))
+                && (self.is_advisory_only() || !self.capabilities.is_empty())
                 && self
                     .capabilities
                     .iter()

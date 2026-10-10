@@ -400,7 +400,9 @@ fn a_quantized_kv_cache_fits_a_long_context_where_f16_does_not() {
         .find(|model| {
             model.source.ollama.is_some()
                 && model.kv_bytes_per_token.is_some()
-                && model.context_length >= 32768.0
+                && model
+                    .context_length
+                    .is_some_and(|context| context >= 32768.0)
         })
         .unwrap();
     let fits = |kv_cache, ram: f64| {

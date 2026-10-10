@@ -269,3 +269,23 @@ fn report_rejects_empty_scope_and_ambiguous_publisher_associations() {
     assert!(evaluate(&rows, &[], &[], &catalog).is_err());
     assert!(evaluate(&[], &[], &[], &catalog).is_err());
 }
+
+#[test]
+fn inventory_rejects_deferred_manifest_instead_of_admitting_only_initial_rows() {
+    let rows = rigspark_core::artificial_analysis::parse_index_html(include_str!(
+        "../fixtures/artificial-analysis-inventory.html"
+    ))
+    .unwrap();
+    let envelope = serde_json::json!({
+        "slug":"artificial-analysis-intelligence-index",
+        "initialModels":rows,
+        "defaultSlugs":["qwen-example"],
+        "manifest":{"path":"/data/public-manifest.txt","key":"synthetic-public-client-key"}
+    });
+    let html = format!(
+        "<script>self.__next_f.push({})</script>",
+        serde_json::json!([1, envelope.to_string()])
+    );
+    let error = rigspark_core::artificial_analysis::parse_index_html(&html).unwrap_err();
+    assert!(error.to_string().contains("partial"));
+}

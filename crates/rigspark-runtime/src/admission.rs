@@ -1003,9 +1003,10 @@ fn correct(
         }
         match field.as_str() {
             "contextLength" => {
-                fixed.context_length = to
-                    .as_f64()
-                    .ok_or_else(|| io::Error::other("invalid context"))?
+                fixed.context_length = Some(
+                    to.as_f64()
+                        .ok_or_else(|| io::Error::other("invalid context"))?,
+                )
             }
             "license" => {
                 fixed.license = to

@@ -15,6 +15,7 @@ pub const MAX_INDEX_HTML_BYTES: usize = 4 * 1024 * 1024;
 pub const MAX_IDENTITY_RECORDS: usize = 10_000;
 pub const INDEX_URL: &str =
     "https://artificialanalysis.ai/evaluations/artificial-analysis-intelligence-index";
+pub mod admission;
 pub mod coverage;
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
@@ -101,6 +102,17 @@ pub fn parse_index_html(raw: &str) -> Result<Vec<IndexModel>, ValidationError> {
         }
     }
     let marker = "\"initialModels\":";
+    static MANIFEST: OnceLock<Regex> = OnceLock::new();
+    let manifest = MANIFEST
+        .get_or_init(|| Regex::new(r#""manifest"\s*:"#).expect("valid deferred manifest pattern"));
+    require(
+        !manifest.is_match(&payload),
+        "partial Artificial Analysis inventory: deferred manifest requires a verified complete source",
+    )?;
+    require(
+        payload.matches(marker).count() <= 1,
+        "ambiguous Artificial Analysis inventory payloads",
+    )?;
     let start = payload
         .find(marker)
         .map(|index| index + marker.len())

@@ -34,7 +34,14 @@ workspace buildable and testable.
   and ambiguous coverage, deterministic replay, path safety and preservation on source errors.
   Full workspace tests, build, strict Clippy, formatting, native-retirement and command-help
   verification passed. No live source requests or model downloads were made during tests.
-- Tasks 7-11: pending. No Artificial Analysis models have been imported yet.
+- Task 7 staging: complete; the user approved explicit unknown advisory facts and separately
+  tracking production-import blockers. Pure immutable-artifact admission, runtime collection,
+  `--admit` candidate snapshots and read-only `--admit --check` are implemented. Existing runnable
+  artifacts and catalog IDs are preserved; legacy migrations require verified pins.
+  Twelve new tests cover unknown facts, deterministic aliases, reuse, conflicting evidence,
+  collision handling, partial inventory rejection and end-to-end staged admission.
+  Full workspace tests, build, strict Clippy, formatting and native-retirement passed.
+- Tasks 8-11: pending. No production Artificial Analysis models have been imported yet.
 - Rollout detail: production writers and bundled data stay on v3 until admission and
   presentation are ready. The v4 reader and activation safety ship together.
 - Actual regression targets for tasks 2-3: core `catalog_availability`, runtime
@@ -289,6 +296,23 @@ honest unknowns.
 - `crates/rigspark-core/data/models.json`
 
 **Estimated scope:** Medium
+
+### Production-import follow-ups (separate from completed task-7 staging)
+
+The user chose to complete staged admission and track these blockers separately:
+
+1. **Complete public inventory:** the live page now exposes 31 initial/default rows and a
+   deferred manifest. The parser rejects that partial source. Review an anonymous complete
+   source before adapting the collector; no authentication or premium bypass.
+2. **Legacy migration pins:** verify official artifacts for six bundled Kimi entries lacking
+   backend pins. Never fabricate pins, drop entries or silently switch their default backend.
+3. **Reviewed production selections and import:** after (1) and (2), populate exact official
+   publisher/export selections, run admission and coverage against the full inventory, and
+   coordinate rollout with tasks 8-10. Production publication remains outside this authorization.
+
+The public-source change was observed during task 7 on 2026-10-10. The observed 11 Open Weights
+rows are a partial initial list, not a complete coverage result. A subsequent live check verified
+that the collector now rejects this response explicitly.
 
 ### Task 8: Present availability in CLI and TUI
 

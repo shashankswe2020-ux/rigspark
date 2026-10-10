@@ -132,6 +132,9 @@ fn upstream_errors_and_empty_inventory_preserve_the_previous_report_and_inputs()
         json!({"status":401,"text":"unauthorized"}),
         json!({"status":200,"text":"<html>no inventory</html>"}),
         json!({"status":200,"text":"<script>self.__next_f.push([1,\"{\\\"initialModels\\\":[]}\"])</script>"}),
+        json!({"status":200,"text":format!("<script>self.__next_f.push({})</script>",json!([1,
+            json!({"initialModels":[],"manifest":{"path":"/data/deferred.txt"}}).to_string()
+        ]))}),
     ] {
         let mut fixture = recorded.clone();
         fixture[INDEX_URL] = response;
@@ -227,5 +230,58 @@ fn ambiguous_catalog_coverage_fails_check_and_publisher_errors_preserve_snapshot
     assert_eq!(
         fs::read(root.path().join("coverage.json")).unwrap(),
         b"verified snapshot"
+    );
+}
+
+#[test]
+fn admission_emits_a_candidate_catalog_and_check_mode_never_writes_it() {
+    let root = tempfile::tempdir().unwrap();
+    setup(root.path());
+    let mut catalog: Value = serde_json::from_str(rigspark_core::MODELS_JSON).unwrap();
+    let pinned = catalog["models"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|model| {
+            model["source"]["ollama"].is_string()
+                && model["quantizations"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .all(|quant| quant["sha256"].is_string())
+        })
+        .unwrap()
+        .clone();
+    catalog["models"] = json!([pinned]);
+    fs::write(root.path().join("catalog.json"), catalog.to_string()).unwrap();
+    let original = fs::read(root.path().join("catalog.json")).unwrap();
+    let output = command(root.path())
+        .args(["--admit", "--check"])
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let report: Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(report["catalog"]["schemaVersion"], 4);
+    assert_eq!(report["catalog"]["models"].as_array().unwrap().len(), 2);
+    let added = &report["catalog"]["models"][1];
+    assert_eq!(added["params"], "unknown");
+    assert_eq!(added["architecture"], "unknown");
+    assert!(added.get("contextLength").is_none());
+    assert_eq!(added["availability"]["status"], "advisory-only");
+    assert!(!root.path().join("coverage.json").exists());
+    assert_eq!(
+        fs::read(root.path().join("catalog.json")).unwrap(),
+        original
+    );
+    let written = command(root.path()).arg("--admit").output().unwrap();
+    assert!(written.status.success());
+    assert_eq!(written.stdout, output.stdout);
+    assert_eq!(
+        fs::read(root.path().join("coverage.json")).unwrap(),
+        output.stdout
     );
 }

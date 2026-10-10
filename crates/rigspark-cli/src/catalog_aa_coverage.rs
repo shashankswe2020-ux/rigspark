@@ -6,7 +6,7 @@ use rigspark_core::{
 };
 use rigspark_runtime::{
     admission::{AdmissionTransport, NativeAdmissionTransport, RecordedAdmissionTransport},
-    artificial_analysis::{PublisherSelection, collect_coverage},
+    artificial_analysis::{PublisherSelection, collect_admission, collect_coverage},
     secure_fs::same_file,
 };
 use std::{
@@ -38,6 +38,9 @@ struct Args {
     /// Emit the report without writes; fail if coverage is incomplete or ambiguous.
     #[arg(long)]
     check: bool,
+    /// Include a merged candidate catalog in the report; never modify the input catalog.
+    #[arg(long)]
+    admit: bool,
 }
 struct Input {
     path: PathBuf,
@@ -103,7 +106,13 @@ async fn run(args: Args) -> Result<bool, Box<dyn Error>> {
             cancel.cancel();
             return Err(io::Error::new(io::ErrorKind::Interrupted, "Artificial Analysis coverage cancelled").into());
         }
-        report = collect_coverage(&catalog, &selections, transport.as_ref(), &now, &cancel) => report?,
+        report = async {
+            if args.admit {
+                collect_admission(&catalog, &selections, transport.as_ref(), &now, &cancel).await
+            } else {
+                collect_coverage(&catalog, &selections, transport.as_ref(), &now, &cancel).await
+            }
+        } => report?,
     };
     let encoded = format!("{}\n", serde_json::to_string_pretty(&report)?);
     if encoded.len() > 16 * 1024 * 1024 {

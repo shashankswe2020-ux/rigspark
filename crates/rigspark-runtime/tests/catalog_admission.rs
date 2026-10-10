@@ -695,7 +695,7 @@ async fn source_backed_corrections_fix_contradicted_curated_facts_with_a_cited_r
         .iter()
         .find(|model| model.id == "mistral:7b")
         .unwrap();
-    assert_eq!(mistral.context_length, 4096.0);
+    assert_eq!(mistral.context_length, Some(4096.0));
     assert_eq!(
         mistral.provenance,
         EntryProvenance::Curated,
@@ -741,5 +741,8 @@ async fn source_backed_corrections_fix_contradicted_curated_facts_with_a_cited_r
     .await
     .unwrap();
     assert!(untouched.corrections.is_empty());
-    assert_eq!(untouched.catalog.unwrap().models[0].context_length, 32768.0);
+    assert_eq!(
+        untouched.catalog.unwrap().models[0].context_length,
+        Some(32768.0)
+    );
 }

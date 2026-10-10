@@ -276,7 +276,10 @@ pub fn build_recommendation(
             legacy_fixed(number(&entry["score"])?, 2),
             list(&capabilities),
             single_line(&model.license)?,
-            model.context_length,
+            model
+                .context_length
+                .map(|value| value.to_string())
+                .unwrap_or_else(|| "unknown".into()),
             single_line(&context_evidence)?,
             single_line(text(&provenance["backend"])?)?,
             legacy_fixed(number(&scores["quality"])?, 2),

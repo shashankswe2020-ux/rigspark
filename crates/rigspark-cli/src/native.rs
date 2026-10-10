@@ -965,12 +965,11 @@ async fn execute(mut args: Args) -> Result<u8, Box<dyn std::error::Error>> {
                 context as u32
             }
             Some(_) => return Err("invalid migration context".into()),
-            None => {
-                resolve(&catalog, to)
-                    .map_err(|_| "target model is ambiguous or unknown; specify --context")?
-                    .model
-                    .context_length as u32
-            }
+            None => resolve(&catalog, to)
+                .map_err(|_| "target model is ambiguous or unknown; specify --context")?
+                .model
+                .context_length
+                .ok_or("target context is unknown; specify --context")? as u32,
         };
         let from = resolve(&catalog, from)
             .map(|resolved| resolved.model.id.as_str())

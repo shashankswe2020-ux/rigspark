@@ -112,6 +112,28 @@ are not weight files. Manifests are bounded to 256 unique safe paths, and every 
 positive integral size and SHA-256. Sharded weights have per-file digests, not a fabricated
 aggregate weight digest.
 
+### Unknown advisory facts (approved task-7 extension)
+
+Schema v4 advisory-only entries may use `params: "unknown"` and `architecture: "unknown"`.
+An absent `contextLength` means unknown, not zero or an invented default. Empty capabilities
+mean none have been sourced. These relaxations do not apply to legacy or runnable catalog
+entries; null fields remain forbidden. Existing known fields keep their numeric/string wire
+representation. An unknown quantization uses the literal `unknown`, never a guessed precision.
+
+Advice retains these entries using verified weight bytes and the existing weights-plus-15%
+memory estimate. That allowance is an estimate, not a publisher-sourced RAM requirement or a
+guarantee that an unsupported runtime can load the model. Unknown parameter counts contribute
+no parameter-quality or speed bonus. Unknown architecture/parameters produce no throughput
+estimate, unknown KV geometry produces no context-capacity estimate, and unknown native context
+cannot be used for a percentage-of-native-context calculation. Plain catalog output must not
+mislabel unknown architecture as dense. Known-model sizing and ranking remain unchanged.
+
+`backend-support-unverified` is an additional advisory reason: a verified GGUF or safetensors
+export does not by itself prove that an adapter supports its architecture. Admission keeps it
+advisory-only until separate backend evidence exists, rather than falsely declaring its format
+unsupported or runnable. Advisory entries expose no supported backend and are never the source
+of the recommendation's suggested activation command.
+
 The guard is shared by CLI and GUI activation and the native runtime application. It runs
 before hardware/backend probing and runtime state access, including explicit installed-model
 selection, source-reference aliases, bypass and already-active/switch shortcuts. Down and
@@ -211,6 +233,7 @@ catalog publication.
 ```bash
 cargo catalog-aa-coverage --publishers-path <reviewed-selections.json> --fixture <recorded.json>
 cargo catalog-aa-coverage --publishers-path <reviewed-selections.json> --check
+cargo catalog-aa-coverage --publishers-path <reviewed-selections.json> --admit --check
 cargo catalog-admit --dry-run
 cargo test --locked -p rigspark-core --test artificial_analysis_coverage
 cargo test --locked -p rigspark-runtime --test artificial_analysis_coverage
@@ -273,6 +296,48 @@ missing catalog artifacts and ambiguous matches. `collapsedConfigurations` count
 sharing an identical **complete set of artifact identities**, not duplicate observations or
 the sum of per-export duplicates. Zero Open Weights rows fail validation rather than producing
 vacuously complete coverage. Publisher errors abort collection and identify the repository.
+
+### Staged admission
+
+`--admit` resolves publisher evidence using the same injected transport and includes a merged
+candidate `catalog` in the report. `--admit --check` is a read-only admission dry run. Neither
+form overwrites the input catalog; normal mode writes the candidate, evidence and coverage in
+the same atomic snapshot. Unresolved rows, ambiguous matches, conflicting licenses or source
+facts, incomplete standard shards and invalid input catalogs abort without writes.
+
+Admission reuses an exact existing artifact, preserving its catalog ID and runnable status.
+Different revisions or digest sets remain distinct. New IDs are deterministic for the observed
+identities, preserve existing IDs on repeated runs, and disambiguate collisions without replacing
+an existing entry. Alias manifests are chosen deterministically. Re-running with no missing
+artifacts preserves the catalog and its generation timestamp.
+
+New entries carry publisher-pinned files and license, source context when available, admission
+date rather than an invented release date, and explicitly unknown unsourced facts. Every new
+entry is advisory-only with `backend-support-unverified`; filenames alone do not establish
+adapter capability. Existing runnable entries are reused rather than converted to advisory-only.
+The merged candidate must pass catalog parsing and complete artifact coverage before it is returned.
+
+When new entries require a v3-to-v4 migration, legacy entries receive availability only when
+their existing default backend source has verified pins. Missing pins abort with the entry ID;
+admission never deletes the entry, guesses a digest or silently switches its default backend.
+The bundled catalog and production writer version remain unchanged until the presentation and
+publication rollout is ready.
+
+### Production-import blockers (2026-10-10 observation)
+
+The task-7 live check found only 31 initial/default index rows (11 Open Weights rows) and a
+separately loaded `manifest`, unlike the earlier 687-row inventory observation. These counts are
+**not** a new complete coverage denominator. The parser now rejects deferred-manifest payloads
+and multiple inventory markers, so partial initialization data cannot pass admission. Supporting
+a complete anonymous public source requires a separately reviewed source-contract update.
+No deferred manifest was fetched or decoded, and no credentials or premium endpoint were used.
+
+Six bundled legacy entries also lack pinned backend artifacts: `kimi-k2-thinking`, `kimi-linear`,
+`kimi-k2:base`, `kimi-k2:instruct`, `kimi-dev-72b` and `kimi-vl-a3b`. Their official weight evidence
+must be resolved before a full bundled-catalog migration. Reviewed production publisher/export
+selections must then be populated against the complete inventory. The user explicitly approved
+finishing the staging implementation while tracking these production-import blockers separately.
+Task 7 does not claim that production models have been imported or that live coverage is complete.
 
 ## Project Structure
 

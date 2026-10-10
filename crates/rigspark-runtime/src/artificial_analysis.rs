@@ -49,6 +49,8 @@ pub struct CollectedCoverage {
     pub source: InventorySource,
     pub inventory: Vec<IndexModel>,
     pub evidence: Vec<PublisherEvidence>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub catalog: Option<Catalog>,
     #[serde(flatten)]
     pub coverage: Coverage,
 }
@@ -150,8 +152,57 @@ pub async fn collect_coverage(
         },
         inventory,
         evidence,
+        catalog: None,
         coverage,
     })
+}
+
+pub async fn collect_admission(
+    catalog: &Catalog,
+    selections: &[PublisherSelection],
+    transport: &dyn AdmissionTransport,
+    checked_at: &str,
+    cancel: &CancellationToken,
+) -> Result<CollectedCoverage, PublisherResolutionError> {
+    use rigspark_core::artificial_analysis::admission::{AdmissionArtifact, admit};
+    let mut collected =
+        collect_coverage(catalog, selections, transport, checked_at, cancel).await?;
+    let mappings: Vec<_> = selections
+        .iter()
+        .map(|selection| selection.publisher.clone())
+        .collect();
+    let artifacts: Vec<_> = collected
+        .evidence
+        .iter()
+        .map(|evidence| AdmissionArtifact {
+            model_ids: evidence.model_ids.clone(),
+            source: evidence.artifact.source.clone(),
+            license: evidence.artifact.license.clone(),
+            context_length: evidence.artifact.context_length,
+        })
+        .collect();
+    if cancel.is_cancelled() {
+        return Err(PublisherResolutionError::Cancelled);
+    }
+    let admitted = admit(
+        catalog,
+        &collected.inventory,
+        &mappings,
+        &artifacts,
+        checked_at,
+    )?;
+    let observations: Vec<_> = artifacts
+        .iter()
+        .flat_map(|artifact| {
+            artifact.model_ids.iter().map(|id| ArtifactObservation {
+                model_id: id.clone(),
+                source: artifact.source.clone(),
+            })
+        })
+        .collect();
+    collected.coverage = evaluate(&collected.inventory, &mappings, &observations, &admitted)?;
+    collected.catalog = Some(admitted);
+    Ok(collected)
 }
 
 #[derive(Debug, thiserror::Error)]
