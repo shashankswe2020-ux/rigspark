@@ -209,8 +209,8 @@ catalog publication.
 ## Commands
 
 ```bash
-cargo catalog-aa-coverage --fixture <recorded.json>
-cargo catalog-aa-coverage --check
+cargo catalog-aa-coverage --publishers-path <reviewed-selections.json> --fixture <recorded.json>
+cargo catalog-aa-coverage --publishers-path <reviewed-selections.json> --check
 cargo catalog-admit --dry-run
 cargo test --locked -p rigspark-core --test artificial_analysis_coverage
 cargo test --locked -p rigspark-runtime --test artificial_analysis_coverage
@@ -219,6 +219,60 @@ cargo clippy --workspace --all-targets --locked -- -D warnings
 cargo fmt --all -- --check
 cargo native-retirement
 ```
+
+### Coverage command and snapshot
+
+`catalog-aa-coverage` always emits a JSON report to stdout after successful collection. Normal
+mode atomically writes that same document to `--out` (default `artificial-analysis-coverage.json`).
+It exits zero for a valid report, even when coverage is incomplete. **Publication must use
+`--check`**, which exits nonzero for unresolved rows, missing artifacts or ambiguous catalog
+matches. Check mode performs no writes, ignores the output destination and does not update
+`GITHUB_STEP_SUMMARY`. Fetch/parse/validation failures emit an error on stderr and exit nonzero
+without replacing an existing report.
+
+The version-1 snapshot contains the typed inventory, publisher evidence, coverage details and
+the source URL, capture timestamp and SHA-256 of the exact fetched HTML. Keeping inventory and
+report in one atomic document prevents a failed run from pairing a new inventory with an old
+report. Reports are capped at 16 MiB. Input/output aliases (including hard links) are rejected,
+symlink outputs are refused, and inputs/output are rechecked for changes before replacement.
+No catalog, publisher-selection file or recorded response is modified.
+
+`--publishers-path` accepts a JSON array of reviewed selections:
+
+```json
+[
+  {
+    "publisher": {
+      "creatorSlug": "example-creator",
+      "releaseSlug": "example-release",
+      "repo": "OfficialPublisher/Example"
+    },
+    "files": ["model.safetensors"]
+  }
+]
+```
+
+Each selection describes one complete export. Multiple exports may share a publisher mapping;
+identical selections are idempotent. Only mappings for current Open Weights rows are fetched.
+Missing mappings remain explicitly unmatched. No real selections are bundled by task 6: the
+default `docs/references/artificial-analysis-publishers.json` must be supplied during admission
+rollout. `--fixture` uses the existing URL-keyed recorded admission-response format and never
+constructs a native HTTP transport. Without it, only the exact public index URL and the existing
+allowlisted publisher endpoints are fetched. `--now <UTC-RFC3339>` makes replay timestamps
+deterministic; otherwise the capture uses the current UTC timestamp.
+
+Coverage compares exact repository/revision/weight digest-size identities against catalog
+weight manifests, MLX weight files (excluding configuration/tokenizer files), and unambiguously
+sized GGUF sources. Runnable sources must agree with the catalog's explicit backend when one
+is declared. An Ollama tag or unpinned Hugging Face link alone does not establish a publisher
+revision and cannot count as coverage. Multiple matching catalog entries are ambiguous, never
+silently collapsed. Missing catalog artifacts include their index row IDs.
+
+The report includes scalar counts and detail arrays for unresolved rows, proprietary exclusions,
+missing catalog artifacts and ambiguous matches. `collapsedConfigurations` counts resolved rows
+sharing an identical **complete set of artifact identities**, not duplicate observations or
+the sum of per-export duplicates. Zero Open Weights rows fail validation rather than producing
+vacuously complete coverage. Publisher errors abort collection and identify the repository.
 
 ## Project Structure
 
@@ -233,8 +287,10 @@ crates/rigspark-core/src/catalog.rs
     Schema-v4 availability types and backward-compatible parsing.
 crates/rigspark-core/tests/artificial_analysis_coverage.rs
 crates/rigspark-runtime/tests/artificial_analysis_coverage.rs
-docs/references/artificial-analysis-inventory.json
-docs/references/artificial-analysis-coverage.json
+docs/references/artificial-analysis-publishers.json
+    Reviewed selections to be populated during catalog admission.
+artificial-analysis-coverage.json
+    Generated combined inventory/evidence/report snapshot, overridable with --out.
 ```
 
 ## Code Style

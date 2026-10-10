@@ -28,7 +28,13 @@ workspace buildable and testable.
   Three shared transport regressions also prove full responses cannot truncate at the exact cap
   or over-allocate on an oversized chunk; bounded range reads retain their existing behavior.
   Final full workspace tests, build, strict Clippy, formatting and native-retirement passed.
-- Tasks 6-11: pending. No Artificial Analysis models have been imported yet.
+- Task 6: complete; deterministic artifact coverage, bounded recorded/live collection and
+  `catalog-aa-coverage` with atomic combined inventory/report snapshots and read-only `--check`.
+  Seven new core, three runtime and seven CLI tests cover counts, identity matching, unresolved
+  and ambiguous coverage, deterministic replay, path safety and preservation on source errors.
+  Full workspace tests, build, strict Clippy, formatting, native-retirement and command-help
+  verification passed. No live source requests or model downloads were made during tests.
+- Tasks 7-11: pending. No Artificial Analysis models have been imported yet.
 - Rollout detail: production writers and bundled data stay on v3 until admission and
   presentation are ready. The v4 reader and activation safety ship together.
 - Actual regression targets for tasks 2-3: core `catalog_availability`, runtime
@@ -249,6 +255,9 @@ writes.
 - No live network is used by tests.
 - `cargo test --locked -p rigspark-core --test artificial_analysis_coverage`
 - `cargo test --locked -p rigspark-runtime --test artificial_analysis_coverage`
+- Task 6 stores inventory, publisher evidence and report in one atomic snapshot instead of
+  independently replacing two files. Reviewed publisher/export selections remain explicit
+  external inputs; production selections and catalog admission are task 7.
 
 ## Phase 3: Catalog Integration
 
