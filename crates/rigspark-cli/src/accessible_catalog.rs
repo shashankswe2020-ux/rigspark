@@ -304,6 +304,7 @@ pub fn build_catalog(
         let architecture = match model.architecture {
             Architecture::Dense => "dense",
             Architecture::Moe => "moe",
+            Architecture::Unknown => "unknown",
         };
         let fit = sizing.fit.reason.unwrap_or("fit");
         let release = single_line(&model.recency_label())?;
@@ -360,7 +361,10 @@ pub fn build_catalog(
             gib(required),
             single_line(&model.license)?,
             if model.open_weight { "yes" } else { "no" },
-            model.context_length,
+            model
+                .context_length
+                .map(|value| value.to_string())
+                .unwrap_or_else(|| "unknown".into()),
             omitted(&capabilities),
             omitted(&supported),
             sources(model)?,

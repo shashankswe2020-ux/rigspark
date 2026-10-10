@@ -75,16 +75,16 @@ impl AdviceOptions {
     }
     pub fn tokens(&self, model: &CatalogModel) -> Option<f64> {
         self.context_percent
-            .map(|percent| {
-                (model.context_length * f64::from(percent) / 100.0)
-                    .floor()
-                    .max(1.0)
-            })
+            .zip(model.context_length)
+            .map(|(percent, limit)| (limit * f64::from(percent) / 100.0).floor().max(1.0))
             .or(self.context)
     }
 }
 
 pub fn backends(model: &CatalogModel, hardware: &Hardware) -> Vec<&'static str> {
+    if model.is_advisory_only() {
+        return Vec::new();
+    }
     let mut result = Vec::new();
     if model.source.ollama.is_some() {
         result.push("ollama");
@@ -147,14 +147,15 @@ fn recommend_inner(
         usable = sized.usable_bytes;
         kind = sized.memory_kind;
         let supported = backends(model, hardware);
-        if options
-            .available_backends
-            .as_ref()
-            .is_some_and(|available| {
-                !supported
-                    .iter()
-                    .any(|backend| available.iter().any(|name| name == backend))
-            })
+        if !model.is_advisory_only()
+            && options
+                .available_backends
+                .as_ref()
+                .is_some_and(|available| {
+                    !supported
+                        .iter()
+                        .any(|backend| available.iter().any(|name| name == backend))
+                })
         {
             continue;
         }
@@ -169,7 +170,11 @@ fn recommend_inner(
         let required = fit
             .required_bytes
             .ok_or_else(|| ValidationError("missing fitting size".into()))?;
-        let param_class = ((parse_param_count(&model.params)?.log10() - 9.0) / 3.0).clamp(0.0, 1.0);
+        let param_class = if model.params == "unknown" {
+            0.0
+        } else {
+            ((parse_param_count(&model.params)?.log10() - 9.0) / 3.0).clamp(0.0, 1.0)
+        };
         let quality = model
             .benchmark_proxy
             .map_or(param_class, |proxy| 0.5 * param_class + 0.5 * proxy);
@@ -186,10 +191,14 @@ fn recommend_inner(
         } else {
             0.2
         };
-        let speed = (bandwidth
-            * (4.7 / quant_bits(&quant.name).unwrap_or(4.7)).clamp(0.0, 1.0)
-            * (7e9 / parse_param_count(active)?))
-        .clamp(0.0, 1.0);
+        let speed = if active == "unknown" || matches!(model.architecture, Architecture::Unknown) {
+            0.0
+        } else {
+            (bandwidth
+                * (4.7 / quant_bits(&quant.name).unwrap_or(4.7)).clamp(0.0, 1.0)
+                * (7e9 / parse_param_count(active)?))
+            .clamp(0.0, 1.0)
+        };
         let (day, _) = model
             .recency()
             .ok_or_else(|| ValidationError("catalog entry has no recency date".into()))?;
@@ -223,6 +232,9 @@ fn recommend_inner(
         if model.provenance == crate::catalog::EntryProvenance::Auto {
             entry["provenance"] = json!("auto");
         }
+        if let Some(availability) = model.availability {
+            entry["availability"] = json!(availability);
+        }
         if detailed {
             entry["throughputEvidence"] = json!({"backend":backend,"source":"offline-estimate","unknownReason":if estimate.known{None}else{Some("no-sourced-performance-profile")}});
             entry["scores"] = json!({"quality":quality,"fit":fit_score,"speed":speed,"recency":recency,"capability":capability});
@@ -242,16 +254,15 @@ fn recommend_inner(
             entry["kvPrecision"] = json!(KvCacheType::label(options.kv_cache));
         } else if options.max_context {
             let maximum = sized.max_context[index];
-            entry["maxContextTokens"] =
-                json!(maximum.map(|tokens| tokens.min(model.context_length)));
-            entry["boundBy"] =
-                json!(
-                    maximum.map_or("unknown", |tokens| if tokens < model.context_length {
-                        "hardware"
-                    } else {
-                        "model"
-                    })
-                );
+            entry["maxContextTokens"] = json!(
+                maximum
+                    .zip(model.context_length)
+                    .map(|(tokens, limit)| tokens.min(limit))
+            );
+            entry["boundBy"] = json!(maximum.zip(model.context_length).map_or(
+                "unknown",
+                |(tokens, limit)| if tokens < limit { "hardware" } else { "model" }
+            ));
             entry["kvPrecision"] = json!(KvCacheType::label(options.kv_cache));
         }
         entries.push((
@@ -279,7 +290,8 @@ fn recommend_inner(
         })
         .collect();
     let command = ranked
-        .first()
+        .iter()
+        .find(|entry| entry["availability"]["status"] != "advisory-only")
         .and_then(|entry| entry["id"].as_str())
         .map(|id| format!("rigspark up {id}"));
     Ok(

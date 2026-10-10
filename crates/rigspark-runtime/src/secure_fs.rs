@@ -6,6 +6,10 @@ use std::{
     path::{Component, Path, PathBuf},
 };
 
+pub fn same_file(left: &Path, right: &Path) -> io::Result<bool> {
+    same_file::is_same_file(left, right)
+}
+
 #[derive(Debug)]
 pub struct Directory {
     directory: Dir,

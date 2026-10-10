@@ -1,6 +1,6 @@
 # Spec: Artificial Analysis Open-Weights Catalog Coverage
 
-Status: proposed, pending approval · Owner: catalog pipeline · Extends:
+Status: approved, implementation in progress · Owner: catalog pipeline · Extends:
 `catalog-auto-admission.md`
 
 ## Objective
@@ -93,7 +93,115 @@ Rules:
 - Removal from the current index does not immediately delete a catalog entry. It leaves the
   coverage scope and follows the existing reviewed retirement policy.
 
+### Staged availability rollout
+
+The first availability increment adds schema-v4 reading and lifecycle preflight, without
+republishing or rewriting the bundled schema-v3 catalog. `SCHEMA_VERSION` remains the existing
+maintenance writer version; `MAX_SCHEMA_VERSION` is the highest reader-supported version.
+Publication switches to v4 only when admission and all presentation surfaces support it.
+V4 fields are forbidden in legacy documents, and v4 documents must give every model explicit
+availability. Legacy entries retain their existing source selection; no runnable backend is
+invented for an old Hugging Face-only entry.
+
+For weights that are not installable by a current backend, `source.weights` stores an immutable
+publisher repository/revision and a list of pinned files (`file`, `bytes`, `sha256`). It is
+accepted only for advisory-only entries, with one quantization whose disk size exactly equals
+the manifest sum. This increment supports safetensors and GGUF weight files only; unknown
+formats remain unresolved, not implicitly accepted. Configs and executable repository code
+are not weight files. Manifests are bounded to 256 unique safe paths, and every file has a
+positive integral size and SHA-256. Sharded weights have per-file digests, not a fabricated
+aggregate weight digest.
+
+### Unknown advisory facts (approved task-7 extension)
+
+Schema v4 advisory-only entries may use `params: "unknown"` and `architecture: "unknown"`.
+An absent `contextLength` means unknown, not zero or an invented default. Empty capabilities
+mean none have been sourced. These relaxations do not apply to legacy or runnable catalog
+entries; null fields remain forbidden. Existing known fields keep their numeric/string wire
+representation. An unknown quantization uses the literal `unknown`, never a guessed precision.
+
+Advice retains these entries using verified weight bytes and the existing weights-plus-15%
+memory estimate. That allowance is an estimate, not a publisher-sourced RAM requirement or a
+guarantee that an unsupported runtime can load the model. Unknown parameter counts contribute
+no parameter-quality or speed bonus. Unknown architecture/parameters produce no throughput
+estimate, unknown KV geometry produces no context-capacity estimate, and unknown native context
+cannot be used for a percentage-of-native-context calculation. Plain catalog output must not
+mislabel unknown architecture as dense. Known-model sizing and ranking remain unchanged.
+
+`backend-support-unverified` is an additional advisory reason: a verified GGUF or safetensors
+export does not by itself prove that an adapter supports its architecture. Admission keeps it
+advisory-only until separate backend evidence exists, rather than falsely declaring its format
+unsupported or runnable. Advisory entries expose no supported backend and are never the source
+of the recommendation's suggested activation command.
+
+The guard is shared by CLI and GUI activation and the native runtime application. It runs
+before hardware/backend probing and runtime state access, including explicit installed-model
+selection, source-reference aliases, bypass and already-active/switch shortcuts. Down and
+doctor remain usable for existing runtime state. `ModelUnavailable` is the typed core error;
+runtime and HTTP boundaries use the repository's existing error presentation.
+
 ## Continuous Coverage Gate
+
+### Identity matching contract
+
+An explicit `PublisherMapping` associates an exact Artificial Analysis creator slug and
+release slug with one repository. Names, suffixes and reasoning settings never select a
+repository. Identical mappings are idempotent; conflicting repositories for the same pair
+are an error. Missing mappings remain unmatched, and proprietary rows are separately excluded.
+These associations alone do not verify publisher authority, license, or downloadability.
+
+After publisher resolution, each observation names its original index row ID and pinned
+source. Unknown, unmatched, proprietary or wrong-repository observations are rejected.
+Artifact identity comprises the exact repository, lowercase immutable revision, and sorted
+multiset of lowercase SHA-256/byte-size pairs. Order and file aliases do not affect identity;
+distinct repositories, revisions or weight digests do. Shards are compared individually,
+without inventing an aggregate digest. The same digest with conflicting byte sizes is an
+error. Rows and groups are deterministically sorted, and duplicate observations do not
+inflate group membership.
+
+Inputs are bounded to 10,000 rows, mappings and observations each, with the shared catalog
+weight-manifest validator enforcing file-level constraints. Grouping an empty observation
+set produces no artifacts, not a claim of complete coverage. The publication report must
+reconcile every in-scope row against these groups and report unresolved rows.
+
+### Publisher resolution contract
+
+The Hugging Face resolver consumes a **reviewed official-publisher association and an explicit
+complete export file selection**. A successful metadata lookup does not establish publisher
+authority: maintainers must verify the association against the publisher's own release page
+before it becomes a collection input. No associations or exports are inferred from display names,
+and this increment does not ship real mappings or import catalog entries.
+
+The resolver reuses the admission transport, reads `/api/models/{owner}/{repo}?blobs=true`, and
+requires an exact repository match, a 40-hex revision, explicit `private: false` and `gated: false`,
+an accepted unambiguous license tag, and agreement with a model-card license when present.
+Every selected file needs publisher LFS SHA-256 and size evidence; a separately reported file
+size must agree. Missing/duplicate files, mixed weight formats, inconsistent digest sizes, unsafe
+paths and invalid manifests fail explicitly. Standard `-00001-of-00002` shard sets must contain
+every index exactly once. Nonstandard export layouts still require a reviewed complete selection;
+filename matching alone is not a general proof of model completeness.
+
+The result records safetensors or GGUF format, pinned files and license, without claiming backend
+support. When listed by the publisher, the root `config.json` is fetched at the resolved immutable
+revision, never at `main`. If no config is listed, config-derived facts and its source URL stay
+explicitly unknown; verified weights are still resolved.
+Only sourced `model_type` and `max_position_embeddings` facts are retained; absent values stay
+unknown. This is the config's position limit, not a claim about runtime-supported context or
+RoPE scaling. Parameter count, attention geometry and backend capability still need separate
+evidence during admission. Repository code is never fetched or executed.
+
+Metadata is capped at 4 MiB, config at 64 KiB, and each request at 120 seconds. Responses must
+be HTTP 200, including through injected transports; partial responses, failed config reads,
+oversized documents, malformed JSON and cancellation are errors, not successful unknown-only
+records. The existing HTTPS host/redirect policy gains only pinned root `config.json` reads.
+Full-response reads continue to EOF at the exact cap, rejecting any subsequent bytes before
+extending the buffer; range reads may stop at their cap.
+No weight downloads, credentials, cache writes or catalog mutations occur in this resolver.
+
+Protocol sources:
+
+- [Hugging Face Hub API endpoints](https://huggingface.co/docs/hub/api)
+- [Hugging Face model-info API reference](https://huggingface.co/docs/huggingface_hub/package_reference/hf_api#huggingface_hub.HfApi.model_info)
 
 The catalog workflow captures a versioned Artificial Analysis inventory before admission,
 then emits a machine-readable report with:
@@ -123,8 +231,9 @@ catalog publication.
 ## Commands
 
 ```bash
-cargo catalog-aa-coverage --fixture <recorded.json>
-cargo catalog-aa-coverage --check
+cargo catalog-aa-coverage --publishers-path <reviewed-selections.json> --fixture <recorded.json>
+cargo catalog-aa-coverage --publishers-path <reviewed-selections.json> --check
+cargo catalog-aa-coverage --publishers-path <reviewed-selections.json> --admit --check
 cargo catalog-admit --dry-run
 cargo test --locked -p rigspark-core --test artificial_analysis_coverage
 cargo test --locked -p rigspark-runtime --test artificial_analysis_coverage
@@ -133,6 +242,102 @@ cargo clippy --workspace --all-targets --locked -- -D warnings
 cargo fmt --all -- --check
 cargo native-retirement
 ```
+
+### Coverage command and snapshot
+
+`catalog-aa-coverage` always emits a JSON report to stdout after successful collection. Normal
+mode atomically writes that same document to `--out` (default `artificial-analysis-coverage.json`).
+It exits zero for a valid report, even when coverage is incomplete. **Publication must use
+`--check`**, which exits nonzero for unresolved rows, missing artifacts or ambiguous catalog
+matches. Check mode performs no writes, ignores the output destination and does not update
+`GITHUB_STEP_SUMMARY`. Fetch/parse/validation failures emit an error on stderr and exit nonzero
+without replacing an existing report.
+
+The version-1 snapshot contains the typed inventory, publisher evidence, coverage details and
+the source URL, capture timestamp and SHA-256 of the exact fetched HTML. Keeping inventory and
+report in one atomic document prevents a failed run from pairing a new inventory with an old
+report. Reports are capped at 16 MiB. Input/output aliases (including hard links) are rejected,
+symlink outputs are refused, and inputs/output are rechecked for changes before replacement.
+No catalog, publisher-selection file or recorded response is modified.
+
+`--publishers-path` accepts a JSON array of reviewed selections:
+
+```json
+[
+  {
+    "publisher": {
+      "creatorSlug": "example-creator",
+      "releaseSlug": "example-release",
+      "repo": "OfficialPublisher/Example"
+    },
+    "files": ["model.safetensors"]
+  }
+]
+```
+
+Each selection describes one complete export. Multiple exports may share a publisher mapping;
+identical selections are idempotent. Only mappings for current Open Weights rows are fetched.
+Missing mappings remain explicitly unmatched. No real selections are bundled by task 6: the
+default `docs/references/artificial-analysis-publishers.json` must be supplied during admission
+rollout. `--fixture` uses the existing URL-keyed recorded admission-response format and never
+constructs a native HTTP transport. Without it, only the exact public index URL and the existing
+allowlisted publisher endpoints are fetched. `--now <UTC-RFC3339>` makes replay timestamps
+deterministic; otherwise the capture uses the current UTC timestamp.
+
+Coverage compares exact repository/revision/weight digest-size identities against catalog
+weight manifests, MLX weight files (excluding configuration/tokenizer files), and unambiguously
+sized GGUF sources. Runnable sources must agree with the catalog's explicit backend when one
+is declared. An Ollama tag or unpinned Hugging Face link alone does not establish a publisher
+revision and cannot count as coverage. Multiple matching catalog entries are ambiguous, never
+silently collapsed. Missing catalog artifacts include their index row IDs.
+
+The report includes scalar counts and detail arrays for unresolved rows, proprietary exclusions,
+missing catalog artifacts and ambiguous matches. `collapsedConfigurations` counts resolved rows
+sharing an identical **complete set of artifact identities**, not duplicate observations or
+the sum of per-export duplicates. Zero Open Weights rows fail validation rather than producing
+vacuously complete coverage. Publisher errors abort collection and identify the repository.
+
+### Staged admission
+
+`--admit` resolves publisher evidence using the same injected transport and includes a merged
+candidate `catalog` in the report. `--admit --check` is a read-only admission dry run. Neither
+form overwrites the input catalog; normal mode writes the candidate, evidence and coverage in
+the same atomic snapshot. Unresolved rows, ambiguous matches, conflicting licenses or source
+facts, incomplete standard shards and invalid input catalogs abort without writes.
+
+Admission reuses an exact existing artifact, preserving its catalog ID and runnable status.
+Different revisions or digest sets remain distinct. New IDs are deterministic for the observed
+identities, preserve existing IDs on repeated runs, and disambiguate collisions without replacing
+an existing entry. Alias manifests are chosen deterministically. Re-running with no missing
+artifacts preserves the catalog and its generation timestamp.
+
+New entries carry publisher-pinned files and license, source context when available, admission
+date rather than an invented release date, and explicitly unknown unsourced facts. Every new
+entry is advisory-only with `backend-support-unverified`; filenames alone do not establish
+adapter capability. Existing runnable entries are reused rather than converted to advisory-only.
+The merged candidate must pass catalog parsing and complete artifact coverage before it is returned.
+
+When new entries require a v3-to-v4 migration, legacy entries receive availability only when
+their existing default backend source has verified pins. Missing pins abort with the entry ID;
+admission never deletes the entry, guesses a digest or silently switches its default backend.
+The bundled catalog and production writer version remain unchanged until the presentation and
+publication rollout is ready.
+
+### Production-import blockers (2026-10-10 observation)
+
+The task-7 live check found only 31 initial/default index rows (11 Open Weights rows) and a
+separately loaded `manifest`, unlike the earlier 687-row inventory observation. These counts are
+**not** a new complete coverage denominator. The parser now rejects deferred-manifest payloads
+and multiple inventory markers, so partial initialization data cannot pass admission. Supporting
+a complete anonymous public source requires a separately reviewed source-contract update.
+No deferred manifest was fetched or decoded, and no credentials or premium endpoint were used.
+
+Six bundled legacy entries also lack pinned backend artifacts: `kimi-k2-thinking`, `kimi-linear`,
+`kimi-k2:base`, `kimi-k2:instruct`, `kimi-dev-72b` and `kimi-vl-a3b`. Their official weight evidence
+must be resolved before a full bundled-catalog migration. Reviewed production publisher/export
+selections must then be populated against the complete inventory. The user explicitly approved
+finishing the staging implementation while tracking these production-import blockers separately.
+Task 7 does not claim that production models have been imported or that live coverage is complete.
 
 ## Project Structure
 
@@ -147,8 +352,10 @@ crates/rigspark-core/src/catalog.rs
     Schema-v4 availability types and backward-compatible parsing.
 crates/rigspark-core/tests/artificial_analysis_coverage.rs
 crates/rigspark-runtime/tests/artificial_analysis_coverage.rs
-docs/references/artificial-analysis-inventory.json
-docs/references/artificial-analysis-coverage.json
+docs/references/artificial-analysis-publishers.json
+    Reviewed selections to be populated during catalog admission.
+artificial-analysis-coverage.json
+    Generated combined inventory/evidence/report snapshot, overridable with --out.
 ```
 
 ## Code Style

@@ -403,11 +403,12 @@ pub fn catalog_text(
         rows.push(vec![
             model.id.clone(),
             model.params.clone(),
-            if matches!(model.architecture, crate::sizing::Architecture::Moe) {
-                "moe".into()
-            } else {
-                "dense".into()
-            },
+            match model.architecture {
+                crate::sizing::Architecture::Moe => "moe",
+                crate::sizing::Architecture::Dense => "dense",
+                crate::sizing::Architecture::Unknown => "unknown",
+            }
+            .into(),
             quant.name.clone(),
             format!(
                 "{:.1}",

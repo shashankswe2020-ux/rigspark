@@ -41,7 +41,7 @@ fn name(part: &str) -> bool {
             .all(|byte| byte.is_ascii_alphanumeric() || b"._-".contains(&byte))
 }
 
-/// Only the listing, tags pages, manifests and blobs of official `library/` models.
+/// Approved registry metadata, weight headers and immutable publisher configurations.
 pub fn allowed_request(url: &Url) -> bool {
     if url.scheme() != "https"
         || url.port().is_some()
@@ -52,6 +52,9 @@ pub fn allowed_request(url: &Url) -> bool {
         return false;
     }
     let segments: Vec<&str> = url.path().trim_start_matches('/').split('/').collect();
+    if url.as_str() == rigspark_core::artificial_analysis::INDEX_URL {
+        return true;
+    }
     match (url.host_str(), url.query(), segments.as_slice()) {
         (Some("ollama.com"), Some("sort=newest"), ["library"]) => true,
         (Some("ollama.com"), None, ["library", repo, "tags"]) => name(repo),
@@ -72,6 +75,12 @@ pub fn allowed_request(url: &Url) -> bool {
         }
         (Some("huggingface.co"), None | Some("blobs=true"), ["api", "models", owner, repo]) => {
             name(owner) && name(repo)
+        }
+        (Some("huggingface.co"), None, [owner, repo, "resolve", revision, "config.json"]) => {
+            name(owner)
+                && name(repo)
+                && revision.len() == 40
+                && revision.bytes().all(|byte| byte.is_ascii_hexdigit())
         }
         (Some("huggingface.co"), None, ["Comfy-Org", repo, "resolve", revision, path @ ..]) => {
             name(repo)
@@ -180,17 +189,52 @@ impl AdmissionTransport for NativeAdmissionTransport {
         let mut body = Vec::new();
         while let Some(chunk) = stream.next().await {
             let chunk = chunk.map_err(|_| io::Error::other("admission body read failed"))?;
-            body.extend_from_slice(&chunk);
-            if body.len() >= limit {
-                // A range read may stop at the cap; anything else larger than the cap is refused.
-                if range.is_none() && body.len() > limit {
-                    return Err(io::Error::other("admission response exceeds its size cap"));
-                }
-                body.truncate(limit);
+            if append_body_chunk(&mut body, &chunk, range, limit)? {
                 break;
             }
         }
         Ok(Fetched { status, body })
+    }
+}
+
+fn append_body_chunk(
+    body: &mut Vec<u8>,
+    chunk: &[u8],
+    range: Option<usize>,
+    limit: usize,
+) -> io::Result<bool> {
+    let remaining = limit.saturating_sub(body.len());
+    if range.is_none() && chunk.len() > remaining {
+        return Err(io::Error::other("admission response exceeds its size cap"));
+    }
+    body.extend_from_slice(&chunk[..chunk.len().min(remaining)]);
+    Ok(range.is_some() && body.len() == limit)
+}
+
+#[cfg(test)]
+mod response_limit_tests {
+    use super::append_body_chunk;
+
+    #[test]
+    fn full_response_must_check_for_more_chunks_at_the_exact_cap() {
+        let mut body = Vec::new();
+        assert!(!append_body_chunk(&mut body, b"{}", None, 2).unwrap());
+        assert!(append_body_chunk(&mut body, b" ", None, 2).is_err());
+        assert_eq!(body, b"{}");
+    }
+
+    #[test]
+    fn oversized_chunk_is_rejected_before_extending_the_full_response_buffer() {
+        let mut body = Vec::new();
+        assert!(append_body_chunk(&mut body, b"oversized", None, 2).is_err());
+        assert!(body.is_empty());
+    }
+
+    #[test]
+    fn range_response_can_stop_at_the_cap_without_copying_the_whole_chunk() {
+        let mut body = Vec::new();
+        assert!(append_body_chunk(&mut body, b"header and weights", Some(6), 6).unwrap());
+        assert_eq!(body, b"header");
     }
 }
 
@@ -959,9 +1003,10 @@ fn correct(
         }
         match field.as_str() {
             "contextLength" => {
-                fixed.context_length = to
-                    .as_f64()
-                    .ok_or_else(|| io::Error::other("invalid context"))?
+                fixed.context_length = Some(
+                    to.as_f64()
+                        .ok_or_else(|| io::Error::other("invalid context"))?,
+                )
             }
             "license" => {
                 fixed.license = to

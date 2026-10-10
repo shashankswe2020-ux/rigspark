@@ -54,6 +54,7 @@ pub struct Lfs {
 #[derive(Debug, Clone, Deserialize)]
 pub struct Sibling {
     pub rfilename: String,
+    pub size: Option<u64>,
     #[serde(default)]
     pub lfs: Option<Lfs>,
 }

@@ -3,6 +3,7 @@ pub mod adapters;
 pub mod admission;
 pub mod agent;
 pub mod application;
+pub mod artificial_analysis;
 pub mod cache;
 pub mod catalog_proposals;
 pub mod catalog_quality;

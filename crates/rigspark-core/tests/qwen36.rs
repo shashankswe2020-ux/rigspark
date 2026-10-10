@@ -9,7 +9,7 @@ fn qwen36_preserves_projector_integrity_and_unknown_hybrid_geometry() {
         .find(|model| model.id == "qwen3.6:35b")
         .expect("Qwen 3.6 is curated");
     assert_eq!(model.active_params.as_deref(), Some("3B"));
-    assert_eq!(model.context_length, 262144.0);
+    assert_eq!(model.context_length, Some(262144.0));
     assert!(model.kv_bytes_per_token.is_none());
     assert!(model.benchmark_proxy.is_none());
     let quant = &model.quantizations[0];
