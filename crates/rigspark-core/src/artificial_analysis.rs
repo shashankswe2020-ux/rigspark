@@ -1,5 +1,6 @@
 use crate::{
-    catalog::{PinnedFileSource, repository, require},
+    catalog::{PinnedFile, PinnedFileSource, repository, require},
+    generation_admission::{HfModel, license_from_tags},
     sizing::ValidationError,
 };
 use regex::Regex;
@@ -124,6 +125,190 @@ pub struct PublisherMapping {
     pub repo: String,
 }
 
+impl PublisherMapping {
+    pub fn validate(&self) -> Result<(), ValidationError> {
+        require(
+            slug(&self.creator_slug) && slug(&self.release_slug),
+            "invalid Artificial Analysis publisher mapping",
+        )?;
+        repository(&self.repo)
+    }
+}
+
+#[derive(Debug, Serialize)]
+pub struct PublisherArtifact {
+    pub source: PinnedFileSource,
+    pub license: String,
+    pub format: WeightFormat,
+    pub has_config: bool,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum WeightFormat {
+    Safetensors,
+    Gguf,
+}
+
+/// The caller must supply a reviewed official-publisher mapping and a complete export selection.
+/// This verifies publisher-reported digests, not downloaded weight contents or backend support.
+pub fn parse_publisher_artifact(
+    mapping: &PublisherMapping,
+    files: &[String],
+    raw: &str,
+) -> Result<PublisherArtifact, ValidationError> {
+    mapping.validate()?;
+    require(
+        (1..=256).contains(&files.len()),
+        "invalid export selection size",
+    )?;
+    let model = HfModel::parse(raw)?;
+    #[derive(Deserialize)]
+    struct Access {
+        private: bool,
+        gated: bool,
+        #[serde(rename = "cardData")]
+        card: Option<Card>,
+    }
+    #[derive(Deserialize)]
+    struct Card {
+        license: Option<String>,
+    }
+    let access: Access =
+        serde_json::from_str(raw).map_err(|error| ValidationError(error.to_string()))?;
+    require(
+        model.id == mapping.repo && model.pinned() && !access.private && !access.gated,
+        "publisher repository is not the mapped public pinned source",
+    )?;
+    let license = license_from_tags(&model.tags).ok_or_else(|| {
+        ValidationError("missing, conflicting or unsupported publisher license".into())
+    })?;
+    if let Some(card_license) = access.card.and_then(|card| card.license) {
+        require(
+            card_license == license,
+            "conflicting publisher license evidence",
+        )?;
+    }
+    let mut siblings = BTreeMap::new();
+    for sibling in &model.siblings {
+        require(
+            siblings
+                .insert(sibling.rfilename.as_str(), sibling)
+                .is_none(),
+            "duplicate publisher file metadata",
+        )?;
+    }
+    let has_config = siblings.contains_key("config.json");
+    let mut source = PinnedFileSource {
+        repo: model.id,
+        revision: model.sha.to_ascii_lowercase(),
+        files: Vec::new(),
+    };
+    let mut digest_sizes = BTreeMap::new();
+    for path in files {
+        let sibling = siblings
+            .get(path.as_str())
+            .ok_or_else(|| ValidationError("selected weight file is missing".into()))?;
+        let lfs = sibling.lfs.as_ref().ok_or_else(|| {
+            ValidationError("selected weight file or LFS evidence is missing".into())
+        })?;
+        require(
+            sibling.size.is_none_or(|size| size == lfs.size),
+            "conflicting publisher file size evidence",
+        )?;
+        if let Some(previous) = digest_sizes.insert(lfs.sha256.to_ascii_lowercase(), lfs.size) {
+            require(previous == lfs.size, "conflicting publisher digest sizes")?;
+        }
+        source.files.push(PinnedFile {
+            file: path.clone(),
+            sha256: lfs.sha256.to_ascii_lowercase(),
+            bytes: lfs.size as f64,
+        });
+    }
+    source.validate_weights()?;
+    require(
+        source
+            .files
+            .iter()
+            .all(|file| file.file.ends_with(".safetensors"))
+            || source.files.iter().all(|file| file.file.ends_with(".gguf")),
+        "publisher export mixes weight formats",
+    )?;
+    validate_export_shards(&source)?;
+    source
+        .files
+        .sort_by(|left, right| left.file.cmp(&right.file));
+    let format = if source.files[0].file.ends_with(".safetensors") {
+        WeightFormat::Safetensors
+    } else {
+        WeightFormat::Gguf
+    };
+    Ok(PublisherArtifact {
+        source,
+        license: license.into(),
+        format,
+        has_config,
+    })
+}
+
+fn validate_export_shards(source: &PinnedFileSource) -> Result<(), ValidationError> {
+    static SHARD: OnceLock<Regex> = OnceLock::new();
+    let shard = SHARD.get_or_init(|| {
+        Regex::new(r"^(.*)-([0-9]{5})-of-([0-9]{5})\.(safetensors|gguf)$")
+            .expect("valid weight shard pattern")
+    });
+    let mut groups: BTreeMap<(String, String), (usize, BTreeSet<usize>)> = BTreeMap::new();
+    for file in &source.files {
+        if let Some(parts) = shard.captures(&file.file) {
+            let index = parts[2].parse::<usize>().expect("five digits");
+            let count = parts[3].parse::<usize>().expect("five digits");
+            let (expected, indices) = groups
+                .entry((parts[1].into(), parts[4].into()))
+                .or_insert_with(|| (count, BTreeSet::new()));
+            require(
+                count > 0
+                    && count <= 256
+                    && count == *expected
+                    && index > 0
+                    && index <= count
+                    && indices.insert(index),
+                "invalid or conflicting publisher weight shards",
+            )?;
+        }
+    }
+    require(
+        groups
+            .values()
+            .all(|(count, indices)| *count == indices.len()),
+        "incomplete publisher weight shard selection",
+    )
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PublisherConfig {
+    pub model_type: Option<String>,
+    #[serde(rename = "max_position_embeddings")]
+    pub context_length: Option<u64>,
+}
+impl PublisherConfig {
+    pub const MAX_BYTES: usize = 64 * 1024;
+
+    pub fn parse(raw: &[u8]) -> Result<Self, ValidationError> {
+        require(
+            raw.len() <= Self::MAX_BYTES,
+            "publisher configuration exceeds 64 KiB",
+        )?;
+        let config: Self =
+            serde_json::from_slice(raw).map_err(|error| ValidationError(error.to_string()))?;
+        require(
+            config.model_type.as_deref().is_none_or(text)
+                && config.context_length.is_none_or(|value| value > 0),
+            "invalid publisher configuration facts",
+        )?;
+        Ok(config)
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PublisherMatch {
@@ -152,11 +337,7 @@ pub fn match_publishers(
     )?;
     let mut publishers = BTreeMap::new();
     for mapping in mappings {
-        require(
-            slug(&mapping.creator_slug) && slug(&mapping.release_slug),
-            "invalid Artificial Analysis publisher mapping",
-        )?;
-        repository(&mapping.repo)?;
+        mapping.validate()?;
         let key = (mapping.creator_slug.as_str(), mapping.release_slug.as_str());
         if let Some(previous) = publishers.insert(key, mapping.repo.as_str()) {
             require(

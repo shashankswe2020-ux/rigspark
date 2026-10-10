@@ -142,6 +142,45 @@ weight-manifest validator enforcing file-level constraints. Grouping an empty ob
 set produces no artifacts, not a claim of complete coverage. The publication report must
 reconcile every in-scope row against these groups and report unresolved rows.
 
+### Publisher resolution contract
+
+The Hugging Face resolver consumes a **reviewed official-publisher association and an explicit
+complete export file selection**. A successful metadata lookup does not establish publisher
+authority: maintainers must verify the association against the publisher's own release page
+before it becomes a collection input. No associations or exports are inferred from display names,
+and this increment does not ship real mappings or import catalog entries.
+
+The resolver reuses the admission transport, reads `/api/models/{owner}/{repo}?blobs=true`, and
+requires an exact repository match, a 40-hex revision, explicit `private: false` and `gated: false`,
+an accepted unambiguous license tag, and agreement with a model-card license when present.
+Every selected file needs publisher LFS SHA-256 and size evidence; a separately reported file
+size must agree. Missing/duplicate files, mixed weight formats, inconsistent digest sizes, unsafe
+paths and invalid manifests fail explicitly. Standard `-00001-of-00002` shard sets must contain
+every index exactly once. Nonstandard export layouts still require a reviewed complete selection;
+filename matching alone is not a general proof of model completeness.
+
+The result records safetensors or GGUF format, pinned files and license, without claiming backend
+support. When listed by the publisher, the root `config.json` is fetched at the resolved immutable
+revision, never at `main`. If no config is listed, config-derived facts and its source URL stay
+explicitly unknown; verified weights are still resolved.
+Only sourced `model_type` and `max_position_embeddings` facts are retained; absent values stay
+unknown. This is the config's position limit, not a claim about runtime-supported context or
+RoPE scaling. Parameter count, attention geometry and backend capability still need separate
+evidence during admission. Repository code is never fetched or executed.
+
+Metadata is capped at 4 MiB, config at 64 KiB, and each request at 120 seconds. Responses must
+be HTTP 200, including through injected transports; partial responses, failed config reads,
+oversized documents, malformed JSON and cancellation are errors, not successful unknown-only
+records. The existing HTTPS host/redirect policy gains only pinned root `config.json` reads.
+Full-response reads continue to EOF at the exact cap, rejecting any subsequent bytes before
+extending the buffer; range reads may stop at their cap.
+No weight downloads, credentials, cache writes or catalog mutations occur in this resolver.
+
+Protocol sources:
+
+- [Hugging Face Hub API endpoints](https://huggingface.co/docs/hub/api)
+- [Hugging Face model-info API reference](https://huggingface.co/docs/huggingface_hub/package_reference/hf_api#huggingface_hub.HfApi.model_info)
+
 The catalog workflow captures a versioned Artificial Analysis inventory before admission,
 then emits a machine-readable report with:
 

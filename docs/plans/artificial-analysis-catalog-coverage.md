@@ -21,15 +21,24 @@ workspace buildable and testable.
 - Task 4: complete; exact publisher mappings and deterministic artifact identities verified
   with ambiguity, duplicate-row, conflicting-size and boundary tests, full workspace tests,
   build, strict Clippy, formatting and native-retirement.
-- Tasks 5-11: pending. No Artificial Analysis models have been imported yet.
+- Task 5: complete; bounded publisher resolution with explicit export selection, pinned
+  config facts, license/size consistency checks, standard shard completeness, and typed failures.
+  Six core and eleven runtime regression tests cover pure evidence and injected transport behavior,
+  including verified weights whose publisher lists no configuration.
+  Three shared transport regressions also prove full responses cannot truncate at the exact cap
+  or over-allocate on an oversized chunk; bounded range reads retain their existing behavior.
+  Final full workspace tests, build, strict Clippy, formatting and native-retirement passed.
+- Tasks 6-11: pending. No Artificial Analysis models have been imported yet.
 - Rollout detail: production writers and bundled data stay on v3 until admission and
   presentation are ready. The v4 reader and activation safety ship together.
 - Actual regression targets for tasks 2-3: core `catalog_availability`, runtime
   `activation_plan` and `catalog_updates`, CLI `public_cli`, and GUI library activation tests.
   The activation boundary is in runtime `application.rs`, not low-level `lifecycle.rs`.
 - Task 4 uses the separate core `artificial_analysis_identity` test target and the existing
-  synthetic inventory fixture. Matching is not publisher/license verification; those checks
-  remain task 5.
+  synthetic inventory fixture. Task 5 uses `artificial_analysis_publisher` targets in both core
+  and runtime. Reviewed official-publisher associations and complete export selections remain
+  required collection inputs; metadata resolution is not automated verification of ownership.
+  Admission must still resolve parameter/attention facts and backend compatibility.
 
 ## Architecture Decisions
 
@@ -191,7 +200,7 @@ sourced model facts.
 
 **Verification:**
 
-- `cargo test --locked -p rigspark-runtime --test artificial_analysis_coverage publisher`
+- `cargo test --locked -p rigspark-core -p rigspark-runtime --test artificial_analysis_publisher`
 
 **Dependencies:** Tasks 1 and 4
 
