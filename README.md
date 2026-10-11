@@ -22,6 +22,11 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/shashankswe2020-ux/rigspark/issues/new?template=bug_report.yml"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/btn-bug-dark.svg"><img src="assets/btn-bug-light.svg" alt="Report a bug" height="44"></picture></a>&nbsp;
+  <a href="https://github.com/shashankswe2020-ux/rigspark/issues/new?template=feature_request.yml"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/btn-idea-dark.svg"><img src="assets/btn-idea-light.svg" alt="Suggest a feature" height="44"></picture></a>
+</p>
+
+<p align="center">
   <a href="https://github.com/shashankswe2020-ux/rigspark/actions/workflows/ci.yml"><img src="https://github.com/shashankswe2020-ux/rigspark/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
   <a href="https://github.com/shashankswe2020-ux/rigspark/releases/latest"><img src="https://img.shields.io/github/v/release/shashankswe2020-ux/rigspark?sort=semver&label=release" alt="Release"></a>
   <a href="https://crates.io/crates/rigspark-cli"><img src="https://img.shields.io/crates/v/rigspark-cli.svg?label=crates.io" alt="crates.io"></a>
