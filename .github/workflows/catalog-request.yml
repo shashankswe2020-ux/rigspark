@@ -1,0 +1,146 @@
+name: Catalog model request
+
+on:
+  issues:
+    types: [opened, reopened, labeled]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: catalog-request-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    if: >-
+      contains(github.event.issue.labels.*.name, 'catalog:request') &&
+      (github.event.action == 'opened' ||
+       github.event.action == 'reopened' ||
+       github.event.label.name == 'catalog:retry')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    defaults:
+      run:
+        shell: bash
+    env:
+      GH_TOKEN: ${{ github.token }}
+      ISSUE_NUMBER: ${{ github.event.issue.number }}
+
+    steps:
+      - name: Fetch the default branch without an action runtime
+        run: |
+          set -euo pipefail
+          git init .
+          git remote add origin "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git"
+          AUTH=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\r\n')
+          export GIT_CONFIG_COUNT=1
+          export GIT_CONFIG_KEY_0="http.${GITHUB_SERVER_URL}/.extraheader"
+          export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $AUTH"
+          git fetch --no-tags origin "$GITHUB_SHA"
+          unset AUTH GIT_CONFIG_COUNT GIT_CONFIG_KEY_0 GIT_CONFIG_VALUE_0
+          git checkout --detach FETCH_HEAD
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+
+      - name: Mark the request as validating
+        run: |
+          set -euo pipefail
+          gh label create "catalog:validating" --repo "$GITHUB_REPOSITORY" --color "1D76DB" --description "Catalog request validation is running" --force
+          gh issue edit "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --add-label "catalog:validating"
+          current=$(gh issue view "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --json labels --jq '.labels[].name')
+          if grep -Fxq "catalog:retry" <<<"$current"; then
+            gh issue edit "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --remove-label "catalog:retry"
+          fi
+
+      - name: Verify request admission contracts
+        run: |
+          set -euo pipefail
+          cargo test --locked -p rigspark-core --test catalog_request
+          cargo test --locked -p rigspark-runtime --test catalog_requests
+          cargo test --locked -p rigspark-cli --test catalog_request_cli
+          cargo build --locked -p rigspark-cli --bin llmup-catalog-request
+
+      - name: Validate and source the requested model
+        id: outcome
+        run: |
+          set -euo pipefail
+          cargo catalog-request --event-path "$GITHUB_EVENT_PATH" > "$RUNNER_TEMP/catalog-request.json"
+          jq -e '.schemaVersion == 1 and (.disposition | type == "string") and (.reasonCode | type == "string")' "$RUNNER_TEMP/catalog-request.json" > /dev/null
+          echo "disposition=$(jq -r '.disposition' "$RUNNER_TEMP/catalog-request.json")" >> "$GITHUB_OUTPUT"
+          echo "reason=$(jq -r '.reasonCode' "$RUNNER_TEMP/catalog-request.json")" >> "$GITHUB_OUTPUT"
+
+      - name: Gate eligible data changes
+        if: steps.outcome.outputs.disposition == 'eligible'
+        run: |
+          set -euo pipefail
+          ALLOWED='^(crates/rigspark-core/data/models\.json|docs/references/catalog-quality-evidence\.json)$'
+          CHANGED=$(git status --porcelain --untracked-files=all | cut -c4-)
+          test -n "$CHANGED"
+          if printf '%s\n' "$CHANGED" | grep -Ev "$ALLOWED"; then
+            echo "Request admission touched files outside the data allow-list; refusing." >&2
+            exit 1
+          fi
+          cargo test --locked -p rigspark-core --test catalog
+          cargo test --locked -p rigspark-runtime --test catalog_quality
+          cargo catalog-quality
+
+      - name: Open a data-only draft pull request
+        id: pull_request
+        if: steps.outcome.outputs.disposition == 'eligible'
+        run: |
+          set -euo pipefail
+          repository=$(jq -r '.repository' "$RUNNER_TEMP/catalog-request.json")
+          slug=$(printf '%s' "$repository" | tr '[:upper:]/_' '[:lower:]---' | tr -cd 'a-z0-9.-' | cut -c1-60)
+          branch="catalog/request-${ISSUE_NUMBER}-${slug}"
+          title="chore(catalog): add ${repository} (refs #${ISSUE_NUMBER})"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$branch"
+          git add crates/rigspark-core/data/models.json docs/references/catalog-quality-evidence.json
+          git commit -m "$title"
+          AUTH=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\r\n')
+          git -c "http.${GITHUB_SERVER_URL}/.extraheader=AUTHORIZATION: basic $AUTH" push origin "$branch"
+          unset AUTH
+          jq -r '[
+            "Automated source-backed model request.",
+            "",
+            "- Request: #" + (.issueNumber | tostring),
+            "- Repository: `" + .repository + "`",
+            "- Models: " + (.modelIds | map("`" + . + "`") | join(", ")),
+            "- Result: `" + .reasonCode + "`",
+            "",
+            "This PR is intentionally draft. Mark it ready for review to start normal pull-request CI."
+          ] | .[]' "$RUNNER_TEMP/catalog-request.json" > "$RUNNER_TEMP/pull-request.md"
+          url=$(gh pr create --draft --base main --head "$branch" --title "$title" --body-file "$RUNNER_TEMP/pull-request.md")
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      - name: Publish the request status
+        if: always() && steps.outcome.outcome == 'success'
+        env:
+          PR_URL: ${{ steps.pull_request.outputs.url }}
+        run: |
+          set -euo pipefail
+          disposition=$(jq -r '.disposition' "$RUNNER_TEMP/catalog-request.json")
+          case "$disposition" in
+            eligible) label="catalog:pr-open"; color="0E8A16" ;;
+            needsRunnableArtifact) label="catalog:needs-runnable-artifact"; color="D93F0B" ;;
+            alreadyAvailable) label="catalog:already-available"; color="5319E7" ;;
+            rejected) label="catalog:rejected"; color="B60205" ;;
+            *) echo "Unexpected request disposition: $disposition" >&2; exit 1 ;;
+          esac
+          gh label create "$label" --repo "$GITHUB_REPOSITORY" --color "$color" --description "RigSpark model catalog request status" --force
+          gh issue edit "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --remove-label "catalog:validating" --add-label "$label"
+          jq -r --arg pr "$PR_URL" '[
+            "## Catalog request status",
+            "",
+            "- Repository: `" + .repository + "`",
+            "- Result: `" + .reasonCode + "`",
+            "- " + .summary,
+            (if $pr == "" then empty else "- Draft pull request: " + $pr end),
+            "- Workflow run: " + env.GITHUB_SERVER_URL + "/" + env.GITHUB_REPOSITORY + "/actions/runs/" + env.GITHUB_RUN_ID
+          ] | .[]' "$RUNNER_TEMP/catalog-request.json" > "$RUNNER_TEMP/issue-status.md"
+          gh issue comment "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file "$RUNNER_TEMP/issue-status.md"

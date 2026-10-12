@@ -110,6 +110,48 @@ fn write_capable_workflows_never_push_to_main() {
 }
 
 #[test]
+fn catalog_requests_are_validated_before_a_data_only_draft_pr() {
+    let workflow = read(".github/workflows/catalog-request.yml");
+    for required in [
+        "types: [opened, reopened, labeled]",
+        "github.event.label.name == 'catalog:retry'",
+        "contents: write",
+        "issues: write",
+        "pull-requests: write",
+        "cargo catalog-request --event-path \"$GITHUB_EVENT_PATH\"",
+        "cargo test --locked -p rigspark-core --test catalog_request",
+        "cargo test --locked -p rigspark-runtime --test catalog_requests",
+        "cargo test --locked -p rigspark-cli --test catalog_request_cli",
+        "Request admission touched files outside the data allow-list; refusing.",
+        "gh pr create --draft --base main",
+    ] {
+        assert!(workflow.contains(required), "{required}");
+    }
+    for forbidden in [
+        "pull_request_target",
+        "gh pr merge",
+        "catalog-publish.yml",
+        "push origin main",
+        "HEAD:main",
+        "${{ github.event.issue.body }}",
+    ] {
+        assert!(!workflow.contains(forbidden), "{forbidden}");
+    }
+    let form = read(".github/ISSUE_TEMPLATE/model_request.yml");
+    for required in [
+        "name: Model catalog request",
+        "labels:",
+        "catalog:request",
+        "id: model_url",
+        "Hugging Face model URL",
+        "https://huggingface.co/owner/repository",
+        "id: integrity",
+    ] {
+        assert!(form.contains(required), "{required}");
+    }
+}
+
+#[test]
 fn automatic_admission_merges_only_verified_data_only_changes() {
     let workflow = read(".github/workflows/catalog-refresh.yml");
     let admit = workflow
