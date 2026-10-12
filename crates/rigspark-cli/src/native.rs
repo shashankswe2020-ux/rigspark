@@ -464,7 +464,13 @@ async fn run_plan(
             hardware
         }
     };
-    let backend = args.backend.as_deref().unwrap_or("ollama");
+    let backend = args.backend.as_deref().unwrap_or_else(|| {
+        if model.supports_backend("bitnet") {
+            "bitnet"
+        } else {
+            "ollama"
+        }
+    });
     let plan = rigspark_core::plan::plan_with_cache(
         &model,
         &hardware,

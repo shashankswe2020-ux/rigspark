@@ -298,6 +298,58 @@ pub async fn bonsai(
     Ok(())
 }
 
+pub async fn bitnet(
+    client: &Client,
+    origin: &str,
+    width: u32,
+    artifacts: &std::path::Path,
+) -> TestResult {
+    open_models(client, origin).await?;
+    let selector =
+        ".model-card-item button[aria-label=\"View performance details for bitnet-b1.58:2b\"]";
+    click(client, selector).await?;
+    wait_for(
+        client,
+        "document.querySelector('#model-detail-title')?.textContent === 'bitnet-b1.58:2b'",
+    )
+    .await?;
+    let facts = client
+        .execute(
+            "return document.querySelector('#model-detail').innerText;",
+            vec![],
+        )
+        .await?;
+    let text = facts.as_str().ok_or("missing BitNet detail")?;
+    for expected in [
+        "I2_S",
+        "RIGSPARK_BITNET_SERVER",
+        "not stock llama.cpp",
+        "Speed unknown",
+        "Not required",
+        "4,096",
+    ] {
+        if !text.contains(expected) {
+            return Err(format!("BitNet detail missing {expected}").into());
+        }
+    }
+    wait_for(client, "document.documentElement.scrollWidth <= innerWidth && !document.querySelector('#model-detail .model-backend-select')").await?;
+    std::fs::write(
+        artifacts.join(format!("bitnet-detail-{width}.png")),
+        client.screenshot().await?,
+    )?;
+    if width == 1440 {
+        click(client, "#model-detail .model-detail-actions button").await?;
+        accept_confirm(client).await?;
+        wait_for_start(
+            client,
+            &json!({"model":"bitnet-b1.58:2b", "backend":"bitnet", "context":2048}),
+            true,
+        )
+        .await?;
+    }
+    Ok(())
+}
+
 pub async fn narrow_details(
     client: &Client,
     origin: &str,

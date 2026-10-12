@@ -47,7 +47,7 @@ integrity status, capabilities, and catalog sources. Unknown inputs stay
 - **Agents & skills.** Author reusable agents (personas) and skills, stored locally as markdown; bundle skills into an agent and load them per message.
 - **MCP connectors & tools.** Attach Model Context Protocol servers (local stdio or loopback HTTP/SSE) to give the chat real tools, called in an agentic loop.
 - **Inline images & graphs.** Let an agent run code in your workspace and render the result — images and graphs display inline in the chat panel.
-- **4 backends.** Ollama, llama.cpp, MLX (Apple Silicon), and LM Studio — auto-selected or user-chosen.
+- **5 backends.** Ollama, llama.cpp, MLX (Apple Silicon), LM Studio, and BitNet — auto-selected or user-chosen.
 - **AI Hardware Score (0–100).** Diagnose your machine's bottleneck in one command.
 - **Context-window sizing.** Choose Low, Mid, High, or Max in the GUI (25%, 50%, 75%, or 100% of each model's advertised context), backed by KV-cache-aware memory estimates with GQA-correct attention geometry.
 - **Honesty gate.** Unknown figures render as `unknown` — never fabricated.
@@ -523,7 +523,7 @@ available to the model:
 --task <task>         Boost models for: chat|code|vision|reasoning|tools|embedding
 --context <tokens>    Size KV cache at N tokens and re-rank
 --max-context         Report largest holdable context per model
---backend <name>      Scope to: ollama|llamacpp|mlx|lmstudio
+--backend <name>      Scope to: ollama|llamacpp|mlx|lmstudio|bitnet
 --available-backends  Only show models an installed backend can serve
 --json                Machine-readable JSON output
 --no-tui              Force plain text mode
@@ -611,14 +611,110 @@ and [model creation API](https://docs.ollama.com/api/create).
 | **llama.cpp** | All | Full (pull/serve/stop) | Self-managed GGUF with HF acquisition |
 | **MLX** | macOS (Apple Silicon) | Full (pull/serve/stop) | `mlx-lm` Python package |
 | **LM Studio** | All | Attach-only | User manages the server; llmup attaches |
+| **BitNet** | CPU, with a compatible user-built binary | Full (pull/serve/stop) | Official I2_S GGUF; explicit `RIGSPARK_BITNET_SERVER` path |
 
 **Auto-selection logic:**
 - Apple Silicon → MLX preferred (when installed)
 - Everywhere else → Ollama preferred (when installed)
 - Override with `--backend <name>`
+- I2_S weights select only BitNet, never stock llama.cpp or LM Studio.
 
 All backends bind to `127.0.0.1` only. Integrity verification is SHA-256 for
 self-managed pulls; LM Studio uses delegated integrity with a named trust boundary.
+
+### Microsoft BitNet
+
+Build [bitnet.cpp](https://github.com/microsoft/BitNet), then set
+`RIGSPARK_BITNET_SERVER` to the absolute path of its compiled `llama-server`
+(`llama-server.exe` on Windows). This is explicit executable trust, not a
+cryptographic certification of your binary. There is no PATH fallback and no
+automatic build or Python-wrapper invocation.
+
+```bash
+export RIGSPARK_BITNET_SERVER=/absolute/path/to/BitNet/build/bin/llama-server
+rigspark can-run bitnet-b1.58:2b --backend bitnet
+rigspark up bitnet-b1.58:2b --backend bitnet --port 8082 --context 4096
+rigspark chat
+rigspark doctor
+rigspark down
+```
+
+Keep the environment variable set in each shell, including when starting the
+GUI. The server uses CPU execution (`-ngl 0`), an unused loopback port (8080 by
+default), and 4096 context tokens by default. Contexts outside 1-4096 are rejected
+even with `--bypass`. Existing listeners are never adopted. `switch` keeps the
+active backend; use `up` to change backends. Embeddings, streaming deltas,
+non-default cache tuning and GPU execution are not supported by this initial
+integration. Chat is returned as one completed response.
+
+Older BitNet servers expose their alias under
+`default_generation_settings.model` instead of top-level model identity fields.
+For those builds, RigSpark also requires the listener's OS-reported command line
+to match its exact launch (verified GGUF path, alias, port, context and CPU flags),
+with unchanged executable/PID/start identity. Missing command-line visibility or
+conflicting modern identity fields fail closed; existing listeners remain
+ineligible for attachment.
+
+The catalog uses the MIT-licensed official 2.4B-parameter, 4096-context model:
+
+- [Pinned model card](https://huggingface.co/microsoft/bitnet-b1.58-2B-4T-gguf/blob/a1f2f1c765812aa8af3f6eda4a313707064bba15/README.md)
+- [Artifact metadata](https://huggingface.co/api/models/microsoft/bitnet-b1.58-2B-4T-gguf/revision/a1f2f1c765812aa8af3f6eda4a313707064bba15?blobs=true)
+- [Release announcement](https://github.com/microsoft/BitNet/blob/0b341e582afbf9e1011f24744b554c96a3477eb5/README.md)
+- [Server launch interface](https://github.com/microsoft/BitNet/blob/0b341e582afbf9e1011f24744b554c96a3477eb5/run_inference_server.py)
+- [Pinned fork HTTP implementation](https://github.com/isHuangXin/llama.cpp/blob/390c307752ab78fd8189f359d6954c9ba1be74af/tools/server/server-context.cpp)
+
+`ggml-model-i2_s.gguf` is 1,187,801,280 bytes with SHA-256
+`4221b252fdd5fd25e15847adfeb5ee88886506ba50b8a34548374492884c2162`.
+The 1,365,971,472-byte weight-memory estimate uses the existing 15% policy, not
+measured peak RAM. CPU fit uses system RAM even on machines with discrete GPUs.
+KV geometry, benchmark proxy and throughput remain unknown; I2_S never uses
+generic llama.cpp efficiency figures. Bootstrap preserves the pinned entry.
+Automated verification uses injected processes and downloads; it does not
+certify live inference with a particular BitNet build.
+
+#### Tested Apple Silicon build
+
+Unmodified upstream builds failed live inference on an Apple M4 Max. The verified
+working configuration uses BitNet revision
+`01eb415772c342d9f20dc42772f1583ae1e5b102` and its llama.cpp submodule
+`1f86f058de0c3f4098dedae2ae8653c335c868a1`, with the
+[ARM I2_S kernel patch](../../scripts/bitnet-arm-i2s.patch). The patch corrects
+128-weight/32-byte packing and batched activation/output strides; it leaves x86
+kernels unchanged. Apply it from the BitNet checkout, not the RigSpark checkout:
+
+```bash
+git apply /absolute/path/to/rigspark/scripts/bitnet-arm-i2s.patch
+python utils/codegen_tl1.py --model bitnet_b1_58-3B \
+  --BM 160,320,320 --BK 64,128,64 --bm 32,64,32
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF \
+  -DBITNET_ARM_TL1=OFF -DGGML_METAL=OFF -DGGML_BLAS=OFF -DGGML_OPENMP=OFF \
+  -DLLAMA_BUILD_COMMON=ON -DLLAMA_BUILD_EXAMPLES=ON -DLLAMA_BUILD_SERVER=ON
+cmake --build build --target llama-server -j 6
+```
+
+Use the upstream build prerequisites and initialize submodules at the pinned
+revision first. The generated TL1 headers are needed by that revision even when
+TL1 execution is disabled. **BLAS must remain disabled:** its generic dequantizer
+is incompatible with this I2_S implementation and crashed on longer prompts.
+`-ngl 0` alone does not disable BLAS.
+
+This patched configuration passed verified acquisition, owned loopback startup,
+finite-probability numerical sanity, production `rigspark chat` (including the
+previously crashing long prompt), and owned shutdown. Native kernel regressions
+covered batch widths 1-64 and model-relevant inner dimensions. A separate
+15-case, temperature-zero chat smoke benchmark completed; strict output-format
+requirements and token limits count against the model, not just answer content.
+It is not a standardized intelligence test or a throughput certification.
+The [BitNet benchmark report](../../benchmarking/bitnet-b1.58-2b/README.md)
+includes the prompts and both capped and uncapped response records.
+
+Do not assume newer upstream revisions are interchangeable. The tested newer
+fork also selected SiLU instead of squared ReLU for b1.58 and interpreted the
+GGUF's obsolete `Human`/`BITNETAssistant` template literally. The working older
+server uses its built-in BitNet chat formatting with `<|eot_id|>` turn boundaries,
+consistent with the
+[official tokenizer configuration](https://huggingface.co/microsoft/bitnet-b1.58-2B-4T/blob/main/tokenizer_config.json).
+Catalog inclusion alone does not certify an arbitrary user-built executable.
 
 ---
 

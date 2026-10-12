@@ -144,14 +144,18 @@ pub fn plan_with_cache(
         backend,
     };
     let unified = hardware.is_unified();
+    let cpu_only = model
+        .quantizations
+        .iter()
+        .any(crate::sizing::Quantization::is_bitnet);
     let mut paths = Vec::new();
     let gpus: Vec<_> = hardware
         .gpu
         .iter()
-        .filter(|gpu| discrete(&gpu.vendor) && gpu.vram_bytes > 0.0)
+        .filter(|gpu| !cpu_only && discrete(&gpu.vendor) && gpu.vram_bytes > 0.0)
         .cloned()
         .collect();
-    if unified {
+    if unified && !cpu_only {
         paths.push(plan_path(&inputs, "unified", hardware.clone(), true, None)?);
     } else if let Some(largest) = gpus
         .iter()

@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashSet};
 use time::{Date, OffsetDateTime, format_description::well_known::Rfc3339};
 
-pub const BACKENDS: [&str; 4] = ["ollama", "llamacpp", "mlx", "lmstudio"];
+pub const BACKENDS: [&str; 5] = ["ollama", "llamacpp", "mlx", "lmstudio", "bitnet"];
 pub const CAPABILITIES: [&str; 6] = ["chat", "code", "vision", "reasoning", "tools", "embedding"];
 pub const VENDORS: [&str; 5] = ["apple", "nvidia", "amd", "intel", "none"];
 pub(crate) const LICENSES: [&str; 18] = [
@@ -177,6 +177,23 @@ pub struct Catalog {
     pub schema_version: u8,
     pub generated_at: String,
     pub models: Vec<CatalogModel>,
+}
+
+impl CatalogModel {
+    pub fn supports_backend(&self, backend: &str) -> bool {
+        if self.quantizations.iter().any(Quantization::is_bitnet) {
+            return backend == "bitnet"
+                && self.source.gguf.is_some()
+                && self.quantizations.len() == 1;
+        }
+        match backend {
+            "ollama" => self.source.ollama.is_some(),
+            "llamacpp" => self.source.gguf.is_some(),
+            "mlx" => self.source.mlx.is_some(),
+            "lmstudio" => self.source.gguf.is_some() || self.source.mlx.is_some(),
+            _ => false,
+        }
+    }
 }
 
 pub(crate) fn coordinates(repo: &str, revision: &str) -> Result<(), ValidationError> {

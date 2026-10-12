@@ -16,7 +16,7 @@ fn loads_shipped_catalog_and_performance_evidence() {
         .iter()
         .filter(|model| model.provenance == EntryProvenance::Curated)
         .count();
-    assert_eq!(curated, 69, "admission never adds or drops curated entries");
+    assert_eq!(curated, 70, "admission never adds or drops curated entries");
     let loaded = Catalog::parse(&catalog().to_string()).unwrap();
     assert_eq!(loaded.models.len(), 69);
     assert!(

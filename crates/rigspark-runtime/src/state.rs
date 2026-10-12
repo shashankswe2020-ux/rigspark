@@ -234,6 +234,16 @@ impl ServerState {
                     && self.auth_token.is_none(),
                 "LM Studio requires attached identity and model path",
             )?,
+            "bitnet" => check(
+                self.owned_by_us
+                    && complete
+                    && self.model_path.is_some()
+                    && self.auth_token.is_none()
+                    && self
+                        .context
+                        .is_some_and(|context| (1..=4096).contains(&context)),
+                "BitNet requires owned identity, model path and bounded context",
+            )?,
             _ => {
                 check(self.auth_token.is_none(), "token only allowed for MLX")?;
                 check(
@@ -251,8 +261,8 @@ impl ServerState {
             "a cache profile is recorded only for owned Ollama or llama.cpp runtimes",
         )?;
         check(
-            self.backend == "lmstudio" || self.model_path.is_none(),
-            "delegated path only allowed for LM Studio",
+            ["lmstudio", "bitnet"].contains(&self.backend.as_str()) || self.model_path.is_none(),
+            "model path only allowed for LM Studio or BitNet",
         )
     }
 }

@@ -251,7 +251,7 @@ fn help_command(spec: &CommandSpec, flat: &Command) -> Command {
                 }
                 "month" => "Only models released (or auto-added) in the last 1, 2 or 3 months",
                 "today" => "Date the --month window ends on (YYYY-MM-DD)",
-                "backend" => "Runtime: ollama, llamacpp, mlx, lmstudio",
+                "backend" => "Runtime: ollama, llamacpp, mlx, lmstudio, bitnet",
                 "port" if spec.name == "gui" => "Loopback GUI port (default: 4000)",
                 "port" if spec.name == "generate" => "Loopback ComfyUI port (default: 8188)",
                 "port" if ["recommend", "can-run"].contains(&spec.name) => {

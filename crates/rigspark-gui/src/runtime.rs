@@ -12,7 +12,7 @@ pub struct RuntimeController {
 }
 fn view(name: &str, installed: bool, running: bool, owned: bool, endpoint: String) -> Value {
     let daemon = name == "ollama";
-    json!({"name":name,"installed":installed,"running":running,"ownedByUs":owned,"endpoint":installed.then_some(endpoint),"canStart":installed&&daemon,"canStop":running&&daemon,"detail":if !installed{"Not installed."}else if !daemon{"Runs per model; start a model from Models."}else{""}})
+    json!({"name":name,"installed":installed,"running":running,"ownedByUs":owned,"endpoint":installed.then_some(endpoint),"canStart":installed&&daemon,"canStop":running&&daemon,"detail":if !installed && name == "bitnet" {"Set RIGSPARK_BITNET_SERVER to the absolute path of a compiled BitNet llama-server."}else if !installed{"Not installed."}else if !daemon{"Runs per model; start a model from Models."}else{""}})
 }
 fn request(name: &str) -> ServeRequest {
     ServeRequest {
@@ -21,7 +21,7 @@ fn request(name: &str) -> ServeRequest {
             "http://127.0.0.1:{}",
             match name {
                 "ollama" => 11434,
-                "llamacpp" => 8080,
+                "llamacpp" | "bitnet" => 8080,
                 "mlx" => 8081,
                 _ => 1234,
             }
@@ -201,7 +201,7 @@ mod tests {
         let home = tempfile::tempdir().unwrap();
         let config = Config::from_home(home.path()).unwrap();
         let mut controller = RuntimeController::default();
-        for name in ["mlx", "llamacpp", "lmstudio", "bogus"] {
+        for name in ["mlx", "llamacpp", "lmstudio", "bitnet", "bogus"] {
             for start in [true, false] {
                 let error = controller
                     .change(config.clone(), name, start, &CancellationToken::new())

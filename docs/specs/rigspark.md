@@ -5,6 +5,27 @@
 
 ## 1. Objective
 
+### Accepted native extension: BitNet (2026-10-11)
+
+The native Rust implementation will catalog `bitnet-b1.58:2b` and run the
+official Microsoft I2_S GGUF through a distinct `bitnet` backend. The user
+supplies a compiled BitNet server with an absolute `RIGSPARK_BITNET_SERVER`
+path; RigSpark never substitutes stock llama.cpp or builds the runtime.
+Existing GGUF integrity metadata and shared process/HTTP boundaries are reused,
+without a catalog schema change or new Rust dependency.
+
+Acceptance: pinned, digest-verified model acquisition; CPU-only, loopback-only
+serving with custom ports and a maximum 4096-token context; lifecycle, chat,
+doctor and CLI/GUI backend selection; ownership-safe stop; RAM-based fit advice
+and unknown unsourced speed/geometry/quality. I2_S must never be advertised as
+compatible with stock llama.cpp, Ollama, MLX or LM Studio.
+
+Implementation order: core catalog/isolation tests, runtime lifecycle tests,
+user-facing integration and documentation, then workspace tests/build/Clippy/
+format/native-retirement checks. Tests inject network and process boundaries;
+live inference requires a separately approved model download and supplied
+BitNet executable. Automatic runtime building and GPU support are out of scope.
+
 `rigspark` is a hardware-aware, single-command CLI (npm package) that lets a
 user go from "nothing installed" to "a running local LLM server" in one line,
 and to switch models — carrying their memory across — in one more line.

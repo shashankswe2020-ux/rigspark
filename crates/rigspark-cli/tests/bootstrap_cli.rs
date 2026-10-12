@@ -22,7 +22,7 @@ fn native_bootstrap_is_offline_deterministic_and_matches_oracle() {
         String::from_utf8_lossy(&output.stderr)
     );
     assert!(output.stdout.is_empty());
-    assert!(String::from_utf8_lossy(&output.stderr).starts_with("bootstrap: wrote 69 models to "));
+    assert!(String::from_utf8_lossy(&output.stderr).starts_with("bootstrap: wrote 70 models to "));
     let first = fs::read_to_string(&path).unwrap();
     let expected = Catalog::parse(include_str!(
         "../../rigspark-core/fixtures/bootstrap-oracle.json"
@@ -50,7 +50,7 @@ fn native_bootstrap_is_offline_deterministic_and_matches_oracle() {
     historical.models.retain(|model| {
         !matches!(
             model.id.as_str(),
-            "qwen3.6:35b" | "qwen3.5:4b" | "bonsai:8b"
+            "qwen3.6:35b" | "qwen3.5:4b" | "bonsai:8b" | "bitnet-b1.58:2b"
         )
     });
     assert_eq!(

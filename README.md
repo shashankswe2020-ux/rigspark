@@ -131,9 +131,28 @@ RigSpark supports:
 - **llama.cpp** — native local serving
 - **MLX** — Apple Silicon
 - **LM Studio** — attach to an already running server
+- **BitNet** — Microsoft's I2_S weights on CPU, using your compiled bitnet.cpp server
 
 Managed weights pass an integrity check before serving. Servers bind to
 `127.0.0.1` by default.
+
+For Microsoft's official BitNet b1.58 2B-4T:
+
+```bash
+export RIGSPARK_BITNET_SERVER=/absolute/path/to/BitNet/build/bin/llama-server
+rigspark up bitnet-b1.58:2b --backend bitnet --context 4096
+rigspark chat
+rigspark down
+```
+
+Build the server using [Microsoft's instructions](https://github.com/microsoft/BitNet).
+On Apple Silicon, use the [tested pinned build and ARM patch](docs/references/guide.md#tested-apple-silicon-build);
+unmodified builds can produce invalid output or crash, and BLAS must be disabled.
+Stock llama.cpp cannot load this I2_S artifact. RigSpark downloads and verifies
+the weights, not the runtime. Keep the variable set for chat, doctor and shutdown.
+The initial integration is CPU-only; speed and KV-memory estimates stay unknown.
+See the [per-model benchmark reports](benchmarking/README.md) for the recorded
+BitNet chat results, methodology, and limitations.
 
 [Backend setup and lifecycle details →](docs/references/guide.md#supported-backends)
 
@@ -211,7 +230,7 @@ Generated media renders inline and is never sent to the language model.
   network.
 - **Reproducible decisions.** The same hardware and catalog produce the same
   recommendation.
-- **One adapter boundary.** Ollama, llama.cpp, MLX, and LM Studio sit behind the
+- **One adapter boundary.** Ollama, llama.cpp, MLX, LM Studio, and BitNet sit behind the
   same runtime lifecycle and safety gates.
 
 ## Update the catalog when you choose

@@ -1403,6 +1403,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const actions = detailElement("div", "model-detail-actions");
     const backends = Array.isArray(model.backends) ? model.backends : [];
+    if (backends.includes("bitnet")) {
+      identity.appendChild(detailElement(
+        "p",
+        "model-detail-summary",
+        "Requires bitnet.cpp (CPU), not stock llama.cpp. Set RIGSPARK_BITNET_SERVER to its compiled llama-server path. Maximum context: 4,096 tokens; speed and KV memory remain unknown.",
+      ));
+    }
     let backendSelect = null;
     if (backends.length > 1) {
       backendSelect = detailElement("select", "model-backend-select");
@@ -1431,7 +1438,7 @@ document.addEventListener("DOMContentLoaded", () => {
       start.disabled = true;
     } else {
       start.addEventListener("click", () =>
-        startModel(model.id, start, backendSelect ? backendSelect.value : "", model.contextTokens !== undefined ? { context: model.contextTokens } : {}),
+        startModel(model.id, start, backendSelect ? backendSelect.value : backends.includes("bitnet") ? "bitnet" : "", model.contextTokens !== undefined ? { context: model.contextTokens } : {}),
       );
     }
     actions.appendChild(start);
@@ -1547,7 +1554,9 @@ document.addEventListener("DOMContentLoaded", () => {
         quantization.name,
         formatSize(quantization.diskBytes),
         formatSize(quantization.minRamBytes),
-        formatSize(quantization.minVramBytes),
+        backends.includes("bitnet") && quantization.minVramBytes === 0
+          ? "Not required"
+          : formatSize(quantization.minVramBytes),
         integrity,
       ]) {
         row.appendChild(detailElement("td", "", value));
@@ -1836,7 +1845,7 @@ document.addEventListener("DOMContentLoaded", () => {
       } else {
         button.textContent = model.verdict === "no" ? "Start anyway" : "Start";
         button.addEventListener("click", () =>
-          startModel(model.id, button, backendSelect ? backendSelect.value : "", model.contextTokens !== undefined ? { context: model.contextTokens } : {}),
+          startModel(model.id, button, backendSelect ? backendSelect.value : backends.includes("bitnet") ? "bitnet" : "", model.contextTokens !== undefined ? { context: model.contextTokens } : {}),
         );
       }
       actions.appendChild(button);

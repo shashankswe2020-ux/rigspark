@@ -6,6 +6,36 @@ use rigspark_core::{
 use rigspark_gui::models::recommended;
 use serde_json::{Value, json};
 
+#[test]
+fn bitnet_gui_advice_retains_runtime_isolation_and_unknown_evidence() {
+    let catalog = Catalog::parse(rigspark_core::MODELS_JSON).unwrap();
+    let perf = PerfDataset::parse(rigspark_core::PERF_JSON).unwrap();
+    let hardware: Hardware = serde_json::from_value(json!({
+        "arch": "x64", "platform": "linux", "totalRamBytes": 17179869184_u64,
+        "freeRamBytes": 12000000000_u64, "freeDiskBytes": 500000000000_u64, "gpu": []
+    }))
+    .unwrap();
+    let models = recommended(
+        &catalog,
+        &hardware,
+        &perf,
+        &AdviceOptions {
+            backend: Some("bitnet".into()),
+            available_backends: Some(vec!["bitnet".into()]),
+            context: Some(4096.0),
+            ..Default::default()
+        },
+        100,
+    )
+    .unwrap();
+    assert_eq!(models.len(), 1);
+    assert_eq!(models[0]["id"], "bitnet-b1.58:2b");
+    assert_eq!(models[0]["backends"], json!(["bitnet"]));
+    assert_eq!(models[0]["throughput"]["known"], false);
+    assert_eq!(models[0]["contextFitKnown"], false);
+    assert_eq!(models[0]["diskBytes"], 1187801280.0);
+}
+
 fn compare(actual: &Value, expected: &Value, path: &str) -> Result<(), String> {
     match (actual, expected) {
         (Value::Number(actual), Value::Number(expected)) => {

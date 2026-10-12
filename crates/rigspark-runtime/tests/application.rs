@@ -268,7 +268,10 @@ async fn switch_rejects_backend_override_before_already_active_or_preparation() 
         active.process_executable = Some(format!("/trusted/{active_backend}"));
         active.process_started_at = Some("instance".into());
         active.auth_token = (active_backend == "mlx").then(|| "a".repeat(64));
-        active.model_path = (active_backend == "lmstudio").then(|| "/models/fixture".into());
+        active.model_path = ["lmstudio", "bitnet"]
+            .contains(&active_backend)
+            .then(|| "/models/fixture".into());
+        active.context = (active_backend == "bitnet").then_some(4096);
         let guard = store.lock(Duration::from_millis(10)).unwrap();
         store.write(&guard, &prior).unwrap();
         guard.release().unwrap();
@@ -346,7 +349,10 @@ async fn switch_matching_or_implicit_backend_preserves_already_active_state() {
         active.process_executable = Some(format!("/trusted/{backend}"));
         active.process_started_at = Some("instance".into());
         active.auth_token = (backend == "mlx").then(|| "a".repeat(64));
-        active.model_path = (backend == "lmstudio").then(|| "/models/fixture".into());
+        active.model_path = ["lmstudio", "bitnet"]
+            .contains(&backend)
+            .then(|| "/models/fixture".into());
+        active.context = Some(if backend == "bitnet" { 4096 } else { 8192 });
         let guard = store.lock(Duration::from_millis(10)).unwrap();
         store.write(&guard, &prior).unwrap();
         guard.release().unwrap();
