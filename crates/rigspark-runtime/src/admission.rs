@@ -73,8 +73,9 @@ pub fn allowed_request(url: &Url) -> bool {
         (Some("huggingface.co"), None | Some("blobs=true"), ["api", "models", owner, repo]) => {
             name(owner) && name(repo)
         }
-        (Some("huggingface.co"), None, ["Comfy-Org", repo, "resolve", revision, path @ ..]) => {
-            name(repo)
+        (Some("huggingface.co"), None, [owner, repo, "resolve", revision, path @ ..]) => {
+            name(owner)
+                && name(repo)
                 && revision.len() == 40
                 && revision.bytes().all(|byte| byte.is_ascii_hexdigit())
                 && !path.is_empty()
@@ -82,7 +83,7 @@ pub fn allowed_request(url: &Url) -> bool {
                 && path.iter().all(|segment| name(segment))
                 && path
                     .last()
-                    .is_some_and(|file| file.ends_with(".safetensors"))
+                    .is_some_and(|file| file.ends_with(".safetensors") || file.ends_with(".gguf"))
         }
         _ => false,
     }
