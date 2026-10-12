@@ -1,15 +1,61 @@
 {
   "schemaVersion": 1,
   "kind": "image",
-  "generatedAt": "2026-10-05T21:23:19Z",
+  "generatedAt": "2026-10-12T12:05:36Z",
   "requiresReview": true,
   "knownCandidates": [
+    "flux1-schnell:fp16",
     "flux1-schnell:fp8",
-    "flux1-schnell:fp16"
+    "boogu-image:boogu_image_base_bf16",
+    "boogu-image:boogu_image_base_fp8_scaled",
+    "boogu-image:boogu_image_base_nvfp4",
+    "boogu-image:boogu_image_turbo_bf16",
+    "boogu-image:boogu_image_turbo_fp8_scaled",
+    "boogu-image:boogu_image_turbo_hotfix_bf16",
+    "boogu-image:boogu_image_turbo_hotfix_int8_convrot",
+    "boogu-image:boogu_image_turbo_hotfix_nvfp4",
+    "boogu-image:boogu_image_turbo_nvfp4",
+    "chroma1-hd:chroma1-hd",
+    "chroma1-hd:chroma1-hd-fp8mixed",
+    "ernie-image:ernie-image",
+    "ernie-image:ernie-image-turbo",
+    "longcat-image:longcat_image_bf16",
+    "lumina_image_2.0:lumina_2_model_bf16",
+    "ming-image:ming_image_0.1_design_bf16",
+    "ming-image:ming_image_0.1_design_int8_convrot",
+    "ming-image:ming_image_0.1_design_layer_bf16",
+    "ming-image:ming_image_0.1_design_layer_int8_convrot",
+    "ovis-image:ovis_image_bf16",
+    "qwen-image:qwen_image_2512_bf16",
+    "qwen-image:qwen_image_2512_fp8_e4m3fn",
+    "qwen-image:qwen_image_bf16",
+    "qwen-image:qwen_image_distill_full_bf16",
+    "qwen-image:qwen_image_distill_full_fp8_e4m3fn",
+    "qwen-image:qwen_image_fp8_e4m3fn",
+    "qwen-image:qwen_image_fp8_hq",
+    "qwen-image:qwen_image_fp8mixed",
+    "qwen-image:qwen_image_nvfp4",
+    "z_image:z_image_bf16",
+    "z_image:z_image_int8_convrot",
+    "z_image_turbo:z_image_turbo_bf16",
+    "z_image_turbo:z_image_turbo_int8_convrot",
+    "z_image_turbo:z_image_turbo_nvfp4"
   ],
   "unknownCandidates": [
     {
       "repository": "city96/FLUX.1-schnell-gguf",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "black-forest-labs/FLUX.1-schnell-onnx",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "unsloth/FLUX.1-schnell-GGUF",
       "pipelineTag": "text-to-image",
       "license": null,
       "reason": "not auto-added: no reviewed built-in workflow mapping"
@@ -249,12 +295,6 @@
       "reason": "not auto-added: no reviewed built-in workflow mapping"
     },
     {
-      "repository": "black-forest-labs/FLUX.1-schnell-onnx",
-      "pipelineTag": "text-to-image",
-      "license": null,
-      "reason": "not auto-added: no reviewed built-in workflow mapping"
-    },
-    {
       "repository": "position025/FLUX.1-schnell1-update",
       "pipelineTag": "text-to-image",
       "license": null,
@@ -448,12 +488,6 @@
     },
     {
       "repository": "AINovice2005/FLUX.1-schnell-smashed",
-      "pipelineTag": "text-to-image",
-      "license": null,
-      "reason": "not auto-added: no reviewed built-in workflow mapping"
-    },
-    {
-      "repository": "unsloth/FLUX.1-schnell-GGUF",
       "pipelineTag": "text-to-image",
       "license": null,
       "reason": "not auto-added: no reviewed built-in workflow mapping"
