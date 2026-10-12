@@ -152,6 +152,17 @@ async fn local_benchmark_report_is_not_exposed_by_gui() {
     assert!(!include_str!("../static/chat.js").contains("RigSparkBenchmarks"));
 }
 
+#[test]
+fn model_catalog_links_to_the_structured_public_request_form() {
+    let html = include_str!("../static/index.html");
+    assert!(html.contains("id=\"request-model\""));
+    assert!(html.contains(
+        "https://github.com/shashankswe2020-ux/rigspark/issues/new?template=model_request.yml"
+    ));
+    assert!(html.contains(">Request a model</a>"));
+    assert!(html.contains("Requires GitHub sign-in. Requests are public."));
+}
+
 #[tokio::test]
 async fn catalog_browsing_limit_is_bounded_and_default_stays_eight() {
     let home = tempfile::tempdir().unwrap();
