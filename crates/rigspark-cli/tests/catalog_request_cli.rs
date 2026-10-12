@@ -48,8 +48,7 @@ fn gguf() -> Vec<u8> {
 }
 
 fn setup(root: &Path, runnable: bool) {
-    let mut catalog =
-        Catalog::parse(include_str!("../../rigspark-core/data/models.json")).unwrap();
+    let mut catalog = Catalog::parse(include_str!("../../rigspark-core/data/models.json")).unwrap();
     catalog.models.retain(|model| model.id == "mistral:7b");
     fs::write(
         root.join("models.json"),
@@ -164,8 +163,8 @@ fn blocked_and_dry_run_requests_leave_inputs_byte_stable() {
     ] {
         let root = tempfile::tempdir().unwrap();
         setup(root.path(), runnable);
-        let before = ["models.json", "evidence.json"]
-            .map(|name| fs::read(root.path().join(name)).unwrap());
+        let before =
+            ["models.json", "evidence.json"].map(|name| fs::read(root.path().join(name)).unwrap());
         let output = command(root.path(), dry_run);
         assert!(
             output.status.success(),
@@ -175,8 +174,7 @@ fn blocked_and_dry_run_requests_leave_inputs_byte_stable() {
         let report: Value = serde_json::from_slice(&output.stdout).unwrap();
         assert_eq!(report["disposition"], disposition);
         assert_eq!(
-            ["models.json", "evidence.json"]
-                .map(|name| fs::read(root.path().join(name)).unwrap()),
+            ["models.json", "evidence.json"].map(|name| fs::read(root.path().join(name)).unwrap()),
             before
         );
     }

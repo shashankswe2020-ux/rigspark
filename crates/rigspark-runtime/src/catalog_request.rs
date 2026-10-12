@@ -184,8 +184,7 @@ pub async fn evaluate_request(
         .iter()
         .filter_map(|sibling| {
             let lower = sibling.rfilename.to_ascii_lowercase();
-            (lower.ends_with("q4_k_m.gguf"))
-                .then_some((sibling, sibling.lfs.as_ref()?))
+            (lower.ends_with("q4_k_m.gguf")).then_some((sibling, sibling.lfs.as_ref()?))
         })
         .min_by_key(|(sibling, artifact)| (artifact.size, sibling.rfilename.as_str()))
     else {
@@ -199,10 +198,7 @@ pub async fn evaluate_request(
     if artifact.size == 0
         || artifact.size > 9_007_199_254_740_991
         || artifact.sha256.len() != 64
-        || !artifact
-            .sha256
-            .bytes()
-            .all(|byte| byte.is_ascii_hexdigit())
+        || !artifact.sha256.bytes().all(|byte| byte.is_ascii_hexdigit())
     {
         return Ok(RequestOutcome::no_change(
             repository,
@@ -229,16 +225,12 @@ pub async fn evaluate_request(
         }
     };
     let today = today(now)?;
-    let entry = match build_entry(
-        repository,
-        &model,
-        &parsed,
-        &file.rfilename,
-        &artifact.sha256,
-        artifact.size,
-        tag_license,
-        &today,
-    ) {
+    let selected = SelectedGguf {
+        file: &file.rfilename,
+        sha256: &artifact.sha256,
+        bytes: artifact.size,
+    };
+    let entry = match build_entry(repository, &model, &parsed, &selected, tag_license, &today) {
         Ok(entry) => entry,
         Err(reason) => {
             return Ok(RequestOutcome::no_change(
@@ -298,13 +290,17 @@ pub async fn evaluate_request(
     })
 }
 
+struct SelectedGguf<'a> {
+    file: &'a str,
+    sha256: &'a str,
+    bytes: u64,
+}
+
 fn build_entry(
     repository: &Repository,
     model: &HfModel,
     gguf: &Gguf,
-    file: &str,
-    sha256: &str,
-    bytes: u64,
+    artifact: &SelectedGguf<'_>,
     tag_license: &str,
     today: &str,
 ) -> Result<CatalogModel, String> {
@@ -312,9 +308,8 @@ fn build_entry(
         .architecture()
         .ok_or_else(|| "GGUF architecture is missing.".to_string())?;
     if let Some(raw) = gguf.text("general.license") {
-        let gguf_license =
-            license_id(Some(raw), gguf.text("general.license.name"), None)
-                .map_err(|_| "GGUF license is not supported.".to_string())?;
+        let gguf_license = license_id(Some(raw), gguf.text("general.license.name"), None)
+            .map_err(|_| "GGUF license is not supported.".to_string())?;
         if gguf_license != tag_license {
             return Err("Hugging Face and GGUF license evidence disagree.".into());
         }
@@ -341,8 +336,8 @@ fn build_entry(
         total as f64,
         &architecture_kind,
         "Q4_K_M",
-        bytes as f64,
-        Some(sha256.to_owned()),
+        artifact.bytes as f64,
+        Some(artifact.sha256.to_owned()),
         Vec::new(),
     )
     .map_err(|error| error.to_string())?;
@@ -368,8 +363,8 @@ fn build_entry(
             gguf: Some(GgufSource {
                 repo: repository.as_str().into(),
                 revision: model.sha.clone(),
-                file: file.into(),
-                sha256: sha256.into(),
+                file: artifact.file.into(),
+                sha256: artifact.sha256.into(),
             }),
             ..Default::default()
         },

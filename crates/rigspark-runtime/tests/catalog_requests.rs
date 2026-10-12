@@ -1,8 +1,4 @@
-use rigspark_core::{
-    MODELS_JSON,
-    catalog::Catalog,
-    catalog_request::Repository,
-};
+use rigspark_core::{MODELS_JSON, catalog::Catalog, catalog_request::Repository};
 use rigspark_runtime::{
     admission::RecordedAdmissionTransport,
     catalog_request::{RequestDisposition, evaluate_request},
@@ -139,7 +135,13 @@ async fn pinned_q4_k_m_repository_produces_one_valid_catalog_entry() {
     let entry = updated
         .models
         .iter()
-        .find(|model| model.source.gguf.as_ref().is_some_and(|source| source.repo == REPOSITORY))
+        .find(|model| {
+            model
+                .source
+                .gguf
+                .as_ref()
+                .is_some_and(|source| source.repo == REPOSITORY)
+        })
         .unwrap();
     assert_eq!(entry.id, "owner/requested-1b:q4_k_m");
     assert_eq!(entry.family, "requested");

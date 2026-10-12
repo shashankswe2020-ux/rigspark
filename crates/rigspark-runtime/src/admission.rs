@@ -81,9 +81,10 @@ pub fn allowed_request(url: &Url) -> bool {
                 && !path.is_empty()
                 && path.len() <= 8
                 && path.iter().all(|segment| name(segment))
-                && path
-                    .last()
-                    .is_some_and(|file| file.ends_with(".safetensors") || file.ends_with(".gguf"))
+                && path.last().is_some_and(|file| {
+                    file.ends_with(".gguf")
+                        || (*owner == "Comfy-Org" && file.ends_with(".safetensors"))
+                })
         }
         _ => false,
     }

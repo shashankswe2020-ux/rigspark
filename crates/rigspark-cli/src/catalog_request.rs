@@ -1,9 +1,6 @@
 use clap::Parser;
 use rigspark_cli::maintenance_file::File;
-use rigspark_core::{
-    catalog::Catalog,
-    catalog_request::ModelRequest,
-};
+use rigspark_core::{catalog::Catalog, catalog_request::ModelRequest};
 use rigspark_runtime::{
     admission::{AdmissionTransport, NativeAdmissionTransport, RecordedAdmissionTransport},
     catalog_request::{RequestDisposition, evaluate_request},
