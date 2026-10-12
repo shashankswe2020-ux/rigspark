@@ -1,4 +1,12 @@
 {
+  "bitnet-b1.58:2b": {
+    "gguf": {
+      "repo": "microsoft/bitnet-b1.58-2B-4T-gguf",
+      "revision": "a1f2f1c765812aa8af3f6eda4a313707064bba15",
+      "file": "ggml-model-i2_s.gguf",
+      "sha256": "4221b252fdd5fd25e15847adfeb5ee88886506ba50b8a34548374492884c2162"
+    }
+  },
   "bonsai:8b": {
     "gguf": {
       "repo": "prism-ml/Bonsai-8B-gguf",

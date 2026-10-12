@@ -11,7 +11,7 @@ fn snapshot_entries_build_independently_and_have_pinned_family_offsets() {
     for candidate in candidates {
         if matches!(
             candidate.id.as_str(),
-            "qwen3.6:35b" | "qwen3.5:4b" | "bonsai:8b"
+            "qwen3.6:35b" | "qwen3.5:4b" | "bonsai:8b" | "bitnet-b1.58:2b"
         ) {
             assert!(rigspark_core::bootstrap::family_quality_offset(&candidate.family).is_none());
             continue;
@@ -100,7 +100,7 @@ fn complete_bootstrap_matches_frozen_typescript_oracle() {
     candidates.retain(|candidate| {
         !matches!(
             candidate.id.as_str(),
-            "qwen3.6:35b" | "qwen3.5:4b" | "bonsai:8b"
+            "qwen3.6:35b" | "qwen3.5:4b" | "bonsai:8b" | "bitnet-b1.58:2b"
         )
     });
     let expected = Catalog::parse(include_str!("../fixtures/bootstrap-oracle.json")).unwrap();

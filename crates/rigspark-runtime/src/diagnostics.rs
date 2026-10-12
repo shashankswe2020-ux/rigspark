@@ -38,6 +38,9 @@ struct SystemBackendProbe;
 #[async_trait::async_trait]
 impl BackendProbe for SystemBackendProbe {
     async fn installed(&self, name: &str, program: &str) -> Result<bool, String> {
+        if name == "bitnet" {
+            return crate::process_control::resolve_bitnet_server().map(|_| true);
+        }
         if name == "mlx" {
             return command_output(program, &["-c", "import mlx_lm"])
                 .await
@@ -47,7 +50,13 @@ impl BackendProbe for SystemBackendProbe {
         Ok(crate::process_control::resolve_binary(program).is_ok())
     }
 
-    async fn version(&self, _name: &str, program: &str, args: &[&str]) -> Result<String, String> {
+    async fn version(&self, name: &str, program: &str, args: &[&str]) -> Result<String, String> {
+        if name == "bitnet" {
+            let path = crate::process_control::resolve_bitnet_server()?;
+            return command_output(path.to_str().ok_or("invalid BitNet executable path")?, args)
+                .await
+                .map_err(|error| error.to_string());
+        }
         command_output(program, args)
             .await
             .map_err(|error| error.to_string())
@@ -60,6 +69,7 @@ async fn probe_with(apple: bool, probe: &impl BackendProbe) -> Vec<BackendInfo> 
         let (program, args): (&str, &[&str]) = match name {
             "ollama" => ("ollama", &["--version"]),
             "llamacpp" => ("llama-server", &["--version"]),
+            "bitnet" => ("bitnet", &["--version"]),
             "mlx" => (
                 "python3",
                 &[
@@ -93,6 +103,7 @@ async fn probe_with(apple: bool, probe: &impl BackendProbe) -> Vec<BackendInfo> 
                 "ollama" => "https://ollama.com/download",
                 "llamacpp" => "https://github.com/ggml-org/llama.cpp",
                 "mlx" => "python3 -m pip install mlx-lm",
+                "bitnet" => "Build https://github.com/microsoft/BitNet and set RIGSPARK_BITNET_SERVER to its absolute llama-server path",
                 _ => "https://lmstudio.ai/download",
             }
             .into(),
@@ -308,7 +319,11 @@ mod probe_tests {
     async fn backend_probes_isolate_failures_preserve_installation_and_choose_platform_default() {
         for apple in [false, true] {
             let rows = probe_with(apple, &Probe { absent: false }).await;
-            assert_eq!(rows.len(), 4);
+            assert_eq!(rows.len(), 5);
+            let bitnet = rows.iter().find(|row| row.name == "bitnet").unwrap();
+            assert!(bitnet.installed);
+            assert!(!bitnet.is_default);
+            assert!(bitnet.install_hint.contains("RIGSPARK_BITNET_SERVER"));
             let ollama = rows.iter().find(|row| row.name == "ollama").unwrap();
             assert!(ollama.installed);
             assert!(ollama.version.is_none());

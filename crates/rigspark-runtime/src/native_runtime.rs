@@ -4,7 +4,7 @@ use crate::{
     http::NativeTransport,
     identity::NativeProcessProbe,
     lifecycle::Registry,
-    process_control::{NativeProcessControl, resolve_binary},
+    process_control::{NativeProcessControl, resolve_binary, resolve_bitnet_server},
     special_adapters::{LmStudioAdapter, MlxAdapter},
     state::Config,
 };
@@ -22,6 +22,7 @@ pub struct NativeRuntime {
 pub struct NativeAdapters<'runtime> {
     ollama: RuntimeAdapter<'runtime>,
     llama: RuntimeAdapter<'runtime>,
+    bitnet: RuntimeAdapter<'runtime>,
     mlx: MlxAdapter<'runtime>,
     studio: LmStudioAdapter<'runtime>,
 }
@@ -47,7 +48,12 @@ impl NativeRuntime {
         })
     }
     pub fn binary(&self, name: &str) -> PathBuf {
-        resolve_binary(name).unwrap_or_else(|_| self.config.home.join(".unavailable").join(name))
+        let resolved = if name == "bitnet" {
+            resolve_bitnet_server()
+        } else {
+            resolve_binary(name)
+        };
+        resolved.unwrap_or_else(|_| self.config.home.join(".unavailable").join(name))
     }
     pub fn adapters(&self) -> NativeAdapters<'_> {
         let mut ollama = RuntimeAdapter::new(
@@ -63,6 +69,13 @@ impl NativeRuntime {
             llama: RuntimeAdapter::new(
                 BackendKind::LlamaCpp,
                 self.binary("llama-server"),
+                &self.http,
+                &self.probe,
+                &self.control,
+            ),
+            bitnet: RuntimeAdapter::new(
+                BackendKind::BitNet,
+                self.binary("bitnet"),
                 &self.http,
                 &self.probe,
                 &self.control,
@@ -88,6 +101,12 @@ impl NativeRuntime {
 }
 impl NativeAdapters<'_> {
     pub fn registry(&self) -> Registry<'_> {
-        Registry::new(vec![&self.ollama, &self.llama, &self.mlx, &self.studio])
+        Registry::new(vec![
+            &self.ollama,
+            &self.llama,
+            &self.mlx,
+            &self.studio,
+            &self.bitnet,
+        ])
     }
 }

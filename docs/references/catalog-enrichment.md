@@ -25,7 +25,7 @@ without a human in the loop. Spec: `docs/specs/catalog-auto-admission.md`.
    review.
 
 Tests use `crates/rigspark-core/fixtures/catalog-baseline.json`, so admission
-never moves goldens. The shipped catalog keeps invariants instead: 69 curated
+never moves goldens. The shipped catalog keeps invariants instead: 70 curated
 entries, bootstrap fidelity except recorded corrections, and reproducible proxies.
 
 Maintainer setup: add a fine-grained `CATALOG_MERGE_TOKEN` (this repository only;

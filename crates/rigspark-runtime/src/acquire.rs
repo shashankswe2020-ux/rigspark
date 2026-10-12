@@ -378,7 +378,7 @@ fn digest(value: &str, length: usize) -> bool {
 impl Artifact {
     pub fn validate(&self) -> Result<(), String> {
         let coordinates: Vec<_> = self.repo.split('/').collect();
-        if !["llamacpp", "mlx", "comfyui"].contains(&self.backend.as_str())
+        if !["llamacpp", "mlx", "comfyui", "bitnet"].contains(&self.backend.as_str())
             || coordinates.len() != 2
             || !coordinates.iter().all(|part| segment(part))
             || !digest(&self.revision, 40)

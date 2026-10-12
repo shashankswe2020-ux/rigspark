@@ -5787,6 +5787,37 @@
       "benchmarkProxy": 0.54
     },
     {
+      "id": "bitnet-b1.58:2b",
+      "family": "bitnet-b1.58",
+      "params": "2.4B",
+      "architecture": "dense",
+      "license": "mit",
+      "openWeight": true,
+      "contextLength": 4096.0,
+      "capabilities": [
+        "chat"
+      ],
+      "releaseDate": "2025-04-14",
+      "source": {
+        "hf": "microsoft/bitnet-b1.58-2B-4T-gguf",
+        "gguf": {
+          "repo": "microsoft/bitnet-b1.58-2B-4T-gguf",
+          "revision": "a1f2f1c765812aa8af3f6eda4a313707064bba15",
+          "file": "ggml-model-i2_s.gguf",
+          "sha256": "4221b252fdd5fd25e15847adfeb5ee88886506ba50b8a34548374492884c2162"
+        }
+      },
+      "quantizations": [
+        {
+          "name": "I2_S",
+          "diskBytes": 1187801280.0,
+          "minRamBytes": 1365971472.0,
+          "minVramBytes": 0.0,
+          "sha256": "4221b252fdd5fd25e15847adfeb5ee88886506ba50b8a34548374492884c2162"
+        }
+      ]
+    },
+    {
       "id": "glm4:9b",
       "family": "glm4",
       "params": "9B",

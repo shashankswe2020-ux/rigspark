@@ -85,17 +85,20 @@ impl AdviceOptions {
 }
 
 pub fn backends(model: &CatalogModel, hardware: &Hardware) -> Vec<&'static str> {
+    if model.supports_backend("bitnet") {
+        return vec!["bitnet"];
+    }
     let mut result = Vec::new();
-    if model.source.ollama.is_some() {
+    if model.supports_backend("ollama") {
         result.push("ollama");
     }
-    if model.source.gguf.is_some() {
+    if model.supports_backend("llamacpp") {
         result.push("llamacpp");
     }
-    if unified(hardware) && model.source.mlx.is_some() {
+    if unified(hardware) && model.supports_backend("mlx") {
         result.push("mlx");
     }
-    if model.source.gguf.is_some() || (unified(hardware) && model.source.mlx.is_some()) {
+    if model.supports_backend("lmstudio") && (model.source.gguf.is_some() || unified(hardware)) {
         result.push("lmstudio");
     }
     result

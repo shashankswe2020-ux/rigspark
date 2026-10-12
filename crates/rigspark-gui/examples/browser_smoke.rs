@@ -542,6 +542,7 @@ async fn main() -> TestResult {
                     formatting::desktop(&client, origin.as_str()).await?;
                     models::details(&client, origin.as_str(), &artifacts).await?;
                     models::bonsai(&client, origin.as_str(), 1440, &artifacts).await?;
+                    models::bitnet(&client, origin.as_str(), 1440, &artifacts).await?;
                     models::tools(&client, origin.as_str()).await?;
                     models::workspace(&client, origin.as_str()).await?;
                     library(&client, origin.as_str()).await?;
@@ -553,16 +554,19 @@ async fn main() -> TestResult {
                     formatting::viewport(&client, origin.as_str(), 390).await?;
                     models::narrow_details(&client, origin.as_str(), &artifacts).await?;
                     models::bonsai(&client, origin.as_str(), 390, &artifacts).await?;
+                    models::bitnet(&client, origin.as_str(), 390, &artifacts).await?;
                     models::installed(&client, origin.as_str(), 390, &artifacts).await?;
                 }
                 Some((320, _)) => {
                     narrow_chat(&client, origin.as_str()).await?;
                     formatting::viewport(&client, origin.as_str(), 320).await?;
                     models::bonsai(&client, origin.as_str(), 320, &artifacts).await?;
+                    models::bitnet(&client, origin.as_str(), 320, &artifacts).await?;
                 }
                 Some((width, _)) => {
                     formatting::viewport(&client, origin.as_str(), width).await?;
                     models::bonsai(&client, origin.as_str(), width, &artifacts).await?;
+                    models::bitnet(&client, origin.as_str(), width, &artifacts).await?;
                 }
             }
             let errors = browser_errors(&webdriver, &client).await?;

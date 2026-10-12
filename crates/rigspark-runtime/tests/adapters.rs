@@ -65,6 +65,22 @@ struct ModelHttp {
     path: String,
     mlx: bool,
 }
+struct LegacyBitNetHttp(serde_json::Value);
+#[async_trait::async_trait]
+impl Transport for LegacyBitNetHttp {
+    async fn send(&self, request: Request) -> Result<Response, HttpError> {
+        let body = match request.url.path() {
+            "/health" => json!({"status":"ok"}),
+            "/props" => self.0.clone(),
+            "/v1/models" => json!({"data":[{"id":"test:latest"}]}),
+            _ => panic!("unexpected legacy BitNet request"),
+        };
+        Ok(Response {
+            status: 200,
+            body: Box::pin(std::io::Cursor::new(body.to_string().into_bytes())),
+        })
+    }
+}
 #[async_trait::async_trait]
 impl Transport for ModelHttp {
     async fn send(&self, request: Request) -> Result<Response, HttpError> {
@@ -75,7 +91,14 @@ impl Transport for ModelHttp {
                 json!({"data":[{"id":if self.mlx{self.path.as_str()}else{"test:latest"}}]})
             }
             "/v1/chat/completions" => {
-                assert_eq!(request.body().unwrap()["model"], "default_model");
+                assert_eq!(
+                    request.body().unwrap()["model"],
+                    if self.mlx {
+                        "default_model"
+                    } else {
+                        "test:latest"
+                    }
+                );
                 json!({"choices":[{"message":{"content":"ready"}}]})
             }
             _ => panic!("unexpected model request"),
@@ -242,6 +265,283 @@ async fn attach_only_never_spawns_when_daemon_disappears() {
 }
 struct Spawned {
     cleaned: std::sync::Arc<Mutex<bool>>,
+}
+
+struct CommandProbe {
+    command: Vec<String>,
+}
+#[async_trait::async_trait]
+impl ProcessProbe for CommandProbe {
+    async fn listener(&self, port: u16, host: &str) -> Result<Listener, StateError> {
+        Probe {
+            binary: RUNTIME.into(),
+        }
+        .listener(port, host)
+        .await
+    }
+    async fn process(&self, pid: u32) -> Result<ProcessIdentity, StateError> {
+        Probe {
+            binary: RUNTIME.into(),
+        }
+        .process(pid)
+        .await
+    }
+    async fn command_line(&self, _pid: u32) -> Result<Vec<String>, StateError> {
+        Ok(self.command.clone())
+    }
+}
+fn legacy_bitnet_props() -> serde_json::Value {
+    json!({
+        "default_generation_settings":{"model":"test:latest","n_ctx":2048},
+        "total_slots":1,
+        "chat_template":"test"
+    })
+}
+fn legacy_bitnet_command(path: &std::path::Path) -> Vec<String> {
+    [
+        RUNTIME,
+        "-m",
+        path.to_str().unwrap(),
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "11435",
+        "--alias",
+        "test:latest",
+        "--ctx-size",
+        "2048",
+        "-ngl",
+        "0",
+    ]
+    .into_iter()
+    .map(str::to_owned)
+    .collect()
+}
+
+#[tokio::test]
+async fn legacy_bitnet_verifies_owned_launch_when_props_omit_model_path() {
+    use rigspark_runtime::adapters::BackendAdapter;
+    let root = tempfile::tempdir().unwrap();
+    let path = root.path().join("weights.gguf");
+    std::fs::write(&path, b"verified").unwrap();
+    let probe = CommandProbe {
+        command: legacy_bitnet_command(&path),
+    };
+    let control = SpawnControl {
+        args: Mutex::new(Vec::new()),
+        env: Mutex::new(Default::default()),
+        cleaned: std::sync::Arc::new(Mutex::new(false)),
+    };
+    let http = LegacyBitNetHttp(legacy_bitnet_props());
+    let adapter = RuntimeAdapter::new(
+        BackendKind::BitNet,
+        PathBuf::from(RUNTIME),
+        &http,
+        &probe,
+        &control,
+    );
+    let request = ServeRequest {
+        model_id: "test:latest".into(),
+        endpoint: "http://127.0.0.1:11435".into(),
+        model_path: Some(path),
+        context: Some(2048),
+        cache: None,
+    };
+    let cancel = CancellationToken::new();
+    let handle = adapter.serve(&request, &cancel).await.unwrap();
+    assert!(handle.owned_by_us);
+    assert_eq!(*control.args.lock().unwrap(), probe.command[1..]);
+    adapter
+        .ready_handle(&request, &handle, &cancel)
+        .await
+        .unwrap();
+    adapter.stop(&handle, &cancel).await.unwrap();
+}
+
+#[tokio::test]
+async fn legacy_bitnet_rejects_wrong_launch_metadata_and_modern_identity_mismatches() {
+    let root = tempfile::tempdir().unwrap();
+    let path = root.path().join("weights.gguf");
+    std::fs::write(&path, b"verified").unwrap();
+    let request = ServeRequest {
+        model_id: "test:latest".into(),
+        endpoint: "http://127.0.0.1:11435".into(),
+        model_path: Some(path.clone()),
+        context: Some(2048),
+        cache: None,
+    };
+    let mut tasks = tokio::task::JoinSet::new();
+    for case in 0..10 {
+        let path = path.clone();
+        let request = request.clone();
+        tasks.spawn(async move {
+            let mut command = legacy_bitnet_command(&path);
+            let mut props = legacy_bitnet_props();
+            match case {
+                0 => command[2] = "/wrong/weights.gguf".into(),
+                1 => command[8] = "wrong:latest".into(),
+                2 => command.extend(["--model".into(), "/wrong/weights.gguf".into()]),
+                3 => props["default_generation_settings"]["model"] = json!("wrong:latest"),
+                4 => props["default_generation_settings"]["n_ctx"] = json!(4096),
+                5 => props["model_path"] = json!("/wrong/weights.gguf"),
+                6 => props["model_alias"] = serde_json::Value::Null,
+                7 => props["chat_template"] = serde_json::Value::Null,
+                8 | 9 => (),
+                _ => unreachable!(),
+            }
+            let probe = CommandProbe { command };
+            let control = SpawnControl {
+                args: Mutex::new(Vec::new()),
+                env: Mutex::new(Default::default()),
+                cleaned: std::sync::Arc::new(Mutex::new(false)),
+            };
+            let http = LegacyBitNetHttp(props);
+            let unavailable = Probe {
+                binary: RUNTIME.into(),
+            };
+            let probe: &dyn ProcessProbe = if case == 8 { &unavailable } else { &probe };
+            let adapter = RuntimeAdapter::new(
+                if case == 9 {
+                    BackendKind::LlamaCpp
+                } else {
+                    BackendKind::BitNet
+                },
+                PathBuf::from(RUNTIME),
+                &http,
+                probe,
+                &control,
+            );
+            assert!(
+                adapter
+                    .serve(&request, &CancellationToken::new())
+                    .await
+                    .is_err(),
+                "case {case}"
+            );
+            assert!(*control.cleaned.lock().unwrap(), "case {case}");
+        });
+    }
+    while let Some(result) = tasks.join_next().await {
+        result.unwrap();
+    }
+}
+
+#[tokio::test]
+async fn bitnet_uses_cpu_server_custom_port_context_openai_chat_and_owned_stop() {
+    use rigspark_runtime::adapters::BackendAdapter;
+    use rigspark_runtime::{
+        lifecycle::{Lifecycle, Registry},
+        state::{Config, StateStore},
+    };
+    let root = tempfile::tempdir().unwrap();
+    let path = root.path().join("ggml-model-i2_s.gguf");
+    std::fs::write(&path, b"verified").unwrap();
+    let http = ModelHttp {
+        path: path.to_string_lossy().into_owned(),
+        mlx: false,
+    };
+    let probe = Probe {
+        binary: RUNTIME.into(),
+    };
+    let control = SpawnControl {
+        args: Mutex::new(Vec::new()),
+        env: Mutex::new(Default::default()),
+        cleaned: std::sync::Arc::new(Mutex::new(false)),
+    };
+    let adapter = RuntimeAdapter::new(
+        BackendKind::BitNet,
+        PathBuf::from(RUNTIME),
+        &http,
+        &probe,
+        &control,
+    );
+    let mut request = ServeRequest {
+        model_id: "test:latest".into(),
+        endpoint: "http://127.0.0.1:11435".into(),
+        model_path: Some(path.clone()),
+        context: Some(2048),
+        cache: None,
+    };
+    let store = StateStore::new(Config::from_home(root.path().join("state")).unwrap());
+    let registry = Registry::new(vec![&adapter]);
+    let lifecycle = Lifecycle {
+        store: &store,
+        registry: &registry,
+        probe: &probe,
+    };
+    let cancel = CancellationToken::new();
+    let reviewed = lifecycle.review(&request.model_id, &cancel).await.unwrap();
+    let handle = lifecycle
+        .replace("bitnet", &request, &reviewed, &cancel)
+        .await
+        .unwrap();
+    assert_eq!(store.read().unwrap().active.as_ref(), Some(&handle));
+    assert_eq!(handle.backend, "bitnet");
+    assert_eq!(handle.context, Some(2048));
+    assert!(handle.owned_by_us);
+    assert_eq!(handle.model_path.as_deref(), path.to_str());
+    assert_eq!(
+        *control.args.lock().unwrap(),
+        [
+            "-m",
+            path.to_str().unwrap(),
+            "--host",
+            "127.0.0.1",
+            "--port",
+            "11435",
+            "--alias",
+            "test:latest",
+            "--ctx-size",
+            "2048",
+            "-ngl",
+            "0",
+        ]
+    );
+    adapter
+        .ready_handle(&request, &handle, &CancellationToken::new())
+        .await
+        .unwrap();
+    lifecycle.health(&handle, &request, &cancel).await.unwrap();
+    let input = rigspark_runtime::ollama_inference::ChatInput {
+        model: "test:latest".into(),
+        messages: vec![rigspark_runtime::ollama_inference::ChatMessage {
+            role: "user".into(),
+            content: "hello".into(),
+            tool_calls: vec![],
+            tool_name: None,
+        }],
+        tools: vec![],
+        temperature: None,
+    };
+    assert_eq!(
+        adapter
+            .chat(&handle, &input, &CancellationToken::new())
+            .await
+            .unwrap()
+            .content,
+        "ready"
+    );
+    assert!(!adapter.can_embed());
+    assert!(!adapter.can_stream());
+    lifecycle.down(&cancel).await.unwrap();
+    assert!(store.read().unwrap().active.is_none());
+    request.cache = Some(q8_cache());
+    assert!(
+        adapter
+            .serve(&request, &CancellationToken::new())
+            .await
+            .unwrap_err()
+            .0
+            .contains("bitnet")
+    );
+    request.cache = None;
+    request.context = Some(4097);
+    assert!(
+        adapter
+            .serve(&request, &CancellationToken::new())
+            .await
+            .is_err()
+    );
 }
 #[async_trait::async_trait]
 impl ChildProcess for Spawned {

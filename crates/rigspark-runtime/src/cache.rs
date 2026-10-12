@@ -209,6 +209,7 @@ impl CacheProvider for NativeCacheProvider {
             "llamacpp" => Ok(llama_cpp(profile)),
             "ollama" => ollama(profile, owned),
             "mlx" => Err(CacheError::Unverified { backend: "mlx" }),
+            "bitnet" => Err(CacheError::Unverified { backend: "bitnet" }),
             _ => Err(CacheError::Unsupported {
                 backend: "lmstudio",
                 reason: "LM Studio is attach-only; change its cache settings in LM Studio",

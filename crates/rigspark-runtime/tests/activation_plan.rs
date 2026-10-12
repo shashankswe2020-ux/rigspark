@@ -55,6 +55,39 @@ fn roomy() -> Hardware {
     hardware(Platform::Linux, CpuArch::X64, 256e9, 4e12)
 }
 
+#[test]
+fn bitnet_is_isolated_and_context_is_bounded_even_with_bypass() {
+    let catalog = catalog();
+    let model = catalog
+        .models
+        .iter()
+        .find(|model| model.id == "bitnet-b1.58:2b")
+        .unwrap();
+    assert_eq!(auto_backend_order(model, &roomy()), ["bitnet"]);
+    check_backend(model, "bitnet", &roomy(), true).unwrap();
+    for backend in ["ollama", "llamacpp", "mlx", "lmstudio"] {
+        assert!(check_backend(model, backend, &roomy(), true).is_err());
+    }
+    assert!(check_backend(&universal(), "bitnet", &roomy(), true).is_err());
+    for context in [None, Some(1), Some(4096)] {
+        assert!(
+            plan_quantization(model, None, "bitnet", &roomy(), options(false, context)).is_ok()
+        );
+    }
+    for context in [0, 4097, 10000000] {
+        assert!(
+            plan_quantization(
+                model,
+                None,
+                "bitnet",
+                &roomy(),
+                options(true, Some(context))
+            )
+            .is_err()
+        );
+    }
+}
+
 fn options(bypass: bool, context: Option<u32>) -> PlanOptions {
     PlanOptions {
         simple_switch: false,

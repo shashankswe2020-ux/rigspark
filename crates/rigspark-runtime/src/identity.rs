@@ -297,6 +297,10 @@ fn validate_process(identity: &ProcessIdentity) -> Result<(), StateError> {
 pub trait ProcessProbe: Send + Sync {
     async fn listener(&self, port: u16, host: &str) -> Result<Listener, StateError>;
     async fn process(&self, pid: u32) -> Result<ProcessIdentity, StateError>;
+    /// Return argv including the executable; unavailable introspection must fail closed.
+    async fn command_line(&self, _pid: u32) -> Result<Vec<String>, StateError> {
+        Err(invalid("process command line unavailable"))
+    }
 }
 pub struct NativeProcessProbe;
 async fn output(binary: &str, args: &[&str]) -> Result<String, StateError> {
@@ -306,6 +310,37 @@ async fn output(binary: &str, args: &[&str]) -> Result<String, StateError> {
 }
 #[async_trait::async_trait]
 impl ProcessProbe for NativeProcessProbe {
+    async fn command_line(&self, pid: u32) -> Result<Vec<String>, StateError> {
+        tokio::task::spawn_blocking(move || {
+            let mut system = sysinfo::System::new();
+            let pid = sysinfo::Pid::from_u32(pid);
+            system.refresh_processes_specifics(
+                sysinfo::ProcessesToUpdate::Some(&[pid]),
+                true,
+                sysinfo::ProcessRefreshKind::nothing().with_cmd(sysinfo::UpdateKind::Always),
+            );
+            let process = system
+                .process(pid)
+                .ok_or_else(|| invalid("process command line unavailable"))?;
+            let args = process.cmd();
+            if args.is_empty()
+                || args.len() > 1024
+                || args.iter().map(|arg| arg.len()).sum::<usize>() > 65536
+            {
+                return Err(invalid("invalid process command line"));
+            }
+            args.iter()
+                .map(|arg| {
+                    arg.to_str()
+                        .map(str::to_owned)
+                        .ok_or_else(|| invalid("non-UTF-8 process command line"))
+                })
+                .collect()
+        })
+        .await
+        .map_err(|_| invalid("process command line probe failed"))?
+    }
+
     async fn listener(&self, port: u16, host: &str) -> Result<Listener, StateError> {
         loopback(&format!(
             "http://{}:{port}",

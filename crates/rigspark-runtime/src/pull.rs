@@ -204,9 +204,9 @@ impl PullService<'_> {
                 result.digest_verified = request.expected_sha256.is_some();
                 result.local_manifest_digest = Some(digest);
             }
-            "llamacpp" => {
+            "llamacpp" | "bitnet" => {
                 let source = request.gguf.as_ref().ok_or_else(|| {
-                    BackendError("llama.cpp requires a pinned GGUF source".into())
+                    BackendError(format!("{} requires a pinned GGUF source", request.backend))
                 })?;
                 let ceiling = request
                     .expected_bytes

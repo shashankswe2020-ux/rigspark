@@ -1,0 +1,209 @@
+{
+  "suite": "RigSpark local chat smoke benchmark v1",
+  "standardized_intelligence_score": null,
+  "temperature": 0,
+  "seed": 42,
+  "maximum_generated_tokens": 128,
+  "grading": "Predeclared strict answer/JSON match; stop and fewer than 128 generated tokens required; no per-case retries or judge model.",
+  "cases": [
+    {
+      "id": "multiply",
+      "category": "arithmetic",
+      "response": "17 * 23 = 391",
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 8,
+        "prompt_tokens": 21,
+        "total_tokens": 29
+      },
+      "passed": false,
+      "token_limit_reached": false
+    },
+    {
+      "id": "word-problem",
+      "category": "arithmetic",
+      "response": "To solve the problem, we need to follow these steps:\n\n1. Determine the total number of pencils initially.\n2. Subtract the number of pencils removed from the total number of pencils.\n\nFirst, we calculate the total number of pencils initially:\n\\[\n3 \\text{ boxes} \\times 12 \\text{ pencils per box} = 36 \\text{ pencils}\n\\]\n\nNext, we subtract the number of pencils removed:\n\\[\n36 \\text{ pencils} - 7 \\text{ pencils} = 29 \\text{ pencils}\n\\]\n\nThus, the number of pencils remaining is:\n\\[\n\\boxed{29",
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 128,
+        "prompt_tokens": 32,
+        "total_tokens": 160
+      },
+      "passed": false,
+      "token_limit_reached": true
+    },
+    {
+      "id": "fractions",
+      "category": "arithmetic",
+      "response": "To add the fractions \\( \\frac{1}{2} \\) and \\( \\frac{1}{3} \\), we need to find a common denominator. The denominators are 2 and 3, and the least common multiple of 2 and 3 is 6. Therefore, we will convert each fraction to an equivalent fraction with a denominator of 6.\n\nFirst, we convert \\( \\frac{1}{2} \\) to a fraction with a denominator of 6:\n\\[\n\\frac{1}{2} = \\frac{1 \\times 3}{2 \\times 3} = \\frac",
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 128,
+        "prompt_tokens": 32,
+        "total_tokens": 160
+      },
+      "passed": false,
+      "token_limit_reached": true
+    },
+    {
+      "id": "syllogism",
+      "category": "logic",
+      "response": "No.",
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 3,
+        "prompt_tokens": 37,
+        "total_tokens": 40
+      },
+      "passed": false,
+      "token_limit_reached": false
+    },
+    {
+      "id": "invalid-converse",
+      "category": "logic",
+      "response": "No.",
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 3,
+        "prompt_tokens": 33,
+        "total_tokens": 36
+      },
+      "passed": true,
+      "token_limit_reached": false
+    },
+    {
+      "id": "ordering",
+      "category": "logic",
+      "response": "Cara",
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 3,
+        "prompt_tokens": 29,
+        "total_tokens": 32
+      },
+      "passed": true,
+      "token_limit_reached": false
+    },
+    {
+      "id": "python-squares",
+      "category": "coding",
+      "response": "14",
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 2,
+        "prompt_tokens": 40,
+        "total_tokens": 42
+      },
+      "passed": true,
+      "token_limit_reached": false
+    },
+    {
+      "id": "python-alias",
+      "category": "coding",
+      "response": "3",
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 2,
+        "prompt_tokens": 40,
+        "total_tokens": 42
+      },
+      "passed": false,
+      "token_limit_reached": false
+    },
+    {
+      "id": "rust-range",
+      "category": "coding",
+      "response": "5",
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 2,
+        "prompt_tokens": 34,
+        "total_tokens": 36
+      },
+      "passed": false,
+      "token_limit_reached": false
+    },
+    {
+      "id": "capital",
+      "category": "knowledge",
+      "response": "Tokyo",
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 3,
+        "prompt_tokens": 21,
+        "total_tokens": 24
+      },
+      "passed": true,
+      "token_limit_reached": false
+    },
+    {
+      "id": "element",
+      "category": "knowledge",
+      "response": "Au",
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 2,
+        "prompt_tokens": 21,
+        "total_tokens": 23
+      },
+      "passed": true,
+      "token_limit_reached": false
+    },
+    {
+      "id": "exact-output",
+      "category": "instruction-following",
+      "response": "BLUE",
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 2,
+        "prompt_tokens": 19,
+        "total_tokens": 21
+      },
+      "passed": true,
+      "token_limit_reached": false
+    },
+    {
+      "id": "extract-json",
+      "category": "structured-output",
+      "response": "```json\n{\n  \"name\": \"Mira\",\n  \"age\": 27\n}\n```",
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 22,
+        "prompt_tokens": 47,
+        "total_tokens": 69
+      },
+      "passed": false,
+      "token_limit_reached": false
+    },
+    {
+      "id": "reading",
+      "category": "reading",
+      "response": "Red box.",
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 4,
+        "prompt_tokens": 42,
+        "total_tokens": 46
+      },
+      "passed": false,
+      "token_limit_reached": false
+    },
+    {
+      "id": "multi-turn",
+      "category": "multi-turn",
+      "response": "507",
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 2,
+        "prompt_tokens": 43,
+        "total_tokens": 45
+      },
+      "passed": true,
+      "token_limit_reached": false
+    }
+  ],
+  "passed": 7,
+  "total": 15,
+  "pass_rate_percent": 46.666666666666664,
+  "runtime_caveat": "This old server reports finish_reason=stop even at the token cap; token counts mark those cases as truncated. No scores changed when adding this annotation."
+}
