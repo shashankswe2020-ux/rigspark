@@ -124,9 +124,13 @@ fn catalog_requests_are_validated_before_a_data_only_draft_pr() {
         "cargo test --locked -p rigspark-cli --test catalog_request_cli",
         "Request admission touched files outside the data allow-list; refusing.",
         "gh pr create --draft --base main",
+        "catalog:needs-maintainer",
+        "Automation failed before a safe draft pull request could be reported.",
     ] {
         assert!(workflow.contains(required), "{required}");
     }
+    assert!(workflow.contains("steps.outcome.outputs.disposition != 'eligible' ||"));
+    assert!(workflow.contains("steps.pull_request.outcome == 'success'"));
     for forbidden in [
         "pull_request_target",
         "gh pr merge",
@@ -134,6 +138,7 @@ fn catalog_requests_are_validated_before_a_data_only_draft_pr() {
         "push origin main",
         "HEAD:main",
         "${{ github.event.issue.body }}",
+        "if: always() && steps.outcome.outcome == 'success'",
     ] {
         assert!(!workflow.contains(forbidden), "{forbidden}");
     }

@@ -119,7 +119,10 @@ jobs:
           echo "url=$url" >> "$GITHUB_OUTPUT"
 
       - name: Publish the request status
-        if: always() && steps.outcome.outcome == 'success'
+        if: >-
+          steps.outcome.outcome == 'success' &&
+          (steps.outcome.outputs.disposition != 'eligible' ||
+           steps.pull_request.outcome == 'success')
         env:
           PR_URL: ${{ steps.pull_request.outputs.url }}
         run: |
@@ -144,3 +147,23 @@ jobs:
             "- Workflow run: " + env.GITHUB_SERVER_URL + "/" + env.GITHUB_REPOSITORY + "/actions/runs/" + env.GITHUB_RUN_ID
           ] | .[]' "$RUNNER_TEMP/catalog-request.json" > "$RUNNER_TEMP/issue-status.md"
           gh issue comment "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file "$RUNNER_TEMP/issue-status.md"
+
+      - name: Report an automation failure
+        if: failure()
+        run: |
+          set -euo pipefail
+          gh label create "catalog:needs-maintainer" --repo "$GITHUB_REPOSITORY" --color "FBCA04" --description "Catalog request needs maintainer attention" --force
+          current=$(gh issue view "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --json labels --jq '.labels[].name')
+          args=(--add-label "catalog:needs-maintainer")
+          if grep -Fxq "catalog:validating" <<<"$current"; then
+            args+=(--remove-label "catalog:validating")
+          fi
+          gh issue edit "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" "${args[@]}"
+          printf '%s\n' \
+            "## Catalog request status" \
+            "" \
+            "Automation failed before a safe draft pull request could be reported." \
+            "" \
+            "Workflow run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" \
+            > "$RUNNER_TEMP/issue-failure.md"
+          gh issue comment "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file "$RUNNER_TEMP/issue-failure.md"
