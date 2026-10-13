@@ -3,6 +3,7 @@ pub mod advice;
 pub mod bootstrap;
 pub mod catalog;
 pub mod catalog_notice;
+pub mod catalog_request;
 pub mod coverage;
 pub mod enrich;
 pub mod freshness;

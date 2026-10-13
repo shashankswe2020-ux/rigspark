@@ -308,12 +308,14 @@ impl CatalogModel {
             EntryProvenance::Auto => require(
                 self.added_at.is_some()
                     && self.benchmark_proxy.is_none()
-                    && self.source.ollama.is_some()
+                    && (self.source.ollama.is_some()
+                        || self.source.gguf.is_some()
+                        || self.source.mlx.is_some())
                     && self
                         .quantizations
                         .iter()
                         .all(|quant| quant.sha256.is_some()),
-                "auto entry needs addedAt, a pinned Ollama digest and no benchmarkProxy",
+                "auto entry needs addedAt, a pinned runtime artifact and no benchmarkProxy",
             )?,
         }
         require(
