@@ -7,6 +7,30 @@ use serde_json::{Value, json};
 const GIB: f64 = 1073741824.0;
 /// Frozen curated catalog for fixture-style tests; weekly admission grows the shipped one.
 const GENERATION_JSON: &str = include_str!("../fixtures/generation-baseline.json");
+
+#[test]
+fn ming_design_is_an_image_workflow_with_three_exact_roles_but_is_not_shipped() {
+    use rigspark_core::generation::{FileRole, Workflow};
+    let workflow: Workflow = serde_json::from_value(json!("ming-design")).unwrap();
+    assert_eq!(workflow, Workflow::MingDesign);
+    assert_eq!(workflow.kind(), GenerationKind::Image);
+    assert_eq!(
+        workflow.roles(),
+        &[FileRole::Diffusion, FileRole::TextEncoder, FileRole::Vae]
+    );
+    assert_eq!(
+        serde_json::to_value(workflow).unwrap(),
+        json!("ming-design")
+    );
+    assert!(
+        GenerationCatalog::bundled()
+            .unwrap()
+            .models
+            .iter()
+            .all(|model| { model.workflow != Some(Workflow::MingDesign) })
+    );
+}
+
 fn baseline() -> GenerationCatalog {
     GenerationCatalog::parse(GENERATION_JSON).unwrap()
 }

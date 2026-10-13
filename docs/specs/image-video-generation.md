@@ -8,6 +8,20 @@
 
 ## 1. Objective
 
+### Ming Design candidate (2026-10-13)
+
+The additional typed workflow value `ming-design` is approved for candidate
+implementation. Its authored graph and bounded pre-download capability checks are
+implemented, but the reserved admission recipe remains unverified and the bundled
+Ming entries stay fit-only. No dataset schema-version or default-model change is made.
+The memory-fit bypass must not bypass missing workflow support.
+
+The exact INT8 pairing, source evidence, limitations, and release gate are recorded in
+[the candidate contract](../references/ming-design-workflow.md). Mac/MPS compatibility
+and real generation have not been verified. The current increment has explicit
+no-download approval; CLI/GUI availability and request closure remain blocked on the
+live checkpoint in [the plan](../plans/ming-design-workflow-support.md).
+
 Extend rigspark beyond text LLMs so a user can discover, verify, install, and run
 **open-weight image and video generation models fully locally and for free**.
 
