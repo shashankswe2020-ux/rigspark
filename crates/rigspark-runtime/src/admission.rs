@@ -73,6 +73,16 @@ pub fn allowed_request(url: &Url) -> bool {
         (Some("huggingface.co"), None | Some("blobs=true"), ["api", "models", owner, repo]) => {
             name(owner) && name(repo)
         }
+        (
+            Some("huggingface.co"),
+            Some("blobs=true"),
+            ["api", "models", owner, repo, "revision", revision],
+        ) => {
+            name(owner)
+                && name(repo)
+                && revision.len() == 40
+                && revision.bytes().all(|byte| byte.is_ascii_hexdigit())
+        }
         (Some("huggingface.co"), None, [owner, repo, "resolve", revision, path @ ..]) => {
             name(owner)
                 && name(repo)

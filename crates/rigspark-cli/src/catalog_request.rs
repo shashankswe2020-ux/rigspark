@@ -1,6 +1,8 @@
 use clap::Parser;
 use rigspark_cli::maintenance_file::File;
-use rigspark_core::{catalog::Catalog, catalog_request::ModelRequest};
+use rigspark_core::{
+    catalog::Catalog, catalog_request::ModelRequest, generation::GenerationCatalog,
+};
 use rigspark_runtime::{
     admission::{AdmissionTransport, NativeAdmissionTransport, RecordedAdmissionTransport},
     catalog_request::{RequestDisposition, evaluate_request},
@@ -10,12 +12,16 @@ use std::{error::Error, io, path::PathBuf, process::ExitCode};
 use tokio_util::sync::CancellationToken;
 
 #[derive(Parser)]
-#[command(about = "Validate one GitHub model request and admit a source-backed GGUF entry")]
+#[command(
+    about = "Route a GitHub model request to generation review or source-backed GGUF admission"
+)]
 struct Args {
     #[arg(long, default_value = "crates/rigspark-core/data/models.json")]
     catalog_path: PathBuf,
     #[arg(long, default_value = "docs/references/catalog-quality-evidence.json")]
     evidence_path: PathBuf,
+    #[arg(long, default_value = "crates/rigspark-core/data/generation.json")]
+    generation_path: PathBuf,
     #[arg(long)]
     event_path: PathBuf,
     #[arg(long)]
@@ -52,6 +58,7 @@ async fn run(args: Args) -> Result<Value, Box<dyn Error>> {
     let original_evidence = evidence_file.read()?;
     let request = ModelRequest::from_event(utf8(&event_file.read()?)?)?;
     let catalog = Catalog::parse(utf8(&original_catalog)?)?;
+    let generation = GenerationCatalog::parse(utf8(&File::open(&args.generation_path)?.read()?)?)?;
     let evidence: Value = serde_json::from_slice(&original_evidence)?;
     let transport: Box<dyn AdmissionTransport> = match args.fixture {
         Some(path) => Box::new(RecordedAdmissionTransport::parse(utf8(
@@ -65,6 +72,7 @@ async fn run(args: Args) -> Result<Value, Box<dyn Error>> {
         .unwrap_or_else(rigspark_runtime::native_chat::timestamp)?;
     let outcome = evaluate_request(
         &catalog,
+        &generation,
         &request.repository,
         transport.as_ref(),
         &now,

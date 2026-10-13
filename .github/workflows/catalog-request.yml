@@ -52,9 +52,11 @@ jobs:
           gh label create "catalog:validating" --repo "$GITHUB_REPOSITORY" --color "1D76DB" --description "Catalog request validation is running" --force
           gh issue edit "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --add-label "catalog:validating"
           current=$(gh issue view "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --json labels --jq '.labels[].name')
-          if grep -Fxq "catalog:retry" <<<"$current"; then
-            gh issue edit "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --remove-label "catalog:retry"
-          fi
+          for label in catalog:retry catalog:needs-workflow catalog:needs-maintainer catalog:needs-runnable-artifact catalog:already-available catalog:rejected catalog:pr-open; do
+            if grep -Fxq "$label" <<<"$current"; then
+              gh issue edit "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --remove-label "$label"
+            fi
+          done
 
       - name: Verify request admission contracts
         run: |
@@ -131,6 +133,8 @@ jobs:
           case "$disposition" in
             eligible) label="catalog:pr-open"; color="0E8A16" ;;
             needsRunnableArtifact) label="catalog:needs-runnable-artifact"; color="D93F0B" ;;
+            needsWorkflow) label="catalog:needs-workflow"; color="D93F0B" ;;
+            needsMaintainer) label="catalog:needs-maintainer"; color="FBCA04" ;;
             alreadyAvailable) label="catalog:already-available"; color="5319E7" ;;
             rejected) label="catalog:rejected"; color="B60205" ;;
             *) echo "Unexpected request disposition: $disposition" >&2; exit 1 ;;
@@ -143,6 +147,8 @@ jobs:
             "- Repository: `" + .repository + "`",
             "- Result: `" + .reasonCode + "`",
             "- " + .summary,
+            (if (.modelIds | length) == 0 then empty else "- Related catalog IDs: " + (.modelIds | map("`" + . + "`") | join(", ")) end),
+            (.evidenceUrls[] | "- Source: " + .),
             (if $pr == "" then empty else "- Draft pull request: " + $pr end),
             "- Workflow run: " + env.GITHUB_SERVER_URL + "/" + env.GITHUB_REPOSITORY + "/actions/runs/" + env.GITHUB_RUN_ID
           ] | .[]' "$RUNNER_TEMP/catalog-request.json" > "$RUNNER_TEMP/issue-status.md"

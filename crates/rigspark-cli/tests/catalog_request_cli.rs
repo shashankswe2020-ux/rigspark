@@ -48,6 +48,7 @@ fn gguf() -> Vec<u8> {
 }
 
 fn setup(root: &Path, runnable: bool) {
+    fs::write(root.join("generation.json"), rigspark_core::GENERATION_JSON).unwrap();
     let mut catalog = Catalog::parse(include_str!("../../rigspark-core/data/models.json")).unwrap();
     catalog.models.retain(|model| model.id == "mistral:7b");
     fs::write(
@@ -111,6 +112,8 @@ fn command(root: &Path, dry_run: bool) -> std::process::Output {
         "models.json",
         "--evidence-path",
         "evidence.json",
+        "--generation-path",
+        "generation.json",
         "--event-path",
         "event.json",
         "--fixture",
@@ -175,6 +178,86 @@ fn blocked_and_dry_run_requests_leave_inputs_byte_stable() {
         assert_eq!(report["disposition"], disposition);
         assert_eq!(
             ["models.json", "evidence.json"].map(|name| fs::read(root.path().join(name)).unwrap()),
+            before
+        );
+    }
+}
+
+#[test]
+fn image_request_reports_pinned_lineage_without_mutating_any_catalog_file() {
+    let root = tempfile::tempdir().unwrap();
+    setup(root.path(), false);
+    let mut catalog =
+        rigspark_core::generation::GenerationCatalog::parse(rigspark_core::GENERATION_JSON)
+            .unwrap();
+    catalog
+        .models
+        .retain(|model| model.family == "ming-image" || model.default);
+    fs::write(
+        root.path().join("generation.json"),
+        serde_json::to_vec(&catalog).unwrap(),
+    )
+    .unwrap();
+    fs::write(root.path().join("event.json"), json!({"issue":{
+            "number":317,
+            "html_url":"https://github.com/shashankswe2020-ux/rigspark/issues/317",
+            "body":"### Hugging Face model URL\n\nhttps://huggingface.co/inclusionAI/Ming-Image-0.1-Design\n\n### Reason or use case\n\nneed for UI/UX design"
+        }}).to_string()).unwrap();
+    let recorded: Value = serde_json::from_str(include_str!(
+        "../../rigspark-core/fixtures/admission/hf-models.json"
+    ))
+    .unwrap();
+    let package = &recorded["Comfy-Org/Ming-Image"];
+    let revision = package["sha"].as_str().unwrap();
+    let mut upstream = json!({
+        "https://huggingface.co/api/models/inclusionAI/Ming-Image-0.1-Design?blobs=true": {
+            "status":200, "json":{
+                "id":"inclusionAI/Ming-Image-0.1-Design", "sha":REVISION,
+                "private":false, "gated":false, "pipeline_tag":"text-to-image",
+                "tags":[], "siblings":[]
+            }
+        },
+        format!("https://huggingface.co/api/models/Comfy-Org/Ming-Image/revision/{revision}?blobs=true"): {
+            "status":200, "json":package
+        }
+    });
+    for model in catalog.models.iter().filter(|model| model.default) {
+        for file in &model.files {
+            let url = format!(
+                "https://huggingface.co/api/models/{}/revision/{}?blobs=true",
+                file.repo, file.revision,
+            );
+            upstream[url] = json!({"status":200, "json":{
+                "id":file.repo, "sha":file.revision, "private":false, "gated":false,
+                "tags":[], "siblings":[]
+            }});
+        }
+    }
+    fs::write(root.path().join("upstream.json"), upstream.to_string()).unwrap();
+    let names = ["models.json", "evidence.json", "generation.json"];
+    let before = names.map(|name| fs::read(root.path().join(name)).unwrap());
+    for dry_run in [false, true] {
+        let output = command(root.path(), dry_run);
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        let report: Value = serde_json::from_slice(&output.stdout).unwrap();
+        assert_eq!(report["issueNumber"], 317);
+        assert_eq!(report["disposition"], "needsWorkflow");
+        assert_eq!(report["reasonCode"], "GENERATION_WORKFLOW_MISSING");
+        assert_eq!(
+            report["modelIds"].as_array().unwrap().len(),
+            catalog
+                .models
+                .iter()
+                .filter(|model| model.family == "ming-image")
+                .count()
+        );
+        assert_eq!(report["changedFiles"], json!([]));
+        assert_eq!(
+            names.map(|name| fs::read(root.path().join(name)).unwrap()),
             before
         );
     }

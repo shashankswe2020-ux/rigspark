@@ -2,13 +2,49 @@
 
 Status: proposed · Date: 2026-10-13 · Owner: catalog pipeline
 
+## Implemented scope and deployment boundary
+
+This document includes the target design below; it is not a claim that every
+lifecycle guarantee has shipped. The initial implementation provides:
+
+- A self-contained GUI link with a prefilled issue title, body headings and
+  `catalog:request` label. It does not depend on the issue template being deployed.
+- Typed URL/event validation and pinned Q4_K_M GGUF admission for text-generation
+  repositories, with source evidence and draft data-only PRs.
+- Separate routing for text-to-image and text-to-video requests. Existing
+  generation entries are matched by source/primary-weight repository, not shared
+  encoders or name similarity. Base-model relationships use direct `base_model:`
+  tags from immutable Comfy-Org package metadata, with matching primary artifact
+  path, digest and size. At most 32 pinned packages are fetched, once each.
+- `needsWorkflow` / `catalog:needs-workflow` for related fit-only entries. Their
+  IDs and source URLs are reported and the issue stays open. Repository-level
+  lineage can include multiple base models; it is not a per-file variant mapping.
+  Runnable lineage-only matches require maintainer variant review rather than
+  claiming exact coverage.
+- `needsMaintainer` for image/video requests without proven existing coverage.
+  This command does **not** automatically admit new generation entries.
+- Generation catalog loading via `--generation-path` without modification;
+  retries clear conflicting status labels. Upstream failures are surfaced and
+  the workflow reports `catalog:needs-maintainer`, not an availability claim.
+
+Cross-issue deduplication, idempotent recovery of an already-created request PR,
+automatic issue closure, and multi-file transactional writes remain unimplemented.
+The current text gate requires existing catalog-wide quality evidence to pass;
+stale baseline evidence can block a draft PR independently of the new entry.
+
+The issue-triggered workflow must be reviewed and merged into the default branch
+before hosted intake/retry works. A locally successful dry-run is not a hosted
+Action smoke test. PRs created with `GITHUB_TOKEN` require a maintainer's
+`ready_for_review` event to start the normal CI workflow; that event is explicitly
+enabled in CI. No automatic merge or publication is performed.
+
 ## Objective
 
 Let a RigSpark user request a model that is missing from the model catalog without
 having to understand the catalog schema or prepare a pull request.
 
-The Models view adds a **Request a model** button. It opens a dedicated GitHub issue
-form, where a signed-in GitHub user submits:
+The Models view adds a **Request a model** button. It opens a prefilled GitHub issue
+editor, where a signed-in GitHub user submits:
 
 - one canonical Hugging Face model URL; and
 - an optional reason or use case.
@@ -70,15 +106,16 @@ Place **Request a model** beside the existing catalog status/update controls in
 `crates/rigspark-gui/static/index.html`.
 
 - The control is a link styled as a button, not a local form submission.
-- It opens the repository's `model_request.yml` issue form in the user's browser.
+- It opens the repository's issue editor with prefilled title/body and label.
 - Its accessible name is `Request a model`.
 - Supporting text says: `Requires GitHub sign-in. Requests are public.`
 - The app does not collect a GitHub token, email address, or other identity data.
 - If the browser cannot be opened, show the copyable issue-form URL.
 
-The first version does not attempt to prefill issue-form fields. GitHub supports
-selecting an issue template and prefilling a title, but structured issue-form answers
-must remain explicit user input.
+The GUI URL includes body headings matching the validator, so it works before the
+dedicated template reaches the default branch. The user explicitly replaces the
+URL placeholder and fills in the optional reason. The dedicated issue form is also
+available through GitHub's template picker after deployment.
 
 ### Issue form
 
@@ -114,6 +151,7 @@ Labels are the machine-readable request state:
 | `catalog:request` | Valid intake item | No |
 | `catalog:validating` | Workflow owns the current attempt | No |
 | `catalog:needs-runnable-artifact` | Base model is valid but no supported pinned GGUF, MLX, or Ollama artifact was proven | No |
+| `catalog:needs-workflow` | Related generation entries exist only as fit-only; a built-in workflow is still needed | No |
 | `catalog:needs-metadata` | Required source-backed catalog facts are absent or contradictory | No |
 | `catalog:needs-maintainer` | Automation cannot safely decide | No |
 | `catalog:pr-open` | Draft PR was created | No |

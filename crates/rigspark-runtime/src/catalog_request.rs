@@ -4,7 +4,8 @@ use rigspark_core::{
     catalog::{Catalog, CatalogModel, EntryProvenance, GgufSource, SCHEMA_VERSION, Source},
     catalog_request::Repository,
     enrich::sized_quantization,
-    generation_admission::{HfModel, MAX_METADATA_BYTES, license_from_tags},
+    generation::GenerationCatalog,
+    generation_admission::{HfModel, MAX_METADATA_BYTES, kind_from_pipeline, license_from_tags},
     sizing::Architecture,
 };
 use serde::Serialize;
@@ -14,6 +15,8 @@ use time::{OffsetDateTime, format_description::well_known::Rfc3339};
 use tokio_util::sync::CancellationToken;
 use url::Url;
 
+mod generation;
+
 const GGUF_STEPS: [usize; 3] = [8 * 1024 * 1024, 32 * 1024 * 1024, 64 * 1024 * 1024];
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
@@ -21,6 +24,8 @@ const GGUF_STEPS: [usize; 3] = [8 * 1024 * 1024, 32 * 1024 * 1024, 64 * 1024 * 1
 pub enum RequestDisposition {
     Eligible,
     NeedsRunnableArtifact,
+    NeedsWorkflow,
+    NeedsMaintainer,
     Rejected,
     AlreadyAvailable,
 }
@@ -34,6 +39,7 @@ pub struct RequestOutcome {
     pub reason_code: &'static str,
     pub summary: String,
     pub model_ids: Vec<String>,
+    pub evidence_urls: Vec<String>,
     pub changed_files: Vec<&'static str>,
     #[serde(skip)]
     pub catalog: Option<Catalog>,
@@ -55,6 +61,7 @@ impl RequestOutcome {
             reason_code,
             summary: summary.into(),
             model_ids: Vec::new(),
+            evidence_urls: vec![repository.url()],
             changed_files: Vec::new(),
             catalog: None,
             observation: None,
@@ -119,11 +126,15 @@ async fn gguf(
 
 pub async fn evaluate_request(
     catalog: &Catalog,
+    generation_catalog: &GenerationCatalog,
     repository: &Repository,
     transport: &dyn AdmissionTransport,
     now: &str,
     cancel: &CancellationToken,
 ) -> io::Result<RequestOutcome> {
+    if let Some(outcome) = generation::direct_match(generation_catalog, repository) {
+        return Ok(outcome);
+    }
     if catalog.models.iter().any(|model| {
         model.source.hf.as_deref() == Some(repository.as_str())
             || model
@@ -163,12 +174,15 @@ pub async fn evaluate_request(
             "The repository must be public, ungated, and pinned by Hugging Face.",
         ));
     }
+    if let Some(kind) = kind_from_pipeline(model.pipeline_tag.as_deref()) {
+        return generation::evaluate(generation_catalog, repository, kind, transport, cancel).await;
+    }
     if model.pipeline_tag.as_deref() != Some("text-generation") {
         return Ok(RequestOutcome::no_change(
             repository,
             RequestDisposition::Rejected,
-            "TEXT_GENERATION_REQUIRED",
-            "The repository is not identified as a text-generation model.",
+            "UNSUPPORTED_PIPELINE",
+            "The repository is not identified as text generation, text-to-image, or text-to-video.",
         ));
     }
     let Some(tag_license) = license_from_tags(&model.tags) else {
@@ -281,6 +295,7 @@ pub async fn evaluate_request(
         reason_code: "ELIGIBLE",
         summary: format!("Validated source-backed catalog entry {model_id}."),
         model_ids: vec![model_id],
+        evidence_urls: sources,
         changed_files: vec![
             "crates/rigspark-core/data/models.json",
             "docs/references/catalog-quality-evidence.json",

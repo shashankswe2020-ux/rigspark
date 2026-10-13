@@ -1,4 +1,9 @@
-use rigspark_core::{MODELS_JSON, catalog::Catalog, catalog_request::Repository};
+use rigspark_core::{
+    GENERATION_JSON, MODELS_JSON,
+    catalog::Catalog,
+    catalog_request::Repository,
+    generation::{FileRole, GenerationCatalog, GenerationKind},
+};
 use rigspark_runtime::{
     admission::RecordedAdmissionTransport,
     catalog_request::{RequestDisposition, evaluate_request},
@@ -12,6 +17,10 @@ const REPOSITORY: &str = "owner/Requested-1B-GGUF";
 const REVISION: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 const FILE: &str = "requested-1b-q4_k_m.gguf";
 const SHA256: &str = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+
+fn generation() -> GenerationCatalog {
+    GenerationCatalog::parse(GENERATION_JSON).unwrap()
+}
 
 #[derive(Default)]
 struct Gguf {
@@ -122,6 +131,7 @@ async fn pinned_q4_k_m_repository_produces_one_valid_catalog_entry() {
     let repository = Repository::parse(&format!("https://huggingface.co/{REPOSITORY}")).unwrap();
     let outcome = evaluate_request(
         &catalog,
+        &generation(),
         &repository,
         &transport(true),
         NOW,
@@ -161,6 +171,7 @@ async fn repository_without_runnable_artifact_is_blocked_without_mutation() {
     let repository = Repository::parse(&format!("https://huggingface.co/{REPOSITORY}")).unwrap();
     let outcome = evaluate_request(
         &catalog,
+        &generation(),
         &repository,
         &transport(false),
         NOW,
@@ -175,4 +186,179 @@ async fn repository_without_runnable_artifact_is_blocked_without_mutation() {
     assert_eq!(outcome.reason_code, "RUNNABLE_ARTIFACT_MISSING");
     assert!(outcome.catalog.is_none());
     assert!(outcome.observation.is_none());
+}
+
+fn ming_catalog() -> GenerationCatalog {
+    let mut catalog = generation();
+    catalog.models.retain(|model| model.family == "ming-image");
+    assert!(!catalog.models.is_empty());
+    catalog
+}
+
+#[tokio::test]
+async fn shared_generation_encoders_do_not_establish_model_coverage() {
+    let mut catalog = ming_catalog();
+    let base = "inclusionAI/Ming-Image-0.1-Design";
+    for model in &mut catalog.models {
+        model.source = "https://huggingface.co/Other/Package".into();
+        for file in &mut model.files {
+            file.repo = if matches!(file.role, FileRole::Diffusion | FileRole::Checkpoint) {
+                "Other/Package".into()
+            } else {
+                base.into()
+            };
+        }
+    }
+    let request = Repository::parse(&format!("https://huggingface.co/{base}")).unwrap();
+    let outcome = evaluate_request(
+        &Catalog::parse(MODELS_JSON).unwrap(),
+        &catalog,
+        &request,
+        &ming_transport(base, false),
+        NOW,
+        &CancellationToken::new(),
+    )
+    .await
+    .unwrap();
+    assert_eq!(outcome.disposition, RequestDisposition::NeedsMaintainer);
+    assert!(outcome.model_ids.is_empty());
+}
+
+#[tokio::test]
+async fn upstream_lookup_failure_is_not_a_success_shaped_availability_result() {
+    let request =
+        Repository::parse("https://huggingface.co/inclusionAI/Ming-Image-0.1-Design").unwrap();
+    let error = evaluate_request(
+        &Catalog::parse(MODELS_JSON).unwrap(),
+        &ming_catalog(),
+        &request,
+        &RecordedAdmissionTransport::new(BTreeMap::new()).unwrap(),
+        NOW,
+        &CancellationToken::new(),
+    )
+    .await
+    .err()
+    .expect("unavailable metadata must return an error");
+    assert!(error.to_string().contains("404"));
+}
+
+fn ming_transport(base: &str, change_digest: bool) -> RecordedAdmissionTransport {
+    let recorded: Value = serde_json::from_str(include_str!(
+        "../../rigspark-core/fixtures/admission/hf-models.json"
+    ))
+    .unwrap();
+    let mut package = recorded["Comfy-Org/Ming-Image"].clone();
+    if change_digest {
+        for sibling in package["siblings"].as_array_mut().unwrap() {
+            if sibling["lfs"].is_object() {
+                sibling["lfs"]["sha256"] = json!("b".repeat(64));
+            }
+        }
+    }
+    let revision = package["sha"].as_str().unwrap();
+    RecordedAdmissionTransport::parse(&json!({
+        format!("https://huggingface.co/api/models/{base}?blobs=true"): {
+            "status": 200,
+            "json": {
+                "id": base, "sha": REVISION, "private": false, "gated": false,
+                "pipeline_tag": "text-to-image", "tags": ["license:mit"], "siblings": []
+            }
+        },
+        format!("https://huggingface.co/api/models/Comfy-Org/Ming-Image/revision/{revision}?blobs=true"): {
+            "status": 200, "json": package
+        }
+    }).to_string()).unwrap()
+}
+
+#[tokio::test]
+async fn issue_317_matches_pinned_ming_lineage_but_keeps_fit_only_request_open() {
+    let catalog = ming_catalog();
+    let base = "inclusionAI/Ming-Image-0.1-Design";
+    let request = Repository::parse(&format!("https://huggingface.co/{base}")).unwrap();
+    let outcome = evaluate_request(
+        &Catalog::parse(MODELS_JSON).unwrap(),
+        &catalog,
+        &request,
+        &ming_transport(base, false),
+        NOW,
+        &CancellationToken::new(),
+    )
+    .await
+    .unwrap();
+    assert_eq!(outcome.disposition, RequestDisposition::NeedsWorkflow);
+    assert_eq!(outcome.reason_code, "GENERATION_WORKFLOW_MISSING");
+    assert_eq!(outcome.model_ids.len(), catalog.models.len());
+    assert!(outcome.summary.contains("fit-only"));
+    assert!(
+        outcome
+            .evidence_urls
+            .iter()
+            .any(|url| url.contains("/revision/"))
+    );
+    assert!(outcome.changed_files.is_empty());
+    assert!(outcome.catalog.is_none());
+    assert!(outcome.observation.is_none());
+}
+
+#[tokio::test]
+async fn image_names_or_lineage_without_matching_pinned_weights_are_not_duplicates() {
+    for (base, change_digest) in [
+        ("unrelated/Ming-Image-0.1-Design", false),
+        ("inclusionAI/Ming-Image-0.1-Design", true),
+    ] {
+        let request = Repository::parse(&format!("https://huggingface.co/{base}")).unwrap();
+        let outcome = evaluate_request(
+            &Catalog::parse(MODELS_JSON).unwrap(),
+            &ming_catalog(),
+            &request,
+            &ming_transport(base, change_digest),
+            NOW,
+            &CancellationToken::new(),
+        )
+        .await
+        .unwrap();
+        assert_eq!(outcome.disposition, RequestDisposition::NeedsMaintainer);
+        assert_eq!(outcome.reason_code, "GENERATION_ADMISSION_REVIEW_REQUIRED");
+        assert!(outcome.model_ids.is_empty());
+        assert!(outcome.changed_files.is_empty());
+    }
+}
+
+#[tokio::test]
+async fn direct_generation_requests_distinguish_runnable_and_fit_only_without_network() {
+    let catalog = generation();
+    let offline = RecordedAdmissionTransport::new(BTreeMap::new()).unwrap();
+    for kind in [GenerationKind::Image, GenerationKind::Video] {
+        let runnable = catalog
+            .models
+            .iter()
+            .find(|model| model.kind == kind && model.runnable().is_ok())
+            .unwrap();
+        let request = Repository::parse(&runnable.source).unwrap();
+        let outcome = evaluate_request(
+            &Catalog::parse(MODELS_JSON).unwrap(),
+            &catalog,
+            &request,
+            &offline,
+            NOW,
+            &CancellationToken::new(),
+        )
+        .await
+        .unwrap();
+        assert_eq!(outcome.disposition, RequestDisposition::AlreadyAvailable);
+        assert!(outcome.model_ids.contains(&runnable.id));
+        assert!(outcome.changed_files.is_empty());
+    }
+    let request = Repository::parse("https://huggingface.co/Comfy-Org/Ming-Image").unwrap();
+    let outcome = evaluate_request(
+        &Catalog::parse(MODELS_JSON).unwrap(),
+        &catalog,
+        &request,
+        &offline,
+        NOW,
+        &CancellationToken::new(),
+    )
+    .await
+    .unwrap();
+    assert_eq!(outcome.disposition, RequestDisposition::NeedsWorkflow);
 }

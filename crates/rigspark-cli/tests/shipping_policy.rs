@@ -112,6 +112,14 @@ fn write_capable_workflows_never_push_to_main() {
 #[test]
 fn catalog_requests_are_validated_before_a_data_only_draft_pr() {
     let workflow = read(".github/workflows/catalog-request.yml");
+    assert!(workflow.contains("needsWorkflow) label=\"catalog:needs-workflow\""));
+    assert!(workflow.contains("needsMaintainer) label=\"catalog:needs-maintainer\""));
+    assert!(workflow.contains(".evidenceUrls"));
+    assert!(!workflow.contains("gh issue close"));
+    assert!(
+        read(".github/workflows/ci.yml")
+            .contains("types: [opened, synchronize, reopened, ready_for_review]")
+    );
     for required in [
         "types: [opened, reopened, labeled]",
         "github.event.label.name == 'catalog:retry'",
