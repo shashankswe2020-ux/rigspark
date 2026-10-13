@@ -23,11 +23,12 @@ use tokio_util::sync::CancellationToken;
 
 pub const DEFAULT_PORT: u16 = 8188;
 pub const MAX_PROMPT_BYTES: usize = 16 * 1024;
+mod preflight;
 pub const MAX_SEED: u64 = 9_007_199_254_740_991;
 const MAX_OUTPUT_BYTES: u64 = 1024 * 1024 * 1024;
 const WEIGHT_TIMEOUT: Duration = Duration::from_secs(6 * 60 * 60);
 /// Core ComfyUI nodes used by the built-in workflows; anything else is refused.
-pub const LOCAL_NODES: [&str; 21] = [
+pub const LOCAL_NODES: [&str; 22] = [
     "BasicGuider",
     "BasicScheduler",
     "CheckpointLoaderSimple",
@@ -40,6 +41,7 @@ pub const LOCAL_NODES: [&str; 21] = [
     "KSampler",
     "KSamplerSelect",
     "ModelSamplingAuraFlow",
+    "ModelSamplingFlux",
     "ModelSamplingSD3",
     "RandomNoise",
     "SamplerCustomAdvanced",
@@ -76,6 +78,8 @@ pub enum GenerationError {
     NotVisible(String),
     #[error("workflow node `{0}` is not an allowlisted local node; refusing to submit")]
     NonLocalNode(String),
+    #[error("{0}")]
+    Incompatible(String),
     #[error("ComfyUI rejected the workflow: {0}")]
     Rejected(String),
     #[error("ComfyUI generation failed: {0}")]
@@ -110,7 +114,7 @@ pub fn output_extension(kind: GenerationKind) -> &'static str {
 }
 fn save_node(workflow: Workflow) -> &'static str {
     match workflow {
-        Workflow::FluxCheckpoint | Workflow::FluxSplit => "9",
+        Workflow::FluxCheckpoint | Workflow::FluxSplit | Workflow::MingDesign => "9",
         Workflow::WanT2v | Workflow::Wan22Ti2v => "28",
         Workflow::QwenImage => "60",
     }
@@ -240,6 +244,29 @@ pub fn workflow(
             "48": {"class_type": "ModelSamplingSD3", "inputs": {"shift": 8.0, "model": ["37", 0]}},
             "55": {"class_type": "Wan22ImageToVideoLatent", "inputs": {
                 "width": 1280, "height": 704, "length": 41, "batch_size": 1, "vae": ["39", 0]}},
+        }),
+        // Pinned Ming contract and deliberate template reductions: docs/references/ming-design-workflow.md.
+        Workflow::MingDesign => json!({
+            "5": {"class_type": "EmptyLatentImage", "inputs": {"width": 1024, "height": 1024, "batch_size": 1}},
+            "6": {"class_type": "CLIPTextEncode", "inputs": {"text": prompt, "clip": ["11", 0]}},
+            "8": {"class_type": "VAEDecode", "inputs": {"samples": ["13", 0], "vae": ["10", 0]}},
+            "9": {"class_type": "SaveImage", "inputs": {"filename_prefix": "rigspark", "images": ["8", 0]}},
+            "10": {"class_type": "VAELoader", "inputs": {"vae_name": name(FileRole::Vae)?}},
+            "11": {"class_type": "CLIPLoader", "inputs": {
+                "clip_name": name(FileRole::TextEncoder)?, "type": "qwen_image", "device": "default"}},
+            "12": {"class_type": "UNETLoader", "inputs": {
+                "unet_name": name(FileRole::Diffusion)?, "weight_dtype": "default"}},
+            "13": {"class_type": "SamplerCustomAdvanced", "inputs": {
+                "noise": ["25", 0], "guider": ["22", 0], "sampler": ["16", 0],
+                "sigmas": ["17", 0], "latent_image": ["5", 0]}},
+            "16": {"class_type": "KSamplerSelect", "inputs": {"sampler_name": "euler"}},
+            "17": {"class_type": "BasicScheduler", "inputs": {
+                "scheduler": "simple", "steps": 12, "denoise": 1.0, "model": ["26", 0]}},
+            "22": {"class_type": "BasicGuider", "inputs": {
+                "model": ["26", 0], "conditioning": ["6", 0]}},
+            "25": {"class_type": "RandomNoise", "inputs": {"noise_seed": seed}},
+            "26": {"class_type": "ModelSamplingFlux", "inputs": {
+                "model": ["12", 0], "max_shift": 1.15, "base_shift": 0.5, "width": 1024, "height": 1024}},
         }),
         // https://comfyanonymous.github.io/ComfyUI_examples/qwen_image/ (basic workflow)
         Workflow::QwenImage => json!({
@@ -908,16 +935,26 @@ impl ComfyUi<'_> {
                 return Err(GenerationError::Exists(output.to_path_buf()));
             }
         }
-        let status = self.ready(request.endpoint, cancel).await?;
-        let devices = &status.devices;
         let built_in = model
             .runnable()
             .map_err(|error| GenerationError::Catalog(error.to_string()))?;
+        let status = self.ready(request.endpoint, cancel).await?;
+        let devices = &status.devices;
         if matches!(built_in, Workflow::WanT2v | Workflow::Wan22Ti2v) && apple_mps(devices) {
             self.emit(
                 "ComfyUI reports Apple MPS: using the euler sampler (uni_pc diverges on MPS)"
                     .into(),
             );
+        }
+        if built_in == Workflow::MingDesign {
+            let names = model
+                .files
+                .iter()
+                .map(|file| (file.role, file.file.clone()))
+                .collect();
+            let graph = workflow(model, &names, request.prompt, request.seed, devices)?;
+            self.emit("Checking native Ming Design capabilities before downloading weights".into());
+            preflight::ming(self, request.endpoint, &graph, cancel).await?;
         }
         self.emit(format!("Verifying weights for {}", model.id));
         let mut weights = self.install(model, request.comfyui_dir, cancel).await?;
@@ -1054,6 +1091,9 @@ pub fn prepare(
         .resolve(&options.model)
         .map_err(|error| GenerationError::Catalog(error.to_string()))?
         .clone();
+    model
+        .runnable()
+        .map_err(|error| GenerationError::Catalog(error.to_string()))?;
     if options.comfyui_dir.as_os_str().is_empty() {
         return Err(GenerationError::Invalid(
             "a ComfyUI directory is required (--comfyui-dir or RIGSPARK_COMFYUI_DIR)",

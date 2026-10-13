@@ -15,6 +15,54 @@ fn model(repo: &str) -> HfModel {
     HfModel::parse(&models()[repo].to_string()).unwrap()
 }
 
+#[test]
+fn ming_candidate_is_pinned_to_the_exact_int8_pairing_but_not_auto_admitted() {
+    use rigspark_core::generation_admission::{RECIPES, recipe};
+    let candidate =
+        GenerationCatalog::parse(include_str!("../fixtures/ming-design-candidate.json")).unwrap();
+    let entry = candidate.resolve("image").unwrap();
+    let upstream = model("Comfy-Org/Ming-Image");
+    let planned = RECIPES
+        .iter()
+        .find(|recipe| recipe.workflow == Workflow::MingDesign)
+        .unwrap();
+    assert!(!planned.verified);
+    assert!(recipe("Comfy-Org/Ming-Image").is_none());
+    assert_eq!(
+        planned.diffusion,
+        &["ming_image_0.1_design_int8_convrot.safetensors"]
+    );
+    assert_eq!(entry.workflow, Some(planned.workflow));
+    assert_eq!(entry.workflow_source.as_deref(), Some(planned.source));
+    assert_eq!(entry.total_bytes(), 25_936_727_174);
+    for file in &entry.files {
+        assert_eq!(file.repo, upstream.id);
+        assert_eq!(file.revision, upstream.sha);
+        let sibling = upstream
+            .siblings
+            .iter()
+            .find(|sibling| sibling.rfilename == file.file)
+            .unwrap();
+        let lfs = sibling.lfs.as_ref().unwrap();
+        assert_eq!(file.sha256, lfs.sha256);
+        assert_eq!(file.bytes, lfs.size);
+    }
+    assert!(
+        entry
+            .file(FileRole::TextEncoder)
+            .unwrap()
+            .file
+            .ends_with(planned.text_encoder)
+    );
+    assert!(
+        entry
+            .file(FileRole::Vae)
+            .unwrap()
+            .file
+            .ends_with(planned.vae)
+    );
+}
+
 /// A safetensors header for tensors with the given shapes.
 fn header(shapes: &[&[u64]]) -> Vec<u8> {
     let mut object = serde_json::Map::new();

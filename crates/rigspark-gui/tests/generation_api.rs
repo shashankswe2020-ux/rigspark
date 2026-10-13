@@ -164,6 +164,28 @@ async fn models_endpoint_reports_memory_fit_and_unknown_speed() {
 }
 
 #[tokio::test]
+async fn unverified_ming_remains_fit_only_and_cannot_start_a_gui_job() {
+    let home = tempfile::tempdir().unwrap();
+    let directory = comfy();
+    let host = host(home.path(), Arc::new(Waits));
+    let (_, models) = json_call(&host, "GET", "/api/generation/models", None).await;
+    let id = "ming-image:ming_image_0.1_design_int8_convrot";
+    let ming = models["models"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|model| model["id"] == id)
+        .unwrap();
+    assert_eq!(ming["runnable"], false);
+    let (status, response) = json_call(&host, "POST", "/api/generation/jobs", Some(json!({
+        "model": id, "prompt": "a transparent icon", "comfyuiDir": directory.path(), "bypass": true,
+    }))).await;
+    host.shutdown.cancel();
+    assert_eq!(status, StatusCode::BAD_REQUEST, "{response}");
+    assert!(response.to_string().contains("fit-only"));
+}
+
+#[tokio::test]
 async fn image_job_runs_and_serves_the_png_preview() {
     let home = tempfile::tempdir().unwrap();
     let comfy = comfy();

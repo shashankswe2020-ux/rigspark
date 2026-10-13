@@ -1,0 +1,83 @@
+{
+  "TextEncodeMingImageEdit": {
+    "name": "TextEncodeMingImageEdit", "python_module": "comfy_extras.nodes_ming",
+    "input": {"required": {}}, "output": ["CONDITIONING"]
+  },
+  "UNETLoader": {
+    "name": "UNETLoader", "python_module": "nodes",
+    "input": {"required": {"unet_name": [[]], "weight_dtype": [["default", "fp8_e4m3fn", "fp8_e5m2"]]}},
+    "output": ["MODEL"]
+  },
+  "CLIPLoader": {
+    "name": "CLIPLoader", "python_module": "nodes",
+    "input": {
+      "required": {"clip_name": [[]], "type": [["stable_diffusion", "qwen_image"]]},
+      "optional": {"device": [["default", "cpu"]]}
+    }, "output": ["CLIP"]
+  },
+  "VAELoader": {
+    "name": "VAELoader", "python_module": "nodes",
+    "input": {"required": {"vae_name": [[]]}}, "output": ["VAE"]
+  },
+  "CLIPTextEncode": {
+    "name": "CLIPTextEncode", "python_module": "nodes",
+    "input": {"required": {"text": ["STRING"], "clip": ["CLIP"]}},
+    "output": ["CONDITIONING"]
+  },
+  "ModelSamplingFlux": {
+    "name": "ModelSamplingFlux", "python_module": "comfy_extras.nodes_model_advanced",
+    "input": {"required": {
+      "model": ["MODEL"], "max_shift": ["FLOAT", {"min": 0, "max": 100}],
+      "base_shift": ["FLOAT", {"min": 0, "max": 100}],
+      "width": ["INT", {"min": 16, "max": 16384}],
+      "height": ["INT", {"min": 16, "max": 16384}]
+    }}, "output": ["MODEL"]
+  },
+  "EmptyLatentImage": {
+    "name": "EmptyLatentImage", "python_module": "nodes",
+    "input": {"required": {
+      "width": ["INT", {"min": 16, "max": 16384}],
+      "height": ["INT", {"min": 16, "max": 16384}],
+      "batch_size": ["INT", {"min": 1, "max": 4096}]
+    }}, "output": ["LATENT"]
+  },
+  "RandomNoise": {
+    "name": "RandomNoise", "python_module": "comfy_extras.nodes_custom_sampler",
+    "input": {"required": {"noise_seed": ["INT", {"min": 0, "max": 18446744073709551615}]}},
+    "output": ["NOISE"]
+  },
+  "KSamplerSelect": {
+    "name": "KSamplerSelect", "python_module": "comfy_extras.nodes_custom_sampler",
+    "input": {"required": {"sampler_name": [["euler", "heun"]]}},
+    "output": ["SAMPLER"]
+  },
+  "BasicScheduler": {
+    "name": "BasicScheduler", "python_module": "comfy_extras.nodes_custom_sampler",
+    "input": {"required": {
+      "model": ["MODEL"], "scheduler": [["simple", "normal"]],
+      "steps": ["INT", {"min": 1, "max": 10000}], "denoise": ["FLOAT", {"min": 0, "max": 1}]
+    }}, "output": ["SIGMAS"]
+  },
+  "BasicGuider": {
+    "name": "BasicGuider", "python_module": "comfy_extras.nodes_custom_sampler",
+    "input": {"required": {"model": ["MODEL"], "conditioning": ["CONDITIONING"]}},
+    "output": ["GUIDER"]
+  },
+  "SamplerCustomAdvanced": {
+    "name": "SamplerCustomAdvanced", "python_module": "comfy_extras.nodes_custom_sampler",
+    "input": {"required": {
+      "noise": ["NOISE"], "guider": ["GUIDER"], "sampler": ["SAMPLER"],
+      "sigmas": ["SIGMAS"], "latent_image": ["LATENT"]
+    }}, "output": ["LATENT", "LATENT"]
+  },
+  "VAEDecode": {
+    "name": "VAEDecode", "python_module": "nodes",
+    "input": {"required": {"samples": ["LATENT"], "vae": ["VAE"]}},
+    "output": ["IMAGE"]
+  },
+  "SaveImage": {
+    "name": "SaveImage", "python_module": "nodes",
+    "input": {"required": {"images": ["IMAGE"], "filename_prefix": ["STRING"]}},
+    "output": ["IMAGE"], "output_node": true
+  }
+}
