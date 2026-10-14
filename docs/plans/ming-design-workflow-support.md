@@ -6,6 +6,12 @@ Tracking: [model request #317](https://github.com/shashankswe2020-ux/rigspark/is
 
 ## Current execution status
 
+Latest update: a separately approved real attempt reached live preflight and production
+downloads, but the large encoder transfer failed before inference. See the
+[live attempt evidence](../references/ming-design-workflow.md#first-approved-live-attempt-2026-10-14).
+T6 remains incomplete and production activation is still blocked. The earlier
+no-download decision below describes the original candidate increment.
+
 The user approved the serialized `ming-design` candidate value and then explicitly
 chose to finish the tested candidate **without downloading weights**.
 
