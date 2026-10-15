@@ -126,3 +126,28 @@ The attempt used a temporary Rust executable calling production hardware sizing,
 The executable source was removed after cleanup; it did not enable a user-facing
 catalog bypass. Retrying requires the encoder download again, since failed unverified
 bytes were deliberately not promoted or retained.
+
+## Second approved live attempt (2026-10-15)
+
+Result: **PASS on Apple MPS; one real 1024×1024 image generated**. Release gate unchanged.
+
+- Candidate code: `ad90363` (includes the COMBO fix, #321), plus the resume-request
+  retry fix (#322). Root cause of the first attempt's failure: a dropped body triggered
+  one resume request, and a transport failure on that request aborted the download.
+  Resume-request failures now share the bounded `MAX_RESUMES` budget.
+- Same owned ComfyUI 0.38.0 server on `127.0.0.1:49322`, custom and API nodes disabled.
+- Real preflight passed. The cached diffusion artifact was re-hashed and reused.
+  The encoder (19,507,670,525 bytes) and VAE (253,816,696 bytes) were downloaded and
+  verified by production acquisition, then independently re-hashed: both SHA-256
+  digests match the catalog, mode `0600`.
+- Prompt `e57674f0-d5d2-4938-b59b-0b032f74f346`, seed 42, 12 Euler steps: ComfyUI
+  loaded encoder (18,283 MB) and diffusion (5,889 MB) fully on MPS, sampled at about
+  19.8 s/step, and executed in 278.88 s. End-to-end with downloads took 1,965 s.
+- Output: 697,504-byte PNG, 1024×1024, 8-bit RGBA, preserved unchanged. Visual check:
+  a coherent mobile UI mockup matching the prompt; rendered text is not legible.
+- Peak inference memory was not sampled, so it remains unverified. The owned ComfyUI
+  process was stopped and its listener released; the temporary probe source was removed.
+
+This evidence satisfies the real-runtime smoke for this exact pairing on one Apple MPS
+machine. Promoting the recipe to `verified: true`, enabling the bundled catalog entry,
+and marking #317 available still require explicit approval; CUDA remains uncertified.
