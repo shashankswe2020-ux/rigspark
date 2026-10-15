@@ -91,3 +91,38 @@ The user explicitly chose **no weight downloads and no real smoke test** for thi
 increment. Do not flip the recipe flag, promote catalog entries, mark #317 available,
 or claim CLI/GUI Ming generation works until the exact pairing passes the approved
 real-runtime checkpoint in the [implementation plan](../plans/ming-design-workflow-support.md).
+
+## First approved live attempt (2026-10-14)
+
+Result: **PARTIAL, acquisition failure; no image generated**.
+
+- Candidate code: `a08ff8c`, plus the live-discovered COMBO compatibility fix.
+- Existing ComfyUI 0.38.0 at `f1072eb0350638a3390ddb6afbcaa8c6b237c6fd`;
+  Python 3.12.13, Torch 2.14.1, Apple MPS available, 36 GiB unified RAM.
+- Started an owned server on `127.0.0.1:49322`, with custom and partner nodes
+  disabled and separate smoke user/output directories. No existing server was replaced.
+- Live immutable metadata matched all three candidate file sizes and SHA-256 digests.
+  Production hardware sizing returned `yes` (about 28.9 GiB weight budget); this
+  does not prove inference peak-memory requirements.
+- The first preflight rejected a valid modern node schema: native ComfyUI reports
+  some choices as `["COMBO", {"options": [...], "multiselect": false}]`, not only
+  legacy nested arrays. A failing regression reproduced this; validation now accepts
+  both single-choice formats while rejecting missing/malformed choices, unsupported
+  values, and multiselect inputs. The real preflight then passed.
+- Production acquisition downloaded and verified the 6,175,239,953-byte diffusion
+  artifact. Independent SHA-256 verification matched the catalog, with mode `0600`.
+- The 19,507,670,525-byte encoder transfer reached at least 95% before failing with
+  `error decoding response body; download transport failed`. No prompt was submitted.
+  The installer removed its incomplete file and lock; VAE acquisition was not reached.
+- The owned ComfyUI process was stopped and its listener released. The verified
+  diffusion cache was retained for a later retry; no inference RAM remains allocated
+  by this test. No production catalog data or ComfyUI checkout files changed.
+- Regression tests, full workspace tests, build, strict Clippy, fmt and the native
+  retirement gate passed for the schema fix. Real acquisition completion, cache-hit
+  execution, actual PNG/alpha generation, and CUDA/MPS certification remain unproven.
+
+The attempt used a temporary Rust executable calling production hardware sizing,
+`ComfyUi::generate`, `NativeTransport`, and `HfTransport` with the candidate fixture.
+The executable source was removed after cleanup; it did not enable a user-facing
+catalog bypass. Retrying requires the encoder download again, since failed unverified
+bytes were deliberately not promoted or retained.

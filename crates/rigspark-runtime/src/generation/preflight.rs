@@ -7,6 +7,43 @@ use tokio_util::sync::CancellationToken;
 const MING_MARKER: &str = "TextEncodeMingImageEdit";
 const MAX_NODE_BYTES: usize = 1024 * 1024;
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn modern_combo_schema_requires_a_supported_single_choice() {
+        let check = |spec: Value, value: Value, file| {
+            accepts(
+                spec.as_array().unwrap(),
+                &value,
+                file,
+                &json!({}),
+                &BTreeMap::new(),
+            )
+        };
+        assert!(check(
+            json!(["COMBO", {"options":["euler","heun"],"multiselect":false}]),
+            json!("euler"),
+            false
+        ));
+        assert!(check(
+            json!(["COMBO", {"options":[]}]),
+            json!("pending.safetensors"),
+            true
+        ));
+        for spec in [
+            json!(["COMBO", {"options":["heun"]}]),
+            json!(["COMBO", {}]),
+            json!(["COMBO", {"options":["euler",3]}]),
+            json!(["COMBO", {"options":["euler"],"multiselect":true}]),
+        ] {
+            assert!(!check(spec, json!("euler"), false));
+        }
+    }
+}
+
 #[derive(Deserialize)]
 struct NodeInfo {
     name: String,
@@ -31,6 +68,9 @@ struct Inputs {
 struct Limits {
     min: Option<f64>,
     max: Option<f64>,
+    options: Option<Vec<String>>,
+    #[serde(default)]
+    multiselect: bool,
 }
 
 fn incompatible(detail: impl Into<String>) -> GenerationError {
@@ -70,6 +110,14 @@ fn accepts(
         return value.is_string()
             && choices.iter().all(Value::is_string)
             && (deferred_file || choices.contains(value));
+    }
+    if specification[0].as_str() == Some("COMBO") {
+        return !limits.multiselect
+            && limits.options.as_ref().is_some_and(|choices| {
+                value.as_str().is_some_and(|value| {
+                    deferred_file || choices.iter().any(|choice| choice == value)
+                })
+            });
     }
     if deferred_file {
         return false;
