@@ -37,7 +37,7 @@ impl GenerationKind {
 }
 
 /// Built-in ComfyUI workflow graphs implemented by `rigspark-runtime`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Workflow {
     FluxCheckpoint,

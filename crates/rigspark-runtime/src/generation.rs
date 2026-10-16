@@ -7,9 +7,9 @@ use crate::{
     http::{HttpError, Request, Transport, read_json},
 };
 use rigspark_core::generation::{
-    FileRole, FitVerdict, GenerationCatalog, GenerationFit, GenerationKind, GenerationModel,
-    Workflow, fit,
+    FileRole, FitVerdict, GenerationCatalog, GenerationFit, GenerationKind, GenerationModel, fit,
 };
+use rigspark_core::workflow::{WorkflowFile, registry};
 use serde::Serialize;
 use serde_json::{Value, json};
 use std::{
@@ -52,9 +52,6 @@ pub const LOCAL_NODES: [&str; 22] = [
     "VAELoader",
     "Wan22ImageToVideoLatent",
 ];
-/// Wan 2.1's published default negative prompt (Apache-2.0), as used by the official
-/// ComfyUI example: https://comfyanonymous.github.io/ComfyUI_examples/wan/
-const WAN_NEGATIVE_PROMPT: &str = "色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走";
 
 #[derive(Debug, thiserror::Error)]
 pub enum GenerationError {
@@ -112,13 +109,6 @@ pub fn output_extension(kind: GenerationKind) -> &'static str {
         GenerationKind::Video => "webp",
     }
 }
-fn save_node(workflow: Workflow) -> &'static str {
-    match workflow {
-        Workflow::FluxCheckpoint | Workflow::FluxSplit | Workflow::MingDesign => "9",
-        Workflow::WanT2v | Workflow::Wan22Ti2v => "28",
-        Workflow::QwenImage => "60",
-    }
-}
 
 /// Random seed in the JSON-safe integer range, reported back so runs are reproducible.
 pub fn random_seed() -> u64 {
@@ -144,17 +134,7 @@ pub fn apple_mps(devices: &[String]) -> bool {
     devices.iter().any(|device| device == "mps")
 }
 
-/// Wan's official `uni_pc` sampler diverged into noise on Apple MPS in live testing (ComfyUI
-/// 0.38, 30 steps), while `euler` at the official size and length stayed coherent.
-fn wan_sampler(devices: &[String]) -> &'static str {
-    if apple_mps(devices) {
-        "euler"
-    } else {
-        "uni_pc"
-    }
-}
-
-/// Builds the API-format graph published in the official ComfyUI examples.
+/// Builds the API-format graph for one run from the model's bundled workflow file.
 pub fn workflow(
     model: &GenerationModel,
     names: &HashMap<FileRole, String>,
@@ -162,129 +142,19 @@ pub fn workflow(
     seed: u64,
     devices: &[String],
 ) -> Result<Value, GenerationError> {
-    let name = |role| {
-        names
-            .get(&role)
-            .cloned()
-            .ok_or(GenerationError::Invalid("missing installed weight name"))
-    };
-    let workflow = model
+    Ok(workflow_file(model)?
+        .apply(prompt, seed, names, devices)
+        .map_err(|error| GenerationError::Catalog(error.0))?
+        .graph)
+}
+
+fn workflow_file(model: &GenerationModel) -> Result<&'static WorkflowFile, GenerationError> {
+    let built_in = model
         .runnable()
         .map_err(|error| GenerationError::Catalog(error.to_string()))?;
-    Ok(match workflow {
-        // https://comfyanonymous.github.io/ComfyUI_examples/flux/ (schnell fp8 checkpoint)
-        Workflow::FluxCheckpoint => json!({
-            "6": {"class_type": "CLIPTextEncode", "inputs": {"text": prompt, "clip": ["30", 1]}},
-            "8": {"class_type": "VAEDecode", "inputs": {"samples": ["31", 0], "vae": ["30", 2]}},
-            "9": {"class_type": "SaveImage", "inputs": {"filename_prefix": "rigspark", "images": ["8", 0]}},
-            "27": {"class_type": "EmptySD3LatentImage", "inputs": {"width": 1024, "height": 1024, "batch_size": 1}},
-            "30": {"class_type": "CheckpointLoaderSimple", "inputs": {"ckpt_name": name(FileRole::Checkpoint)?}},
-            "31": {"class_type": "KSampler", "inputs": {
-                "seed": seed, "steps": 4, "cfg": 1.0, "sampler_name": "euler", "scheduler": "simple",
-                "denoise": 1.0, "model": ["30", 0], "positive": ["6", 0], "negative": ["33", 0],
-                "latent_image": ["27", 0]}},
-            "33": {"class_type": "CLIPTextEncode", "inputs": {"text": "", "clip": ["30", 1]}},
-        }),
-        // https://comfyanonymous.github.io/ComfyUI_examples/flux/ (regular full version)
-        Workflow::FluxSplit => json!({
-            "5": {"class_type": "EmptyLatentImage", "inputs": {"width": 1024, "height": 1024, "batch_size": 1}},
-            "6": {"class_type": "CLIPTextEncode", "inputs": {"text": prompt, "clip": ["11", 0]}},
-            "8": {"class_type": "VAEDecode", "inputs": {"samples": ["13", 0], "vae": ["10", 0]}},
-            "9": {"class_type": "SaveImage", "inputs": {"filename_prefix": "rigspark", "images": ["8", 0]}},
-            "10": {"class_type": "VAELoader", "inputs": {"vae_name": name(FileRole::Vae)?}},
-            "11": {"class_type": "DualCLIPLoader", "inputs": {
-                "clip_name1": name(FileRole::TextEncoder)?,
-                "clip_name2": name(FileRole::Clip)?,
-                "type": "flux"}},
-            "12": {"class_type": "UNETLoader", "inputs": {
-                "unet_name": name(FileRole::Diffusion)?, "weight_dtype": "default"}},
-            "13": {"class_type": "SamplerCustomAdvanced", "inputs": {
-                "noise": ["25", 0], "guider": ["22", 0], "sampler": ["16", 0],
-                "sigmas": ["17", 0], "latent_image": ["5", 0]}},
-            "16": {"class_type": "KSamplerSelect", "inputs": {"sampler_name": "euler"}},
-            "17": {"class_type": "BasicScheduler", "inputs": {
-                "scheduler": "simple", "steps": 4, "denoise": 1.0, "model": ["12", 0]}},
-            "22": {"class_type": "BasicGuider", "inputs": {
-                "model": ["12", 0], "conditioning": ["6", 0]}},
-            "25": {"class_type": "RandomNoise", "inputs": {"noise_seed": seed}},
-        }),
-        // https://comfyanonymous.github.io/ComfyUI_examples/wan/ (text to video, 1.3B)
-        Workflow::WanT2v => json!({
-            "3": {"class_type": "KSampler", "inputs": {
-                "seed": seed, "steps": 30, "cfg": 6.0, "sampler_name": wan_sampler(devices), "scheduler": "simple",
-                "denoise": 1.0, "model": ["48", 0], "positive": ["6", 0], "negative": ["7", 0],
-                "latent_image": ["40", 0]}},
-            "6": {"class_type": "CLIPTextEncode", "inputs": {"text": prompt, "clip": ["38", 0]}},
-            "7": {"class_type": "CLIPTextEncode", "inputs": {"text": WAN_NEGATIVE_PROMPT, "clip": ["38", 0]}},
-            "8": {"class_type": "VAEDecode", "inputs": {"samples": ["3", 0], "vae": ["39", 0]}},
-            "28": {"class_type": "SaveAnimatedWEBP", "inputs": {
-                "filename_prefix": "rigspark", "fps": 16.0, "lossless": false, "quality": 90,
-                "method": "default", "images": ["8", 0]}},
-            "37": {"class_type": "UNETLoader", "inputs": {"unet_name": name(FileRole::Diffusion)?, "weight_dtype": "default"}},
-            "38": {"class_type": "CLIPLoader", "inputs": {"clip_name": name(FileRole::TextEncoder)?, "type": "wan", "device": "default"}},
-            "39": {"class_type": "VAELoader", "inputs": {"vae_name": name(FileRole::Vae)?}},
-            "40": {"class_type": "EmptyHunyuanLatentVideo", "inputs": {"width": 832, "height": 480, "length": 49, "batch_size": 1}},
-            "48": {"class_type": "ModelSamplingSD3", "inputs": {"shift": 8.0, "model": ["37", 0]}},
-        }),
-        // https://comfyanonymous.github.io/ComfyUI_examples/wan22/ (5B text to video)
-        Workflow::Wan22Ti2v => json!({
-            "3": {"class_type": "KSampler", "inputs": {
-                "seed": seed, "steps": 30, "cfg": 5.0, "sampler_name": wan_sampler(devices), "scheduler": "simple",
-                "denoise": 1.0, "model": ["48", 0], "positive": ["6", 0], "negative": ["7", 0],
-                "latent_image": ["55", 0]}},
-            "6": {"class_type": "CLIPTextEncode", "inputs": {"text": prompt, "clip": ["38", 0]}},
-            "7": {"class_type": "CLIPTextEncode", "inputs": {"text": WAN_NEGATIVE_PROMPT, "clip": ["38", 0]}},
-            "8": {"class_type": "VAEDecode", "inputs": {"samples": ["3", 0], "vae": ["39", 0]}},
-            "28": {"class_type": "SaveAnimatedWEBP", "inputs": {
-                "filename_prefix": "rigspark", "fps": 24.0, "lossless": false, "quality": 90,
-                "method": "default", "images": ["8", 0]}},
-            "37": {"class_type": "UNETLoader", "inputs": {"unet_name": name(FileRole::Diffusion)?, "weight_dtype": "default"}},
-            "38": {"class_type": "CLIPLoader", "inputs": {"clip_name": name(FileRole::TextEncoder)?, "type": "wan", "device": "default"}},
-            "39": {"class_type": "VAELoader", "inputs": {"vae_name": name(FileRole::Vae)?}},
-            "48": {"class_type": "ModelSamplingSD3", "inputs": {"shift": 8.0, "model": ["37", 0]}},
-            "55": {"class_type": "Wan22ImageToVideoLatent", "inputs": {
-                "width": 1280, "height": 704, "length": 41, "batch_size": 1, "vae": ["39", 0]}},
-        }),
-        // Pinned Ming contract and deliberate template reductions: docs/references/ming-design-workflow.md.
-        Workflow::MingDesign => json!({
-            "5": {"class_type": "EmptyLatentImage", "inputs": {"width": 1024, "height": 1024, "batch_size": 1}},
-            "6": {"class_type": "CLIPTextEncode", "inputs": {"text": prompt, "clip": ["11", 0]}},
-            "8": {"class_type": "VAEDecode", "inputs": {"samples": ["13", 0], "vae": ["10", 0]}},
-            "9": {"class_type": "SaveImage", "inputs": {"filename_prefix": "rigspark", "images": ["8", 0]}},
-            "10": {"class_type": "VAELoader", "inputs": {"vae_name": name(FileRole::Vae)?}},
-            "11": {"class_type": "CLIPLoader", "inputs": {
-                "clip_name": name(FileRole::TextEncoder)?, "type": "qwen_image", "device": "default"}},
-            "12": {"class_type": "UNETLoader", "inputs": {
-                "unet_name": name(FileRole::Diffusion)?, "weight_dtype": "default"}},
-            "13": {"class_type": "SamplerCustomAdvanced", "inputs": {
-                "noise": ["25", 0], "guider": ["22", 0], "sampler": ["16", 0],
-                "sigmas": ["17", 0], "latent_image": ["5", 0]}},
-            "16": {"class_type": "KSamplerSelect", "inputs": {"sampler_name": "euler"}},
-            "17": {"class_type": "BasicScheduler", "inputs": {
-                "scheduler": "simple", "steps": 12, "denoise": 1.0, "model": ["26", 0]}},
-            "22": {"class_type": "BasicGuider", "inputs": {
-                "model": ["26", 0], "conditioning": ["6", 0]}},
-            "25": {"class_type": "RandomNoise", "inputs": {"noise_seed": seed}},
-            "26": {"class_type": "ModelSamplingFlux", "inputs": {
-                "model": ["12", 0], "max_shift": 1.15, "base_shift": 0.5, "width": 1024, "height": 1024}},
-        }),
-        // https://comfyanonymous.github.io/ComfyUI_examples/qwen_image/ (basic workflow)
-        Workflow::QwenImage => json!({
-            "3": {"class_type": "KSampler", "inputs": {
-                "seed": seed, "steps": 20, "cfg": 2.5, "sampler_name": "euler", "scheduler": "simple",
-                "denoise": 1.0, "model": ["66", 0], "positive": ["6", 0], "negative": ["7", 0],
-                "latent_image": ["58", 0]}},
-            "6": {"class_type": "CLIPTextEncode", "inputs": {"text": prompt, "clip": ["38", 0]}},
-            "7": {"class_type": "CLIPTextEncode", "inputs": {"text": " ", "clip": ["38", 0]}},
-            "8": {"class_type": "VAEDecode", "inputs": {"samples": ["3", 0], "vae": ["39", 0]}},
-            "37": {"class_type": "UNETLoader", "inputs": {"unet_name": name(FileRole::Diffusion)?, "weight_dtype": "default"}},
-            "38": {"class_type": "CLIPLoader", "inputs": {"clip_name": name(FileRole::TextEncoder)?, "type": "qwen_image", "device": "default"}},
-            "39": {"class_type": "VAELoader", "inputs": {"vae_name": name(FileRole::Vae)?}},
-            "58": {"class_type": "EmptySD3LatentImage", "inputs": {"width": 1328, "height": 1328, "batch_size": 1}},
-            "60": {"class_type": "SaveImage", "inputs": {"filename_prefix": "rigspark", "images": ["8", 0]}},
-            "66": {"class_type": "ModelSamplingAuraFlow", "inputs": {"shift": 3.1, "model": ["37", 0]}},
-        }),
-    })
+    Ok(registry()
+        .map_err(|error| GenerationError::Catalog(error.0))?
+        .get(built_in))
 }
 
 /// Fails closed unless every node is an allowlisted core local node.
@@ -935,26 +805,33 @@ impl ComfyUi<'_> {
                 return Err(GenerationError::Exists(output.to_path_buf()));
             }
         }
-        let built_in = model
-            .runnable()
-            .map_err(|error| GenerationError::Catalog(error.to_string()))?;
+        let file = workflow_file(model)?;
         let status = self.ready(request.endpoint, cancel).await?;
         let devices = &status.devices;
-        if matches!(built_in, Workflow::WanT2v | Workflow::Wan22Ti2v) && apple_mps(devices) {
-            self.emit(
-                "ComfyUI reports Apple MPS: using the euler sampler (uni_pc diverges on MPS)"
-                    .into(),
-            );
+        let catalog_names = model
+            .files
+            .iter()
+            .map(|file| (file.role, file.file.clone()))
+            .collect();
+        let preview = file
+            .apply(request.prompt, request.seed, &catalog_names, devices)
+            .map_err(|error| GenerationError::Catalog(error.0))?;
+        for note in preview.notes {
+            self.emit(note);
         }
-        if built_in == Workflow::MingDesign {
-            let names = model
-                .files
-                .iter()
-                .map(|file| (file.role, file.file.clone()))
-                .collect();
-            let graph = workflow(model, &names, request.prompt, request.seed, devices)?;
-            self.emit("Checking native Ming Design capabilities before downloading weights".into());
-            preflight::ming(self, request.endpoint, &graph, cancel).await?;
+        if let Some(checks) = &file.preflight {
+            self.emit(format!(
+                "Checking native ComfyUI capabilities for {} before downloading weights",
+                model.id
+            ));
+            preflight::check(
+                self,
+                request.endpoint,
+                &preview.graph,
+                &checks.markers,
+                cancel,
+            )
+            .await?;
         }
         self.emit(format!("Verifying weights for {}", model.id));
         let mut weights = self.install(model, request.comfyui_dir, cancel).await?;
@@ -1007,7 +884,7 @@ impl ComfyUi<'_> {
             }
         };
         let descriptor = outputs
-            .get(save_node(built_in))
+            .get(file.output_node())
             .and_then(|node| node.get("images"))
             .and_then(Value::as_array)
             .and_then(|images| images.first())

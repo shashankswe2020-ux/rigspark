@@ -15,6 +15,7 @@ pub mod registry_collector;
 pub mod reports;
 pub mod site_latest;
 pub mod sizing;
+pub mod workflow;
 
 /// Curated, cited model catalog bundled into every release.
 pub const MODELS_JSON: &str = include_str!("../data/models.json");
