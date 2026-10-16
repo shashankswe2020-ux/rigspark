@@ -288,9 +288,10 @@ pub enum BindingError {
 1. All six existing workflows run from data files with byte-identical graphs (golden)
    and pass re-verification on Apple MPS; per-workflow Rust builders are deleted.
 2. `cargo workflow-harvest --dry-run` against the pinned templates commit compiles
-   `text_to_video_wan`, `image_qwen_image` and `image_ming_image_01_design_t2i`
-   into graphs equivalent to the hand-authored ones, and reports a reason for each
-   rejected template.
+   `text_to_video_wan` and `image_qwen_image` into graphs that ComfyUI's own `/prompt`
+   validation accepts. It reports a reason for each rejected template; for example,
+   the official Ming template needs an Nvidia/AMD attention backend. Differences from
+   hand-authored graphs are expected and recorded, not hidden.
 3. The CI harvest workflow opens a candidate PR, with fit-only entries, that passes
    CPU ComfyUI validation.
 4. `cargo workflow-verify` on this Mac promotes one **new** workflow end to end with

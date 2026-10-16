@@ -47,5 +47,6 @@ pub mod special_adapters;
 pub mod state;
 pub mod tool_policy;
 pub mod usage;
+pub mod workflow_compile;
 pub mod workspace;
 pub mod workspace_git;
