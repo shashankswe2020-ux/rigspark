@@ -10,25 +10,28 @@ const GENERATION_JSON: &str = include_str!("../fixtures/generation-baseline.json
 
 #[test]
 fn ming_design_ships_only_the_verified_int8_pairing() {
-    use rigspark_core::generation::{FileRole, Workflow};
-    let workflow: Workflow = serde_json::from_value(json!("ming-design")).unwrap();
-    assert_eq!(workflow, Workflow::MingDesign);
-    assert_eq!(workflow.kind(), GenerationKind::Image);
-    assert_eq!(
-        workflow.roles(),
-        &[FileRole::Diffusion, FileRole::TextEncoder, FileRole::Vae]
+    use rigspark_core::generation::{FileRole, WorkflowId};
+    let id: WorkflowId = serde_json::from_value(json!("ming-design")).unwrap();
+    let workflow = rigspark_core::workflow::registry()
+        .unwrap()
+        .get(&id)
+        .unwrap();
+    assert_eq!(workflow.kind, GenerationKind::Image);
+    let roles: Vec<_> = workflow.models.iter().map(|slot| slot.role).collect();
+    assert!(
+        roles.len() == 3
+            && [FileRole::Diffusion, FileRole::TextEncoder, FileRole::Vae]
+                .iter()
+                .all(|role| roles.contains(role))
     );
-    assert_eq!(
-        serde_json::to_value(workflow).unwrap(),
-        json!("ming-design")
-    );
+    assert_eq!(serde_json::to_value(&id).unwrap(), json!("ming-design"));
     let catalog = GenerationCatalog::bundled().unwrap();
     let ming = catalog
         .resolve("ming-image:ming_image_0.1_design_int8_convrot")
         .unwrap();
     let candidate =
         GenerationCatalog::parse(include_str!("../fixtures/ming-design-candidate.json")).unwrap();
-    assert_eq!(ming.runnable().unwrap(), Workflow::MingDesign);
+    assert_eq!(ming.runnable().unwrap().id, "ming-design");
     assert_eq!(
         serde_json::to_value(&ming.files).unwrap(),
         serde_json::to_value(&candidate.resolve("image").unwrap().files).unwrap()
@@ -187,7 +190,7 @@ fn validation_fails_closed_on_untrusted_dataset_fields() {
     );
     rejects(
         |v| model_mut(v, "flux1-schnell:fp8")["workflow"] = json!("wan-t2v"),
-        "workflow roles",
+        "model slots",
     );
     rejects(
         |v| {
@@ -198,7 +201,7 @@ fn validation_fails_closed_on_untrusted_dataset_fields() {
                 .map(drop)
                 .unwrap()
         },
-        "workflow roles",
+        "model slots",
     );
     rejects(
         |v| model_mut(v, "flux1-schnell:fp8")["files"][0]["folder"] = json!("vae"),

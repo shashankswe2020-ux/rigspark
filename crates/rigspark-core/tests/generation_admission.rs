@@ -1,6 +1,6 @@
 use rigspark_core::{
     catalog::EntryProvenance,
-    generation::{FileRole, GenerationCatalog, GenerationKind, Workflow},
+    generation::{FileRole, GenerationCatalog, GenerationKind},
     generation_admission::{
         FitOnlyInput, HfModel, fit_only_entries, kind_from_pipeline, license_from_tags,
         parse_listing, safetensors_params,
@@ -24,18 +24,18 @@ fn ming_recipe_is_verified_and_pinned_to_the_exact_int8_pairing() {
     let upstream = model("Comfy-Org/Ming-Image");
     let planned = RECIPES
         .iter()
-        .find(|recipe| recipe.workflow == Workflow::MingDesign)
+        .find(|recipe| recipe.workflow == "ming-design")
         .unwrap();
     assert!(planned.verified);
     assert_eq!(
         recipe("Comfy-Org/Ming-Image").unwrap().workflow,
-        Workflow::MingDesign
+        "ming-design"
     );
     assert_eq!(
         planned.diffusion,
         &["ming_image_0.1_design_int8_convrot.safetensors"]
     );
-    assert_eq!(entry.workflow, Some(planned.workflow));
+    assert_eq!(entry.workflow.as_ref().unwrap(), &planned.workflow);
     assert_eq!(entry.workflow_source.as_deref(), Some(planned.source));
     assert_eq!(entry.total_bytes(), 25_936_727_174);
     for file in &entry.files {
@@ -214,8 +214,8 @@ fn fit_only_entries_use_each_diffusion_file_with_the_smallest_companions() {
             .is_err()
     );
     assert_eq!(
-        parsed.resolve("image").unwrap().workflow,
-        Some(Workflow::FluxCheckpoint)
+        parsed.resolve("image").unwrap().workflow.as_ref().unwrap(),
+        &"flux-checkpoint"
     );
 
     // Unknown parameter counts are never guessed: the variant is skipped.
@@ -270,7 +270,7 @@ fn official_recipes_promote_exactly_the_documented_files_to_runnable() {
         .find(|entry| entry.id == "wan_2.2:wan2.2_ti2v_5b_fp16")
         .unwrap();
     assert_eq!(ti2v.kind, GenerationKind::Video);
-    assert_eq!(ti2v.workflow, Some(Workflow::Wan22Ti2v));
+    assert_eq!(ti2v.workflow.as_ref().unwrap(), &"wan22-ti2v");
     assert_eq!(
         ti2v.workflow_source.as_deref(),
         Some("https://comfyanonymous.github.io/ComfyUI_examples/wan22/")
@@ -305,7 +305,12 @@ fn official_recipes_promote_exactly_the_documented_files_to_runnable() {
     let qwen = entries_for("Comfy-Org/Qwen-Image_ComfyUI");
     let runnable: Vec<&str> = qwen
         .iter()
-        .filter(|entry| entry.workflow == Some(Workflow::QwenImage))
+        .filter(|entry| {
+            entry
+                .workflow
+                .as_ref()
+                .is_some_and(|id| id == &"qwen-image")
+        })
         .map(|entry| entry.id.as_str())
         .collect();
     assert_eq!(
@@ -344,8 +349,9 @@ fn official_recipes_promote_exactly_the_documented_files_to_runnable() {
             .resolve("wan_2.2:wan2.2_ti2v_5b_fp16")
             .unwrap()
             .runnable()
-            .unwrap(),
-        Workflow::Wan22Ti2v
+            .unwrap()
+            .id,
+        "wan22-ti2v"
     );
     assert!(rigspark_core::generation_admission::recipe("Comfy-Org/Ming-Image").is_some());
 }

@@ -1,10 +1,10 @@
 //! Data-driven graphs must equal the hand-written builders they replaced. The legacy
 //! outputs were frozen from those builders before deletion (prompt and seed below).
 use rigspark_core::{
-    generation::{FileRole, Workflow},
+    generation::{FileRole, WorkflowId},
     workflow::registry,
 };
-use serde_json::{Value, json};
+use serde_json::Value;
 use std::collections::HashMap;
 
 const PROMPT: &str = "a fox \"in\" snow\n";
@@ -34,7 +34,7 @@ fn bundled_workflow_files_reproduce_the_frozen_legacy_graphs_exactly() {
     .collect();
     let mut checked = 0;
     for (id, devices) in frozen.as_object().unwrap() {
-        let built_in: Workflow = serde_json::from_value(json!(id)).unwrap();
+        let built_in = WorkflowId::new(id).unwrap();
         for (device, legacy) in devices.as_object().unwrap() {
             let devices: Vec<String> = (device != "none")
                 .then(|| device.clone())
@@ -42,7 +42,8 @@ fn bundled_workflow_files_reproduce_the_frozen_legacy_graphs_exactly() {
                 .collect();
             let applied = registry()
                 .unwrap()
-                .get(built_in)
+                .get(&built_in)
+                .unwrap()
                 .apply(PROMPT, SEED, &names, &devices)
                 .unwrap();
             assert_eq!(&applied.graph, legacy, "{id} on {device}");

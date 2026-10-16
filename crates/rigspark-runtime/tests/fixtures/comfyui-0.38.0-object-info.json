@@ -499,6 +499,40 @@
   "essentials_category": null,
   "has_intermediate_output": false
  },
+ "ConditioningZeroOut": {
+  "input": {
+   "required": {
+    "conditioning": [
+     "CONDITIONING"
+    ]
+   }
+  },
+  "input_order": {
+   "required": [
+    "conditioning"
+   ]
+  },
+  "is_input_list": false,
+  "output": [
+   "CONDITIONING"
+  ],
+  "output_is_list": [
+   false
+  ],
+  "output_name": [
+   "CONDITIONING"
+  ],
+  "name": "ConditioningZeroOut",
+  "display_name": "Conditioning Zero Out",
+  "python_module": "nodes",
+  "category": "model/conditioning/transform",
+  "output_node": false,
+  "has_intermediate_output": false,
+  "search_aliases": [
+   "null conditioning",
+   "clear conditioning"
+  ]
+ },
  "CreateVideo": {
   "input": {
    "required": {
@@ -685,6 +719,72 @@
   "output_node": false,
   "has_intermediate_output": false,
   "search_aliases": []
+ },
+ "EmptyFlux2LatentImage": {
+  "input": {
+   "required": {
+    "width": [
+     "INT",
+     {
+      "default": 1024,
+      "min": 16,
+      "max": 16384,
+      "step": 16
+     }
+    ],
+    "height": [
+     "INT",
+     {
+      "default": 1024,
+      "min": 16,
+      "max": 16384,
+      "step": 16
+     }
+    ],
+    "batch_size": [
+     "INT",
+     {
+      "default": 1,
+      "min": 1,
+      "max": 4096
+     }
+    ]
+   }
+  },
+  "input_order": {
+   "required": [
+    "width",
+    "height",
+    "batch_size"
+   ]
+  },
+  "is_input_list": false,
+  "output": [
+   "LATENT"
+  ],
+  "output_is_list": [
+   false
+  ],
+  "output_name": [
+   "LATENT"
+  ],
+  "output_tooltips": [
+   null
+  ],
+  "output_matchtypes": null,
+  "name": "EmptyFlux2LatentImage",
+  "display_name": "Empty Flux 2 Latent",
+  "python_module": "comfy_extras.nodes_flux",
+  "category": "model/latent/flux",
+  "output_node": false,
+  "deprecated": false,
+  "experimental": false,
+  "dev_only": false,
+  "api_node": false,
+  "price_badge": null,
+  "search_aliases": null,
+  "essentials_category": null,
+  "has_intermediate_output": false
  },
  "EmptyHunyuanLatentVideo": {
   "input": {
@@ -2991,6 +3091,69 @@
    "export video"
   ],
   "essentials_category": "Basics",
+  "has_intermediate_output": false
+ },
+ "StringReplace": {
+  "input": {
+   "required": {
+    "string": [
+     "STRING",
+     {
+      "multiline": true
+     }
+    ],
+    "find": [
+     "STRING",
+     {
+      "multiline": true
+     }
+    ],
+    "replace": [
+     "STRING",
+     {
+      "multiline": true
+     }
+    ]
+   }
+  },
+  "input_order": {
+   "required": [
+    "string",
+    "find",
+    "replace"
+   ]
+  },
+  "is_input_list": false,
+  "output": [
+   "STRING"
+  ],
+  "output_is_list": [
+   false
+  ],
+  "output_name": [
+   "STRING"
+  ],
+  "output_tooltips": [
+   null
+  ],
+  "output_matchtypes": null,
+  "name": "StringReplace",
+  "display_name": "Replace Text",
+  "python_module": "comfy_extras.nodes_string",
+  "category": "text",
+  "output_node": false,
+  "deprecated": false,
+  "experimental": false,
+  "dev_only": false,
+  "api_node": false,
+  "price_badge": null,
+  "search_aliases": [
+   "replace",
+   "find and replace",
+   "substitute",
+   "swap text"
+  ],
+  "essentials_category": null,
   "has_intermediate_output": false
  },
  "TextGenerate": {

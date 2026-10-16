@@ -57,7 +57,7 @@ Build a pipeline in which **adding a workflow requires no Rust code**:
 
 ### 2.1 Workflow file (new dataset)
 
-`crates/rigspark-core/data/workflows/<id>.json`, bundled at build time:
+one entry in `crates/rigspark-core/data/workflows.json`, bundled at build time:
 
 ```json
 {
@@ -230,7 +230,7 @@ cargo native-retirement
 
 ```
 crates/rigspark-core/src/workflow/        # file model, digest, bindings, contract, registry
-crates/rigspark-core/data/workflows/      # bundled workflow files
+crates/rigspark-core/data/workflows.json  # bundled workflow registry
 crates/rigspark-core/data/workflow-evidence/
 crates/rigspark-runtime/src/workflow/     # compiler (UI→API), harvest, pin, validate, verify
 crates/rigspark-runtime/src/generation.rs # generic executor (per-workflow builders removed)

@@ -3,7 +3,7 @@
 
 use crate::{
     catalog::{EntryProvenance, LICENSES, require},
-    generation::{FileRole, GenerationFile, GenerationKind, GenerationModel, Workflow},
+    generation::{FileRole, GenerationFile, GenerationKind, GenerationModel, WorkflowId},
     sizing::ValidationError,
 };
 use serde::Deserialize;
@@ -198,7 +198,8 @@ pub struct Recipe {
     pub verified: bool,
     pub repository: &'static str,
     pub kind: GenerationKind,
-    pub workflow: Workflow,
+    /// Bundled workflow id the recipe promotes entries to.
+    pub workflow: &'static str,
     pub source: &'static str,
     /// Diffusion files the example uses (and same-architecture precision siblings).
     pub diffusion: &'static [&'static str],
@@ -211,7 +212,7 @@ pub const RECIPES: [Recipe; 3] = [
         verified: true,
         repository: "Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
         kind: GenerationKind::Video,
-        workflow: Workflow::Wan22Ti2v,
+        workflow: "wan22-ti2v",
         source: "https://comfyanonymous.github.io/ComfyUI_examples/wan22/",
         diffusion: &["wan2.2_ti2v_5B_fp16.safetensors"],
         text_encoder: "umt5_xxl_fp8_e4m3fn_scaled.safetensors",
@@ -221,7 +222,7 @@ pub const RECIPES: [Recipe; 3] = [
         verified: true,
         repository: "Comfy-Org/Qwen-Image_ComfyUI",
         kind: GenerationKind::Image,
-        workflow: Workflow::QwenImage,
+        workflow: "qwen-image",
         source: "https://comfyanonymous.github.io/ComfyUI_examples/qwen_image/",
         diffusion: &[
             "qwen_image_fp8_e4m3fn.safetensors",
@@ -234,7 +235,7 @@ pub const RECIPES: [Recipe; 3] = [
         verified: true,
         repository: "Comfy-Org/Ming-Image",
         kind: GenerationKind::Image,
-        workflow: Workflow::MingDesign,
+        workflow: "ming-design",
         source: "https://github.com/Comfy-Org/workflow_templates/blob/99e3d43745926b78466d99f937c0cd2bb622423a/templates/image_ming_image_01_design_t2i.json",
         diffusion: &["ming_image_0.1_design_int8_convrot.safetensors"],
         text_encoder: "ming_image_0.1_ling_mini_2.0_int8_convrot.safetensors",
@@ -398,7 +399,10 @@ pub fn fit_only_entries(input: &FitOnlyInput) -> Result<Vec<GenerationModel>, Va
         let (workflow, workflow_source) = match runnable {
             Some((recipe, encoder, vae)) => {
                 entry_files.extend([encoder, vae]);
-                (Some(recipe.workflow), Some(recipe.source.to_string()))
+                (
+                    Some(WorkflowId::new(recipe.workflow)?),
+                    Some(recipe.source.to_string()),
+                )
             }
             None => {
                 entry_files.extend(companions.iter().cloned());
