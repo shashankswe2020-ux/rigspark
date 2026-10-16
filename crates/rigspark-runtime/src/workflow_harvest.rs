@@ -139,6 +139,28 @@ pub fn needs_media_input(classes: &BTreeSet<String>) -> Option<&str> {
         .map(String::as_str)
 }
 
+/// Every node type a UI-format template declares, including inside subgraphs.
+pub fn template_classes(text: &str) -> BTreeSet<String> {
+    let value: serde_json::Value = serde_json::from_str(text).unwrap_or_default();
+    let mut classes = BTreeSet::new();
+    let mut collect = |nodes: &serde_json::Value| {
+        for node in nodes.as_array().into_iter().flatten() {
+            if let Some(class) = node["type"].as_str() {
+                classes.insert(class.to_owned());
+            }
+        }
+    };
+    collect(&value["nodes"]);
+    for subgraph in value["definitions"]["subgraphs"]
+        .as_array()
+        .into_iter()
+        .flatten()
+    {
+        collect(&subgraph["nodes"]);
+    }
+    classes
+}
+
 fn role(directory: &str) -> Option<FileRole> {
     match directory {
         "diffusion_models" | "unet" => Some(FileRole::Diffusion),
@@ -426,6 +448,13 @@ pub async fn harvest(
                 .insert(name.clone(), "template is not UTF-8".into());
             continue;
         };
+        if let Some(class) = needs_media_input(&template_classes(&text)) {
+            report.rejected.insert(
+                name.clone(),
+                format!("needs a media input ({class}); only prompt-only workflows are harvested"),
+            );
+            continue;
+        }
         let mut compiled: Option<Compiled> = None;
         let mut devices = Vec::new();
         let mut errors = Vec::new();
@@ -452,13 +481,6 @@ pub async fn harvest(
             report.rejected.insert(name.clone(), errors.join("; "));
             continue;
         };
-        if let Some(class) = needs_media_input(&compiled.classes) {
-            report.rejected.insert(
-                name.clone(),
-                format!("needs a media input ({class}); only prompt-only workflows are harvested"),
-            );
-            continue;
-        }
         let mut weights = Vec::new();
         for slot in &compiled.models {
             match pin(slot, transport, cancel, &mut cache).await? {
@@ -535,6 +557,14 @@ pub async fn harvest(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn template_classes_include_subgraph_nodes() {
+        let text = r#"{"nodes":[{"type":"SaveImage"}],"definitions":{"subgraphs":[{"nodes":[{"type":"LoadImage"}]}]}}"#;
+        let classes = template_classes(text);
+        assert_eq!(needs_media_input(&classes), Some("LoadImage"));
+        assert!(classes.contains("SaveImage"));
+    }
 
     #[test]
     fn media_reading_nodes_are_detected_but_model_loaders_are_not() {

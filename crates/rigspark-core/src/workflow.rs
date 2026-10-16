@@ -344,7 +344,7 @@ impl WorkflowFile {
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct Document {
     schema_version: u8,
@@ -358,15 +358,30 @@ impl Registry {
         let document: Document =
             serde_json::from_str(raw).map_err(|error| invalid(error.to_string()))?;
         require(
-            document.schema_version == WORKFLOW_SCHEMA_VERSION && document.workflows.len() <= 512,
+            document.schema_version == WORKFLOW_SCHEMA_VERSION,
             "unsupported workflow registry",
         )?;
+        Self::new(document.workflows)
+    }
+    pub fn new(files: Vec<WorkflowFile>) -> Result<Self, ValidationError> {
+        require(files.len() <= 512, "too many workflows")?;
         let mut ids = HashSet::new();
-        for file in &document.workflows {
+        for file in &files {
             file.validate()?;
             require(ids.insert(file.id.clone()), "duplicate workflow id")?;
         }
-        Ok(Self(document.workflows))
+        Ok(Self(files))
+    }
+    /// Canonical document text; the bundled file must already be in this form.
+    pub fn to_json(&self) -> String {
+        let document = Document {
+            schema_version: WORKFLOW_SCHEMA_VERSION,
+            workflows: self.0.clone(),
+        };
+        format!(
+            "{}\n",
+            serde_json::to_string_pretty(&document).expect("workflow documents serialize")
+        )
     }
     pub fn get(&self, id: &WorkflowId) -> Option<&WorkflowFile> {
         self.0.iter().find(|file| &file.id == id)

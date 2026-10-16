@@ -286,3 +286,19 @@ fn repeated_role_candidates_cannot_be_applied_until_per_file_names_exist() {
     let file = parse(candidate()).unwrap();
     assert!(file.apply("p", 1, &names("n"), &[]).is_err());
 }
+
+#[test]
+fn the_bundled_registry_is_stored_in_canonical_form() {
+    // Harvests rewrite the file through `to_json`; keeping it canonical means a harvest
+    // diff contains only the workflows it adds.
+    let registry =
+        rigspark_core::workflow::Registry::parse(rigspark_core::workflow::WORKFLOWS_JSON).unwrap();
+    if std::env::var_os("CANONICALIZE_WORKFLOWS").is_some() {
+        std::fs::write(
+            concat!(env!("CARGO_MANIFEST_DIR"), "/data/workflows.json"),
+            registry.to_json(),
+        )
+        .unwrap();
+    }
+    assert_eq!(registry.to_json(), rigspark_core::workflow::WORKFLOWS_JSON);
+}

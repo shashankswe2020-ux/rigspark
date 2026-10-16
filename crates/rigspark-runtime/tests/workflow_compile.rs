@@ -399,3 +399,34 @@ fn oversized_templates_are_refused_before_parsing() {
     let error = compile("huge", &huge, &info()).unwrap_err().to_string();
     assert!(error.contains("too large"), "{error}");
 }
+
+fn extra(name: &str) -> Value {
+    serde_json::from_str(match name {
+        "flux_dev" => include_str!("fixtures/templates/flux_dev_checkpoint_example.json"),
+        "ernie" => include_str!("fixtures/templates/image_ernie_image.json"),
+        _ => unreachable!(),
+    })
+    .unwrap()
+}
+
+#[test]
+fn a_zeroed_negative_derived_from_the_positive_is_not_a_shared_prompt() {
+    // FLUX dev feeds the negative through ConditioningZeroOut(positive); its text is ignored.
+    let compiled = build("flux_dev", &extra("flux_dev")).unwrap();
+    let encoder = &compiled.graph[&compiled.prompt.node];
+    assert_eq!(encoder["class_type"], "CLIPTextEncode");
+    assert_eq!(compiled.prompt.input, "text");
+    assert!(
+        compiled
+            .graph
+            .values()
+            .any(|node| node["class_type"] == "ConditioningZeroOut")
+    );
+}
+
+#[test]
+fn display_only_values_on_widgetless_output_nodes_are_ignored() {
+    // PreviewAny stores its last preview in widgets_values even though it has no widgets.
+    let error = build("ernie", &extra("ernie")).err().unwrap_or_default();
+    assert!(!error.contains("widget values"), "{error}");
+}

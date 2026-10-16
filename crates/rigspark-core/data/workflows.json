@@ -7,39 +7,6 @@
       "status": "verified",
       "source": "https://comfyanonymous.github.io/ComfyUI_examples/flux/",
       "graph": {
-        "6": {
-          "class_type": "CLIPTextEncode",
-          "inputs": {
-            "clip": [
-              "30",
-              1
-            ],
-            "text": ""
-          }
-        },
-        "8": {
-          "class_type": "VAEDecode",
-          "inputs": {
-            "samples": [
-              "31",
-              0
-            ],
-            "vae": [
-              "30",
-              2
-            ]
-          }
-        },
-        "9": {
-          "class_type": "SaveImage",
-          "inputs": {
-            "filename_prefix": "rigspark",
-            "images": [
-              "8",
-              0
-            ]
-          }
-        },
         "27": {
           "class_type": "EmptySD3LatentImage",
           "inputs": {
@@ -90,6 +57,39 @@
             ],
             "text": ""
           }
+        },
+        "6": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "clip": [
+              "30",
+              1
+            ],
+            "text": ""
+          }
+        },
+        "8": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "31",
+              0
+            ],
+            "vae": [
+              "30",
+              2
+            ]
+          }
+        },
+        "9": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "filename_prefix": "rigspark",
+            "images": [
+              "8",
+              0
+            ]
+          }
         }
       },
       "bindings": {
@@ -124,47 +124,6 @@
       "status": "verified",
       "source": "https://comfyanonymous.github.io/ComfyUI_examples/flux/",
       "graph": {
-        "5": {
-          "class_type": "EmptyLatentImage",
-          "inputs": {
-            "batch_size": 1,
-            "height": 1024,
-            "width": 1024
-          }
-        },
-        "6": {
-          "class_type": "CLIPTextEncode",
-          "inputs": {
-            "clip": [
-              "11",
-              0
-            ],
-            "text": ""
-          }
-        },
-        "8": {
-          "class_type": "VAEDecode",
-          "inputs": {
-            "samples": [
-              "13",
-              0
-            ],
-            "vae": [
-              "10",
-              0
-            ]
-          }
-        },
-        "9": {
-          "class_type": "SaveImage",
-          "inputs": {
-            "filename_prefix": "rigspark",
-            "images": [
-              "8",
-              0
-            ]
-          }
-        },
         "10": {
           "class_type": "VAELoader",
           "inputs": {
@@ -247,6 +206,47 @@
           "inputs": {
             "noise_seed": 0
           }
+        },
+        "5": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "batch_size": 1,
+            "height": 1024,
+            "width": 1024
+          }
+        },
+        "6": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "clip": [
+              "11",
+              0
+            ],
+            "text": ""
+          }
+        },
+        "8": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "13",
+              0
+            ],
+            "vae": [
+              "10",
+              0
+            ]
+          }
+        },
+        "9": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "filename_prefix": "rigspark",
+            "images": [
+              "8",
+              0
+            ]
+          }
         }
       },
       "bindings": {
@@ -296,6 +296,20 @@
       "status": "verified",
       "source": "https://comfyanonymous.github.io/ComfyUI_examples/wan/",
       "graph": {
+        "28": {
+          "class_type": "SaveAnimatedWEBP",
+          "inputs": {
+            "filename_prefix": "rigspark",
+            "fps": 16.0,
+            "images": [
+              "8",
+              0
+            ],
+            "lossless": false,
+            "method": "default",
+            "quality": 90
+          }
+        },
         "3": {
           "class_type": "KSampler",
           "inputs": {
@@ -321,53 +335,6 @@
             "scheduler": "simple",
             "seed": 0,
             "steps": 30
-          }
-        },
-        "6": {
-          "class_type": "CLIPTextEncode",
-          "inputs": {
-            "clip": [
-              "38",
-              0
-            ],
-            "text": ""
-          }
-        },
-        "7": {
-          "class_type": "CLIPTextEncode",
-          "inputs": {
-            "clip": [
-              "38",
-              0
-            ],
-            "text": "色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走"
-          }
-        },
-        "8": {
-          "class_type": "VAEDecode",
-          "inputs": {
-            "samples": [
-              "3",
-              0
-            ],
-            "vae": [
-              "39",
-              0
-            ]
-          }
-        },
-        "28": {
-          "class_type": "SaveAnimatedWEBP",
-          "inputs": {
-            "filename_prefix": "rigspark",
-            "fps": 16.0,
-            "images": [
-              "8",
-              0
-            ],
-            "lossless": false,
-            "method": "default",
-            "quality": 90
           }
         },
         "37": {
@@ -408,6 +375,39 @@
               0
             ],
             "shift": 8.0
+          }
+        },
+        "6": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "clip": [
+              "38",
+              0
+            ],
+            "text": ""
+          }
+        },
+        "7": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "clip": [
+              "38",
+              0
+            ],
+            "text": "色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走"
+          }
+        },
+        "8": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "3",
+              0
+            ],
+            "vae": [
+              "39",
+              0
+            ]
           }
         }
       },
@@ -462,6 +462,20 @@
       "status": "verified",
       "source": "https://comfyanonymous.github.io/ComfyUI_examples/wan22/",
       "graph": {
+        "28": {
+          "class_type": "SaveAnimatedWEBP",
+          "inputs": {
+            "filename_prefix": "rigspark",
+            "fps": 24.0,
+            "images": [
+              "8",
+              0
+            ],
+            "lossless": false,
+            "method": "default",
+            "quality": 90
+          }
+        },
         "3": {
           "class_type": "KSampler",
           "inputs": {
@@ -487,53 +501,6 @@
             "scheduler": "simple",
             "seed": 0,
             "steps": 30
-          }
-        },
-        "6": {
-          "class_type": "CLIPTextEncode",
-          "inputs": {
-            "clip": [
-              "38",
-              0
-            ],
-            "text": ""
-          }
-        },
-        "7": {
-          "class_type": "CLIPTextEncode",
-          "inputs": {
-            "clip": [
-              "38",
-              0
-            ],
-            "text": "色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走"
-          }
-        },
-        "8": {
-          "class_type": "VAEDecode",
-          "inputs": {
-            "samples": [
-              "3",
-              0
-            ],
-            "vae": [
-              "39",
-              0
-            ]
-          }
-        },
-        "28": {
-          "class_type": "SaveAnimatedWEBP",
-          "inputs": {
-            "filename_prefix": "rigspark",
-            "fps": 24.0,
-            "images": [
-              "8",
-              0
-            ],
-            "lossless": false,
-            "method": "default",
-            "quality": 90
           }
         },
         "37": {
@@ -578,6 +545,39 @@
               0
             ],
             "width": 1280
+          }
+        },
+        "6": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "clip": [
+              "38",
+              0
+            ],
+            "text": ""
+          }
+        },
+        "7": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "clip": [
+              "38",
+              0
+            ],
+            "text": "色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走"
+          }
+        },
+        "8": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "3",
+              0
+            ],
+            "vae": [
+              "39",
+              0
+            ]
           }
         }
       },
@@ -659,39 +659,6 @@
             "steps": 20
           }
         },
-        "6": {
-          "class_type": "CLIPTextEncode",
-          "inputs": {
-            "clip": [
-              "38",
-              0
-            ],
-            "text": ""
-          }
-        },
-        "7": {
-          "class_type": "CLIPTextEncode",
-          "inputs": {
-            "clip": [
-              "38",
-              0
-            ],
-            "text": " "
-          }
-        },
-        "8": {
-          "class_type": "VAEDecode",
-          "inputs": {
-            "samples": [
-              "3",
-              0
-            ],
-            "vae": [
-              "39",
-              0
-            ]
-          }
-        },
         "37": {
           "class_type": "UNETLoader",
           "inputs": {
@@ -721,6 +688,16 @@
             "width": 1328
           }
         },
+        "6": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "clip": [
+              "38",
+              0
+            ],
+            "text": ""
+          }
+        },
         "60": {
           "class_type": "SaveImage",
           "inputs": {
@@ -739,6 +716,29 @@
               0
             ],
             "shift": 3.1
+          }
+        },
+        "7": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "clip": [
+              "38",
+              0
+            ],
+            "text": " "
+          }
+        },
+        "8": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "3",
+              0
+            ],
+            "vae": [
+              "39",
+              0
+            ]
           }
         }
       },
@@ -784,47 +784,6 @@
       "status": "verified",
       "source": "https://github.com/Comfy-Org/workflow_templates/blob/99e3d43745926b78466d99f937c0cd2bb622423a/templates/image_ming_image_01_design_t2i.json",
       "graph": {
-        "5": {
-          "class_type": "EmptyLatentImage",
-          "inputs": {
-            "batch_size": 1,
-            "height": 1024,
-            "width": 1024
-          }
-        },
-        "6": {
-          "class_type": "CLIPTextEncode",
-          "inputs": {
-            "clip": [
-              "11",
-              0
-            ],
-            "text": ""
-          }
-        },
-        "8": {
-          "class_type": "VAEDecode",
-          "inputs": {
-            "samples": [
-              "13",
-              0
-            ],
-            "vae": [
-              "10",
-              0
-            ]
-          }
-        },
-        "9": {
-          "class_type": "SaveImage",
-          "inputs": {
-            "filename_prefix": "rigspark",
-            "images": [
-              "8",
-              0
-            ]
-          }
-        },
         "10": {
           "class_type": "VAELoader",
           "inputs": {
@@ -919,6 +878,47 @@
               0
             ],
             "width": 1024
+          }
+        },
+        "5": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "batch_size": 1,
+            "height": 1024,
+            "width": 1024
+          }
+        },
+        "6": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "clip": [
+              "11",
+              0
+            ],
+            "text": ""
+          }
+        },
+        "8": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "13",
+              0
+            ],
+            "vae": [
+              "10",
+              0
+            ]
+          }
+        },
+        "9": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "filename_prefix": "rigspark",
+            "images": [
+              "8",
+              0
+            ]
           }
         }
       },

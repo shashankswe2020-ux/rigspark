@@ -91,6 +91,11 @@ path = "src/generation_admit.rs"
 required-features = ["maintainer-tools"]
 
 [[bin]]
+name = "llmup-workflow-harvest"
+path = "src/workflow_harvest.rs"
+required-features = ["maintainer-tools"]
+
+[[bin]]
 name = "llmup-generation-enrich"
 path = "src/generation_enrich.rs"
 required-features = ["maintainer-tools"]

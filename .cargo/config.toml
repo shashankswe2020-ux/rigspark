@@ -9,6 +9,7 @@ catalog-enrich = "run --quiet --locked -p rigspark-cli --bin llmup-catalog-enric
 catalog-admit = "run --quiet --locked -p rigspark-cli --bin llmup-catalog-admit --"
 catalog-site = "run --quiet --locked -p rigspark-cli --bin llmup-catalog-site --"
 generation-admit = "run --quiet --locked -p rigspark-cli --bin llmup-generation-admit --"
+workflow-harvest = "run --quiet --locked -p rigspark-cli --bin llmup-workflow-harvest --"
 generation-enrich = "run --quiet --locked -p rigspark-cli --bin llmup-generation-enrich --"
 catalog-coverage = "run --quiet --locked -p rigspark-cli --bin llmup-catalog-coverage --"
 catalog-notice = "run --quiet --locked -p rigspark-cli --bin llmup-catalog-notice --"
