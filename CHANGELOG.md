@@ -8,6 +8,9 @@
   executed by one generic runtime. Graphs are byte-identical to the previous built-in
   builders. This is phase 1 of the
   [automated workflow pipeline](docs/specs/automated-workflow-pipeline.md).
+- New template compiler converts official ComfyUI templates (subgraphs, dynamic
+  combos, switches) into validated API graphs with detected bindings. This is
+  phase 2 of the pipeline; it is not yet used at run time.
 
 ## 3.0.3 (2026-10-16)
 
