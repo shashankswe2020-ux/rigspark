@@ -231,7 +231,7 @@ pub const RECIPES: [Recipe; 3] = [
         vae: "qwen_image_vae.safetensors",
     },
     Recipe {
-        verified: false,
+        verified: true,
         repository: "Comfy-Org/Ming-Image",
         kind: GenerationKind::Image,
         workflow: Workflow::MingDesign,

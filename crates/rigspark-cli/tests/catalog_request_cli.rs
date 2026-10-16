@@ -193,6 +193,14 @@ fn image_request_reports_pinned_lineage_without_mutating_any_catalog_file() {
     catalog
         .models
         .retain(|model| model.family == "ming-image" || model.default);
+    for model in catalog
+        .models
+        .iter_mut()
+        .filter(|model| model.family == "ming-image")
+    {
+        model.workflow = None;
+        model.workflow_source = None;
+    }
     fs::write(
         root.path().join("generation.json"),
         serde_json::to_vec(&catalog).unwrap(),

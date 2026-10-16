@@ -272,7 +272,11 @@ fn ming_transport(base: &str, change_digest: bool) -> RecordedAdmissionTransport
 
 #[tokio::test]
 async fn issue_317_matches_pinned_ming_lineage_but_keeps_fit_only_request_open() {
-    let catalog = ming_catalog();
+    let mut catalog = ming_catalog();
+    for model in &mut catalog.models {
+        model.workflow = None;
+        model.workflow_source = None;
+    }
     let base = "inclusionAI/Ming-Image-0.1-Design";
     let request = Repository::parse(&format!("https://huggingface.co/{base}")).unwrap();
     let outcome = evaluate_request(
@@ -298,6 +302,25 @@ async fn issue_317_matches_pinned_ming_lineage_but_keeps_fit_only_request_open()
     assert!(outcome.changed_files.is_empty());
     assert!(outcome.catalog.is_none());
     assert!(outcome.observation.is_none());
+}
+
+#[tokio::test]
+async fn runnable_ming_does_not_turn_package_lineage_into_exact_variant_coverage() {
+    let request =
+        Repository::parse("https://huggingface.co/inclusionAI/Ming-Image-0.1-Design").unwrap();
+    let outcome = evaluate_request(
+        &Catalog::parse(MODELS_JSON).unwrap(),
+        &ming_catalog(),
+        &request,
+        &ming_transport(request.as_str(), false),
+        NOW,
+        &CancellationToken::new(),
+    )
+    .await
+    .unwrap();
+    assert_eq!(outcome.disposition, RequestDisposition::NeedsMaintainer);
+    assert_eq!(outcome.reason_code, "GENERATION_VARIANT_REVIEW_REQUIRED");
+    assert!(outcome.changed_files.is_empty());
 }
 
 #[tokio::test]
@@ -360,5 +383,5 @@ async fn direct_generation_requests_distinguish_runnable_and_fit_only_without_ne
     )
     .await
     .unwrap();
-    assert_eq!(outcome.disposition, RequestDisposition::NeedsWorkflow);
+    assert_eq!(outcome.disposition, RequestDisposition::AlreadyAvailable);
 }

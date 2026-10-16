@@ -179,11 +179,11 @@ fn unreachable_comfyui_downloads_nothing() {
 }
 
 #[test]
-fn unverified_ming_is_rejected_offline_even_with_bypass() {
+fn unverified_ming_variant_is_rejected_offline_even_with_bypass() {
     let directory = tempfile::tempdir().unwrap();
     let output = invoke(&[
         "generate",
-        "ming-image:ming_image_0.1_design_int8_convrot",
+        "ming-image:ming_image_0.1_design_bf16",
         "--prompt",
         "a transparent icon",
         "--bypass",
