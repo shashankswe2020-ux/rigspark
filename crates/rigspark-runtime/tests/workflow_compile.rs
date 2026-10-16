@@ -34,12 +34,14 @@ fn ids(compiled: &Compiled) -> BTreeSet<&str> {
     compiled.graph.keys().map(String::as_str).collect()
 }
 fn shipped(id: &str) -> Value {
-    let raw = match id {
-        "wan-t2v" => include_str!("../../rigspark-core/data/workflows/wan-t2v.json"),
-        "qwen-image" => include_str!("../../rigspark-core/data/workflows/qwen-image.json"),
-        _ => unreachable!(),
-    };
-    serde_json::from_str::<Value>(raw).unwrap()["graph"].clone()
+    let registry: Value = serde_json::from_str(rigspark_core::workflow::WORKFLOWS_JSON).unwrap();
+    registry["workflows"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|file| file["id"] == id)
+        .unwrap()["graph"]
+        .clone()
 }
 fn models(compiled: &Compiled) -> Vec<(&str, &str)> {
     let mut found: Vec<_> = compiled

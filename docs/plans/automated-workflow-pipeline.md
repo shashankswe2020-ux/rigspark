@@ -41,7 +41,7 @@ Phases 4 and 5 can proceed in parallel once phase 3 lands.
 ## Phase 1 status (2026-10-16)
 
 Done: 1.1, 1.2, 1.3, 1.5 and 1.6. The six workflows are bundled data files under
-`crates/rigspark-core/data/workflows/`. The runtime builds every graph through
+`crates/rigspark-core/data/workflows.json`. The runtime builds every graph through
 `WorkflowFile::apply`. Device overrides, output nodes and native-capability preflight
 markers are data. Builders, `save_node`, the Wan sampler helper and the Ming-only
 preflight are removed. Graphs match the frozen legacy output byte-for-byte for all

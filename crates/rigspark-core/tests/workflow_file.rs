@@ -1,5 +1,5 @@
 use rigspark_core::{
-    generation::{FileRole, GenerationKind, Workflow},
+    generation::{FileRole, GenerationKind, WorkflowId},
     workflow::{WorkflowFile, registry},
 };
 use serde_json::{Value, json};
@@ -14,8 +14,11 @@ const ALL: [&str; 6] = [
     "ming-design",
 ];
 
-fn id(value: &str) -> Workflow {
-    serde_json::from_value(json!(value)).unwrap()
+fn id(value: &str) -> WorkflowId {
+    WorkflowId::new(value).unwrap()
+}
+fn get(value: &str) -> &'static WorkflowFile {
+    registry().unwrap().get(&id(value)).unwrap()
 }
 
 fn names(prefix: &str) -> HashMap<FileRole, String> {
@@ -32,7 +35,7 @@ fn names(prefix: &str) -> HashMap<FileRole, String> {
 }
 
 fn wan() -> Value {
-    serde_json::to_value(registry().unwrap().get(id("wan-t2v"))).unwrap()
+    serde_json::to_value(get("wan-t2v")).unwrap()
 }
 
 type Mutation = (&'static str, fn(&mut Value));
@@ -42,27 +45,54 @@ fn parse(value: Value) -> Result<WorkflowFile, String> {
 }
 
 #[test]
-fn every_built_in_workflow_has_one_bundled_file_matching_its_kind_and_roles() {
-    let registry = registry().unwrap();
-    for name in ALL {
-        let workflow = id(name);
-        let file = registry.get(workflow);
-        assert_eq!(file.id, workflow);
-        assert_eq!(file.kind, workflow.kind(), "{name}");
-        let roles: HashSet<_> = file.models.iter().map(|slot| slot.role).collect();
+fn every_built_in_workflow_is_bundled_verified_with_its_kind_and_roles() {
+    use FileRole::*;
+    let expected: [(&str, GenerationKind, &[FileRole]); 6] = [
+        ("flux-checkpoint", GenerationKind::Image, &[Checkpoint]),
+        (
+            "flux-split",
+            GenerationKind::Image,
+            &[Diffusion, TextEncoder, Clip, Vae],
+        ),
+        (
+            "wan-t2v",
+            GenerationKind::Video,
+            &[Diffusion, TextEncoder, Vae],
+        ),
+        (
+            "wan22-ti2v",
+            GenerationKind::Video,
+            &[Diffusion, TextEncoder, Vae],
+        ),
+        (
+            "qwen-image",
+            GenerationKind::Image,
+            &[Diffusion, TextEncoder, Vae],
+        ),
+        (
+            "ming-design",
+            GenerationKind::Image,
+            &[Diffusion, TextEncoder, Vae],
+        ),
+    ];
+    for (name, kind, roles) in expected {
+        let file = get(name);
+        assert_eq!(file.id, id(name));
+        assert_eq!(file.kind, kind, "{name}");
+        let found: HashSet<_> = file.models.iter().map(|slot| slot.role).collect();
         assert_eq!(
-            roles,
-            workflow.roles().iter().copied().collect::<HashSet<_>>(),
+            found,
+            roles.iter().copied().collect::<HashSet<_>>(),
             "{name}"
         );
         assert!(file.verified(), "{name}");
     }
-    assert_eq!(registry.len(), ALL.len());
+    assert_eq!(registry().unwrap().len(), ALL.len());
 }
 
 #[test]
 fn apply_substitutes_only_the_declared_bindings() {
-    let file = registry().unwrap().get(id("wan-t2v"));
+    let file = get("wan-t2v");
     let applied = file
         .apply("a fox in snow", 7, &names("pinned"), &[])
         .unwrap();
@@ -88,7 +118,7 @@ fn apply_substitutes_only_the_declared_bindings() {
 
 #[test]
 fn device_overrides_apply_only_to_matching_devices_and_are_reported() {
-    let file = registry().unwrap().get(id("wan22-ti2v"));
+    let file = get("wan22-ti2v");
     let applied = file
         .apply("p", 1, &names("n"), &["cuda:0".into(), "mps".into()])
         .unwrap();
@@ -103,7 +133,7 @@ fn device_overrides_apply_only_to_matching_devices_and_are_reported() {
 
 #[test]
 fn apply_fails_closed_without_every_installed_weight_name() {
-    let file = registry().unwrap().get(id("flux-split"));
+    let file = get("flux-split");
     let mut partial = names("n");
     partial.remove(&FileRole::Clip);
     assert!(file.apply("p", 1, &partial, &[]).is_err());
@@ -154,6 +184,6 @@ fn files_with_duplicate_model_roles_or_unknown_status_are_rejected() {
     assert!(parse(value).is_err());
     let mut value = wan();
     value["kind"] = json!("image");
-    assert!(parse(value).is_err(), "kind must match the workflow");
+    assert!(parse(value).is_err(), "kind must match the output format");
     assert_eq!(parse(wan()).unwrap().kind, GenerationKind::Video);
 }

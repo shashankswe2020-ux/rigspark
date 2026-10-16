@@ -4,7 +4,7 @@
 
 ### Internal
 
-- Generation workflows are now bundled data files (`crates/rigspark-core/data/workflows/`)
+- Generation workflows are now bundled data files (`crates/rigspark-core/data/workflows.json`)
   executed by one generic runtime. Graphs are byte-identical to the previous built-in
   builders. This is phase 1 of the
   [automated workflow pipeline](docs/specs/automated-workflow-pipeline.md).

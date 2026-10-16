@@ -9,7 +9,7 @@ use crate::{
 use rigspark_core::generation::{
     FileRole, FitVerdict, GenerationCatalog, GenerationFit, GenerationKind, GenerationModel, fit,
 };
-use rigspark_core::workflow::{WorkflowFile, registry};
+use rigspark_core::workflow::WorkflowFile;
 use serde::Serialize;
 use serde_json::{Value, json};
 use std::{
@@ -149,12 +149,9 @@ pub fn workflow(
 }
 
 fn workflow_file(model: &GenerationModel) -> Result<&'static WorkflowFile, GenerationError> {
-    let built_in = model
+    model
         .runnable()
-        .map_err(|error| GenerationError::Catalog(error.to_string()))?;
-    Ok(registry()
-        .map_err(|error| GenerationError::Catalog(error.0))?
-        .get(built_in))
+        .map_err(|error| GenerationError::Catalog(error.to_string()))
 }
 
 /// Fails closed unless every node is an allowlisted core local node.
@@ -442,11 +439,9 @@ impl ComfyUi<'_> {
                 "ComfyUI directory must contain a models/ folder",
             ));
         }
-        let workflow = model
-            .runnable()
-            .map_err(|error| GenerationError::Catalog(error.to_string()))?;
+        let workflow = workflow_file(model)?;
         let mut installed = Vec::new();
-        for role in workflow.roles() {
+        for role in workflow.models.iter().map(|slot| &slot.role) {
             let file = model
                 .file(*role)
                 .ok_or(GenerationError::Invalid("model is missing a workflow file"))?;

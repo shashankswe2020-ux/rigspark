@@ -1,9 +1,9 @@
-//! Bundled ComfyUI workflow files: an API-format graph plus the only values RigSpark
-//! substitutes at run time. Adding a workflow is a data change, not new graph code.
+//! Bundled ComfyUI workflows (`data/workflows.json`): API-format graphs plus the only
+//! values RigSpark substitutes at run time. Adding a workflow is a data change.
 
 use crate::{
     catalog::require,
-    generation::{FileRole, GenerationKind, Workflow},
+    generation::{FileRole, GenerationFile, GenerationKind, WorkflowId},
     sizing::ValidationError,
 };
 use serde::{Deserialize, Serialize};
@@ -16,14 +16,7 @@ use std::{
 pub const WORKFLOW_SCHEMA_VERSION: u8 = 1;
 const MAX_NODES: usize = 64;
 
-const BUNDLED: [&str; 6] = [
-    include_str!("../data/workflows/flux-checkpoint.json"),
-    include_str!("../data/workflows/flux-split.json"),
-    include_str!("../data/workflows/wan-t2v.json"),
-    include_str!("../data/workflows/wan22-ti2v.json"),
-    include_str!("../data/workflows/qwen-image.json"),
-    include_str!("../data/workflows/ming-design.json"),
-];
+pub const WORKFLOWS_JSON: &str = include_str!("../data/workflows.json");
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(rename_all = "kebab-case")]
@@ -98,8 +91,7 @@ pub struct Preflight {
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct WorkflowFile {
-    pub schema_version: u8,
-    pub id: Workflow,
+    pub id: WorkflowId,
     pub kind: GenerationKind,
     pub status: Status,
     pub source: String,
@@ -130,6 +122,15 @@ impl WorkflowFile {
         Ok(file)
     }
 
+    /// Whether a catalog entry's files fill exactly this workflow's model slots.
+    pub fn accepts_files(&self, files: &[GenerationFile]) -> bool {
+        let mut wanted: Vec<FileRole> = self.models.iter().map(|slot| slot.role).collect();
+        let mut have: Vec<FileRole> = files.iter().map(|file| file.role).collect();
+        wanted.sort_by_key(|role| role.folder());
+        have.sort_by_key(|role| role.folder());
+        wanted.len() == have.len() && wanted.iter().zip(&have).all(|(left, right)| left == right)
+    }
+
     pub fn verified(&self) -> bool {
         self.status == Status::Verified
     }
@@ -146,11 +147,6 @@ impl WorkflowFile {
     }
 
     fn validate(&self) -> Result<(), ValidationError> {
-        require(
-            self.schema_version == WORKFLOW_SCHEMA_VERSION,
-            "unsupported workflow schema version",
-        )?;
-        require(self.kind == self.id.kind(), "workflow kind mismatch")?;
         require(
             self.source.starts_with("https://") && self.source.len() <= 2048,
             "workflow source must be HTTPS",
@@ -203,10 +199,7 @@ impl WorkflowFile {
             )?;
             require(roles.insert(slot.role), "duplicate model role")?;
         }
-        require(
-            roles == self.id.roles().iter().copied().collect(),
-            "model slots must match the workflow's file roles",
-        )?;
+        require(!roles.is_empty(), "workflow needs at least one model slot")?;
         for change in &self.overrides {
             require(
                 !change.device.is_empty()
@@ -271,14 +264,35 @@ impl WorkflowFile {
     }
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct Document {
+    schema_version: u8,
+    workflows: Vec<WorkflowFile>,
+}
+
 pub struct Registry(Vec<WorkflowFile>);
 
 impl Registry {
-    pub fn get(&self, id: Workflow) -> &WorkflowFile {
-        self.0
-            .iter()
-            .find(|file| file.id == id)
-            .expect("registry validated one file per workflow")
+    pub fn parse(raw: &str) -> Result<Self, ValidationError> {
+        let document: Document =
+            serde_json::from_str(raw).map_err(|error| invalid(error.to_string()))?;
+        require(
+            document.schema_version == WORKFLOW_SCHEMA_VERSION && document.workflows.len() <= 512,
+            "unsupported workflow registry",
+        )?;
+        let mut ids = HashSet::new();
+        for file in &document.workflows {
+            file.validate()?;
+            require(ids.insert(file.id.clone()), "duplicate workflow id")?;
+        }
+        Ok(Self(document.workflows))
+    }
+    pub fn get(&self, id: &WorkflowId) -> Option<&WorkflowFile> {
+        self.0.iter().find(|file| &file.id == id)
+    }
+    pub fn files(&self) -> &[WorkflowFile] {
+        &self.0
     }
     pub fn len(&self) -> usize {
         self.0.len()
@@ -288,21 +302,11 @@ impl Registry {
     }
 }
 
-fn load() -> Result<Registry, ValidationError> {
-    let files = BUNDLED
-        .iter()
-        .map(|raw| WorkflowFile::parse(raw))
-        .collect::<Result<Vec<_>, _>>()?;
-    let ids: HashSet<_> = files.iter().map(|file| file.id).collect();
-    require(ids.len() == files.len(), "duplicate bundled workflow id")?;
-    Ok(Registry(files))
-}
-
 /// The bundled workflows, parsed and validated once.
 pub fn registry() -> Result<&'static Registry, ValidationError> {
     static REGISTRY: OnceLock<Result<Registry, ValidationError>> = OnceLock::new();
     REGISTRY
-        .get_or_init(load)
+        .get_or_init(|| Registry::parse(WORKFLOWS_JSON))
         .as_ref()
         .map_err(|error| ValidationError(error.0.clone()))
 }
