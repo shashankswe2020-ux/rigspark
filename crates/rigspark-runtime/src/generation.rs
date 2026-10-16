@@ -9,7 +9,7 @@ use crate::{
 use rigspark_core::generation::{
     FileRole, FitVerdict, GenerationCatalog, GenerationFit, GenerationKind, GenerationModel, fit,
 };
-use rigspark_core::workflow::WorkflowFile;
+use rigspark_core::workflow::{OutputFormat, WorkflowFile};
 use serde::Serialize;
 use serde_json::{Value, json};
 use std::{
@@ -801,6 +801,11 @@ impl ComfyUi<'_> {
             }
         }
         let file = workflow_file(model)?;
+        if file.bindings.output.format == OutputFormat::Mp4 {
+            return Err(GenerationError::Incompatible(
+                "MP4 workflows cannot run yet; RigSpark saves video as animated WEBP".into(),
+            ));
+        }
         let status = self.ready(request.endpoint, cancel).await?;
         let devices = &status.devices;
         let catalog_names = model
