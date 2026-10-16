@@ -9,7 +9,7 @@ const GIB: f64 = 1073741824.0;
 const GENERATION_JSON: &str = include_str!("../fixtures/generation-baseline.json");
 
 #[test]
-fn ming_design_is_an_image_workflow_with_three_exact_roles_but_is_not_shipped() {
+fn ming_design_ships_only_the_verified_int8_pairing() {
     use rigspark_core::generation::{FileRole, Workflow};
     let workflow: Workflow = serde_json::from_value(json!("ming-design")).unwrap();
     assert_eq!(workflow, Workflow::MingDesign);
@@ -22,13 +22,26 @@ fn ming_design_is_an_image_workflow_with_three_exact_roles_but_is_not_shipped() 
         serde_json::to_value(workflow).unwrap(),
         json!("ming-design")
     );
-    assert!(
-        GenerationCatalog::bundled()
-            .unwrap()
-            .models
-            .iter()
-            .all(|model| { model.workflow != Some(Workflow::MingDesign) })
+    let catalog = GenerationCatalog::bundled().unwrap();
+    let ming = catalog
+        .resolve("ming-image:ming_image_0.1_design_int8_convrot")
+        .unwrap();
+    let candidate =
+        GenerationCatalog::parse(include_str!("../fixtures/ming-design-candidate.json")).unwrap();
+    assert_eq!(ming.runnable().unwrap(), Workflow::MingDesign);
+    assert_eq!(
+        serde_json::to_value(&ming.files).unwrap(),
+        serde_json::to_value(&candidate.resolve("image").unwrap().files).unwrap()
     );
+    assert_eq!(ming.total_bytes(), 25_936_727_174);
+    assert!(!ming.default);
+    for variant in catalog
+        .models
+        .iter()
+        .filter(|model| model.family == "ming-image" && model.id != ming.id)
+    {
+        assert!(variant.runnable().is_err(), "{}", variant.id);
+    }
 }
 
 fn baseline() -> GenerationCatalog {

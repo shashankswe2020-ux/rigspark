@@ -82,15 +82,13 @@ No CUDA or Mac/MPS execution claim follows from an object-info response.
 
 ## Release gate
 
-The reserved admission recipe has `verified: false`; production recipe lookup excludes
-it. Bundled Ming entries remain unchanged and fit-only. Both native preparation and
-direct runtime execution reject fit-only entries before contacting ComfyUI; GUI job
-creation cannot bypass this with the memory-fit bypass flag.
-
-The user explicitly chose **no weight downloads and no real smoke test** for this
-increment. Do not flip the recipe flag, promote catalog entries, mark #317 available,
-or claim CLI/GUI Ming generation works until the exact pairing passes the approved
-real-runtime checkpoint in the [implementation plan](../plans/ming-design-workflow-support.md).
+After the approved live MPS smoke and real GUI generation, the exact INT8 pairing
+is enabled in v3.0.3. Its admission recipe is verified and selects the 19.51 GB INT8
+encoder, not the smaller W4A8 encoder used for fit-only estimates. Other Ming variants
+remain fit-only, and memory bypass cannot enable them. FLUX remains the default.
+Evidence applies to ComfyUI 0.38.0 on a 36 GiB Apple Silicon Mac; CUDA and peak
+inference memory remain uncertified. To roll back, remove the bundled entry's workflow
+and workflowSource and set the Ming recipe's verified flag to false together.
 
 ## First approved live attempt (2026-10-14)
 
@@ -149,5 +147,15 @@ Result: **PASS on Apple MPS; one real 1024×1024 image generated**. Release gate
   process was stopped and its listener released; the temporary probe source was removed.
 
 This evidence satisfies the real-runtime smoke for this exact pairing on one Apple MPS
-machine. Promoting the recipe to `verified: true`, enabling the bundled catalog entry,
-and marking #317 available still require explicit approval; CUDA remains uncertified.
+machine. The user subsequently approved production promotion and resolving #317.
+CUDA remains uncertified.
+
+## Real GUI verification (2026-10-16)
+
+A separate local GUI build used the exact candidate pairing. Selecting Ming under
+Models → Image → Use in Chat and submitting the plant-care mockup prompt produced
+a 1024×1024 RGBA PNG inline with a working Download link. ComfyUI executed in
+249.44 seconds. The model's text rendering was visibly garbled. The
+[screenshot](../../site/brand/screens/ming-design-gui.png) is from this actual run,
+not an inserted image or a mocked job. The temporary build and owned ComfyUI were
+stopped after capture. This is smoke evidence, not a portable throughput estimate.

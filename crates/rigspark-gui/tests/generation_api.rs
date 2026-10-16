@@ -169,7 +169,7 @@ async fn unverified_ming_remains_fit_only_and_cannot_start_a_gui_job() {
     let directory = comfy();
     let host = host(home.path(), Arc::new(Waits));
     let (_, models) = json_call(&host, "GET", "/api/generation/models", None).await;
-    let id = "ming-image:ming_image_0.1_design_int8_convrot";
+    let id = "ming-image:ming_image_0.1_design_bf16";
     let ming = models["models"]
         .as_array()
         .unwrap()
@@ -183,6 +183,48 @@ async fn unverified_ming_remains_fit_only_and_cannot_start_a_gui_job() {
     host.shutdown.cancel();
     assert_eq!(status, StatusCode::BAD_REQUEST, "{response}");
     assert!(response.to_string().contains("fit-only"));
+}
+
+#[tokio::test]
+async fn verified_ming_starts_a_gui_job_and_serves_the_preview() {
+    let home = tempfile::tempdir().unwrap();
+    let directory = comfy();
+    let host = host(home.path(), Arc::new(Paints));
+    let id = "ming-image:ming_image_0.1_design_int8_convrot";
+    let (_, models) = json_call(&host, "GET", "/api/generation/models", None).await;
+    let ming = models["models"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|model| model["id"] == id)
+        .unwrap();
+    assert_eq!(ming["runnable"], true);
+    assert_eq!(ming["weightsBytes"], 25_936_727_174u64);
+    let (status, response) = json_call(
+        &host,
+        "POST",
+        "/api/generation/jobs",
+        Some(json!({
+            "model": id, "prompt": "a plant-care app", "seed": 42,
+            "comfyuiDir": directory.path(),
+        })),
+    )
+    .await;
+    assert_eq!(status, StatusCode::ACCEPTED, "{response}");
+    let job = wait_for(&host, "succeeded").await;
+    assert_eq!(job["result"]["result"]["model"], id);
+    let (status, kind, bytes) = send(
+        &host,
+        "GET",
+        job["outputUrl"].as_str().unwrap(),
+        None,
+        false,
+    )
+    .await;
+    host.shutdown.cancel();
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(kind.as_deref(), Some("image/png"));
+    assert_eq!(bytes, PNG);
 }
 
 #[tokio::test]

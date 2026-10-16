@@ -1,16 +1,22 @@
 # Implementation Plan: Ming Design Workflow Support
 
-Status: tested candidate implemented; production activation is gated.
+Status: exact INT8 pairing verified on Apple MPS; production promotion approved for v3.0.3.
 Date: 2026-10-13
 Tracking: [model request #317](https://github.com/shashankswe2020-ux/rigspark/issues/317)
 
 ## Current execution status
 
-Latest update: a separately approved real attempt reached live preflight and production
-downloads, but the large encoder transfer failed before inference. See the
-[live attempt evidence](../references/ming-design-workflow.md#first-approved-live-attempt-2026-10-14).
-T6 remains incomplete and production activation is still blocked. The earlier
-no-download decision below describes the original candidate increment.
+Latest update (2026-10-16): the approved retry downloaded and independently verified
+the exact pairing and generated a real image on MPS. A subsequent real GUI run rendered
+the output inline. The user approved production activation and resolving #317.
+See the [live evidence](../references/ming-design-workflow.md).
+T6-T7 are complete for this pairing on Apple MPS. T8 retains conservative
+repository-lineage handling; the verified exact variant is resolved by maintainer
+review in this PR rather than claiming every variant in a shared package is runnable.
+T9 includes website/README evidence and v3.0.3 release verification.
+CUDA and peak inference memory remain unverified.
+
+### Historical candidate-only increment
 
 The user approved the serialized `ming-design` candidate value and then explicitly
 chose to finish the tested candidate **without downloading weights**.
