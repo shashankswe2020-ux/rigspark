@@ -1,0 +1,188 @@
+[
+ {
+  "moduleName": "default",
+  "title": "Image",
+  "templates": [
+   {
+    "name": "image_ming_image_01_design_t2i",
+    "title": "Ming Image 0.1 Design: Text to Image",
+    "description": "Generate text-heavy design compositions from text prompts using Ming Image 0.1 Design, a 6B model tuned for UI screens, infographics, and posters. It takes no file inputs and produces one image, supporting transparent backgrounds for easy layering. Ideal for interface mockups, marketing posters, and data-rich infographic drafts.",
+    "mediaType": "image",
+    "mediaSubtype": "webp",
+    "tags": [
+     "Text to Image"
+    ],
+    "models": [
+     "Ming Image"
+    ],
+    "minComfyUIVersion": "0.37.3",
+    "date": "2026-09-25",
+    "openSource": true,
+    "size": 43271795507,
+    "usage": 0,
+    "searchRank": 0,
+    "username": "ComfyUI",
+    "io": {
+     "outputs": [
+      {
+       "nodeId": 84,
+       "nodeType": "SaveImageAdvanced",
+       "file": "image_ming_image_01_design_t2i.png",
+       "mediaType": "image"
+      }
+     ]
+    },
+    "thumbnail": [
+     "output/image_ming_image_01_design_t2i.png"
+    ]
+   },
+   {
+    "name": "image_qwen_image",
+    "title": "Qwen-Image: Text to Image",
+    "mediaType": "image",
+    "mediaSubtype": "webp",
+    "description": "Generate images with exceptional multilingual text rendering and editing capabilities using Qwen-Image's 20B MMDiT model.",
+    "tutorialUrl": "https://docs.comfy.org/tutorials/image/qwen/qwen-image",
+    "tags": [
+     "Image",
+     "Text to Image"
+    ],
+    "models": [
+     "Qwen-Image"
+    ],
+    "date": "2025-08-05",
+    "size": 31782757990,
+    "usage": 33,
+    "io": {
+     "outputs": [
+      {
+       "nodeId": 60,
+       "nodeType": "SaveImage",
+       "file": "image_qwen_image.png",
+       "mediaType": "image"
+      }
+     ]
+    },
+    "username": "ComfyUI",
+    "openSource": true,
+    "searchRank": 0,
+    "thumbnail": [
+     "output/image_qwen_image.png"
+    ],
+    "minComfyUIVersion": "0.4.0"
+   },
+   {
+    "name": "api_wan_text_to_image",
+    "title": "Wan2.5: Text to Image",
+    "description": "Generate images with excellent prompt following and visual quality using Wan 2.5.",
+    "mediaType": "image",
+    "mediaSubtype": "webp",
+    "tags": [
+     "Text to Image",
+     "Image",
+     "API"
+    ],
+    "models": [
+     "Wan2.5",
+     "Wan"
+    ],
+    "date": "2025-09-25",
+    "openSource": false,
+    "size": 0,
+    "usage": 11,
+    "username": "ComfyUI",
+    "minComfyUIVersion": "0.3.60"
+   }
+  ]
+ },
+ {
+  "moduleName": "default",
+  "title": "Video",
+  "templates": [
+   {
+    "name": "video_wan2_2_14B_t2v",
+    "title": "Wan 2.2 14B Text to Video",
+    "description": "Generate high-quality videos from text prompts with cinematic aesthetic control and dynamic motion generation using Wan 2.2.",
+    "mediaType": "image",
+    "mediaSubtype": "webp",
+    "tutorialUrl": "https://docs.comfy.org/tutorials/video/wan/wan2_2",
+    "tags": [
+     "Text to Video",
+     "Video"
+    ],
+    "models": [
+     "Wan2.2",
+     "Wan"
+    ],
+    "date": "2025-07-29",
+    "size": 38031935406,
+    "usage": 271,
+    "username": "ComfyUI",
+    "minComfyUIVersion": "0.16.4"
+   },
+   {
+    "name": "text_to_video_wan",
+    "title": "Wan 2.1 Text to Video",
+    "description": "Generate videos from text prompts using Wan 2.1.",
+    "mediaType": "image",
+    "mediaSubtype": "webp",
+    "tutorialUrl": "https://docs.comfy.org/tutorials/video/wan/wan-video",
+    "tags": [
+     "Text to Video",
+     "Video"
+    ],
+    "models": [
+     "Wan2.1",
+     "Wan"
+    ],
+    "date": "2025-03-01",
+    "size": 9824737690,
+    "usage": 72,
+    "username": "ComfyUI",
+    "minComfyUIVersion": "0.3.31"
+   }
+  ]
+ },
+ {
+  "title": "Audio",
+  "templates": [
+   {
+    "name": "audio_ace_step_1_5_split_llm",
+    "title": "ACE-Step 1.5 AI Lyric Song Generation",
+    "description": "Input a music style and optional lyrics. Generate a full song with AI-created lyrics and audio.",
+    "mediaType": "audio",
+    "mediaSubtype": "mp3",
+    "tags": [
+     "API",
+     "Text to Audio"
+    ],
+    "models": [
+     "ACE-Step",
+     "Google Gemini"
+    ],
+    "logos": [
+     {
+      "provider": "Google"
+     }
+    ],
+    "date": "2026-02-09",
+    "openSource": false,
+    "size": 9985798963,
+    "usage": 11,
+    "searchRank": 0,
+    "io": {
+     "outputs": [
+      {
+       "nodeId": 111,
+       "nodeType": "SaveAudioAdvanced",
+       "file": "audio_ace_step_1_5_split_llm.flac",
+       "mediaType": "audio"
+      }
+     ]
+    },
+    "username": "ComfyUI",
+    "minComfyUIVersion": "0.12.0"
+   }
+  ]
+ }
+]
