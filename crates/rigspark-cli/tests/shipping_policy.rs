@@ -72,6 +72,7 @@ fn ci_runs_every_native_gate_read_only() {
     for step in [
         "test \"$(git rev-parse HEAD)\" = \"$GITHUB_SHA\"",
         "cargo native-retirement",
+        "python3 -B -m unittest discover -s scripts/tests -p test_workflow_validate.py",
         "cargo catalog-site --check",
         "cargo fmt --all -- --check",
         "cargo clippy --workspace --all-targets --locked -- -D warnings",

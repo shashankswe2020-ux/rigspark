@@ -87,7 +87,15 @@ fn every_built_in_workflow_is_bundled_verified_with_its_kind_and_roles() {
         );
         assert!(file.verified(), "{name}");
     }
-    assert_eq!(registry().unwrap().len(), ALL.len());
+    assert_eq!(
+        registry()
+            .unwrap()
+            .files()
+            .iter()
+            .filter(|file| file.verified())
+            .count(),
+        ALL.len()
+    );
 }
 
 #[test]
