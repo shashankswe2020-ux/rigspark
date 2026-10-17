@@ -1,0 +1,124 @@
+name: Workflow Candidate Harvest
+
+on:
+  schedule:
+    - cron: "23 5 * * 2"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: workflow-candidate-harvest
+  cancel-in-progress: false
+
+jobs:
+  harvest:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - name: Preserve pending workflow review
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          PENDING=$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls?state=open&base=main&per_page=100" \
+            --jq '.[] | select(.head.ref | startswith("generation/workflow-candidates-")) | .html_url')
+          if [ -n "$PENDING" ]; then
+            printf 'Review or close the pending workflow proposal first:\n%s\n' "$PENDING"
+            exit 1
+          fi
+
+      - name: Fetch trusted source without an action runtime
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git init .
+          git remote add origin "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git"
+          AUTH=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\r\n')
+          git -c "http.${GITHUB_SERVER_URL}/.extraheader=AUTHORIZATION: basic $AUTH" fetch --no-tags origin "$GITHUB_SHA"
+          git checkout --detach FETCH_HEAD
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          git show "$GITHUB_SHA:crates/rigspark-core/data/workflows.json" > "$RUNNER_TEMP/workflows-baseline.json"
+
+      - name: Install pinned CPU validation runtime
+        run: |
+          set -euo pipefail
+          python3 -c 'import sys; assert sys.version_info[:2] == (3, 12)'
+          COMFY="$RUNNER_TEMP/workflow-comfyui"
+          git init "$COMFY"
+          git -C "$COMFY" remote add origin https://github.com/comfyanonymous/ComfyUI.git
+          git -C "$COMFY" fetch --depth 1 origin f1072eb0350638a3390ddb6afbcaa8c6b237c6fd
+          git -C "$COMFY" checkout --detach FETCH_HEAD
+          test "$(git -C "$COMFY" rev-parse HEAD)" = f1072eb0350638a3390ddb6afbcaa8c6b237c6fd
+          python3 -m venv "$RUNNER_TEMP/workflow-venv"
+          PY="$RUNNER_TEMP/workflow-venv/bin/python"
+          "$PY" -m pip install --index-url https://download.pytorch.org/whl/cpu torch==2.10.0 torchvision==0.25.0
+          printf 'torch==2.10.0\ntorchvision==0.25.0\n' > "$RUNNER_TEMP/workflow-constraints.txt"
+          "$PY" -m pip install -c "$RUNNER_TEMP/workflow-constraints.txt" -r "$COMFY/requirements.txt"
+
+      - name: Capture CPU schemas without a server or execution worker
+        run: |
+          set -euo pipefail
+          python3 -B -m unittest discover -s scripts/tests -p test_workflow_validate.py
+          timeout 180 "$RUNNER_TEMP/workflow-venv/bin/python" -B scripts/workflow_validate.py capture \
+            --comfyui "$RUNNER_TEMP/workflow-comfyui" --output "$RUNNER_TEMP/workflow-object-info.json"
+
+      - name: Harvest bounded pinned candidates
+        run: |
+          set -euo pipefail
+          cargo workflow-harvest --object-info "cpu=$RUNNER_TEMP/workflow-object-info.json" --limit 10
+          jq -e '.complete == true and (.failures | length) == 0 and (.candidates | length) <= 10' \
+            docs/references/workflow-harvest-report.json
+
+      - name: Validate candidate graphs without enqueuing
+        run: |
+          set -euo pipefail
+          timeout 900 "$RUNNER_TEMP/workflow-venv/bin/python" -B scripts/workflow_validate.py validate \
+            --comfyui "$RUNNER_TEMP/workflow-comfyui" \
+            --workflows crates/rigspark-core/data/workflows.json \
+            --baseline "$RUNNER_TEMP/workflows-baseline.json" \
+            --harvest-report docs/references/workflow-harvest-report.json \
+            --output docs/references/workflow-validation-report.json
+          jq -e '.valid == true and .executedGraphs == 0 and .mode == "validation-only-no-worker"' \
+            docs/references/workflow-validation-report.json
+          cargo fmt --all -- --check
+          cargo test --locked -p rigspark-core --test workflow_file --test generation
+          cargo test --locked -p rigspark-runtime --test workflow_compile --test workflow_harvest --test workflow_golden
+          cargo test --locked -p rigspark-cli --test workflow_harvest_cli --test workflow_harvest_policy --test shipping_policy
+          cargo native-retirement
+
+      - name: Propose candidates only
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if [ "$(jq '.candidates | length' docs/references/workflow-harvest-report.json)" = 0 ]; then
+            echo "No new candidates; no proposal needed."
+            exit 0
+          fi
+          {
+            git diff --name-only
+            git ls-files --others --exclude-standard
+          } | while IFS= read -r path; do
+            case "$path" in
+              crates/rigspark-core/data/workflows.json|docs/references/workflow-harvest-report.json|docs/references/workflow-validation-report.json) ;;
+              *) printf 'Refusing unexpected change: %s\n' "$path"; exit 1 ;;
+            esac
+          done
+          BRANCH="generation/workflow-candidates-${GITHUB_RUN_ID}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add crates/rigspark-core/data/workflows.json docs/references/workflow-harvest-report.json docs/references/workflow-validation-report.json
+          git commit -m "chore(workflows): propose pinned workflow candidates" \
+            -m "CPU schema validation only; no weights downloaded or graphs executed. Candidates remain unverified." \
+            -m "Watermark: Claude" -m "Co-authored-by: Claude <noreply@anthropic.com>"
+          AUTH=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\r\n')
+          git -c "http.${GITHUB_SERVER_URL}/.extraheader=AUTHORIZATION: basic $AUTH" push origin "$BRANCH"
+          gh pr create --base main --head "$BRANCH" \
+            --title "chore(workflows): review pinned workflow candidates" \
+            --body "Official templates pinned to the commit in the harvest report. Native CPU schema validation passed with zero execution and isolated empty placeholders; this is NOT inference or hardware verification. Candidates remain unverified and cannot run. Existing catalog matches are report-only, not new model admissions. Real-hardware verification and promotion are separate maintainer steps. No automatic merge. Watermark: Claude"

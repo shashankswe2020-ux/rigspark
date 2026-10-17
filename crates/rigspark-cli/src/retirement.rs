@@ -95,7 +95,12 @@ pub fn check_file(path: &str, text: &str) -> Vec<&'static str> {
         {
             failures.push("workflow still references a Node-backed action");
         }
-        let has_command = lower
+        let command_text = if extension == "py" {
+            without_python_graph_keys(&lower)
+        } else {
+            lower.clone()
+        };
+        let has_command = command_text
             .split(|character: char| {
                 !character.is_ascii_alphanumeric() && character != '-' && character != '_'
             })
@@ -118,4 +123,33 @@ pub fn check_file(path: &str, text: &str) -> Vec<&'static str> {
         }
     }
     failures
+}
+
+// ComfyUI's "node" dictionary keys are not runtime invocations. Do not exempt
+// standalone string values or command lists such as subprocess.run(["node"]).
+fn without_python_graph_keys(text: &str) -> String {
+    let mut result = text.to_owned();
+    for (start, _) in text.match_indices("node") {
+        let before = &text[..start];
+        let after = &text[start + 4..];
+        let Some(quote @ ('"' | '\'')) = before.chars().next_back() else {
+            continue;
+        };
+        let Some(suffix) = after.strip_prefix(quote) else {
+            continue;
+        };
+        let prefix = before[..before.len() - 1].trim_end();
+        let dict_access = suffix.trim_start().starts_with(']')
+            && prefix.strip_suffix('[').is_some_and(|prefix| {
+                prefix
+                    .trim_end()
+                    .chars()
+                    .next_back()
+                    .is_some_and(|ch| ch.is_ascii_alphanumeric() || ch == '_' || ch == ']')
+            });
+        if suffix.trim_start().starts_with(':') || dict_access {
+            result.replace_range(start..start + 4, "    ");
+        }
+    }
+    result
 }

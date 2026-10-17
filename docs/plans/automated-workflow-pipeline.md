@@ -21,7 +21,7 @@ Clippy (`-D warnings`), full tests, build and `cargo native-retirement`.
 | 1 | Data-driven runtime | Six workflows run from files; per-workflow Rust removed | none |
 | 2 | Template compiler | UI→API compiler with binding detection on recorded templates | 1 |
 | 3 | Harvest and pin | `cargo workflow-harvest --dry-run`, multi-file roles, LoRA, report | 2 |
-| 4 | CI validation and proposals | Weekly workflow; CPU ComfyUI `/prompt` validation; candidate PRs | 3 |
+| 4 | CI validation and proposals | Weekly workflow; workerless CPU schema validation; candidate PRs | 3 |
 | 5 | Verify, promote, MP4 | Evidence files, CI gate, MP4 output in CLI and GUI | 1, 3 |
 | 6 | Real proof | Re-verify the six on MPS, remove legacy allowance, promote one new workflow | 4, 5 |
 
@@ -31,7 +31,7 @@ Phases 4 and 5 can proceed in parallel once phase 3 lands.
 
 | Risk | Impact | Mitigation |
 |---|---|---|
-| UI→API conversion is subtle (widget order, `control_after_generate`, subgraphs, bypass) | Wrong graphs | Frozen golden fixtures from real templates; ComfyUI's own `/prompt` validation in CI; ambiguous cases fail closed |
+| UI→API conversion is subtle (widget order, `control_after_generate`, subgraphs, bypass) | Wrong graphs | Frozen golden fixtures from real templates; ComfyUI's own workerless `validate_prompt` in CI; ambiguous cases fail closed |
 | Migration changes behavior of shipped workflows | Regressions | Byte-identical golden tests against the existing builders before deletion |
 | Six shipped workflows lack evidence files | Promotion gate would block them | Temporary `legacy-builtin` allowance for those six ids at frozen digests, removed in phase 6 after MPS re-verification |
 | Template churn upstream | Noisy PRs | Pinned commit, skip unchanged templates, cap 10 candidates, one pending PR |
@@ -125,12 +125,12 @@ Fixtures: four templates at `99e3d437` and `object_info` for the 37 classes used
 captured from ComfyUI 0.38.0 (`f1072eb`) on Apple Silicon in CPU mode. 14 tests cover
 every compiled template and the fail-closed cases.
 
-**Real validation:** ComfyUI 0.38.0's own `/prompt` validator accepted all five compiled
+**Earlier smoke:** ComfyUI 0.38.0's own `/prompt` validator accepted all five compiled
 graphs (Wan 2.1, Qwen-Image, Wan 2.2 14B, Ming with and without prompt enhancement)
 with zero `node_errors`, using zero-byte placeholder weights in a temporary
 `--base-directory`. The queue started executing before it was cleared, and the
-placeholders failed harmlessly at load. Phase 4 must clear the queue (or hold
-execution) before submitting.
+placeholders failed harmlessly at load. This method was rejected for CI; phase 4
+validates directly without starting a server or worker.
 
 Findings that change expectations:
 
@@ -199,9 +199,33 @@ The live run found and fixed two compiler bugs, each with a regression fixture:
 Media-input templates are now detected before compiling, so their reason is accurate.
 
 A first attempt also exposed an environment hazard: an unowned ComfyUI already held
-port 8188, so a capture that assumed ownership read the wrong server. Evidence above
-uses only the owned CPU capture. Phase 4 CI must start its own ComfyUI on a free port
-and verify ownership before capturing `object_info`.
+port 8188, so a capture that assumed ownership read the wrong server. Phase 4 avoids
+server ports entirely by capturing `object_info` in-process from pinned ComfyUI.
+
+## Phase 4 status (2026-10-17)
+
+Done: the scheduled/manual workflow checks for a pending proposal before doing work,
+fetches only the triggering `main` revision, uses ComfyUI commit
+`f1072eb0350638a3390ddb6afbcaa8c6b237c6fd`, and pins Python 3.12 and CPU Torch.
+`scripts/workflow_validate.py` captures CPU schemas and validates up to ten harvested
+candidates with ComfyUI's direct `execution.validate_prompt`. It never starts a
+server/worker, calls `/prompt`, loads weights, or executes a graph; model placeholders
+are empty files in a fresh temporary base. It fails closed on incomplete harvests,
+non-CPU candidates, unpinned or unsafe model paths, native-node violations, partial
+output errors, and modifications/removals of existing verified workflows. The
+machine-readable report says `validation-only-no-worker` and `executedGraphs: 0`.
+
+Only the workflow registry plus harvest and validation reports can reach the proposal
+PR; model catalog entries are not added. Candidates stay unverified, no PR is opened
+for zero candidates, and the automation does not merge. The commit/PR text carries the
+requested Claude watermark and co-author trailer.
+
+Verification: seven standard-library validator tests, the CLI/core/runtime workflow
+test slices, `cargo native-retirement`, `cargo fmt --check`, and `actionlint` passed.
+A real local CPU smoke harvested one template at source commit `04a508b`, then
+validated `image-capybara-v0-1-text-to-image-04a508b`: valid, no node errors, output
+`102`, with `executedGraphs: 0`. This proves schema compatibility only, not that its
+36 GB weights fit or can generate on CPU.
 
 ### Phase 2 tasks: template compiler (outline)
 

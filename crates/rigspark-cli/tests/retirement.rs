@@ -1,6 +1,33 @@
 use rigspark_cli::retirement::check_file;
 
 #[test]
+fn python_graph_keys_are_data_but_runtime_invocations_still_fail() {
+    for source in [
+        r#"graph = {"node": "1"}"#,
+        r#"graph = {'node': '1'}"#,
+        r#"identifier = slot["node"]"#,
+        r#"identifier = item["output"]["node"]"#,
+    ] {
+        assert!(
+            check_file("scripts/validate.py", source).is_empty(),
+            "{source}"
+        );
+    }
+    for source in [
+        r#"subprocess.run(["node"])"#,
+        r#"subprocess.run(["node", "script.js"])"#,
+        r#"os.system("node script.js")"#,
+        r#"runtime = "node""#,
+        r#"subprocess.run(["npm", "test"])"#,
+    ] {
+        assert!(
+            !check_file("scripts/validate.py", source).is_empty(),
+            "{source}"
+        );
+    }
+}
+
+#[test]
 fn root_src_must_be_empty_even_when_files_are_not_typescript() {
     for path in [
         "src/config.json",
