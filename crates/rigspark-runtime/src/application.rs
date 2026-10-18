@@ -7,7 +7,8 @@ use crate::{
     lifecycle::{Activation, Lifecycle, Registry},
     ollama_installed::{InstalledModels, LocalVerifier, verify_catalog_manifest},
     process_control::{
-        NativeProcessControl, ProcessControl, listener, resolve_binary, same_process,
+        NativeProcessControl, ProcessControl, listener, resolve_binary, resolve_bitnet_server,
+        same_process,
     },
     pull::{PullRequest, PullService},
     special_adapters::{LmStudioAdapter, MlxAdapter},
@@ -259,26 +260,18 @@ impl Activation for ContextActivation<'_> {
     }
 }
 fn compatible(model: &CatalogModel, backend: &str) -> bool {
-    if model.is_advisory_only() {
-        return false;
-    }
-    match backend {
-        "ollama" => model.source.ollama.is_some(),
-        "llamacpp" => model.source.gguf.is_some(),
-        "mlx" => model.source.mlx.is_some(),
-        "lmstudio" => model.source.gguf.is_some() || model.source.mlx.is_some(),
-        _ => false,
-    }
+    model.supports_backend(backend)
 }
 fn backend_known(backend: &str) -> bool {
     rigspark_core::catalog::BACKENDS.contains(&backend)
 }
-/// Index into the resolved runtime binaries: ollama, llama-server, python3, lms.
+/// Index into the resolved runtime binaries: ollama, llama-server, python3, lms, BitNet.
 fn backend_index(backend: &str) -> usize {
     match backend {
         "llamacpp" => 1,
         "mlx" => 2,
         "lmstudio" => 3,
+        "bitnet" => 4,
         _ => 0,
     }
 }
@@ -322,9 +315,9 @@ pub fn auto_backend_order(model: &CatalogModel, hardware: &Hardware) -> Vec<&'st
     let apple = hardware.platform == rigspark_core::sizing::Platform::Darwin
         && hardware.arch == rigspark_core::sizing::CpuArch::Arm64;
     let order: &[&str] = if apple {
-        &["mlx", "ollama", "llamacpp"]
+        &["mlx", "ollama", "llamacpp", "bitnet"]
     } else {
-        &["ollama", "llamacpp"]
+        &["ollama", "llamacpp", "bitnet"]
     };
     order
         .iter()
@@ -368,6 +361,15 @@ pub struct QuantPlan {
     pub quant: rigspark_core::sizing::Quantization,
     pub estimated_fit: bool,
 }
+
+fn bitnet_context_limit(model: &CatalogModel) -> Result<u32, BackendError> {
+    let limit = model
+        .context_length
+        .filter(|limit| limit.is_finite() && *limit >= 1.0 && limit.fract() == 0.0)
+        .ok_or_else(|| BackendError("BitNet requires a known model context limit".into()))?;
+    Ok(limit.min(4096.0) as u32)
+}
+
 /// Picks the quantization to pull and enforces fit, bypass and disk preflight before any side effect.
 pub fn plan_quantization(
     model: &CatalogModel,
@@ -384,7 +386,21 @@ pub fn plan_quantization(
             "single-model and delegated runtimes require up to replace models".into(),
         ));
     }
-    if options.context.is_some() && backend != "ollama" {
+    if backend == "bitnet" {
+        if !model.supports_backend("bitnet") {
+            return Err(BackendError("BitNet requires an I2_S GGUF artifact".into()));
+        }
+        let limit = bitnet_context_limit(model)?;
+        if options
+            .context
+            .is_some_and(|context| context == 0 || context > limit)
+        {
+            return Err(BackendError(
+                "BitNet context exceeds the model's supported range".into(),
+            ));
+        }
+    }
+    if options.context.is_some() && !["ollama", "bitnet"].contains(&backend) {
         return Err(BackendError(
             "explicit runtime context currently requires Ollama".into(),
         ));
@@ -624,7 +640,21 @@ pub async fn run_native_with_config_observed(
         .or_else(|| std::env::var_os("USERPROFILE"))
         .map(PathBuf::from)
         .ok_or_else(|| BackendError("home unavailable".into()))?;
-    let paths = ["ollama", "llama-server", "python3", "lms"].map(|name| resolve_binary(name).ok());
+    let bitnet_path = resolve_bitnet_server();
+    if ["down", "doctor"].contains(&options.command.as_str())
+        && prior
+            .active
+            .as_ref()
+            .is_some_and(|active| active.backend == "bitnet")
+    {
+        bitnet_path
+            .as_ref()
+            .map_err(|error| BackendError(error.clone()))?;
+    }
+    let mut paths = ["ollama", "llama-server", "python3", "lms"]
+        .map(|name| resolve_binary(name).ok())
+        .to_vec();
+    paths.push(bitnet_path.as_ref().ok().cloned());
     let binary = |index: usize| {
         paths[index]
             .clone()
@@ -640,6 +670,7 @@ pub async fn run_native_with_config_observed(
     let ollama = RuntimeAdapter::new(BackendKind::Ollama, binary(0), &http, &probe, &control)
         .with_ollama_models(ollama_root.clone())?;
     let llama = RuntimeAdapter::new(BackendKind::LlamaCpp, binary(1), &http, &probe, &control);
+    let bitnet = RuntimeAdapter::new(BackendKind::BitNet, binary(4), &http, &probe, &control);
     let mlx = MlxAdapter {
         binary: binary(2),
         http: &http,
@@ -662,7 +693,8 @@ pub async fn run_native_with_config_observed(
     let llama = ObservedAdapter::new(&llama, observer, LifecycleScope::Runtime);
     let mlx = ObservedAdapter::new(&mlx, observer, LifecycleScope::Runtime);
     let studio = ObservedAdapter::new(&studio, observer, LifecycleScope::Runtime);
-    let registry = Registry::new(vec![&ollama, &llama, &mlx, &studio]);
+    let bitnet = ObservedAdapter::new(&bitnet, observer, LifecycleScope::Runtime);
+    let registry = Registry::new(vec![&ollama, &llama, &mlx, &studio, &bitnet]);
     let lifecycle = Lifecycle {
         store: &store,
         registry: &registry,
@@ -694,7 +726,7 @@ pub async fn run_native_with_config_observed(
                     .join(owner)
                     .join(format!("{name}@{}", source.revision)),
             )
-        } else if active.backend == "llamacpp" {
+        } else if ["llamacpp", "bitnet"].contains(&active.backend.as_str()) {
             let source = model
                 .and_then(|model| model.source.gguf.as_ref())
                 .ok_or_else(|| BackendError("active GGUF source unavailable".into()))?;
@@ -705,7 +737,8 @@ pub async fn run_native_with_config_observed(
             Some(
                 config
                     .home
-                    .join("cache/llamacpp")
+                    .join("cache")
+                    .join(&active.backend)
                     .join(owner)
                     .join(format!("{name}@{}", source.revision))
                     .join(&source.file),
@@ -878,8 +911,14 @@ pub async fn run_native_with_config_observed(
     }
     let hardware =
         hardware.ok_or_else(|| BackendError("hardware required for model selection".into()))?;
-    let simple_switch =
-        options.command == "switch" && options.context.is_none() && !options.bypass && cache_kept;
+    let simple_switch = options.command == "switch"
+        && options.context.is_none()
+        && !options.bypass
+        && cache_kept
+        && prior
+            .active
+            .as_ref()
+            .is_none_or(|active| active.backend != "bitnet");
     let env_backend = std::env::var("RIGSPARK_BACKEND").ok();
     let user = config
         .user_config()
@@ -908,6 +947,11 @@ pub async fn run_native_with_config_observed(
     } else {
         let mut selected = None;
         for name in auto_backend_order(model, hardware) {
+            if name == "bitnet" {
+                bitnet_path
+                    .as_ref()
+                    .map_err(|error| BackendError(error.clone()))?;
+            }
             let index = backend_index(name);
             if paths[index].is_some() {
                 let args = if name == "mlx" {
@@ -932,6 +976,11 @@ pub async fn run_native_with_config_observed(
         }
         selected.ok_or_else(|| BackendError("no installed backend supports this model".into()))?
     };
+    if backend == "bitnet" {
+        bitnet_path
+            .as_ref()
+            .map_err(|error| BackendError(error.clone()))?;
+    }
     check_backend(
         model,
         &backend,
@@ -1014,10 +1063,14 @@ pub async fn run_native_with_config_observed(
         model_id: model.id.clone(),
         endpoint,
         model_path: prepared.model_path,
-        context: options.context,
+        context: if backend == "bitnet" {
+            Some(options.context.unwrap_or(bitnet_context_limit(model)?))
+        } else {
+            options.context
+        },
         cache: requested,
     };
-    let active = if options.context.is_some() {
+    let active = if options.context.is_some() && backend == "ollama" {
         let activation = ContextActivation {
             source: pull_request.model_id,
             context: options.context,

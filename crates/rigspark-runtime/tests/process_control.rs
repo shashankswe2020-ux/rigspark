@@ -14,6 +14,33 @@ fn identity() -> ProcessIdentity {
     }
 }
 struct Probe;
+
+#[test]
+fn bitnet_server_requires_an_explicit_absolute_executable_file() {
+    use rigspark_runtime::process_control::bitnet_server_path;
+    assert!(
+        bitnet_server_path(None)
+            .unwrap_err()
+            .contains("RIGSPARK_BITNET_SERVER")
+    );
+    assert!(bitnet_server_path(Some(std::ffi::OsStr::new("llama-server"))).is_err());
+    let root = tempfile::tempdir().unwrap();
+    assert!(bitnet_server_path(Some(root.path().as_os_str())).is_err());
+    let binary = root.path().join("llama-server");
+    assert!(bitnet_server_path(Some(binary.as_os_str())).is_err());
+    std::fs::write(&binary, b"not executed in tests").unwrap();
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(&binary, std::fs::Permissions::from_mode(0o600)).unwrap();
+        assert!(bitnet_server_path(Some(binary.as_os_str())).is_err());
+        std::fs::set_permissions(&binary, std::fs::Permissions::from_mode(0o700)).unwrap();
+    }
+    assert_eq!(
+        bitnet_server_path(Some(binary.as_os_str())).unwrap(),
+        binary.canonicalize().unwrap()
+    );
+}
 #[async_trait::async_trait]
 impl ProcessProbe for Probe {
     async fn listener(&self, port: u16, host: &str) -> Result<Listener, StateError> {

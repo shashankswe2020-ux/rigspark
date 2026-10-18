@@ -7,6 +7,7 @@ pub mod artificial_analysis;
 pub mod cache;
 pub mod catalog_proposals;
 pub mod catalog_quality;
+pub mod catalog_request;
 pub mod catalog_update;
 pub mod chat_service;
 pub mod command;

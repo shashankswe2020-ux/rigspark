@@ -360,7 +360,7 @@ async fn self_managed_pull_requires_pinned_source_before_side_effects() {
         ollama_models: root.path(),
         studio_models: root.path(),
     };
-    for backend in ["llamacpp", "mlx"] {
+    for backend in ["llamacpp", "mlx", "bitnet"] {
         let request = PullRequest {
             backend: backend.into(),
             model_id: "test:latest".into(),
@@ -433,6 +433,30 @@ async fn self_managed_preparation_verifies_gguf_and_complete_mlx_snapshot() {
         .unwrap();
     assert!(prepared.digest_verified);
     assert_eq!(std::fs::read(prepared.model_path.unwrap()).unwrap(), b"{}");
+    request.backend = "bitnet".into();
+    let prepared = service
+        .pull(
+            &request,
+            Path::new("/fake/bitnet"),
+            &CancellationToken::new(),
+        )
+        .await
+        .unwrap();
+    assert!(prepared.digest_verified);
+    let path = prepared.model_path.unwrap();
+    assert!(path.starts_with(root.path().canonicalize().unwrap().join("cache/bitnet")));
+    assert_eq!(std::fs::read(&path).unwrap(), b"{}");
+    request.gguf.as_mut().unwrap().sha256 = "b".repeat(64);
+    assert!(
+        service
+            .pull(
+                &request,
+                Path::new("/fake/bitnet"),
+                &CancellationToken::new()
+            )
+            .await
+            .is_err()
+    );
     request.backend = "mlx".into();
     request.expected_bytes = 6;
     request.gguf = None;

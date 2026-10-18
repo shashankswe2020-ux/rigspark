@@ -1044,6 +1044,10 @@ kbd,
   margin: 0;
 }
 
+.catalog-request-note {
+  margin-top: 0.35rem;
+}
+
 .model-detail-facts dt {
   color: var(--muted);
   font-size: 0.75rem;

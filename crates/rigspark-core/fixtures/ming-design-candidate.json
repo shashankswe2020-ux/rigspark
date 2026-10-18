@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-13T00:00:00Z",
+  "models": [
+    {
+      "id": "ming-image:ming_image_0.1_design_int8_convrot",
+      "family": "ming-image",
+      "kind": "image",
+      "params": "6.2B",
+      "license": "mit",
+      "openWeight": true,
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "default": true,
+      "source": "https://huggingface.co/inclusionAI/Ming-Image-0.1-Design",
+      "workflow": "ming-design",
+      "workflowSource": "https://github.com/Comfy-Org/workflow_templates/blob/99e3d43745926b78466d99f937c0cd2bb622423a/templates/image_ming_image_01_design_t2i.json",
+      "files": [
+        {
+          "role": "diffusion",
+          "folder": "diffusion_models",
+          "repo": "Comfy-Org/Ming-Image",
+          "revision": "53654871e47a5d2daed7b3a986cbf1010ef81c78",
+          "file": "diffusion_models/ming_image_0.1_design_int8_convrot.safetensors",
+          "sha256": "0d3f5bcc6d2cb830578ea6d0925b30b9fb66058bcb651cc8633e60760dceb1d0",
+          "bytes": 6175239953
+        },
+        {
+          "role": "text-encoder",
+          "folder": "text_encoders",
+          "repo": "Comfy-Org/Ming-Image",
+          "revision": "53654871e47a5d2daed7b3a986cbf1010ef81c78",
+          "file": "text_encoders/ming_image_0.1_ling_mini_2.0_int8_convrot.safetensors",
+          "sha256": "9d9f31cfce37c24ae1589287f5c33bd9dda80e14ddf773b5e17a0bb69c8cc4b1",
+          "bytes": 19507670525
+        },
+        {
+          "role": "vae",
+          "folder": "vae",
+          "repo": "Comfy-Org/Ming-Image",
+          "revision": "53654871e47a5d2daed7b3a986cbf1010ef81c78",
+          "file": "vae/ming_image_vae_bf16.safetensors",
+          "sha256": "7f5bed402dc8c77dc2e0ab1929a85d4df433b7cf7b599dfa8c353da98db0b90a",
+          "bytes": 253816696
+        }
+      ]
+    }
+  ]
+}

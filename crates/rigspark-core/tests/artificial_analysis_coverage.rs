@@ -235,6 +235,31 @@ fn report_matches_runnable_gguf_by_revision_digest_and_exact_size() {
 }
 
 #[test]
+fn report_counts_a_pinned_bitnet_artifact_as_runnable() {
+    use rigspark_core::catalog::GgufSource;
+    let (rows, mappings, mut observations, mut catalog) = report_inputs();
+    for observation in &mut observations {
+        observation.source.files[0].file = "model.gguf".into();
+    }
+    let model = &mut catalog.models[0];
+    model.source.weights = None;
+    model.source.gguf = Some(GgufSource {
+        repo: mappings[0].repo.clone(),
+        revision: "a".repeat(40),
+        file: "model.gguf".into(),
+        sha256: "b".repeat(64),
+    });
+    model.quantizations[0].name = "I2_S".into();
+    model.availability = Some(
+        serde_json::from_value(serde_json::json!({"status":"runnable","backend":"bitnet"}))
+            .unwrap(),
+    );
+    let report = evaluate(&rows, &mappings, &observations, &catalog).unwrap();
+    assert!(report.complete);
+    assert_eq!(report.covered_runnable, 1);
+}
+
+#[test]
 fn report_mlx_identity_excludes_configuration_and_tokenizer_files() {
     use rigspark_core::catalog::{Availability, CatalogBackend};
     let (rows, mappings, observations, mut catalog) = report_inputs();

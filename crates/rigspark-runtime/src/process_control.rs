@@ -202,6 +202,7 @@ pub fn resolve_binary(binary: &str) -> Result<PathBuf, String> {
             .canonicalize()
             .map_err(|_| "runtime executable unavailable".into());
     }
+
     for directory in std::env::split_paths(&std::env::var_os("PATH").unwrap_or_default()) {
         if directory.as_os_str().is_empty() {
             continue;
@@ -217,6 +218,34 @@ pub fn resolve_binary(binary: &str) -> Result<PathBuf, String> {
     }
     Err("runtime executable not found on PATH".into())
 }
+pub fn bitnet_server_path(value: Option<&std::ffi::OsStr>) -> Result<PathBuf, String> {
+    let invalid = || {
+        "Set RIGSPARK_BITNET_SERVER to the absolute path of a compiled BitNet llama-server executable (not stock llama.cpp)".to_owned()
+    };
+    let path = Path::new(value.ok_or_else(invalid)?);
+    if !path.is_absolute()
+        || path
+            .to_str()
+            .is_none_or(|text| text.chars().any(char::is_control))
+        || !path.is_file()
+    {
+        return Err(invalid());
+    }
+    let path = path.canonicalize().map_err(|_| invalid())?;
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        if path.metadata().map_err(|_| invalid())?.permissions().mode() & 0o111 == 0 {
+            return Err(invalid());
+        }
+    }
+    Ok(path)
+}
+
+pub fn resolve_bitnet_server() -> Result<PathBuf, String> {
+    bitnet_server_path(std::env::var_os("RIGSPARK_BITNET_SERVER").as_deref())
+}
+
 pub fn minimal_env() -> BTreeMap<String, String> {
     [
         "PATH",

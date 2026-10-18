@@ -479,6 +479,9 @@ async fn transient_failures_are_reported_not_cached_and_listing_failure_changes_
 fn only_official_listing_tags_manifests_and_blobs_are_allow_listed() {
     let allowed = |raw: &str| allowed_request(&Url::parse(raw).unwrap());
     assert!(allowed(LIBRARY_URL));
+    assert!(allowed(
+        "https://huggingface.co/api/models/Comfy-Org/Ming-Image/revision/53654871e47a5d2daed7b3a986cbf1010ef81c78?blobs=true"
+    ));
     assert!(allowed("https://ollama.com/library/qwen3.8/tags"));
     assert!(allowed(
         "https://registry.ollama.ai/v2/library/qwen3.8/manifests/27b"
@@ -488,6 +491,8 @@ fn only_official_listing_tags_manifests_and_blobs_are_allow_listed() {
         digest("x")
     )));
     for refused in [
+        "https://huggingface.co/api/models/Comfy-Org/Ming-Image/revision/main?blobs=true",
+        "https://huggingface.co/api/models/Comfy-Org/Ming-Image/revision/53654871e47a5d2daed7b3a986cbf1010ef81c78?blobs=false",
         "http://ollama.com/library?sort=newest",
         "https://ollama.com/library?sort=popular",
         "https://ollama.com/library/../admin/tags",

@@ -10,7 +10,7 @@ fn candidate(id: &str, date: &str) -> Value {
 #[test]
 fn embedded_snapshot_is_structurally_valid_and_matches_catalog_refresh_contract() {
     let candidates = parse_candidates(include_str!("../fixtures/registry-snapshot.json")).unwrap();
-    assert_eq!(candidates.len(), 69);
+    assert_eq!(candidates.len(), 70);
     let catalog = Catalog::parse(include_str!("../../rigspark-core/data/models.json")).unwrap();
     let result = enrich(
         &catalog,

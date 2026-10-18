@@ -335,7 +335,7 @@ async fn model_routes_validate_queries_before_touching_runtimes() {
     let (_, runtimes) = json_call(&host, "GET", "/api/runtimes", Value::Null).await;
     assert_eq!(
         runtimes,
-        json!({"runtimes":["ollama","llamacpp","mlx","lmstudio"]})
+        json!({"runtimes":["ollama","llamacpp","mlx","lmstudio","bitnet"]})
     );
     let (_, active) = json_call(&host, "GET", "/api/models/active", Value::Null).await;
     assert_eq!(active, json!({"active":null}));

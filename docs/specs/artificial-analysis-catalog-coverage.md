@@ -320,6 +320,10 @@ The merged candidate must pass catalog parsing and complete artifact coverage be
 When new entries require a v3-to-v4 migration, legacy entries receive availability only when
 their existing default backend source has verified pins. Missing pins abort with the entry ID;
 admission never deletes the entry, guesses a digest or silently switches its default backend.
+Schema-v4 runnable availability includes `bitnet`. Pinned I2_S artifacts retain
+BitNet availability during migration and coverage reporting; they must not be
+labelled runnable through llama.cpp or LM Studio merely because they are GGUF.
+Advisory-only artifacts remain unavailable through every backend.
 The bundled catalog and production writer version remain unchanged until the presentation and
 publication rollout is ready.
 

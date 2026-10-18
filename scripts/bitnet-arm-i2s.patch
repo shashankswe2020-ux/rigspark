@@ -1,0 +1,35 @@
+diff --git a/src/ggml-bitnet-mad.cpp b/src/ggml-bitnet-mad.cpp
+index 4ba9d65..f16e3be 100644
+--- a/src/ggml-bitnet-mad.cpp
++++ b/src/ggml-bitnet-mad.cpp
+@@ -1043,2 +1043,25 @@ void ggml_vec_dot_i2_i8_s_Nx1(int n, float * s, size_t bs, const void * vx, size
+ void ggml_vec_dot_i2_i8_s(int n, float * s, size_t bs, const void * vx, size_t bx, const void * vy, size_t by, int nrc) {
++#if defined(__ARM_NEON)
++    assert(n % 128 == 0);
++    (void)bx;
++    const auto * packed = static_cast<const uint8_t *>(vx);
++    for (int col = 0; col < nrc; ++col) {
++        const auto * activation = static_cast<const int8_t *>(vy) + col * by;
++        int32x4_t sum = vdupq_n_s32(0);
++        for (int block = 0; block < n / 128; ++block) {
++            for (int group = 0; group < 4; ++group) {
++                for (int half = 0; half < 32; half += 16) {
++                    const uint8x16_t bytes = vld1q_u8(packed + block * 32 + half);
++                    const uint8x16_t codes = vandq_u8(
++                        vshlq_u8(bytes, vdupq_n_s8(2 * group - 6)), vdupq_n_u8(3));
++                    const int8x16_t values = vld1q_s8(activation + block * 128 + group * 32 + half);
++                    const int8x16_t weights = vreinterpretq_s8_u8(codes);
++                    sum = vpadalq_s16(sum, vmull_s8(vget_low_s8(weights), vget_low_s8(values)));
++                    sum = vpadalq_s16(sum, vmull_s8(vget_high_s8(weights), vget_high_s8(values)));
++                }
++            }
++        }
++        s[col * bs] = static_cast<float>(vaddvq_s32(sum));
++    }
++#else
+     if (nrc % PARALLEL_SIZE == 0)
+@@ -1055,2 +1078,3 @@ void ggml_vec_dot_i2_i8_s(int n, float * s, size_t bs, const void * vx, size_t b
+     }
++#endif
+ }
+\ No newline at end of file

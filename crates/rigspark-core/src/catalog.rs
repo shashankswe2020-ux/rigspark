@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashSet};
 use time::{Date, OffsetDateTime, format_description::well_known::Rfc3339};
 
-pub const BACKENDS: [&str; 4] = ["ollama", "llamacpp", "mlx", "lmstudio"];
+pub const BACKENDS: [&str; 5] = ["ollama", "llamacpp", "mlx", "lmstudio", "bitnet"];
 pub const CAPABILITIES: [&str; 6] = ["chat", "code", "vision", "reasoning", "tools", "embedding"];
 pub const VENDORS: [&str; 5] = ["apple", "nvidia", "amd", "intel", "none"];
 pub(crate) const LICENSES: [&str; 18] = [
@@ -164,6 +164,7 @@ pub enum CatalogBackend {
     Llamacpp,
     Mlx,
     Lmstudio,
+    Bitnet,
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(rename_all = "kebab-case")]
@@ -236,6 +237,26 @@ pub struct Catalog {
     pub schema_version: u8,
     pub generated_at: String,
     pub models: Vec<CatalogModel>,
+}
+
+impl CatalogModel {
+    pub fn supports_backend(&self, backend: &str) -> bool {
+        if self.is_advisory_only() {
+            return false;
+        }
+        if self.quantizations.iter().any(Quantization::is_bitnet) {
+            return backend == "bitnet"
+                && self.source.gguf.is_some()
+                && self.quantizations.len() == 1;
+        }
+        match backend {
+            "ollama" => self.source.ollama.is_some(),
+            "llamacpp" => self.source.gguf.is_some(),
+            "mlx" => self.source.mlx.is_some(),
+            "lmstudio" => self.source.gguf.is_some() || self.source.mlx.is_some(),
+            _ => false,
+        }
+    }
 }
 
 pub(crate) fn repository(repo: &str) -> Result<(), ValidationError> {
@@ -374,7 +395,9 @@ impl CatalogModel {
                     && if self.availability.is_some() {
                         self.integrity_pinned()
                     } else {
-                        self.source.ollama.is_some()
+                        (self.source.ollama.is_some()
+                            || self.source.gguf.is_some()
+                            || self.source.mlx.is_some())
                             && self
                                 .quantizations
                                 .iter()
@@ -506,17 +529,16 @@ impl CatalogModel {
                 Availability::AdvisoryOnly { .. } => self.integrity_pinned(),
                 Availability::Runnable { backend } => match backend {
                     CatalogBackend::Ollama => {
-                        self.source.ollama.is_some()
+                        self.supports_backend("ollama")
                             && self
                                 .quantizations
                                 .iter()
                                 .all(|quant| quant.sha256.is_some())
                     }
-                    CatalogBackend::Llamacpp => self.source.gguf.is_some(),
-                    CatalogBackend::Mlx => self.source.mlx.is_some(),
-                    CatalogBackend::Lmstudio => {
-                        self.source.gguf.is_some() || self.source.mlx.is_some()
-                    }
+                    CatalogBackend::Llamacpp => self.supports_backend("llamacpp"),
+                    CatalogBackend::Mlx => self.supports_backend("mlx"),
+                    CatalogBackend::Lmstudio => self.supports_backend("lmstudio"),
+                    CatalogBackend::Bitnet => self.supports_backend("bitnet"),
                 },
             };
             require(

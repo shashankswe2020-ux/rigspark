@@ -139,6 +139,40 @@ fn base_catalog() -> Catalog {
 }
 
 #[test]
+fn migration_preserves_bitnet_instead_of_assigning_llamacpp() {
+    use rigspark_core::artificial_analysis::admission::admit;
+    let (rows, mappings, artifacts) = inputs();
+    let mut original = Catalog::parse(rigspark_core::MODELS_JSON).unwrap();
+    original
+        .models
+        .retain(|model| model.id == "bitnet-b1.58:2b");
+    let migrated = admit(
+        &original,
+        &rows,
+        &mappings,
+        &artifacts,
+        "2026-10-18T00:00:00Z",
+    )
+    .unwrap();
+    assert_eq!(
+        serde_json::to_value(migrated.models[0].availability).unwrap(),
+        json!({"status":"runnable","backend":"bitnet"})
+    );
+    let again = admit(
+        &migrated,
+        &rows,
+        &mappings,
+        &artifacts,
+        "2026-10-18T00:00:00Z",
+    )
+    .unwrap();
+    assert_eq!(
+        serde_json::to_value(migrated).unwrap(),
+        serde_json::to_value(again).unwrap()
+    );
+}
+
+#[test]
 fn admission_merges_once_preserves_existing_facts_and_is_idempotent() {
     use rigspark_core::artificial_analysis::admission::admit;
     let (rows, mappings, artifacts) = inputs();

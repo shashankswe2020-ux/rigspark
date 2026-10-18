@@ -93,7 +93,13 @@ pub fn evaluate(
             sources.push(weights);
         }
         if let Some(gguf) = &model.source.gguf
-            && eligible(CatalogBackend::Llamacpp)
+            && eligible(
+                if model.quantizations.iter().any(|quant| quant.is_bitnet()) {
+                    CatalogBackend::Bitnet
+                } else {
+                    CatalogBackend::Llamacpp
+                },
+            )
         {
             for quant in &model.quantizations {
                 let matches = quant

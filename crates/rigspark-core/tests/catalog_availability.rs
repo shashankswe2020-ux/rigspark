@@ -65,6 +65,35 @@ fn auto_advisory_entries_are_pinned_by_their_file_manifest() {
 }
 
 #[test]
+fn bitnet_availability_preserves_its_backend_and_advisory_gate() {
+    let mut raw: Value = serde_json::from_str(rigspark_core::MODELS_JSON).unwrap();
+    let model = raw["models"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|model| model["id"] == "bitnet-b1.58:2b")
+        .unwrap()
+        .clone();
+    raw["schemaVersion"] = json!(4);
+    raw["models"] = json!([model]);
+    raw["models"][0]["availability"] = json!({"status":"runnable","backend":"bitnet"});
+    let loaded = Catalog::parse(&raw.to_string()).unwrap();
+    assert!(loaded.models[0].supports_backend("bitnet"));
+    for backend in ["ollama", "llamacpp", "mlx", "lmstudio"] {
+        assert!(!loaded.models[0].supports_backend(backend));
+        raw["models"][0]["availability"]["backend"] = json!(backend);
+        assert!(Catalog::parse(&raw.to_string()).is_err(), "{backend}");
+    }
+    raw["models"][0]["availability"] =
+        json!({"status":"advisory-only","reason":"backend-support-unverified"});
+    let loaded = Catalog::parse(&raw.to_string()).unwrap();
+    assert!(loaded.models[0].ensure_runnable().is_err());
+    for backend in rigspark_core::catalog::BACKENDS {
+        assert!(!loaded.models[0].supports_backend(backend), "{backend}");
+    }
+}
+
+#[test]
 fn legacy_schemas_keep_their_wire_shape_and_reject_v4_fields() {
     for version in [2, 3] {
         let mut raw = legacy();

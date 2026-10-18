@@ -163,7 +163,11 @@ pub fn sized_quantization(
         name: name.into(),
         disk_bytes,
         min_ram_bytes: memory,
-        min_vram_bytes: memory,
+        min_vram_bytes: if name.eq_ignore_ascii_case("I2_S") {
+            0.0
+        } else {
+            memory
+        },
         sha256,
         digest_verified: None,
         projectors,

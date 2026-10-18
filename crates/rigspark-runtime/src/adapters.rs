@@ -25,18 +25,21 @@ pub enum BackendKind {
     Ollama,
     #[serde(rename = "llamacpp")]
     LlamaCpp,
+    #[serde(rename = "bitnet")]
+    BitNet,
 }
 impl BackendKind {
     pub fn name(self) -> &'static str {
         match self {
             Self::Ollama => "ollama",
             Self::LlamaCpp => "llamacpp",
+            Self::BitNet => "bitnet",
         }
     }
     pub fn port(self) -> u16 {
         match self {
             Self::Ollama => 11434,
-            Self::LlamaCpp => 8080,
+            Self::LlamaCpp | Self::BitNet => 8080,
         }
     }
 }
@@ -187,6 +190,15 @@ impl<'runtime> RuntimeAdapter<'runtime> {
     }
     fn validate(&self, request: &ServeRequest) -> Result<url::Url, BackendError> {
         model_id(&request.model_id)?;
+        if self.kind == BackendKind::BitNet
+            && request
+                .context
+                .is_some_and(|value| !(1..=4096).contains(&value))
+        {
+            return Err(BackendError(
+                "BitNet context must be between 1 and 4096 tokens".into(),
+            ));
+        }
         if !self.binary.is_absolute()
             || request
                 .context
@@ -196,6 +208,86 @@ impl<'runtime> RuntimeAdapter<'runtime> {
         }
         crate::state::loopback(&request.endpoint).map_err(|error| BackendError(error.to_string()))
     }
+    fn gguf_args(
+        &self,
+        request: &ServeRequest,
+        host: &str,
+        port: u16,
+    ) -> Result<Vec<String>, BackendError> {
+        let path = request
+            .model_path
+            .as_ref()
+            .filter(|path| path.is_absolute() && path.is_file())
+            .ok_or_else(|| BackendError("verified absolute GGUF path required".into()))?;
+        let mut args = vec![
+            "-m".into(),
+            path.to_string_lossy().into_owned(),
+            "--host".into(),
+            host.into(),
+            "--port".into(),
+            port.to_string(),
+            "--alias".into(),
+            request.model_id.clone(),
+        ];
+        let context = request
+            .context
+            .or_else(|| (self.kind == BackendKind::BitNet).then_some(4096));
+        if let Some(context) = context {
+            args.extend(["--ctx-size".into(), context.to_string()]);
+        }
+        if self.kind == BackendKind::BitNet {
+            args.extend(["-ngl".into(), "0".into()]);
+        }
+        Ok(args)
+    }
+
+    async fn legacy_bitnet_identity(
+        &self,
+        request: &ServeRequest,
+        props: Value,
+        cancel: &CancellationToken,
+    ) -> Result<(), BackendError> {
+        #[derive(Deserialize)]
+        struct Generation {
+            model: String,
+            n_ctx: u32,
+        }
+        #[derive(Deserialize)]
+        struct Props {
+            default_generation_settings: Generation,
+            total_slots: u32,
+            chat_template: String,
+        }
+        let props: Props = serde_json::from_value(props)
+            .map_err(|_| BackendError("invalid legacy BitNet properties".into()))?;
+        if props.default_generation_settings.model != request.model_id
+            || props.default_generation_settings.n_ctx != request.context.unwrap_or(4096)
+            || props.total_slots != 1
+            || props.chat_template.is_empty()
+        {
+            return Err(BackendError(
+                "legacy BitNet model or context differs".into(),
+            ));
+        }
+        let before = listener(self.probe, &request.endpoint, cancel).await?;
+        if !self.trusts(&before.identity) {
+            return Err(BackendError("untrusted BitNet executable".into()));
+        }
+        // Older BitNet exposes only an alias over HTTP; prove the exact model launch via the OS.
+        let command = self
+            .probe
+            .command_line(before.identity.pid)
+            .await
+            .map_err(|error| BackendError(error.to_string()))?;
+        let mut expected = vec![before.identity.executable.clone()];
+        expected.extend(self.gguf_args(request, &before.address, before.port)?);
+        let after = listener(self.probe, &request.endpoint, cancel).await?;
+        if command != expected || !same_process(&before.identity, &after.identity) {
+            return Err(BackendError("legacy BitNet launch identity differs".into()));
+        }
+        Ok(())
+    }
+
     async fn ready_once(
         &self,
         request: &ServeRequest,
@@ -217,12 +309,18 @@ impl<'runtime> RuntimeAdapter<'runtime> {
                 )
                 .map_err(|error| BackendError(error.to_string()))?;
             }
-            BackendKind::LlamaCpp => {
+            BackendKind::LlamaCpp | BackendKind::BitNet => {
                 let health = self.json(&request.endpoint, "/health", cancel).await?;
                 if health.get("status").and_then(Value::as_str) != Some("ok") {
                     return Err(BackendError("llama.cpp model is not ready".into()));
                 }
                 let props = self.json(&request.endpoint, "/props", cancel).await?;
+                if self.kind == BackendKind::BitNet
+                    && props.get("model_path").is_none()
+                    && props.get("model_alias").is_none()
+                {
+                    return self.legacy_bitnet_identity(request, props, cancel).await;
+                }
                 let path = props.get("model_path").and_then(Value::as_str);
                 let alias = props.get("model_alias").and_then(Value::as_str);
                 if request
@@ -263,6 +361,11 @@ impl<'runtime> RuntimeAdapter<'runtime> {
         request: &ServeRequest,
         cancel: &CancellationToken,
     ) -> Result<ServerState, BackendError> {
+        let mut request = request.clone();
+        if self.kind == BackendKind::BitNet {
+            request.context.get_or_insert(4096);
+        }
+        let request = &request;
         let url = self.validate(request)?;
         if cancel.is_cancelled() {
             return Err(BackendError("cancelled".into()));
@@ -273,6 +376,12 @@ impl<'runtime> RuntimeAdapter<'runtime> {
             .to_str()
             .ok_or_else(|| BackendError("invalid executable path".into()))?;
         let (observed, owned) = if occupied {
+            if self.kind == BackendKind::BitNet {
+                return Err(BackendError(
+                    "BitNet requires an unused port; refusing to attach to an existing listener"
+                        .into(),
+                ));
+            }
             if crate::cache::effective(request.cache.as_ref()).is_some() {
                 return Err(BackendError(format!(
                     "cache settings apply only to a {} runtime rigspark starts; stop the running server or omit the cache options",
@@ -322,28 +431,8 @@ impl<'runtime> RuntimeAdapter<'runtime> {
                     );
                     vec!["serve".into()]
                 }
-                BackendKind::LlamaCpp => {
-                    let path = request
-                        .model_path
-                        .as_ref()
-                        .filter(|path| path.is_absolute() && path.is_file())
-                        .ok_or_else(|| {
-                            BackendError("verified absolute GGUF path required".into())
-                        })?;
-                    let mut args = vec![
-                        "-m".into(),
-                        path.to_string_lossy().into_owned(),
-                        "--host".into(),
-                        host.into(),
-                        "--port".into(),
-                        port.to_string(),
-                        "--alias".into(),
-                        request.model_id.clone(),
-                    ];
-                    if let Some(context) = request.context {
-                        args.extend(["--ctx-size".into(), context.to_string()]);
-                    }
-                    args
+                BackendKind::LlamaCpp | BackendKind::BitNet => {
+                    self.gguf_args(request, host, port)?
                 }
             };
             args.extend(delta.args);
@@ -381,7 +470,14 @@ impl<'runtime> RuntimeAdapter<'runtime> {
             context: request.context,
             integrity: None,
             local_manifest_digest: None,
-            model_path: None,
+            model_path: if self.kind == BackendKind::BitNet {
+                request
+                    .model_path
+                    .as_ref()
+                    .map(|path| path.to_string_lossy().into_owned())
+            } else {
+                None
+            },
             process_executable: Some(observed.identity.executable),
             process_started_at: Some(observed.identity.started),
             auth_token: None,
@@ -445,6 +541,11 @@ impl BackendAdapter for RuntimeAdapter<'_> {
         request: &ServeRequest,
         cancel: &CancellationToken,
     ) -> Result<ServerState, BackendError> {
+        if self.kind == BackendKind::BitNet {
+            return Err(BackendError(
+                "BitNet requires an owned server; use up".into(),
+            ));
+        }
         self.validate(request)?;
         if cancel.is_cancelled() {
             return Err(BackendError("cancelled".into()));
@@ -479,6 +580,16 @@ impl BackendAdapter for RuntimeAdapter<'_> {
             .map_err(|error| BackendError(error.to_string()))?;
         if handle.backend != self.name() || handle.endpoint != request.endpoint {
             return Err(BackendError("readiness handle mismatch".into()));
+        }
+        if self.kind == BackendKind::BitNet
+            && (handle.model_id != request.model_id
+                || handle.model_path.as_deref()
+                    != request.model_path.as_ref().and_then(|path| path.to_str())
+                || handle.context != Some(request.context.unwrap_or(4096)))
+        {
+            return Err(BackendError(
+                "BitNet readiness model or context mismatch".into(),
+            ));
         }
         let before = listener(self.probe, &handle.endpoint, cancel).await?;
         crate::identity::capture(handle, &before, self.trusts(&before.identity))
@@ -521,7 +632,7 @@ impl BackendAdapter for RuntimeAdapter<'_> {
         input: &crate::ollama_inference::ChatInput,
         cancel: &CancellationToken,
     ) -> Result<crate::ollama_inference::ChatResult, BackendError> {
-        if self.kind == BackendKind::LlamaCpp {
+        if matches!(self.kind, BackendKind::LlamaCpp | BackendKind::BitNet) {
             return crate::openai::OpenAiInference {
                 http: self.http,
                 probe: self.probe,
@@ -552,7 +663,7 @@ impl BackendAdapter for RuntimeAdapter<'_> {
         cancel: &CancellationToken,
         on_delta: &mut (dyn for<'chunk> FnMut(&'chunk str) + Send),
     ) -> Result<crate::ollama_inference::ChatResult, BackendError> {
-        if self.kind == BackendKind::LlamaCpp {
+        if matches!(self.kind, BackendKind::LlamaCpp | BackendKind::BitNet) {
             let result = self.chat(handle, input, cancel).await?;
             on_delta(&result.content);
             return Ok(result);
@@ -579,7 +690,10 @@ impl BackendAdapter for RuntimeAdapter<'_> {
         cancel: &CancellationToken,
     ) -> Result<crate::ollama_inference::EmbedResult, BackendError> {
         if self.kind != BackendKind::Ollama {
-            return Err(BackendError("llama.cpp does not serve embeddings".into()));
+            return Err(BackendError(format!(
+                "{} does not serve embeddings",
+                self.name()
+            )));
         }
         let expected = expected_process(handle)?;
         crate::ollama_inference::OllamaInference::new(

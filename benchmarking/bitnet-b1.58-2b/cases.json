@@ -1,0 +1,180 @@
+[
+  {
+    "id": "multiply",
+    "category": "arithmetic",
+    "messages": [
+      {
+        "role": "user",
+        "content": "What is 17 times 23? Answer with just the integer."
+      }
+    ],
+    "expected": "^391[.]?$"
+  },
+  {
+    "id": "word-problem",
+    "category": "arithmetic",
+    "messages": [
+      {
+        "role": "user",
+        "content": "There are three boxes with twelve pencils each. Seven pencils are removed. How many pencils remain? Answer with just the integer."
+      }
+    ],
+    "expected": "^29[.]?$"
+  },
+  {
+    "id": "fractions",
+    "category": "arithmetic",
+    "messages": [
+      {
+        "role": "user",
+        "content": "What is 1/2 + 1/3? Give only the reduced fraction, like 2/7."
+      }
+    ],
+    "expected": "^5/6[.]?$"
+  },
+  {
+    "id": "syllogism",
+    "category": "logic",
+    "messages": [
+      {
+        "role": "user",
+        "content": "All nims are zoggs. All zoggs are veks. Must all nims be veks? Answer only Yes or No."
+      }
+    ],
+    "expected": "^yes[.]?$"
+  },
+  {
+    "id": "invalid-converse",
+    "category": "logic",
+    "messages": [
+      {
+        "role": "user",
+        "content": "All roses are flowers. Some flowers fade quickly. Does it necessarily follow that some roses fade quickly? Answer only Yes or No."
+      }
+    ],
+    "expected": "^no[.]?$"
+  },
+  {
+    "id": "ordering",
+    "category": "logic",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Alice is taller than Bob. Bob is taller than Cara. Who is shortest? Reply with just the name."
+      }
+    ],
+    "expected": "^cara[.]?$"
+  },
+  {
+    "id": "python-squares",
+    "category": "coding",
+    "messages": [
+      {
+        "role": "user",
+        "content": "What does this Python expression evaluate to: sum(x*x for x in [1, 2, 3])? Reply with just the integer."
+      }
+    ],
+    "expected": "^14[.]?$"
+  },
+  {
+    "id": "python-alias",
+    "category": "coding",
+    "messages": [
+      {
+        "role": "user",
+        "content": "In Python: a = [1]; b = a; b.append(2). What is len(a)? Reply with just the integer."
+      }
+    ],
+    "expected": "^2[.]?$"
+  },
+  {
+    "id": "rust-range",
+    "category": "coding",
+    "messages": [
+      {
+        "role": "user",
+        "content": "In Rust, what value is returned by (1..=4).sum::<i32>()? Reply with just the integer."
+      }
+    ],
+    "expected": "^10[.]?$"
+  },
+  {
+    "id": "capital",
+    "category": "knowledge",
+    "messages": [
+      {
+        "role": "user",
+        "content": "What is the capital of Japan? Reply with only the city name."
+      }
+    ],
+    "expected": "^tokyo[.]?$"
+  },
+  {
+    "id": "element",
+    "category": "knowledge",
+    "messages": [
+      {
+        "role": "user",
+        "content": "What is the chemical symbol for gold? Reply with just the symbol."
+      }
+    ],
+    "expected": "^Au$",
+    "case_sensitive": true
+  },
+  {
+    "id": "exact-output",
+    "category": "instruction-following",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Output exactly BLUE in uppercase, with no punctuation or explanation."
+      }
+    ],
+    "expected": "^BLUE$",
+    "case_sensitive": true
+  },
+  {
+    "id": "extract-json",
+    "category": "structured-output",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Record: name=Mira; age=27. Return only a JSON object with exactly these two keys: name (a string) and age (a number). Do not use Markdown."
+      }
+    ],
+    "expected_json": {
+      "name": "Mira",
+      "age": 27
+    }
+  },
+  {
+    "id": "reading",
+    "category": "reading",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Nora put the key in the red box, not the blue box. Later she moved it to a green drawer. Where is the key now? Reply with exactly two words."
+      }
+    ],
+    "expected": "^green drawer[.]?$"
+  },
+  {
+    "id": "multi-turn",
+    "category": "multi-turn",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Remember this access code for our fictional puzzle: 507."
+      },
+      {
+        "role": "assistant",
+        "content": "The puzzle code is 507."
+      },
+      {
+        "role": "user",
+        "content": "What was the puzzle code? Reply with only the digits."
+      }
+    ],
+    "expected": "^507$"
+  }
+]

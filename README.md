@@ -22,6 +22,11 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/shashankswe2020-ux/rigspark/issues/new?template=bug_report.yml"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/btn-bug-dark.svg"><img src="assets/btn-bug-light.svg" alt="Report a bug" height="44"></picture></a>&nbsp;
+  <a href="https://github.com/shashankswe2020-ux/rigspark/issues/new?template=feature_request.yml"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/btn-idea-dark.svg"><img src="assets/btn-idea-light.svg" alt="Suggest a feature" height="44"></picture></a>
+</p>
+
+<p align="center">
   <a href="https://github.com/shashankswe2020-ux/rigspark/actions/workflows/ci.yml"><img src="https://github.com/shashankswe2020-ux/rigspark/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
   <a href="https://github.com/shashankswe2020-ux/rigspark/releases/latest"><img src="https://img.shields.io/github/v/release/shashankswe2020-ux/rigspark?sort=semver&label=release" alt="Release"></a>
   <a href="https://crates.io/crates/rigspark-cli"><img src="https://img.shields.io/crates/v/rigspark-cli.svg?label=crates.io" alt="crates.io"></a>
@@ -126,9 +131,28 @@ RigSpark supports:
 - **llama.cpp** — native local serving
 - **MLX** — Apple Silicon
 - **LM Studio** — attach to an already running server
+- **BitNet** — Microsoft's I2_S weights on CPU, using your compiled bitnet.cpp server
 
 Managed weights pass an integrity check before serving. Servers bind to
 `127.0.0.1` by default.
+
+For Microsoft's official BitNet b1.58 2B-4T:
+
+```bash
+export RIGSPARK_BITNET_SERVER=/absolute/path/to/BitNet/build/bin/llama-server
+rigspark up bitnet-b1.58:2b --backend bitnet --context 4096
+rigspark chat
+rigspark down
+```
+
+Build the server using [Microsoft's instructions](https://github.com/microsoft/BitNet).
+On Apple Silicon, use the [tested pinned build and ARM patch](docs/references/guide.md#tested-apple-silicon-build);
+unmodified builds can produce invalid output or crash, and BLAS must be disabled.
+Stock llama.cpp cannot load this I2_S artifact. RigSpark downloads and verifies
+the weights, not the runtime. Keep the variable set for chat, doctor and shutdown.
+The initial integration is CPU-only; speed and KV-memory estimates stay unknown.
+See the [per-model benchmark reports](benchmarking/README.md) for the recorded
+BitNet chat results, methodology, and limitations.
 
 [Backend setup and lifecycle details →](docs/references/guide.md#supported-backends)
 
@@ -182,8 +206,20 @@ stays `unknown` when no defensible measurement is available.
 In `rigspark gui`, switch the composer from **Text** to **Image** or **Video**.
 Generated media renders inline and is never sent to the language model.
 
+For UI/UX mockups, select **ming-image:ming_image_0.1_design_int8_convrot**
+under **Models → Image → Use in Chat**, then generate in Image mode. This exact
+25.94 GB weight pairing was tested with ComfyUI 0.38.0 on a 36 GiB Apple Silicon
+Mac. Other Ming variants remain fit-only; NVIDIA/CUDA and peak inference memory
+are not certified. Generated lettering can be garbled.
+
+```bash
+rigspark generate ming-image:ming_image_0.1_design_int8_convrot \
+  --prompt "A plant-care app onboarding screen, soft green palette, flat UI design" \
+  --comfyui-dir ~/ComfyUI
+```
+
 <p align="center">
-  <img src="site/brand/screens/chat-image-generation.webp" alt="A locally generated image rendered inline in RigSpark chat" width="720">
+  <img src="site/brand/screens/ming-design-gui.png" alt="A real Ming Design plant-care app mockup generated inline in RigSpark chat using local ComfyUI" width="720">
 </p>
 
 [Image and video generation specification →](docs/specs/image-video-generation.md)
@@ -206,7 +242,7 @@ Generated media renders inline and is never sent to the language model.
   network.
 - **Reproducible decisions.** The same hardware and catalog produce the same
   recommendation.
-- **One adapter boundary.** Ollama, llama.cpp, MLX, and LM Studio sit behind the
+- **One adapter boundary.** Ollama, llama.cpp, MLX, LM Studio, and BitNet sit behind the
   same runtime lifecycle and safety gates.
 
 ## Update the catalog when you choose

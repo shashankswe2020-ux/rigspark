@@ -150,7 +150,9 @@ pub fn admit(
     for model in &mut result.models {
         if model.availability.is_none() {
             // Preserve the existing default source rather than selecting a different backend.
-            let backend = if model.source.ollama.is_some()
+            let backend = if model.supports_backend("bitnet") {
+                Some(CatalogBackend::Bitnet)
+            } else if model.source.ollama.is_some()
                 && model
                     .quantizations
                     .iter()

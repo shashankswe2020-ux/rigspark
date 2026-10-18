@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="151" height="44" viewBox="0 0 151 44" role="img" aria-labelledby="title">
+  <title id="title">Report a bug</title>
+  <rect x="1" y="1" width="149" height="42" rx="10" fill="#fff7ed" stroke="#c2410c" stroke-width="2"/>
+  <g fill="none" stroke="#c2410c" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+    <path d="M21 17h10v12H21z"/>
+    <path d="M24 14h4M17 19h4M31 19h4M17 24h4M31 24h4M19 29l3-2M33 29l-3-2"/>
+  </g>
+  <text x="43" y="27" fill="#7c2d12" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="700">Report a bug</text>
+</svg>

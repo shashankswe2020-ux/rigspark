@@ -60,7 +60,7 @@ fn catalog_refresh_matches_frozen_legacy_text_and_never_writes_input() {
             .filter(|model| {
                 !matches!(
                     model.id.as_str(),
-                    "qwen3.6:35b" | "qwen3.5:4b" | "bonsai:8b"
+                    "qwen3.6:35b" | "qwen3.5:4b" | "bonsai:8b" | "bitnet-b1.58:2b"
                 )
             })
             .collect();
@@ -278,7 +278,7 @@ fn doctor_reports_corrupt_catalog_without_hiding_other_checks_or_reading_perf() 
             .any(|check| check["name"] == "hardware" && check["status"] == "ok")
     );
     assert!(!report["hardwareScore"].is_null());
-    assert_eq!(report["backends"].as_array().unwrap().len(), 4);
+    assert_eq!(report["backends"].as_array().unwrap().len(), 5);
     assert_eq!(std::fs::read_to_string(path).unwrap(), "invalid catalog");
     assert!(!home.exists());
 }

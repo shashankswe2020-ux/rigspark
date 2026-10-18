@@ -93,6 +93,12 @@ pub struct Quantization {
     pub projectors: Vec<ProjectorArtifact>,
 }
 
+impl Quantization {
+    pub fn is_bitnet(&self) -> bool {
+        self.name.eq_ignore_ascii_case("I2_S")
+    }
+}
+
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Model {
@@ -368,7 +374,11 @@ pub fn evaluate(request: &SizingRequest) -> Result<SizingResult, ValidationError
     validate(request)?;
     let model = &request.model;
     let hardware = &request.hardware;
-    let (memory_kind, usable_bytes) = memory_capacity(hardware);
+    let (memory_kind, usable_bytes) = if model.quantizations.iter().any(Quantization::is_bitnet) {
+        ("ram", (hardware.free_ram_bytes - OS_RESERVE).max(0.0))
+    } else {
+        memory_capacity(hardware)
+    };
     let budget = usable_bytes * (1.0 - HEADROOM);
     let params = if model.params == "unknown" {
         None

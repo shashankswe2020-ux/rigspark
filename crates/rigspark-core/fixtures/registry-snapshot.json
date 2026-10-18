@@ -1,5 +1,22 @@
 [
   {
+    "id": "bitnet-b1.58:2b",
+    "family": "bitnet-b1.58",
+    "params": "2.4B",
+    "architecture": "dense",
+    "license": "mit",
+    "openWeight": true,
+    "contextLength": 4096,
+    "capabilities": ["chat"],
+    "releaseDate": "2025-04-14",
+    "source": {"hf": "microsoft/bitnet-b1.58-2B-4T-gguf"},
+    "quantizations": [{
+      "name": "I2_S",
+      "diskBytes": 1187801280,
+      "sha256": "4221b252fdd5fd25e15847adfeb5ee88886506ba50b8a34548374492884c2162"
+    }]
+  },
+  {
     "id": "bonsai:8b",
     "family": "bonsai",
     "params": "8.19B",

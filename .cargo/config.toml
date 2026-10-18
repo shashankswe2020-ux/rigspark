@@ -16,6 +16,7 @@ catalog-notice = "run --quiet --locked -p rigspark-cli --bin llmup-catalog-notic
 catalog-sign = "run --quiet --locked -p rigspark-cli --bin llmup-catalog-sign --"
 catalog-quality = "run --quiet --locked -p rigspark-cli --bin llmup-catalog-quality --"
 catalog-propose = "run --quiet --locked -p rigspark-cli --bin llmup-catalog-propose --"
+catalog-request = "run --quiet --locked -p rigspark-cli --bin llmup-catalog-request --"
 native-performance = "run --quiet --locked --release -p rigspark-cli --example native-performance --"
 native-retirement = "run --quiet --locked -p rigspark-cli --example retirement-check --"
 native-browser-smoke = "run --quiet --locked -p rigspark-gui --example browser_smoke --"

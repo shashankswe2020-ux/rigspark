@@ -8,6 +8,19 @@
 
 ## 1. Objective
 
+### Ming Design INT8 (v3.0.3, 2026-10-16)
+
+The `ming-design` workflow and verified recipe enable only the exact Design INT8
+pairing. Its authored graph and bounded pre-download capability checks passed real
+generation on Apple MPS with ComfyUI 0.38.0, including an inline GUI preview.
+Other Ming variants remain fit-only. No schema-version or default-model change is
+made; memory bypass must not bypass missing workflow support.
+
+The exact pairing, source evidence, limitations, and rollback procedure are recorded
+in [the workflow contract](../references/ming-design-workflow.md).
+CUDA and peak inference memory remain unverified. RGBA bytes are preserved, but a
+successful PNG is not a guarantee of transparent content or legible generated text.
+
 Extend rigspark beyond text LLMs so a user can discover, verify, install, and run
 **open-weight image and video generation models fully locally and for free**.
 

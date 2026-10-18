@@ -123,7 +123,11 @@ pub fn throughput(
     backend: &str,
 ) -> Result<Throughput, ValidationError> {
     require(BACKENDS.contains(&backend), "unknown backend")?;
-    if model.is_advisory_only() || quant.name.eq_ignore_ascii_case("Q1_0") {
+    if model.is_advisory_only()
+        || quant.name.eq_ignore_ascii_case("Q1_0")
+        || quant.is_bitnet()
+        || backend == "bitnet"
+    {
         return Ok(Throughput::unknown());
     }
     let Some(class) = match_perf(hardware, dataset) else {
@@ -162,6 +166,7 @@ pub fn decode_bytes(
     if model.params == "unknown"
         || matches!(model.architecture, Architecture::Unknown)
         || quant.name.eq_ignore_ascii_case("Q1_0")
+        || quant.is_bitnet()
     {
         return Ok(None);
     }

@@ -82,16 +82,28 @@ pub fn allowed_request(url: &Url) -> bool {
                 && revision.len() == 40
                 && revision.bytes().all(|byte| byte.is_ascii_hexdigit())
         }
-        (Some("huggingface.co"), None, ["Comfy-Org", repo, "resolve", revision, path @ ..]) => {
-            name(repo)
+        (
+            Some("huggingface.co"),
+            Some("blobs=true"),
+            ["api", "models", owner, repo, "revision", revision],
+        ) => {
+            name(owner)
+                && name(repo)
+                && revision.len() == 40
+                && revision.bytes().all(|byte| byte.is_ascii_hexdigit())
+        }
+        (Some("huggingface.co"), None, [owner, repo, "resolve", revision, path @ ..]) => {
+            name(owner)
+                && name(repo)
                 && revision.len() == 40
                 && revision.bytes().all(|byte| byte.is_ascii_hexdigit())
                 && !path.is_empty()
                 && path.len() <= 8
                 && path.iter().all(|segment| name(segment))
-                && path
-                    .last()
-                    .is_some_and(|file| file.ends_with(".safetensors"))
+                && path.last().is_some_and(|file| {
+                    file.ends_with(".gguf")
+                        || (*owner == "Comfy-Org" && file.ends_with(".safetensors"))
+                })
         }
         _ => false,
     }

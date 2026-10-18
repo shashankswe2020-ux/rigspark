@@ -1,0 +1,301 @@
+{
+  "suite": "RigSpark local chat smoke benchmark v1 -- no requested token cap",
+  "runtime": {
+    "model": "bitnet-b1.58:2b",
+    "bitnet_revision": "01eb415772c342d9f20dc42772f1583ae1e5b102",
+    "llama_cpp_revision": "1f86f058de0c3f4098dedae2ae8653c335c868a1",
+    "patched": true,
+    "binary_sha256": "205b44b13cd876230d664bf1146806f02c65df004a539e516ad8a38cc33cef77",
+    "provenance": "README.md"
+  },
+  "comparison": {
+    "strict_score_changed": false,
+    "changed_response_ids": [
+      "word-problem",
+      "fractions"
+    ],
+    "word_problem": "Now completes with 29 in 132 generated tokens; still violates integer-only instruction.",
+    "fractions": "Now completes with 5/6 in 286 generated tokens; still violates fraction-only instruction.",
+    "all_responses_stopped": true,
+    "timeouts": 0,
+    "context_guard_reached": false
+  },
+  "post_hoc_content_review": {
+    "method": "Manual review of answer content ignoring extra explanation and Markdown fences; not the predeclared strict rubric or a standardized intelligence score.",
+    "correct": 11,
+    "total": 15,
+    "format_only_failures": [
+      "multiply",
+      "word-problem",
+      "fractions",
+      "extract-json"
+    ],
+    "substantive_errors": [
+      {
+        "id": "syllogism",
+        "expected": "Yes",
+        "actual": "No."
+      },
+      {
+        "id": "python-alias",
+        "expected": "2",
+        "actual": "3"
+      },
+      {
+        "id": "rust-range",
+        "expected": "10",
+        "actual": "5"
+      },
+      {
+        "id": "reading",
+        "expected": "green drawer",
+        "actual": "Red box."
+      }
+    ]
+  },
+  "standardized_intelligence_score": null,
+  "maximum_generated_tokens": null,
+  "request_max_tokens": -1,
+  "request_n_predict": -1,
+  "temperature": 0,
+  "seed": 42,
+  "per_request_timeout_seconds": 600,
+  "context_window_tokens": 4096,
+  "context_guard": "The pinned server stops unbounded generation when prompt plus output reaches its 4096-token training context. No runtime safety guard was bypassed.",
+  "grading": "Same predeclared exact-answer/JSON rubric as the capped run; no per-case retries or judge model. Timeout cases are incomplete, not intelligence failures.",
+  "cases": [
+    {
+      "id": "multiply",
+      "category": "arithmetic",
+      "status": "completed",
+      "response": "17 * 23 = 391",
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 8,
+        "prompt_tokens": 21,
+        "total_tokens": 29
+      },
+      "elapsed_seconds": 0.501274,
+      "context_guard_possible": false,
+      "passed": false
+    },
+    {
+      "id": "word-problem",
+      "category": "arithmetic",
+      "status": "completed",
+      "response": "To solve the problem, we need to follow these steps:\n\n1. Determine the total number of pencils initially.\n2. Subtract the number of pencils removed from the total number of pencils.\n\nFirst, we calculate the total number of pencils initially:\n\\[\n3 \\text{ boxes} \\times 12 \\text{ pencils per box} = 36 \\text{ pencils}\n\\]\n\nNext, we subtract the number of pencils removed:\n\\[\n36 \\text{ pencils} - 7 \\text{ pencils} = 29 \\text{ pencils}\n\\]\n\nThus, the number of pencils remaining is:\n\\[\n\\boxed{29}\n\\]",
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 132,
+        "prompt_tokens": 32,
+        "total_tokens": 164
+      },
+      "elapsed_seconds": 3.264704,
+      "context_guard_possible": false,
+      "passed": false
+    },
+    {
+      "id": "fractions",
+      "category": "arithmetic",
+      "status": "completed",
+      "response": "To add the fractions \\( \\frac{1}{2} \\) and \\( \\frac{1}{3} \\), we need to find a common denominator. The denominators are 2 and 3, and the least common multiple of 2 and 3 is 6. Therefore, we will convert each fraction to an equivalent fraction with a denominator of 6.\n\nFirst, we convert \\( \\frac{1}{2} \\) to a fraction with a denominator of 6:\n\\[\n\\frac{1}{2} = \\frac{1 \\times 3}{2 \\times 3} = \\frac{3}{6}\n\\]\n\nNext, we convert \\( \\frac{1}{3} \\) to a fraction with a denominator of 6:\n\\[\n\\frac{1}{3} = \\frac{1 \\times 2}{3 \\times 2} = \\frac{2}{6}\n\\]\n\nNow that both fractions have the same denominator, we can add them together:\n\\[\n\\frac{3}{6} + \\frac{2}{6} = \\frac{3 + 2}{6} = \\frac{5}{6}\n\\]\n\nThe fraction \\( \\frac{5}{6} \\) is already in its simplest form. Therefore, the answer is:\n\\[\n\\boxed{\\frac{5}{6}}\n\\]",
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 286,
+        "prompt_tokens": 32,
+        "total_tokens": 318
+      },
+      "elapsed_seconds": 6.494194,
+      "context_guard_possible": false,
+      "passed": false
+    },
+    {
+      "id": "syllogism",
+      "category": "logic",
+      "status": "completed",
+      "response": "No.",
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 3,
+        "prompt_tokens": 37,
+        "total_tokens": 40
+      },
+      "elapsed_seconds": 0.606051,
+      "context_guard_possible": false,
+      "passed": false
+    },
+    {
+      "id": "invalid-converse",
+      "category": "logic",
+      "status": "completed",
+      "response": "No.",
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 3,
+        "prompt_tokens": 33,
+        "total_tokens": 36
+      },
+      "elapsed_seconds": 0.530578,
+      "context_guard_possible": false,
+      "passed": true
+    },
+    {
+      "id": "ordering",
+      "category": "logic",
+      "status": "completed",
+      "response": "Cara",
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 3,
+        "prompt_tokens": 29,
+        "total_tokens": 32
+      },
+      "elapsed_seconds": 0.479974,
+      "context_guard_possible": false,
+      "passed": true
+    },
+    {
+      "id": "python-squares",
+      "category": "coding",
+      "status": "completed",
+      "response": "14",
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 2,
+        "prompt_tokens": 40,
+        "total_tokens": 42
+      },
+      "elapsed_seconds": 0.627195,
+      "context_guard_possible": false,
+      "passed": true
+    },
+    {
+      "id": "python-alias",
+      "category": "coding",
+      "status": "completed",
+      "response": "3",
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 2,
+        "prompt_tokens": 40,
+        "total_tokens": 42
+      },
+      "elapsed_seconds": 0.670131,
+      "context_guard_possible": false,
+      "passed": false
+    },
+    {
+      "id": "rust-range",
+      "category": "coding",
+      "status": "completed",
+      "response": "5",
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 2,
+        "prompt_tokens": 34,
+        "total_tokens": 36
+      },
+      "elapsed_seconds": 0.525795,
+      "context_guard_possible": false,
+      "passed": false
+    },
+    {
+      "id": "capital",
+      "category": "knowledge",
+      "status": "completed",
+      "response": "Tokyo",
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 3,
+        "prompt_tokens": 21,
+        "total_tokens": 24
+      },
+      "elapsed_seconds": 0.357095,
+      "context_guard_possible": false,
+      "passed": true
+    },
+    {
+      "id": "element",
+      "category": "knowledge",
+      "status": "completed",
+      "response": "Au",
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 2,
+        "prompt_tokens": 21,
+        "total_tokens": 23
+      },
+      "elapsed_seconds": 0.336109,
+      "context_guard_possible": false,
+      "passed": true
+    },
+    {
+      "id": "exact-output",
+      "category": "instruction-following",
+      "status": "completed",
+      "response": "BLUE",
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 2,
+        "prompt_tokens": 19,
+        "total_tokens": 21
+      },
+      "elapsed_seconds": 0.321219,
+      "context_guard_possible": false,
+      "passed": true
+    },
+    {
+      "id": "extract-json",
+      "category": "structured-output",
+      "status": "completed",
+      "response": "```json\n{\n  \"name\": \"Mira\",\n  \"age\": 27\n}\n```",
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 22,
+        "prompt_tokens": 47,
+        "total_tokens": 69
+      },
+      "elapsed_seconds": 1.209961,
+      "context_guard_possible": false,
+      "passed": false
+    },
+    {
+      "id": "reading",
+      "category": "reading",
+      "status": "completed",
+      "response": "Red box.",
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 4,
+        "prompt_tokens": 42,
+        "total_tokens": 46
+      },
+      "elapsed_seconds": 0.692855,
+      "context_guard_possible": false,
+      "passed": false
+    },
+    {
+      "id": "multi-turn",
+      "category": "multi-turn",
+      "status": "completed",
+      "response": "507",
+      "finish_reason": "stop",
+      "usage": {
+        "completion_tokens": 2,
+        "prompt_tokens": 43,
+        "total_tokens": 45
+      },
+      "elapsed_seconds": 0.661265,
+      "context_guard_possible": false,
+      "passed": true
+    }
+  ],
+  "total": 15,
+  "completed": 15,
+  "incomplete": 0,
+  "passed": 7,
+  "pass_rate_percent": 46.666666666666664,
+  "previous_passed": 7,
+  "previous_token_cap": 128,
+  "previous_results": "capped.json"
+}
