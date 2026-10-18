@@ -194,6 +194,8 @@ pub struct FitOnlyInput<'a> {
 
 /// A built-in workflow and the exact files ComfyUI's official example runs it with.
 pub struct Recipe {
+    /// Only verified recipes may promote production entries to runnable.
+    pub verified: bool,
     pub repository: &'static str,
     pub kind: GenerationKind,
     pub workflow: Workflow,
@@ -204,8 +206,9 @@ pub struct Recipe {
     pub vae: &'static str,
 }
 
-pub const RECIPES: [Recipe; 2] = [
+pub const RECIPES: [Recipe; 3] = [
     Recipe {
+        verified: true,
         repository: "Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
         kind: GenerationKind::Video,
         workflow: Workflow::Wan22Ti2v,
@@ -215,6 +218,7 @@ pub const RECIPES: [Recipe; 2] = [
         vae: "wan2.2_vae.safetensors",
     },
     Recipe {
+        verified: true,
         repository: "Comfy-Org/Qwen-Image_ComfyUI",
         kind: GenerationKind::Image,
         workflow: Workflow::QwenImage,
@@ -226,12 +230,22 @@ pub const RECIPES: [Recipe; 2] = [
         text_encoder: "qwen_2.5_vl_7b_fp8_scaled.safetensors",
         vae: "qwen_image_vae.safetensors",
     },
+    Recipe {
+        verified: true,
+        repository: "Comfy-Org/Ming-Image",
+        kind: GenerationKind::Image,
+        workflow: Workflow::MingDesign,
+        source: "https://github.com/Comfy-Org/workflow_templates/blob/99e3d43745926b78466d99f937c0cd2bb622423a/templates/image_ming_image_01_design_t2i.json",
+        diffusion: &["ming_image_0.1_design_int8_convrot.safetensors"],
+        text_encoder: "ming_image_0.1_ling_mini_2.0_int8_convrot.safetensors",
+        vae: "ming_image_vae_bf16.safetensors",
+    },
 ];
 
 pub fn recipe(repository: &str) -> Option<&'static Recipe> {
     RECIPES
         .iter()
-        .find(|recipe| recipe.repository == repository)
+        .find(|recipe| recipe.verified && recipe.repository == repository)
 }
 
 /// The model family from a Comfy-Org repository name, without packaging suffixes.

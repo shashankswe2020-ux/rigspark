@@ -578,6 +578,7 @@ struct Flaky {
     chunk: usize,
     resumable: bool,
     corrupt_resume: bool,
+    resume_failures: std::sync::atomic::AtomicU32,
     offsets: std::sync::Mutex<Vec<u64>>,
 }
 impl Flaky {
@@ -613,8 +614,20 @@ impl DownloadTransport for Flaky {
         if offset == 0 {
             return self.get(url).await;
         }
+        if self
+            .resume_failures
+            .fetch_update(
+                std::sync::atomic::Ordering::SeqCst,
+                std::sync::atomic::Ordering::SeqCst,
+                |left| left.checked_sub(1),
+            )
+            .is_ok()
+        {
+            return Err("download transport failed".into());
+        }
         if !self.resumable {
-            return Err("download resume unsupported".into());
+            // A server that ignores Range restarts the body with a fresh 200.
+            return Ok(self.response(0));
         }
         self.offsets.lock().unwrap().push(offset);
         Ok(self.response(offset))
@@ -626,6 +639,7 @@ fn flaky(bytes: &[u8], resumable: bool, corrupt_resume: bool) -> Flaky {
         chunk: 40_000,
         resumable,
         corrupt_resume,
+        resume_failures: Default::default(),
         offsets: Default::default(),
     }
 }
@@ -645,11 +659,28 @@ async fn interrupted_downloads_resume_from_the_verified_offset() {
 }
 
 #[tokio::test]
+async fn a_failed_resume_request_is_retried_from_the_same_offset() {
+    let bytes: Vec<u8> = (0..100_000u32).map(|value| (value % 239) as u8).collect();
+    let root = tempfile::tempdir().unwrap();
+    let transport = flaky(&bytes, true, false);
+    transport
+        .resume_failures
+        .store(1, std::sync::atomic::Ordering::SeqCst);
+    let acquired = Acquisition::new(root.path())
+        .unwrap()
+        .acquire(&artifact(&bytes), &transport, &Default::default())
+        .await
+        .unwrap();
+    assert_eq!(std::fs::read(&acquired.path).unwrap(), bytes);
+    assert_eq!(*transport.offsets.lock().unwrap(), vec![0, 40_000, 80_000]);
+}
+
+#[tokio::test]
 async fn resumed_bytes_are_still_hash_verified_and_unresumable_drops_fail() {
     let bytes: Vec<u8> = (0..100_000u32).map(|value| (value % 241) as u8).collect();
     for (transport, needle) in [
         (flaky(&bytes, true, true), "integrity mismatch"),
-        (flaky(&bytes, false, false), "connection reset"),
+        (flaky(&bytes, false, false), "resume response mismatch"),
     ] {
         let root = tempfile::tempdir().unwrap();
         let error = Acquisition::new(root.path())
