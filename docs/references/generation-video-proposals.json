@@ -1,25 +1,21 @@
 {
   "schemaVersion": 1,
   "kind": "video",
-  "generatedAt": "2026-10-05T19:07:54Z",
+  "generatedAt": "2026-10-12T12:30:45Z",
   "requiresReview": true,
   "knownCandidates": [
     "wan2.1-t2v:1.3b",
-    "wan2.1-t2v:1.3b-bf16"
+    "wan2.1-t2v:1.3b-bf16",
+    "causal_forcing_framewise:causal_forcing-framewise",
+    "mochi_preview:mochi_preview_bf16",
+    "mochi_preview:mochi_preview_fp8_scaled",
+    "wan_2.2:wan2.2_t2v_high_noise_14b_fp16",
+    "wan_2.2:wan2.2_t2v_high_noise_14b_fp8_scaled",
+    "wan_2.2:wan2.2_t2v_low_noise_14b_fp16",
+    "wan_2.2:wan2.2_t2v_low_noise_14b_fp8_scaled",
+    "wan_2.2:wan2.2_ti2v_5b_fp16"
   ],
   "unknownCandidates": [
-    {
-      "repository": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
-      "pipelineTag": "text-to-video",
-      "license": null,
-      "reason": "not auto-added: no reviewed built-in workflow mapping"
-    },
-    {
-      "repository": "samuelchristlie/Wan2.1-T2V-1.3B-GGUF",
-      "pipelineTag": "text-to-video",
-      "license": null,
-      "reason": "not auto-added: no reviewed built-in workflow mapping"
-    },
     {
       "repository": "Wan-AI/Wan2.1-T2V-14B",
       "pipelineTag": "text-to-video",
@@ -27,7 +23,19 @@
       "reason": "not auto-added: no reviewed built-in workflow mapping"
     },
     {
-      "repository": "Efficient-Large-Model/LongLive-Plug-Wan2.1-T2V-14B-few-step",
+      "repository": "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "nvidia/AnyFlow-Wan2.1-T2V-14B-Diffusers",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "Josh-is-cool/Wan2.1-T2V-1.3B",
       "pipelineTag": "text-to-video",
       "license": null,
       "reason": "not auto-added: no reviewed built-in workflow mapping"
@@ -148,6 +156,12 @@
     },
     {
       "repository": "Njbx/Wan2.1-T2V-14B-CausVid-GGUF",
+      "pipelineTag": "text-to-video",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "samuelchristlie/Wan2.1-T2V-1.3B-GGUF",
       "pipelineTag": "text-to-video",
       "license": null,
       "reason": "not auto-added: no reviewed built-in workflow mapping"
@@ -484,12 +498,6 @@
     },
     {
       "repository": "nvidia/AnyFlow-Wan2.1-T2V-1.3B-Diffusers",
-      "pipelineTag": "text-to-video",
-      "license": null,
-      "reason": "not auto-added: no reviewed built-in workflow mapping"
-    },
-    {
-      "repository": "nvidia/AnyFlow-Wan2.1-T2V-14B-Diffusers",
       "pipelineTag": "text-to-video",
       "license": null,
       "reason": "not auto-added: no reviewed built-in workflow mapping"
