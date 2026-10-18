@@ -1,9 +1,9 @@
-//! Bundled ComfyUI workflow files: an API-format graph plus the only values RigSpark
-//! substitutes at run time. Adding a workflow is a data change, not new graph code.
+//! Bundled ComfyUI workflows (`data/workflows.json`): API-format graphs plus the only
+//! values RigSpark substitutes at run time. Adding a workflow is a data change.
 
 use crate::{
     catalog::require,
-    generation::{FileRole, GenerationKind, Workflow},
+    generation::{FileRole, GenerationFile, GenerationKind, WorkflowId},
     sizing::ValidationError,
 };
 use serde::{Deserialize, Serialize};
@@ -14,16 +14,9 @@ use std::{
 };
 
 pub const WORKFLOW_SCHEMA_VERSION: u8 = 1;
-const MAX_NODES: usize = 64;
+const MAX_NODES: usize = 128;
 
-const BUNDLED: [&str; 6] = [
-    include_str!("../data/workflows/flux-checkpoint.json"),
-    include_str!("../data/workflows/flux-split.json"),
-    include_str!("../data/workflows/wan-t2v.json"),
-    include_str!("../data/workflows/wan22-ti2v.json"),
-    include_str!("../data/workflows/qwen-image.json"),
-    include_str!("../data/workflows/ming-design.json"),
-];
+pub const WORKFLOWS_JSON: &str = include_str!("../data/workflows.json");
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(rename_all = "kebab-case")]
@@ -44,6 +37,27 @@ pub struct Target {
 pub enum OutputFormat {
     Png,
     Webp,
+    Mp4,
+}
+
+/// Hardware a candidate was validated against (ComfyUI `/system_stats` device types).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum DeviceClass {
+    Cpu,
+    Mps,
+    Cuda,
+}
+
+/// Where a harvested workflow came from.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Provenance {
+    pub repository: String,
+    pub commit: String,
+    pub template: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub min_comfyui_version: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
@@ -67,6 +81,9 @@ pub struct ModelSlot {
     pub node: String,
     pub input: String,
     pub role: FileRole,
+    /// The exact pinned weight a harvested template requires in this slot.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub weight: Option<GenerationFile>,
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
@@ -98,11 +115,15 @@ pub struct Preflight {
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct WorkflowFile {
-    pub schema_version: u8,
-    pub id: Workflow,
+    pub id: WorkflowId,
     pub kind: GenerationKind,
     pub status: Status,
     pub source: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub provenance: Option<Provenance>,
+    /// Device classes the graph validated on; empty means not restricted.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub device_classes: Vec<DeviceClass>,
     pub graph: Map<String, Value>,
     pub bindings: Bindings,
     pub models: Vec<ModelSlot>,
@@ -130,6 +151,26 @@ impl WorkflowFile {
         Ok(file)
     }
 
+    /// Whether a catalog entry's files fill exactly this workflow's model slots.
+    pub fn accepts_files(&self, files: &[GenerationFile]) -> bool {
+        if self.models.iter().all(|slot| slot.weight.is_some()) {
+            let mut wanted: Vec<&GenerationFile> = self
+                .models
+                .iter()
+                .filter_map(|slot| slot.weight.as_ref())
+                .collect();
+            let mut have: Vec<&GenerationFile> = files.iter().collect();
+            wanted.sort_by(|left, right| left.sha256.cmp(&right.sha256));
+            have.sort_by(|left, right| left.sha256.cmp(&right.sha256));
+            return wanted == have;
+        }
+        let mut wanted: Vec<FileRole> = self.models.iter().map(|slot| slot.role).collect();
+        let mut have: Vec<FileRole> = files.iter().map(|file| file.role).collect();
+        wanted.sort_by_key(|role| role.folder());
+        have.sort_by_key(|role| role.folder());
+        wanted.len() == have.len() && wanted.iter().zip(&have).all(|(left, right)| left == right)
+    }
+
     pub fn verified(&self) -> bool {
         self.status == Status::Verified
     }
@@ -146,11 +187,6 @@ impl WorkflowFile {
     }
 
     fn validate(&self) -> Result<(), ValidationError> {
-        require(
-            self.schema_version == WORKFLOW_SCHEMA_VERSION,
-            "unsupported workflow schema version",
-        )?;
-        require(self.kind == self.id.kind(), "workflow kind mismatch")?;
         require(
             self.source.starts_with("https://") && self.source.len() <= 2048,
             "workflow source must be HTTPS",
@@ -169,8 +205,8 @@ impl WorkflowFile {
         }
         let bindings = &self.bindings;
         require(
-            bindings.prompt.len() == 1 && bindings.seed.len() == 1,
-            "workflow needs exactly one prompt and one seed binding",
+            bindings.prompt.len() == 1 && (1..=8).contains(&bindings.seed.len()),
+            "workflow needs exactly one prompt and 1..=8 seed bindings",
         )?;
         for target in bindings.prompt.iter().chain(&bindings.seed) {
             require(
@@ -182,30 +218,62 @@ impl WorkflowFile {
             .graph
             .get(self.output_node())
             .and_then(|node| node["class_type"].as_str());
-        let expected = match (self.kind, bindings.output.format) {
-            (GenerationKind::Image, OutputFormat::Png) => "SaveImage",
-            (GenerationKind::Video, OutputFormat::Webp) => "SaveAnimatedWEBP",
+        let expected: &[&str] = match (self.kind, bindings.output.format) {
+            (GenerationKind::Image, OutputFormat::Png) => &["SaveImage", "SaveImageAdvanced"],
+            (GenerationKind::Video, OutputFormat::Webp) => &["SaveAnimatedWEBP"],
+            (GenerationKind::Video, OutputFormat::Mp4) => &["SaveVideo"],
             _ => return Err(invalid("output format does not match the workflow kind")),
         };
         require(
-            save == Some(expected),
+            save.is_some_and(|class| expected.contains(&class)),
             "output binding must target the save node",
         )?;
+        match (&self.provenance, self.status) {
+            (Some(provenance), _) => require(
+                provenance.repository == "Comfy-Org/workflow_templates"
+                    && provenance.commit.len() == 40
+                    && provenance
+                        .commit
+                        .bytes()
+                        .all(|byte| byte.is_ascii_hexdigit())
+                    && !provenance.template.is_empty()
+                    && provenance.template.len() <= 128
+                    && provenance
+                        .template
+                        .bytes()
+                        .all(|byte| byte.is_ascii_alphanumeric() || b"._-".contains(&byte)),
+                "invalid workflow provenance",
+            )?,
+            (None, Status::Candidate) => {
+                return Err(invalid("workflow candidates need template provenance"));
+            }
+            (None, Status::Verified) => {}
+        }
+        let pinned = self.models.iter().all(|slot| slot.weight.is_some());
         let mut roles = HashSet::new();
         for slot in &self.models {
+            let target = Target {
+                node: slot.node.clone(),
+                input: slot.input.clone(),
+            };
             require(
-                self.input(&Target {
-                    node: slot.node.clone(),
-                    input: slot.input.clone(),
-                })
-                .is_some(),
+                self.input(&target).is_some(),
                 "model slot targets a missing input",
             )?;
-            require(roles.insert(slot.role), "duplicate model role")?;
+            require(
+                roles.insert(slot.role) || pinned,
+                "repeated model roles need pinned weights",
+            )?;
+            if let Some(weight) = &slot.weight {
+                require(
+                    weight.role == slot.role && weight.folder == slot.role.folder(),
+                    "pinned weight does not match its slot role",
+                )?;
+            }
         }
         require(
-            roles == self.id.roles().iter().copied().collect(),
-            "model slots must match the workflow's file roles",
+            !self.models.is_empty() && self.models.len() <= 16,
+            "workflow needs 1..=16 model slots",
         )?;
         for change in &self.overrides {
             require(
@@ -242,6 +310,11 @@ impl WorkflowFile {
         names: &HashMap<FileRole, String>,
         devices: &[String],
     ) -> Result<Applied, ValidationError> {
+        let roles: HashSet<FileRole> = self.models.iter().map(|slot| slot.role).collect();
+        require(
+            roles.len() == self.models.len(),
+            "workflows with repeated model roles cannot run yet",
+        )?;
         let mut graph = Value::Object(self.graph.clone());
         let mut set = |node: &str, input: &str, value: Value| {
             graph[node]["inputs"][input] = value;
@@ -271,14 +344,50 @@ impl WorkflowFile {
     }
 }
 
+#[derive(Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct Document {
+    schema_version: u8,
+    workflows: Vec<WorkflowFile>,
+}
+
 pub struct Registry(Vec<WorkflowFile>);
 
 impl Registry {
-    pub fn get(&self, id: Workflow) -> &WorkflowFile {
-        self.0
-            .iter()
-            .find(|file| file.id == id)
-            .expect("registry validated one file per workflow")
+    pub fn parse(raw: &str) -> Result<Self, ValidationError> {
+        let document: Document =
+            serde_json::from_str(raw).map_err(|error| invalid(error.to_string()))?;
+        require(
+            document.schema_version == WORKFLOW_SCHEMA_VERSION,
+            "unsupported workflow registry",
+        )?;
+        Self::new(document.workflows)
+    }
+    pub fn new(files: Vec<WorkflowFile>) -> Result<Self, ValidationError> {
+        require(files.len() <= 512, "too many workflows")?;
+        let mut ids = HashSet::new();
+        for file in &files {
+            file.validate()?;
+            require(ids.insert(file.id.clone()), "duplicate workflow id")?;
+        }
+        Ok(Self(files))
+    }
+    /// Canonical document text; the bundled file must already be in this form.
+    pub fn to_json(&self) -> String {
+        let document = Document {
+            schema_version: WORKFLOW_SCHEMA_VERSION,
+            workflows: self.0.clone(),
+        };
+        format!(
+            "{}\n",
+            serde_json::to_string_pretty(&document).expect("workflow documents serialize")
+        )
+    }
+    pub fn get(&self, id: &WorkflowId) -> Option<&WorkflowFile> {
+        self.0.iter().find(|file| &file.id == id)
+    }
+    pub fn files(&self) -> &[WorkflowFile] {
+        &self.0
     }
     pub fn len(&self) -> usize {
         self.0.len()
@@ -288,21 +397,11 @@ impl Registry {
     }
 }
 
-fn load() -> Result<Registry, ValidationError> {
-    let files = BUNDLED
-        .iter()
-        .map(|raw| WorkflowFile::parse(raw))
-        .collect::<Result<Vec<_>, _>>()?;
-    let ids: HashSet<_> = files.iter().map(|file| file.id).collect();
-    require(ids.len() == files.len(), "duplicate bundled workflow id")?;
-    Ok(Registry(files))
-}
-
 /// The bundled workflows, parsed and validated once.
 pub fn registry() -> Result<&'static Registry, ValidationError> {
     static REGISTRY: OnceLock<Result<Registry, ValidationError>> = OnceLock::new();
     REGISTRY
-        .get_or_init(load)
+        .get_or_init(|| Registry::parse(WORKFLOWS_JSON))
         .as_ref()
         .map_err(|error| ValidationError(error.0.clone()))
 }

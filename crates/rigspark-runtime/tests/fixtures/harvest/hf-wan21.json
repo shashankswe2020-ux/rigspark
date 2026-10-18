@@ -1,0 +1,46 @@
+{
+ "id": "Comfy-Org/Wan_2.1_ComfyUI_repackaged",
+ "sha": "123acf1cc74bccbb9bfff8ac1ee72edc08c2341d",
+ "private": false,
+ "gated": false,
+ "tags": [
+  "diffusion-single-file",
+  "comfyui",
+  "base_model:MAGREF-Video/MAGREF",
+  "base_model:finetune:MAGREF-Video/MAGREF",
+  "license:apache-2.0",
+  "region:us"
+ ],
+ "siblings": [
+  {
+   "rfilename": "split_files/diffusion_models/wan2.1_t2v_1.3B_fp16.safetensors",
+   "blobId": "bc54531ca244c0a09518e954f59ba5a7064eebc6",
+   "size": 2838303560,
+   "lfs": {
+    "sha256": "be531024cd9018cb5b48c40cfbb6a6191645b1c792eb8bf4f8c1c6e10f924dc5",
+    "size": 2838303560,
+    "pointerSize": 135
+   }
+  },
+  {
+   "rfilename": "split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+   "blobId": "f67b8b88cdc897fa83f59bbd36ad54612a534ade",
+   "size": 6735906897,
+   "lfs": {
+    "sha256": "c3355d30191f1f066b26d93fba017ae9809dce6c627dda5f6a66eaa651204f68",
+    "size": 6735906897,
+    "pointerSize": 135
+   }
+  },
+  {
+   "rfilename": "split_files/vae/wan_2.1_vae.safetensors",
+   "blobId": "5ff32b52dac309662138ca42604696d34eaad7b8",
+   "size": 253815318,
+   "lfs": {
+    "sha256": "2fc39d31359a4b0a64f55876d8ff7fa8d780956ae2cb13463b0223e15148976b",
+    "size": 253815318,
+    "pointerSize": 134
+   }
+  }
+ ]
+}

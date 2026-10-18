@@ -44,7 +44,7 @@ Phases 4 and 5 can proceed in parallel once phase 3 lands.
 ## Phase 1 status (2026-10-16)
 
 Done: 1.1, 1.2, 1.3, 1.5 and 1.6. The six workflows are bundled data files under
-`crates/rigspark-core/data/workflows/`. The runtime builds every graph through
+`crates/rigspark-core/data/workflows.json`. The runtime builds every graph through
 `WorkflowFile::apply`. Device overrides, output nodes and native-capability preflight
 markers are data. Builders, `save_node`, the Wan sampler helper and the Ming-only
 preflight are removed. Graphs match the frozen legacy output byte-for-byte for all
@@ -148,6 +148,63 @@ Findings that change expectations:
    classes a candidate is valid for.
 3. **Multi-file models are real:** the Wan 2.2 14B template needs two diffusion files.
    This confirms the phase 3 catalog change.
+
+## Phase 3 status (2026-10-17)
+
+Done, in four commits:
+
+1. **String workflow ids.** `WorkflowId` replaces the closed enum. The bundled registry
+   (`crates/rigspark-core/data/workflows.json`, kept in canonical form by a test)
+   decides which workflows exist, their kind and slots, and whether they are verified.
+   Catalog entries run only through a verified registry workflow. Adds the `lora` role.
+2. **Candidate workflow files.** These add template provenance (pinned commit),
+   validated device classes, MP4 via `SaveVideo`, PNG via `SaveImageAdvanced`, 1-8 seed
+   bindings, and slots that pin exact weights (allowing repeated diffusion slots and
+   LoRAs). Repeated-role and MP4 workflows fail closed at run time until phase 5.
+3. **Harvester** (`rigspark_runtime::workflow_harvest`). It resolves `main` through
+   GitHub's `vnd.github.sha` media type, then fetches the index and templates as raw
+   files at that pinned commit. Only these exact URLs are allow-listed. It compiles per
+   device class, pins every manifest weight to an exact Hugging Face commit, SHA-256
+   and size, and links candidates to catalog entries by primary-weight digest. It
+   rejects Partner, media-input, unpinnable and incompatible templates with reasons,
+   skips unchanged templates, caps candidates per run, and marks the run incomplete on
+   fetch failures.
+4. **`cargo workflow-harvest`.** Repeatable `--object-info <cpu|mps|cuda>=<file>`,
+   `--commit`, `--limit`, `--dry-run`, and write mode, which appends candidates
+   canonically and is idempotent.
+
+**Live dry run** (2026-10-17, templates `04a508b`, ComfyUI 0.38.0 CPU `object_info`
+from an owned server):
+
+- 41 candidates; 17 link to existing catalog entries. Linked examples include Wan 2.1
+  1.3B, Wan 2.2 5B and 14B (both fit-only 14B entries), Qwen-Image and 2512, Z-Image
+  and its INT8 variant, Chroma, LongCat and Ovis. New families include HiDream I1,
+  Hunyuan Video 1.5, FLUX.2, SDXL and SD3.5.
+- 649 rejections:
+
+  | Count | Reason |
+  |---:|---|
+  | 389 | Partner API |
+  | 206 | needs a media input |
+  | 22 | no single media save node (audio, 3D, multi-output) |
+  | 16 | prompt not identifiable (for example FLUX schnell's split `clip_l`/`t5xxl` encoder) |
+  | 15 | version skew or a missing node |
+  | 1 | gated repository |
+
+- 1 failure: `Comfy-Org/flux2-klein` metadata request refused (a redirect outside the
+  policy). The run is honestly marked incomplete.
+
+The live run found and fixed two compiler bugs, each with a regression fixture:
+
+- FLUX dev's `ConditioningZeroOut(positive)` negative was mistaken for a shared prompt.
+- `PreviewAny` display values were treated as widget values.
+
+Media-input templates are now detected before compiling, so their reason is accurate.
+
+A first attempt also exposed an environment hazard: an unowned ComfyUI already held
+port 8188, so a capture that assumed ownership read the wrong server. Evidence above
+uses only the owned CPU capture. Phase 4 CI must start its own ComfyUI on a free port
+and verify ownership before capturing `object_info`.
 
 ### Phase 2 tasks: template compiler (outline)
 

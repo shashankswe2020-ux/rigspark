@@ -1,6 +1,7 @@
 //! Curated, offline catalog of local image/video generation models served by ComfyUI.
 //!
 //! Kept separate from the LLM catalog so LLM ranking, signing, and refresh are unaffected.
+use crate::workflow::WorkflowFile;
 use crate::{
     catalog::{
         EntryProvenance, LICENSES, RecencyBasis, coordinates, date, digest, model_file,
@@ -36,44 +37,47 @@ impl GenerationKind {
     }
 }
 
-/// Built-in ComfyUI workflow graphs implemented by `rigspark-runtime`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize, Serialize)]
-#[serde(rename_all = "kebab-case")]
-pub enum Workflow {
-    FluxCheckpoint,
-    FluxSplit,
-    WanT2v,
-    /// Wan 2.2 TI2V-5B text-to-video (https://comfyanonymous.github.io/ComfyUI_examples/wan22/).
-    #[serde(rename = "wan22-ti2v")]
-    Wan22Ti2v,
-    /// Qwen-Image text-to-image (https://comfyanonymous.github.io/ComfyUI_examples/qwen_image/).
-    QwenImage,
-    /// Candidate only; bundled entries stay fit-only until live generation is verified.
-    MingDesign,
-}
-impl Workflow {
-    pub fn kind(self) -> GenerationKind {
-        match self {
-            Self::FluxCheckpoint | Self::FluxSplit | Self::QwenImage | Self::MingDesign => {
-                GenerationKind::Image
-            }
-            Self::WanT2v | Self::Wan22Ti2v => GenerationKind::Video,
-        }
+/// Id of a bundled workflow file (`crates/rigspark-core/data/workflows.json`).
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Deserialize, Serialize)]
+#[serde(try_from = "String", into = "String")]
+pub struct WorkflowId(String);
+
+impl WorkflowId {
+    pub fn new(value: &str) -> Result<Self, ValidationError> {
+        require(
+            !value.is_empty()
+                && value.len() <= 96
+                && value.as_bytes()[0].is_ascii_alphanumeric()
+                && value.bytes().all(|byte| {
+                    byte.is_ascii_lowercase() || byte.is_ascii_digit() || b"._-".contains(&byte)
+                }),
+            "invalid workflow id",
+        )?;
+        Ok(Self(value.to_owned()))
     }
-    /// Exact file roles the workflow loads, in a stable order.
-    pub fn roles(self) -> &'static [FileRole] {
-        match self {
-            Self::FluxCheckpoint => &[FileRole::Checkpoint],
-            Self::FluxSplit => &[
-                FileRole::Diffusion,
-                FileRole::TextEncoder,
-                FileRole::Clip,
-                FileRole::Vae,
-            ],
-            Self::WanT2v | Self::Wan22Ti2v | Self::QwenImage | Self::MingDesign => {
-                &[FileRole::Diffusion, FileRole::TextEncoder, FileRole::Vae]
-            }
-        }
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+impl TryFrom<String> for WorkflowId {
+    type Error = ValidationError;
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        Self::new(&value)
+    }
+}
+impl From<WorkflowId> for String {
+    fn from(id: WorkflowId) -> Self {
+        id.0
+    }
+}
+impl std::fmt::Display for WorkflowId {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str(&self.0)
+    }
+}
+impl PartialEq<&str> for WorkflowId {
+    fn eq(&self, other: &&str) -> bool {
+        self.0 == *other
     }
 }
 
@@ -85,6 +89,7 @@ pub enum FileRole {
     TextEncoder,
     Clip,
     Vae,
+    Lora,
 }
 impl FileRole {
     /// ComfyUI `models/` subfolder the loader node reads this role from.
@@ -95,6 +100,7 @@ impl FileRole {
             Self::TextEncoder => "text_encoders",
             Self::Clip => "text_encoders",
             Self::Vae => "vae",
+            Self::Lora => "loras",
         }
     }
 }
@@ -131,7 +137,7 @@ pub struct GenerationModel {
     pub source: String,
     /// Absent for fit-only entries: sourced weights without a built-in workflow yet.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub workflow: Option<Workflow>,
+    pub workflow: Option<WorkflowId>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub workflow_source: Option<String>,
     pub files: Vec<GenerationFile>,
@@ -175,14 +181,25 @@ impl GenerationModel {
     pub fn recency_label(&self) -> String {
         recency_label(self.recency())
     }
-    /// The built-in workflow that runs this model, or why it cannot run yet.
-    pub fn runnable(&self) -> Result<Workflow, ValidationError> {
-        self.workflow.ok_or_else(|| {
+    /// The verified bundled workflow that runs this model, or why it cannot run yet.
+    pub fn runnable(&self) -> Result<&'static WorkflowFile, ValidationError> {
+        let id = self.workflow.as_ref().ok_or_else(|| {
             ValidationError(format!(
                 "{} is fit-only (workflow coming): RigSpark has no built-in ComfyUI workflow for this architecture yet",
                 self.id
             ))
-        })
+        })?;
+        let file = crate::workflow::registry()?
+            .get(id)
+            .ok_or_else(|| ValidationError(format!("{} uses unknown workflow {id}", self.id)))?;
+        require(
+            file.verified(),
+            &format!(
+                "{} uses workflow candidate {id}, which is not verified on real hardware yet",
+                self.id
+            ),
+        )?;
+        Ok(file)
     }
     pub fn total_bytes(&self) -> u64 {
         self.files.iter().map(|file| file.bytes).sum()
@@ -226,16 +243,16 @@ impl GenerationModel {
             "workflowSource must accompany a workflow",
         )?;
         let roles: Vec<_> = self.files.iter().map(|file| file.role).collect();
-        match (self.workflow, &self.workflow_source) {
-            (Some(workflow), Some(source)) => {
+        match (&self.workflow, &self.workflow_source) {
+            (Some(_), Some(source)) => {
                 https(source)?;
+                let workflow = self.runnable()?;
                 require(
-                    roles.len() == workflow.roles().len()
-                        && workflow.roles().iter().all(|role| roles.contains(role)),
-                    "files must match the workflow roles exactly",
+                    workflow.accepts_files(&self.files),
+                    "files must match the workflow's model slots exactly",
                 )?;
                 require(
-                    workflow.kind() == self.kind,
+                    workflow.kind == self.kind,
                     "workflow does not produce this model kind",
                 )?;
             }
@@ -352,12 +369,16 @@ pub struct GenerationEnrichment {
 
 fn built_in_family(model: &GenerationModel) -> bool {
     matches!(
-        (model.kind, model.workflow, model.family.as_str()),
+        (
+            model.kind,
+            model.workflow.as_ref().map(WorkflowId::as_str),
+            model.family.as_str()
+        ),
         (
             GenerationKind::Image,
-            Some(Workflow::FluxCheckpoint | Workflow::FluxSplit),
+            Some("flux-checkpoint" | "flux-split"),
             "flux1-schnell"
-        ) | (GenerationKind::Video, Some(Workflow::WanT2v), "wan2.1-t2v")
+        ) | (GenerationKind::Video, Some("wan-t2v"), "wan2.1-t2v")
     )
 }
 

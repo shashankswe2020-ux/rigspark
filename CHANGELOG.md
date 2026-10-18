@@ -4,13 +4,17 @@
 
 ### Internal
 
-- Generation workflows are now bundled data files (`crates/rigspark-core/data/workflows/`)
+- Generation workflows are now bundled data files (`crates/rigspark-core/data/workflows.json`)
   executed by one generic runtime. Graphs are byte-identical to the previous built-in
   builders. This is phase 1 of the
   [automated workflow pipeline](docs/specs/automated-workflow-pipeline.md).
 - New template compiler converts official ComfyUI templates (subgraphs, dynamic
   combos, switches) into validated API graphs with detected bindings. This is
   phase 2 of the pipeline; it is not yet used at run time.
+- Workflows have string ids from one bundled registry (`data/workflows.json`), and
+  candidate workflow files can pin exact weights. A new `cargo workflow-harvest`
+  turns official ComfyUI templates into pinned, unverified candidates with a
+  rejection report. This is phase 3; candidates never run until verified.
 
 ## 3.0.3 (2026-10-16)
 

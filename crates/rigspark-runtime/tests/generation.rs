@@ -123,9 +123,9 @@ fn fixture(kind: &str) -> (GenerationModel, Hub) {
 
 #[test]
 fn ming_design_graph_uses_direct_conditioning_and_local_rgba_capable_png_output() {
-    use rigspark_core::generation::Workflow;
+    use rigspark_core::generation::WorkflowId;
     let (mut model, _) = fixture("video");
-    model.workflow = Some(Workflow::MingDesign);
+    model.workflow = Some(WorkflowId::new("ming-design").unwrap());
     model.kind = GenerationKind::Image;
     let names = HashMap::from([
         (FileRole::Diffusion, "design-int8.safetensors".into()),
@@ -1017,11 +1017,11 @@ async fn previous_workflow_weights_are_unloaded_on_switch_when_memory_is_shared_
 
 #[test]
 fn wan22_and_qwen_image_graphs_follow_the_official_examples_and_stay_local() {
-    use rigspark_core::generation::Workflow;
+    use rigspark_core::generation::WorkflowId;
     let catalog = GenerationCatalog::bundled().unwrap();
-    let build = |workflow: Workflow, devices: &[String]| {
+    let build = |workflow: &str, devices: &[String]| {
         let mut model = catalog.resolve("video").unwrap().clone();
-        model.workflow = Some(workflow);
+        model.workflow = Some(WorkflowId::new(workflow).unwrap());
         let names = model
             .files
             .iter()
@@ -1031,7 +1031,7 @@ fn wan22_and_qwen_image_graphs_follow_the_official_examples_and_stay_local() {
         ensure_local_only(&graph).unwrap();
         graph
     };
-    let wan = build(Workflow::Wan22Ti2v, &[]);
+    let wan = build("wan22-ti2v", &[]);
     assert_eq!(wan["55"]["class_type"], "Wan22ImageToVideoLatent");
     assert_eq!(wan["55"]["inputs"]["width"], 1280);
     assert_eq!(wan["55"]["inputs"]["height"], 704);
@@ -1039,11 +1039,11 @@ fn wan22_and_qwen_image_graphs_follow_the_official_examples_and_stay_local() {
     assert_eq!(wan["3"]["inputs"]["sampler_name"], "uni_pc");
     assert_eq!(wan["28"]["class_type"], "SaveAnimatedWEBP");
     assert_eq!(
-        build(Workflow::Wan22Ti2v, &["mps".to_owned()])["3"]["inputs"]["sampler_name"],
+        build("wan22-ti2v", &["mps".to_owned()])["3"]["inputs"]["sampler_name"],
         "euler",
         "uni_pc diverges on Apple MPS"
     );
-    let qwen = build(Workflow::QwenImage, &[]);
+    let qwen = build("qwen-image", &[]);
     assert_eq!(qwen["66"]["class_type"], "ModelSamplingAuraFlow");
     assert_eq!(qwen["66"]["inputs"]["shift"], 3.1);
     assert_eq!(qwen["58"]["inputs"]["width"], 1328);

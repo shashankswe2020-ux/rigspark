@@ -73,6 +73,28 @@ pub fn allowed_request(url: &Url) -> bool {
         (Some("huggingface.co"), None | Some("blobs=true"), ["api", "models", owner, repo]) => {
             name(owner) && name(repo)
         }
+        // Official ComfyUI workflow templates: the main commit, then files at a pinned commit.
+        (
+            Some("api.github.com"),
+            None,
+            [
+                "repos",
+                "Comfy-Org",
+                "workflow_templates",
+                "commits",
+                "main",
+            ],
+        ) => true,
+        (
+            Some("raw.githubusercontent.com"),
+            None,
+            ["Comfy-Org", "workflow_templates", commit, "templates", file],
+        ) => {
+            commit.len() == 40
+                && commit.bytes().all(|byte| byte.is_ascii_hexdigit())
+                && name(file)
+                && file.ends_with(".json")
+        }
         (
             Some("huggingface.co"),
             Some("blobs=true"),

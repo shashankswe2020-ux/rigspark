@@ -746,8 +746,11 @@ fn map_widgets(flat: &Flat, schema: &NodeSchema) -> Result<Mapped, String> {
     let mut inputs = Map::new();
     let mut specs = HashMap::new();
     let mut values = flat.widgets.iter();
-    widget_walk(&schema.ordered(), "", &mut values, &mut inputs, &mut specs)?;
-    if values.next().is_some() {
+    let ordered = schema.ordered();
+    widget_walk(&ordered, "", &mut values, &mut inputs, &mut specs)?;
+    // Output nodes without widgets (e.g. PreviewAny) persist their last preview here.
+    let display_only = schema.output_node && !ordered.iter().any(|(_, spec, _)| spec.widget());
+    if values.next().is_some() && !display_only {
         return Err(format!(
             "{} ({}) has more widget values than its ComfyUI schema",
             flat.id, flat.class
@@ -1093,7 +1096,9 @@ pub fn compile(template: &str, raw: &str, info: &ObjectInfo) -> Result<Compiled,
     seeds.sort_by(|left, right| (&left.node, &left.input).cmp(&(&right.node, &right.input)));
 
     // The prompt is the literal STRING feeding the positive conditioning.
-    let texts = |role: &[&str]| -> Result<BTreeSet<(String, String)>, CompileError> {
+    let texts = |role: &[&str],
+                 stop: &[&str]|
+     -> Result<BTreeSet<(String, String)>, CompileError> {
         let mut found = BTreeSet::new();
         let mut visited = BTreeSet::new();
         let mut stack: Vec<String> = Vec::new();
@@ -1119,7 +1124,10 @@ pub fn compile(template: &str, raw: &str, info: &ObjectInfo) -> Result<Compiled,
             }
         }
         while let Some(id) = stack.pop() {
-            if !visited.insert(id.clone()) || visited.len() > MAX_NODES {
+            if !visited.insert(id.clone())
+                || visited.len() > MAX_NODES
+                || stop.contains(&nodes[&id].class.as_str())
+            {
                 continue;
             }
             let node = &nodes[&id];
@@ -1171,8 +1179,9 @@ pub fn compile(template: &str, raw: &str, info: &ObjectInfo) -> Result<Compiled,
         }
         Ok(found)
     };
-    let positive = texts(&["positive", "conditioning"])?;
-    let negative = texts(&["negative"])?;
+    let positive = texts(&["positive", "conditioning"], &[])?;
+    // A zeroed negative ignores its text, even when derived from the positive encoder.
+    let negative = texts(&["negative"], &["ConditioningZeroOut"])?;
     let prompt = match positive.iter().collect::<Vec<_>>().as_slice() {
         [(node, input)] if !negative.contains(&(node.clone(), input.clone())) => Target {
             node: node.clone(),
