@@ -103,7 +103,53 @@ Real-hardware checkpoint (36 GiB Apple Silicon, ComfyUI 0.38.0, owned loopback s
   - Verify: full gates.
   - Files: `runtime/src/generation.rs`, `core/src/generation.rs`, `core/src/generation_admission.rs`.
 
-## Phase 2 tasks: template compiler (outline)
+## Phase 2 status (2026-10-17)
+
+Done. `rigspark_runtime::workflow_compile::compile(template, ui_json, object_info)`
+converts official templates into API-format graphs with prompt, seed, output and model
+bindings. It handles:
+
+- subgraph flattening, with ids `parent:child` as the ComfyUI frontend exports
+- both instance value styles: `widgets_values(_named)` on the instance, and
+  `proxyWidgets` where inner nodes keep their own values
+- reroute, bypass pass-through, mute and notes
+- positional widgets mapped through `input_order`, with `control_after_generate`
+  only when the schema declares it
+- V3 dynamic combos (`format`, `format.codec`, `sampling_mode.*`) and autogrow sockets
+  (`values.a`)
+- switch folding through primitive constants, and pruning to the single media save node
+- link type checks, combo and range checks, and model files required to appear in
+  the template manifest
+
+Order-sensitive schema parsing uses an order-preserving map, so no workspace-wide
+`serde_json` feature change was needed.
+
+Fixtures: four templates at `99e3d437` and `object_info` for the 37 classes used,
+captured from ComfyUI 0.38.0 (`f1072eb`) on Apple Silicon in CPU mode. 14 tests cover
+every compiled template and the fail-closed cases.
+
+**Real validation:** ComfyUI 0.38.0's own `/prompt` validator accepted all five compiled
+graphs (Wan 2.1, Qwen-Image, Wan 2.2 14B, Ming with and without prompt enhancement)
+with zero `node_errors`, using zero-byte placeholder weights in a temporary
+`--base-directory`. The queue started executing before it was cleared, and the
+placeholders failed harmlessly at load. Phase 4 must clear the queue (or hold
+execution) before submitting.
+
+Findings that change expectations:
+
+1. **Templates are not the shipped graphs.** Template defaults differ: Wan 2.1 uses
+   33 frames and MP4, Qwen-Image uses CFG 4, and Ming enables an LLM prompt enhancer
+   that needs a 27B Qwen 3.8 encoder. The compiler is faithful; reducing a template is
+   a maintainer decision recorded in the workflow file, never inferred.
+2. **Some templates are hardware-specific.** The official Ming template selects
+   `comfy kitchen attention` (Nvidia/AMD only). On this Mac, ComfyUI offers only
+   `pytorch attention`, so the unmodified template is correctly refused. Phase 3 must
+   compile against the target device class's `object_info` and record which device
+   classes a candidate is valid for.
+3. **Multi-file models are real:** the Wan 2.2 14B template needs two diffusion files.
+   This confirms the phase 3 catalog change.
+
+### Phase 2 tasks: template compiler (outline)
 
 - 2.1 Record fixtures: four templates at the pinned commit, plus `object_info` for the
   classes used, captured from local ComfyUI 0.38.0.
