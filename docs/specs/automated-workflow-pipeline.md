@@ -17,7 +17,8 @@ Build a pipeline in which **adding a workflow requires no Rust code**:
 
 1. CI discovers official ComfyUI templates, pins every weight, compiles the template
    into a runnable graph, validates it against a real (CPU-only) ComfyUI, and opens a
-   PR containing a *candidate* workflow file plus fit-only catalog entries.
+   PR containing only *candidate* workflow files plus harvest/validation reports.
+   Existing catalog matches are reported but no catalog entries are automatically added.
 2. A maintainer runs one local command on real hardware. It generates media,
    validates the output, and writes an evidence file.
 3. Promotion to runnable is a data change that CI only accepts when matching evidence
@@ -39,7 +40,7 @@ Build a pipeline in which **adding a workflow requires no Rust code**:
 |---|---|
 | Verification | Local maintainer command on real hardware; self-hosted runner is out of scope |
 | First scope | Prompt-only workflows (text-to-image, text-to-video). Image/video/audio inputs are later |
-| Sources | Only `Comfy-Org/workflow_templates` at a pinned commit; `openSource: true`; no Partner API nodes |
+| Sources | Only `Comfy-Org/workflow_templates` at a pinned commit; explicit `openSource: false` is rejected; native compiler/node checks reject API nodes |
 | Existing workflows | Migrate all six (FLUX checkpoint/split, Wan 2.1, Wan 2.2 TI2V, Qwen-Image, Ming Design) to the data format |
 | Dataset format | Approved: new workflow files and catalog fields |
 
@@ -49,7 +50,8 @@ Build a pipeline in which **adding a workflow requires no Rust code**:
           weekly CI (no GPU)                          maintainer hardware
 ┌──────────┐ ┌──────┐ ┌─────────┐ ┌──────────┐ ┌──────────┐   ┌──────────┐ ┌─────────┐
 │ discover │→│ pin  │→│ compile │→│ validate │→│ propose  │ → │  verify  │→│ promote │
-│ index    │ │ HF   │ │ UI→API  │ │ CPU      │ │ PR       │   │ real run │ │ CI-gated│
+│ index    │ │ HF   │ │ UI→API  │ │ CPU, no  │ │ candidate│   │ real run │ │ CI-gated│
+│          │ │      │ │         │ │ worker   │ │ PR       │   │          │ │         │
 └──────────┘ └──────┘ └─────────┘ │ ComfyUI  │ └──────────┘   └──────────┘ └─────────┘
                                   └──────────┘
                           runtime: one generic executor reads workflow files
@@ -165,18 +167,21 @@ Converts the template's UI format into API format using ComfyUI's live `object_i
 
 ### 3.4 Validate (CI, no GPU)
 
-- Start pinned ComfyUI on CPU, loopback-only, custom and API nodes disabled.
-- Create zero-byte placeholder files with the pinned names in a temporary
-  `models/` directory.
-- Submit the compiled graph to `/prompt`. ComfyUI's own validation must return no
-  `node_errors`. Then immediately interrupt and clear the queue. The placeholders are
-  never loaded.
-- Run RigSpark's generic preflight against the same `object_info`.
+- Use the pinned ComfyUI Python modules directly in an isolated temporary base
+  directory; do not start its server or prompt worker.
+- Capture CPU `object_info` and validate harvested API graphs with ComfyUI's
+  `execution.validate_prompt`. Never call `/prompt`, enqueue, or execute a graph.
+- Create only empty placeholder files for exact pinned model names inside the isolated
+  `models/` tree. No model weights are downloaded or loaded.
+- Refuse custom nodes, API/partner nodes, non-CPU candidates, incomplete harvests,
+  partial output validation, and any change to an existing verified workflow.
+- Emit a machine-readable report stating that validation is schema-only and zero
+  graphs were executed. This is not generation or hardware verification.
 
 ### 3.5 Propose (CI)
 
-- Write candidate workflow files and fit-only catalog entries with hardware-fit
-  verdicts; generation speed stays `unknown`.
+- Write candidate workflow files and reports only. Catalog linkage is informational;
+  adding catalog entries and hardware-fit verdicts is out of scope for this phase.
 - Open at most one pending PR, as the enrichment workflows do. Each run is capped at
   10 new candidates.
 - Record rejections with reasons in `docs/references/workflow-harvest-report.json`.
@@ -217,7 +222,10 @@ bundled workflow, so a hand edit cannot bypass it.
 ```bash
 cargo workflow-harvest --dry-run                 # discover + pin + compile, no writes
 cargo workflow-harvest --object-info <file>      # CI: compile against live CPU ComfyUI
-cargo workflow-validate --endpoint http://127.0.0.1:8188   # CI validation stage
+python3 scripts/workflow_validate.py validate --comfyui <pinned-ComfyUI> \
+  --workflows crates/rigspark-core/data/workflows.json \
+  --harvest-report docs/references/workflow-harvest-report.json \
+  --output docs/references/workflow-validation-report.json # CI; no worker or server
 cargo workflow-verify <id> --entry <catalog-id> --comfyui-dir ~/ComfyUI
 cargo workflow-promote <id>
 cargo test --workspace --locked -- --test-threads=2
@@ -292,8 +300,8 @@ pub enum BindingError {
    validation accepts. It reports a reason for each rejected template; for example,
    the official Ming template needs an Nvidia/AMD attention backend. Differences from
    hand-authored graphs are expected and recorded, not hidden.
-3. The CI harvest workflow opens a candidate PR, with fit-only entries, that passes
-   CPU ComfyUI validation.
+3. The CI harvest workflow opens a candidate-only PR that passes workerless CPU
+   ComfyUI schema validation.
 4. `cargo workflow-verify` on this Mac promotes one **new** workflow end to end with
    no workflow-specific Rust (target: Wan 2.1 T2V-14B or a Wan 2.2 14B T2V variant if
    it fits; otherwise the smallest new prompt-only template that fits).
