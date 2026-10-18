@@ -9,7 +9,7 @@ fn bonsai_8b_pins_official_binary_gguf_without_claiming_other_runtimes() {
         .find(|model| model.id == "bonsai:8b")
         .expect("Bonsai 8B is curated");
     assert_eq!(model.params, "8.19B");
-    assert_eq!(model.context_length, 65536.0);
+    assert_eq!(model.context_length, Some(65536.0));
     assert_eq!(model.license, "apache-2.0");
     assert!(model.source.ollama.is_none());
     assert!(model.source.mlx.is_none());

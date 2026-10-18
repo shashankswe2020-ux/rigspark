@@ -342,7 +342,7 @@ fn builds_a_fully_sourced_auto_entry_and_matching_cited_observation() {
     assert_eq!(entry.family, "granite");
     assert!(matches!(entry.architecture, Architecture::Dense));
     assert_eq!(entry.license, "apache-2.0");
-    assert_eq!(entry.context_length, 131072.0);
+    assert_eq!(entry.context_length, Some(131072.0));
     assert_eq!(entry.capabilities, ["chat", "tools"]);
     assert_eq!(entry.release_date, None);
     assert_eq!(entry.added_at.as_deref(), Some("2026-10-07"));

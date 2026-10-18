@@ -110,6 +110,39 @@ impl LifecycleOptions {
         Ok(())
     }
 }
+/// Rejects advisory selections before callers probe hardware, confirm activation, or access state.
+pub fn check_selection_availability(
+    options: &LifecycleOptions,
+    catalog: &Catalog,
+) -> Result<(), BackendError> {
+    options.validate()?;
+    if !["up", "switch"].contains(&options.command.as_str()) {
+        return Ok(());
+    }
+    let Some(query) = options.model.as_deref() else {
+        return Ok(());
+    };
+    if let Ok(resolved) = resolve(catalog, query) {
+        resolved
+            .model
+            .ensure_runnable()
+            .map_err(|error| BackendError(error.to_string()))?;
+    }
+    // Installed/bypass selection can use the Ollama reference instead of the catalog ID.
+    let normalized = query.trim().to_ascii_lowercase();
+    for model in &catalog.models {
+        if let Some(reference) = &model.source.ollama
+            && rigspark_core::registry_collector::parse_reference(&reference.to_ascii_lowercase())
+                == rigspark_core::registry_collector::parse_reference(&normalized)
+        {
+            model
+                .ensure_runnable()
+                .map_err(|error| BackendError(error.to_string()))?;
+        }
+    }
+    Ok(())
+}
+
 struct CheckedHttp<'runtime> {
     inner: &'runtime dyn Transport,
     probe: &'runtime NativeProcessProbe,
@@ -298,6 +331,9 @@ pub fn check_backend(
     hardware: &Hardware,
     installed: bool,
 ) -> Result<(), BackendError> {
+    model
+        .ensure_runnable()
+        .map_err(|error| BackendError(error.to_string()))?;
     if !rigspark_core::catalog::BACKENDS.contains(&backend) {
         return Err(BackendError("invalid backend selection".into()));
     }
@@ -325,6 +361,15 @@ pub struct QuantPlan {
     pub quant: rigspark_core::sizing::Quantization,
     pub estimated_fit: bool,
 }
+
+fn bitnet_context_limit(model: &CatalogModel) -> Result<u32, BackendError> {
+    let limit = model
+        .context_length
+        .filter(|limit| limit.is_finite() && *limit >= 1.0 && limit.fract() == 0.0)
+        .ok_or_else(|| BackendError("BitNet requires a known model context limit".into()))?;
+    Ok(limit.min(4096.0) as u32)
+}
+
 /// Picks the quantization to pull and enforces fit, bypass and disk preflight before any side effect.
 pub fn plan_quantization(
     model: &CatalogModel,
@@ -333,6 +378,9 @@ pub fn plan_quantization(
     hardware: &Hardware,
     options: PlanOptions,
 ) -> Result<QuantPlan, BackendError> {
+    model
+        .ensure_runnable()
+        .map_err(|error| BackendError(error.to_string()))?;
     if options.simple_switch && backend != "ollama" {
         return Err(BackendError(
             "single-model and delegated runtimes require up to replace models".into(),
@@ -342,9 +390,11 @@ pub fn plan_quantization(
         if !model.supports_backend("bitnet") {
             return Err(BackendError("BitNet requires an I2_S GGUF artifact".into()));
         }
-        if options.context.is_some_and(|context| {
-            context == 0 || f64::from(context) > model.context_length.min(4096.0)
-        }) {
+        let limit = bitnet_context_limit(model)?;
+        if options
+            .context
+            .is_some_and(|context| context == 0 || context > limit)
+        {
             return Err(BackendError(
                 "BitNet context exceeds the model's supported range".into(),
             ));
@@ -499,6 +549,8 @@ pub async fn run_native_observed(
     cancel: &CancellationToken,
     observer: Option<&LifecycleObserver>,
 ) -> Result<(Value, String), BackendError> {
+    options.validate()?;
+    check_selection_availability(options, catalog)?;
     let config = Config::load().map_err(|error| BackendError(error.to_string()))?;
     run_native_with_config_observed(options, catalog, hardware, cancel, config, observer).await
 }
@@ -547,6 +599,7 @@ pub async fn run_native_with_config_observed(
     observer: Option<&LifecycleObserver>,
 ) -> Result<(Value, String), BackendError> {
     options.validate()?;
+    check_selection_availability(options, catalog)?;
     let observer = observer.filter(|_| options.command != "doctor");
     let store = StateStore::new(config.clone());
     let prior = store
@@ -1011,11 +1064,7 @@ pub async fn run_native_with_config_observed(
         endpoint,
         model_path: prepared.model_path,
         context: if backend == "bitnet" {
-            Some(
-                options
-                    .context
-                    .unwrap_or(model.context_length.min(4096.0) as u32),
-            )
+            Some(options.context.unwrap_or(bitnet_context_limit(model)?))
         } else {
             options.context
         },

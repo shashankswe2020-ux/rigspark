@@ -156,7 +156,7 @@ async fn pinned_q4_k_m_repository_produces_one_valid_catalog_entry() {
     assert_eq!(entry.id, "owner/requested-1b:q4_k_m");
     assert_eq!(entry.family, "requested");
     assert_eq!(entry.params, "1B");
-    assert_eq!(entry.context_length, 32768.0);
+    assert_eq!(entry.context_length, Some(32768.0));
     assert_eq!(entry.capabilities, ["chat"]);
     assert_eq!(entry.source.hf.as_deref(), Some("owner/Requested-1B"));
     assert_eq!(entry.source.gguf.as_ref().unwrap().revision, REVISION);

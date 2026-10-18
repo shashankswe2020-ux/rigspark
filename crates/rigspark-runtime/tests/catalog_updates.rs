@@ -44,6 +44,31 @@ fn signed_catalog_is_verified_before_use() {
 }
 
 #[test]
+fn signed_v4_catalog_preserves_advisory_availability_and_rejects_missing_status() {
+    let mut catalog: Value = serde_json::from_str(&fixture_catalog()).unwrap();
+    catalog["schemaVersion"] = json!(4);
+    catalog["models"] = json!([catalog["models"][0].clone()]);
+    catalog["models"][0]["availability"] =
+        json!({"status":"advisory-only","reason":"backend-format-unsupported"});
+    catalog["models"][0]["source"] = json!({"weights":{
+        "repo":"publisher/model","revision":"a".repeat(40),
+        "files":[{"file":"model.safetensors","bytes":1000,"sha256":"b".repeat(64)}]
+    }});
+    catalog["models"][0]["quantizations"] =
+        json!([{"name":"BF16","diskBytes":1000,"minRamBytes":1150,"minVramBytes":1150}]);
+    let mut document = payload(2);
+    document["catalog"] = json!(catalog.to_string());
+    let verified = verify(&signed(document.clone()), &key().verifying_key().to_bytes()).unwrap();
+    assert!(verified.catalog.models[0].is_advisory_only());
+    catalog["models"][0]
+        .as_object_mut()
+        .unwrap()
+        .remove("availability");
+    document["catalog"] = json!(catalog.to_string());
+    assert!(verify(&signed(document), &key().verifying_key().to_bytes()).is_err());
+}
+
+#[test]
 fn rejects_tampering_wrong_key_and_unsigned_catalogs() {
     let artifact = signed(payload(1));
     let mut changed: Value = serde_json::from_slice(&artifact).unwrap();

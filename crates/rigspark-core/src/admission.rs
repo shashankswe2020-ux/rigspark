@@ -617,11 +617,12 @@ pub fn build_entry(input: &AdmissionInput) -> Result<CatalogModel, Rejection> {
         active_params: active,
         license: license.into(),
         open_weight: true,
-        context_length: context as f64,
+        context_length: Some(context as f64),
         capabilities,
         release_date: None,
         added_at: Some(input.today.into()),
         provenance: EntryProvenance::Auto,
+        availability: None,
         source: Source {
             ollama: Some(strip_control(&id)),
             ..Default::default()

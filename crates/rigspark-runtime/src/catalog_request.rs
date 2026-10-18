@@ -368,11 +368,12 @@ fn build_entry(
         active_params,
         license: tag_license.into(),
         open_weight: true,
-        context_length: context as f64,
+        context_length: Some(context as f64),
         capabilities: vec!["chat".into()],
         release_date: None,
         added_at: Some(today.into()),
         provenance: EntryProvenance::Auto,
+        availability: None,
         source: Source {
             hf: Some(source_hf),
             gguf: Some(GgufSource {

@@ -1,5 +1,6 @@
 pub mod admission;
 pub mod advice;
+pub mod artificial_analysis;
 pub mod bootstrap;
 pub mod catalog;
 pub mod catalog_notice;

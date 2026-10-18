@@ -11,6 +11,48 @@ catalog publication whenever verified downloadable coverage is incomplete.
 No production catalog publication is part of this plan. Each increment must leave the
 workspace buildable and testable.
 
+## Implementation progress
+
+- Task 1: complete; parser restored on the continuation branch because its original commit
+  was not included in the merge to main.
+- Tasks 2-3: complete; schema-v4 reader, pinned advisory manifests, legacy compatibility,
+  and shared activation preflight verified with full workspace tests, build, strict Clippy,
+  formatting, and native-retirement.
+- Task 4: complete; exact publisher mappings and deterministic artifact identities verified
+  with ambiguity, duplicate-row, conflicting-size and boundary tests, full workspace tests,
+  build, strict Clippy, formatting and native-retirement.
+- Task 5: complete; bounded publisher resolution with explicit export selection, pinned
+  config facts, license/size consistency checks, standard shard completeness, and typed failures.
+  Six core and eleven runtime regression tests cover pure evidence and injected transport behavior,
+  including verified weights whose publisher lists no configuration.
+  Three shared transport regressions also prove full responses cannot truncate at the exact cap
+  or over-allocate on an oversized chunk; bounded range reads retain their existing behavior.
+  Final full workspace tests, build, strict Clippy, formatting and native-retirement passed.
+- Task 6: complete; deterministic artifact coverage, bounded recorded/live collection and
+  `catalog-aa-coverage` with atomic combined inventory/report snapshots and read-only `--check`.
+  Seven new core, three runtime and seven CLI tests cover counts, identity matching, unresolved
+  and ambiguous coverage, deterministic replay, path safety and preservation on source errors.
+  Full workspace tests, build, strict Clippy, formatting, native-retirement and command-help
+  verification passed. No live source requests or model downloads were made during tests.
+- Task 7 staging: complete; the user approved explicit unknown advisory facts and separately
+  tracking production-import blockers. Pure immutable-artifact admission, runtime collection,
+  `--admit` candidate snapshots and read-only `--admit --check` are implemented. Existing runnable
+  artifacts and catalog IDs are preserved; legacy migrations require verified pins.
+  Twelve new tests cover unknown facts, deterministic aliases, reuse, conflicting evidence,
+  collision handling, partial inventory rejection and end-to-end staged admission.
+  Full workspace tests, build, strict Clippy, formatting and native-retirement passed.
+- Tasks 8-11: pending. No production Artificial Analysis models have been imported yet.
+- Rollout detail: production writers and bundled data stay on v3 until admission and
+  presentation are ready. The v4 reader and activation safety ship together.
+- Actual regression targets for tasks 2-3: core `catalog_availability`, runtime
+  `activation_plan` and `catalog_updates`, CLI `public_cli`, and GUI library activation tests.
+  The activation boundary is in runtime `application.rs`, not low-level `lifecycle.rs`.
+- Task 4 uses the separate core `artificial_analysis_identity` test target and the existing
+  synthetic inventory fixture. Task 5 uses `artificial_analysis_publisher` targets in both core
+  and runtime. Reviewed official-publisher associations and complete export selections remain
+  required collection inputs; metadata resolution is not automated verification of ownership.
+  Admission must still resolve parameter/attention facts and backend compatibility.
+
 ## Architecture Decisions
 
 - Artificial Analysis supplies inventory membership and Open Weights classification only.
@@ -171,7 +213,7 @@ sourced model facts.
 
 **Verification:**
 
-- `cargo test --locked -p rigspark-runtime --test artificial_analysis_coverage publisher`
+- `cargo test --locked -p rigspark-core -p rigspark-runtime --test artificial_analysis_publisher`
 
 **Dependencies:** Tasks 1 and 4
 
@@ -220,6 +262,9 @@ writes.
 - No live network is used by tests.
 - `cargo test --locked -p rigspark-core --test artificial_analysis_coverage`
 - `cargo test --locked -p rigspark-runtime --test artificial_analysis_coverage`
+- Task 6 stores inventory, publisher evidence and report in one atomic snapshot instead of
+  independently replacing two files. Reviewed publisher/export selections remain explicit
+  external inputs; production selections and catalog admission are task 7.
 
 ## Phase 3: Catalog Integration
 
@@ -251,6 +296,23 @@ honest unknowns.
 - `crates/rigspark-core/data/models.json`
 
 **Estimated scope:** Medium
+
+### Production-import follow-ups (separate from completed task-7 staging)
+
+The user chose to complete staged admission and track these blockers separately:
+
+1. **Complete public inventory:** the live page now exposes 31 initial/default rows and a
+   deferred manifest. The parser rejects that partial source. Review an anonymous complete
+   source before adapting the collector; no authentication or premium bypass.
+2. **Legacy migration pins:** verify official artifacts for six bundled Kimi entries lacking
+   backend pins. Never fabricate pins, drop entries or silently switch their default backend.
+3. **Reviewed production selections and import:** after (1) and (2), populate exact official
+   publisher/export selections, run admission and coverage against the full inventory, and
+   coordinate rollout with tasks 8-10. Production publication remains outside this authorization.
+
+The public-source change was observed during task 7 on 2026-10-10. The observed 11 Open Weights
+rows are a partial initial list, not a complete coverage result. A subsequent live check verified
+that the collector now rejects this response explicitly.
 
 ### Task 8: Present availability in CLI and TUI
 

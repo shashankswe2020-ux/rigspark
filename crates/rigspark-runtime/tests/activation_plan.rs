@@ -88,6 +88,28 @@ fn bitnet_is_isolated_and_context_is_bounded_even_with_bypass() {
     }
 }
 
+#[test]
+fn bitnet_refuses_unknown_context_instead_of_defaulting_even_with_bypass() {
+    let mut model = catalog()
+        .models
+        .into_iter()
+        .find(|model| model.id == "bitnet-b1.58:2b")
+        .unwrap();
+    model.context_length = None;
+    for context in [None, Some(4096)] {
+        assert!(
+            error(plan_quantization(
+                &model,
+                None,
+                "bitnet",
+                &roomy(),
+                options(true, context)
+            ))
+            .contains("BitNet requires a known model context limit")
+        );
+    }
+}
+
 fn options(bypass: bool, context: Option<u32>) -> PlanOptions {
     PlanOptions {
         simple_switch: false,
@@ -99,6 +121,89 @@ fn options(bypass: bool, context: Option<u32>) -> PlanOptions {
 
 fn error(result: Result<impl std::fmt::Debug, rigspark_runtime::adapters::BackendError>) -> String {
     result.unwrap_err().0
+}
+
+#[test]
+fn advisory_only_is_never_auto_selected_or_activated_even_with_bypass() {
+    use rigspark_core::catalog::{AdvisoryReason, Availability};
+    let mut model = universal();
+    model.availability = Some(Availability::AdvisoryOnly {
+        reason: AdvisoryReason::BackendFormatUnsupported,
+    });
+    assert!(auto_backend_order(&model, &roomy()).is_empty());
+    for backend in ["ollama", "llamacpp", "mlx", "lmstudio"] {
+        assert!(
+            error(check_backend(&model, backend, &roomy(), true)).contains("not yet installable")
+        );
+        for bypass in [false, true] {
+            assert!(
+                error(plan_quantization(
+                    &model,
+                    None,
+                    backend,
+                    &roomy(),
+                    options(bypass, None)
+                ))
+                .contains("not yet installable")
+            );
+        }
+    }
+}
+
+#[tokio::test]
+async fn advisory_activation_fails_before_state_access_or_installed_fallback() {
+    use rigspark_core::catalog::{AdvisoryReason, Availability};
+    use rigspark_runtime::{
+        application::{LifecycleOptions, run_native_with_config},
+        state::Config,
+    };
+    let temp = tempfile::tempdir().unwrap();
+    let home = temp.path().join("uncreated-home");
+    let mut config = Config::from_home(&home).unwrap();
+    // If preflight reads state first, this invalid state file produces a different error.
+    config.state = temp.path().join("invalid-state.json");
+    std::fs::write(&config.state, "not a state file").unwrap();
+    let mut model = universal();
+    model.availability = Some(Availability::AdvisoryOnly {
+        reason: AdvisoryReason::BackendFormatUnsupported,
+    });
+    let source_alias = model.source.ollama.clone().unwrap();
+    model.id = "advisory:example".into();
+    let mut catalog = catalog();
+    catalog.models = vec![model];
+    for command in ["up", "switch"] {
+        for query in ["advisory:example", source_alias.as_str()] {
+            for installed in [false, true] {
+                let options = LifecycleOptions {
+                    command: command.into(),
+                    model: Some(query.into()),
+                    backend: None,
+                    port: None,
+                    context: None,
+                    installed,
+                    bypass: installed,
+                    cache: Default::default(),
+                };
+                let result = run_native_with_config(
+                    &options,
+                    &catalog,
+                    None,
+                    &tokio_util::sync::CancellationToken::new(),
+                    config.clone(),
+                )
+                .await;
+                assert!(
+                    error(result).contains("not yet installable"),
+                    "{command} {query}"
+                );
+                assert!(!home.exists());
+                assert_eq!(
+                    std::fs::read_to_string(&config.state).unwrap(),
+                    "not a state file"
+                );
+            }
+        }
+    }
 }
 
 #[test]
@@ -350,7 +455,9 @@ fn a_quantized_kv_cache_fits_a_long_context_where_f16_does_not() {
         .find(|model| {
             model.source.ollama.is_some()
                 && model.kv_bytes_per_token.is_some()
-                && model.context_length >= 32768.0
+                && model
+                    .context_length
+                    .is_some_and(|context| context >= 32768.0)
         })
         .unwrap();
     let fits = |kv_cache, ram: f64| {

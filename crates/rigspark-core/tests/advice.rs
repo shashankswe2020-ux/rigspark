@@ -31,7 +31,7 @@ fn scores_hardware_and_preserves_unknown_backend_evidence() {
             model,
             &hardware,
             &perf,
-            Some(model.context_length + 1.0),
+            Some(model.context_length.unwrap() + 1.0),
             "ollama"
         )
         .unwrap()["reason"],

@@ -66,6 +66,11 @@ path = "src/catalog_coverage.rs"
 required-features = ["maintainer-tools"]
 
 [[bin]]
+name = "llmup-catalog-aa-coverage"
+path = "src/catalog_aa_coverage.rs"
+required-features = ["maintainer-tools"]
+
+[[bin]]
 name = "llmup-catalog-notice"
 path = "src/catalog_notice.rs"
 required-features = ["maintainer-tools"]

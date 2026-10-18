@@ -23,7 +23,7 @@ fn official_bitnet_is_pinned_and_survives_bootstrap() {
     let catalog = Catalog::parse(rigspark_core::MODELS_JSON).unwrap();
     let model = resolve(&catalog, "bitnet-b1.58:2b").unwrap().model;
     assert_eq!(model.params, "2.4B");
-    assert_eq!(model.context_length, 4096.0);
+    assert_eq!(model.context_length, Some(4096.0));
     assert_eq!(model.license, "mit");
     assert_eq!(model.release_date.as_deref(), Some("2025-04-14"));
     assert_eq!(model.capabilities, ["chat"]);

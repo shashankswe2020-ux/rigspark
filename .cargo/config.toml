@@ -11,6 +11,7 @@ catalog-site = "run --quiet --locked -p rigspark-cli --bin llmup-catalog-site --
 generation-admit = "run --quiet --locked -p rigspark-cli --bin llmup-generation-admit --"
 generation-enrich = "run --quiet --locked -p rigspark-cli --bin llmup-generation-enrich --"
 catalog-coverage = "run --quiet --locked -p rigspark-cli --bin llmup-catalog-coverage --"
+catalog-aa-coverage = "run --quiet --locked -p rigspark-cli --bin llmup-catalog-aa-coverage --"
 catalog-notice = "run --quiet --locked -p rigspark-cli --bin llmup-catalog-notice --"
 catalog-sign = "run --quiet --locked -p rigspark-cli --bin llmup-catalog-sign --"
 catalog-quality = "run --quiet --locked -p rigspark-cli --bin llmup-catalog-quality --"

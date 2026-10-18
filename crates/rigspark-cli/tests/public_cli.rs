@@ -57,6 +57,50 @@ fn assert_success(output: &Output) {
     assert!(!output.stdout.contains(&0x1b));
 }
 
+#[test]
+fn advisory_catalog_activation_fails_without_creating_runtime_state() {
+    let directory = tempfile::tempdir().unwrap();
+    let mut catalog: Value = serde_json::from_str(rigspark_core::MODELS_JSON).unwrap();
+    let model = catalog["models"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|model| model.get("provenance").is_none())
+        .unwrap()
+        .clone();
+    catalog["schemaVersion"] = json!(4);
+    catalog["models"] = json!([model]);
+    catalog["models"][0]["id"] = json!("advisory:example");
+    catalog["models"][0]["availability"] =
+        json!({"status":"advisory-only","reason":"backend-format-unsupported"});
+    catalog["models"][0]["source"] = json!({"weights":{
+        "repo":"publisher/model","revision":"a".repeat(40),
+        "files":[{"file":"model.safetensors","bytes":1000,"sha256":"b".repeat(64)}]
+    }});
+    catalog["models"][0]["quantizations"] =
+        json!([{"name":"BF16","diskBytes":1000,"minRamBytes":1150,"minVramBytes":1150}]);
+    let path = directory.path().join("catalog.json");
+    std::fs::write(&path, catalog.to_string()).unwrap();
+    for command in ["up", "switch"] {
+        for extra in [vec![], vec!["--bypass"], vec!["--bypass", "--installed"]] {
+            let mut args = vec![
+                command,
+                "advisory:example",
+                "--catalog-path",
+                path.to_str().unwrap(),
+            ];
+            args.extend(extra);
+            let output = invoke_at(&args, directory.path());
+            assert!(!output.status.success());
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            assert!(
+                stderr.contains("not yet installable"),
+                "{command}: {stderr}"
+            );
+        }
+    }
+}
+
 fn assert_json(actual: &Value, expected: &Value) {
     match (actual, expected) {
         (Value::Number(actual), Value::Number(expected)) => {
