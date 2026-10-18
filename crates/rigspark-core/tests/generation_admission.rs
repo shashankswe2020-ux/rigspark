@@ -15,6 +15,57 @@ fn model(repo: &str) -> HfModel {
     HfModel::parse(&models()[repo].to_string()).unwrap()
 }
 
+#[test]
+fn ming_recipe_is_verified_and_pinned_to_the_exact_int8_pairing() {
+    use rigspark_core::generation_admission::{RECIPES, recipe};
+    let candidate =
+        GenerationCatalog::parse(include_str!("../fixtures/ming-design-candidate.json")).unwrap();
+    let entry = candidate.resolve("image").unwrap();
+    let upstream = model("Comfy-Org/Ming-Image");
+    let planned = RECIPES
+        .iter()
+        .find(|recipe| recipe.workflow == Workflow::MingDesign)
+        .unwrap();
+    assert!(planned.verified);
+    assert_eq!(
+        recipe("Comfy-Org/Ming-Image").unwrap().workflow,
+        Workflow::MingDesign
+    );
+    assert_eq!(
+        planned.diffusion,
+        &["ming_image_0.1_design_int8_convrot.safetensors"]
+    );
+    assert_eq!(entry.workflow, Some(planned.workflow));
+    assert_eq!(entry.workflow_source.as_deref(), Some(planned.source));
+    assert_eq!(entry.total_bytes(), 25_936_727_174);
+    for file in &entry.files {
+        assert_eq!(file.repo, upstream.id);
+        assert_eq!(file.revision, upstream.sha);
+        let sibling = upstream
+            .siblings
+            .iter()
+            .find(|sibling| sibling.rfilename == file.file)
+            .unwrap();
+        let lfs = sibling.lfs.as_ref().unwrap();
+        assert_eq!(file.sha256, lfs.sha256);
+        assert_eq!(file.bytes, lfs.size);
+    }
+    assert!(
+        entry
+            .file(FileRole::TextEncoder)
+            .unwrap()
+            .file
+            .ends_with(planned.text_encoder)
+    );
+    assert!(
+        entry
+            .file(FileRole::Vae)
+            .unwrap()
+            .file
+            .ends_with(planned.vae)
+    );
+}
+
 /// A safetensors header for tensors with the given shapes.
 fn header(shapes: &[&[u64]]) -> Vec<u8> {
     let mut object = serde_json::Map::new();
@@ -193,6 +244,25 @@ fn entries_for(repo: &str) -> Vec<rigspark_core::generation::GenerationModel> {
 }
 
 #[test]
+fn ming_refresh_keeps_exact_verified_companions_and_other_variants_fit_only() {
+    let entries = entries_for("Comfy-Org/Ming-Image");
+    let candidate =
+        GenerationCatalog::parse(include_str!("../fixtures/ming-design-candidate.json")).unwrap();
+    let expected = candidate.resolve("image").unwrap();
+    let runnable: Vec<_> = entries
+        .iter()
+        .filter(|entry| entry.workflow.is_some())
+        .collect();
+    assert_eq!(runnable.len(), 1);
+    assert_eq!(runnable[0].id, expected.id);
+    assert_eq!(runnable[0].workflow, expected.workflow);
+    assert_eq!(
+        serde_json::to_value(&runnable[0].files).unwrap(),
+        serde_json::to_value(&expected.files).unwrap()
+    );
+}
+
+#[test]
 fn official_recipes_promote_exactly_the_documented_files_to_runnable() {
     let wan = entries_for("Comfy-Org/Wan_2.2_ComfyUI_Repackaged");
     let ti2v = wan
@@ -277,5 +347,5 @@ fn official_recipes_promote_exactly_the_documented_files_to_runnable() {
             .unwrap(),
         Workflow::Wan22Ti2v
     );
-    assert!(rigspark_core::generation_admission::recipe("Comfy-Org/Ming-Image").is_none());
+    assert!(rigspark_core::generation_admission::recipe("Comfy-Org/Ming-Image").is_some());
 }

@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+## 3.0.3 (2026-10-16)
+
+### Generation
+
+- Enable Ming Image 0.1 Design INT8 for UI/UX mockups in the CLI and browser GUI.
+  The verified pairing uses the 19.51 GB INT8 text encoder (25.94 GB total weights),
+  not the smaller W4A8 fit-only estimate. Other Ming variants remain fit-only.
+  Real generation and inline GUI preview passed on a 36 GiB Apple Silicon Mac with
+  ComfyUI 0.38.0. CUDA and peak inference memory remain uncertified; generated
+  lettering may be garbled. The default image model is unchanged.
+- Accept native ComfyUI single-choice COMBO capability schemas while rejecting
+  malformed options and unsupported multiselect inputs before downloading weights.
+- Retry failed download-resume requests within the existing bounded retry budget,
+  preserving exact range, commit, size, and final SHA-256 verification.
+- Website and README show a real locally generated Ming UI/UX example.
+
 ### Fixes
 
 - GUI: on narrow screens a long conversation could make the whole page

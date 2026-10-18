@@ -177,3 +177,20 @@ fn unreachable_comfyui_downloads_nothing() {
         0
     );
 }
+
+#[test]
+fn unverified_ming_variant_is_rejected_offline_even_with_bypass() {
+    let directory = tempfile::tempdir().unwrap();
+    let output = invoke(&[
+        "generate",
+        "ming-image:ming_image_0.1_design_bf16",
+        "--prompt",
+        "a transparent icon",
+        "--bypass",
+        "--comfyui-dir",
+        directory.path().to_str().unwrap(),
+    ]);
+    assert_eq!(output.status.code(), Some(1));
+    assert!(stderr(&output).contains("fit-only"), "{}", stderr(&output));
+    assert!(!stderr(&output).contains("not reachable"));
+}

@@ -20,6 +20,12 @@ use tokio_util::sync::CancellationToken;
 type Mutation = dyn Fn(&mut GenerationRequest);
 const ENDPOINT: &str = "http://127.0.0.1:8188";
 const PNG: &[u8] = b"\x89PNG\r\n\x1a\nimage-bytes";
+// Valid 1x1 RGBA PNG, red with alpha 64; generated with standard PNG chunks and zlib.
+const RGBA_PNG: &[u8] = &[
+    137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82, 0, 0, 0, 1, 0, 0, 0, 1, 8, 6, 0,
+    0, 0, 31, 21, 196, 137, 0, 0, 0, 13, 73, 68, 65, 84, 120, 156, 99, 248, 207, 192, 224, 0, 0, 4,
+    65, 1, 64, 142, 253, 63, 18, 0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130,
+];
 const WEBP: &[u8] = b"RIFF\x10\0\0\0WEBPVP8 video";
 
 #[derive(Debug, Clone)]
@@ -114,12 +120,68 @@ impl DownloadTransport for Hub {
 fn fixture(kind: &str) -> (GenerationModel, Hub) {
     fixture_query(kind)
 }
+
+#[test]
+fn ming_design_graph_uses_direct_conditioning_and_local_rgba_capable_png_output() {
+    use rigspark_core::generation::Workflow;
+    let (mut model, _) = fixture("video");
+    model.workflow = Some(Workflow::MingDesign);
+    model.kind = GenerationKind::Image;
+    let names = HashMap::from([
+        (FileRole::Diffusion, "design-int8.safetensors".into()),
+        (FileRole::TextEncoder, "ling-int8.safetensors".into()),
+        (FileRole::Vae, "ming-vae.safetensors".into()),
+    ]);
+    let graph = workflow(&model, &names, "transparent red fox", 42, &[]).unwrap();
+    ensure_local_only(&graph).unwrap();
+    assert_eq!(graph["6"]["inputs"]["text"], "transparent red fox");
+    assert_eq!(graph["11"]["inputs"]["type"], "qwen_image");
+    assert_eq!(
+        graph["11"]["inputs"]["clip_name"],
+        names[&FileRole::TextEncoder]
+    );
+    assert_eq!(
+        graph["12"]["inputs"]["unet_name"],
+        names[&FileRole::Diffusion]
+    );
+    assert_eq!(graph["10"]["inputs"]["vae_name"], names[&FileRole::Vae]);
+    assert_eq!(graph["25"]["inputs"]["noise_seed"], 42);
+    assert_eq!(graph["16"]["inputs"]["sampler_name"], "euler");
+    assert_eq!(graph["17"]["inputs"]["steps"], 12);
+    assert_eq!(graph["17"]["inputs"]["scheduler"], "simple");
+    assert_eq!(graph["17"]["inputs"]["model"], json!(["26", 0]));
+    assert_eq!(graph["22"]["inputs"]["model"], json!(["26", 0]));
+    assert_eq!(graph["26"]["class_type"], "ModelSamplingFlux");
+    for node in ["5", "26"] {
+        assert_eq!(graph[node]["inputs"]["width"], 1024);
+        assert_eq!(graph[node]["inputs"]["height"], 1024);
+    }
+    assert_eq!(graph["8"]["inputs"]["samples"], json!(["13", 0]));
+    assert_eq!(graph["9"]["class_type"], "SaveImage");
+    assert_eq!(graph["9"]["inputs"]["images"], json!(["8", 0]));
+    assert_eq!(graph.as_object().unwrap().len(), 13);
+    assert!(!graph.to_string().contains("TextGenerate"));
+    assert!(workflow(&model, &HashMap::new(), "fox", 1, &[]).is_err());
+}
+
 fn fixture_query(query: &str) -> (GenerationModel, Hub) {
-    let mut model = GenerationCatalog::bundled()
+    let model = GenerationCatalog::bundled()
         .unwrap()
         .resolve(query)
         .unwrap()
         .clone();
+    tiny_weights(model)
+}
+
+fn ming_fixture() -> (GenerationModel, Hub) {
+    let catalog = GenerationCatalog::parse(include_str!(
+        "../../rigspark-core/fixtures/ming-design-candidate.json"
+    ))
+    .unwrap();
+    tiny_weights(catalog.resolve("image").unwrap().clone())
+}
+
+fn tiny_weights(mut model: GenerationModel) -> (GenerationModel, Hub) {
     let mut files = HashMap::new();
     for file in &mut model.files {
         let content = format!("weights for {}", file.file).into_bytes();
@@ -204,6 +266,135 @@ fn request<'a>(
         comfyui_dir: comfy,
         output,
         output_dir,
+    }
+}
+
+#[tokio::test]
+async fn ming_missing_native_capabilities_fails_before_any_weight_download() {
+    let (model, hub) = ming_fixture();
+    let http = healthy(&model, false, completed("9", "ming.png"), PNG);
+    let directory = comfy_dir();
+    let out = tempfile::tempdir().unwrap();
+    let result = client(&http, &hub)
+        .generate(
+            &request(&model, directory.path(), out.path(), None),
+            &CancellationToken::new(),
+        )
+        .await;
+    assert!(result.is_err(), "old ComfyUI must fail preflight");
+    assert_eq!(hub.downloads.load(Ordering::SeqCst), 0);
+    assert!(http.submitted().is_none());
+}
+
+fn ming_server(model: &GenerationModel, schemas: Value, media: &'static [u8]) -> Comfy {
+    let base = healthy(model, false, completed("9", "ming.png"), media);
+    Comfy::new(move |call, polls| {
+        if let Some(class) = call.path.strip_prefix("/object_info/") {
+            return json_body(json!({class: schemas[class]}));
+        }
+        (base.handler)(call, polls)
+    })
+}
+
+#[tokio::test]
+async fn ming_checks_capabilities_then_installs_and_saves_unchanged_output() {
+    let (model, hub) = ming_fixture();
+    let schemas = serde_json::from_str(include_str!("fixtures/ming-object-info.json")).unwrap();
+    let http = ming_server(&model, schemas, RGBA_PNG);
+    let directory = comfy_dir();
+    let out = tempfile::tempdir().unwrap();
+    let output = out.path().join("ming.png");
+    client(&http, &hub)
+        .generate(
+            &request(&model, directory.path(), out.path(), Some(&output)),
+            &CancellationToken::new(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(std::fs::read(output).unwrap(), RGBA_PNG);
+    assert_eq!(hub.downloads.load(Ordering::SeqCst), 3);
+    assert_eq!(
+        http.submitted().unwrap()["11"]["inputs"]["type"],
+        "qwen_image"
+    );
+    assert_eq!(
+        http.calls()
+            .iter()
+            .filter(|call| call.path.starts_with("/object_info/"))
+            .count(),
+        14
+    );
+}
+
+#[tokio::test]
+async fn ming_incompatible_contracts_fail_without_downloads_or_submission() {
+    let mutations: &[fn(&mut Value)] = &[
+        |v| v["TextEncodeMingImageEdit"] = Value::Null,
+        |v| v["CLIPLoader"]["input"]["required"]["type"] = json!([["flux"]]),
+        |v| v["UNETLoader"]["input"]["required"]["weight_dtype"] = json!([["fp8"]]),
+        |v| v["KSamplerSelect"]["input"]["required"]["sampler_name"] = json!([["heun"]]),
+        |v| v["ModelSamplingFlux"]["input"]["required"]["width"] = json!(["INT", {"max": 512}]),
+        |v| v["BasicScheduler"]["input"]["required"]["steps"] = json!(["INT", {"min": "wrong"}]),
+        |v| v["BasicGuider"]["input"]["required"]["new_required_input"] = json!(["STRING"]),
+        |v| v["CLIPTextEncode"]["output"] = json!(["IMAGE"]),
+        |v| v["SaveImage"]["output_node"] = json!(false),
+        |v| v["SaveImage"]["api_node"] = json!(true),
+        |v| v["UNETLoader"]["python_module"] = json!("custom_nodes.untrusted"),
+        |v| v["VAELoader"]["input"]["required"]["vae_name"] = json!(["STRING"]),
+    ];
+    for mutate in mutations {
+        let (model, hub) = ming_fixture();
+        let mut schemas =
+            serde_json::from_str(include_str!("fixtures/ming-object-info.json")).unwrap();
+        mutate(&mut schemas);
+        let http = ming_server(&model, schemas, PNG);
+        let directory = comfy_dir();
+        let out = tempfile::tempdir().unwrap();
+        let error = client(&http, &hub)
+            .generate(
+                &request(&model, directory.path(), out.path(), None),
+                &CancellationToken::new(),
+            )
+            .await
+            .unwrap_err();
+        assert!(matches!(error, GenerationError::Incompatible(_)), "{error}");
+        assert!(error.to_string().contains("Update ComfyUI"));
+        assert_eq!(hub.downloads.load(Ordering::SeqCst), 0);
+        assert!(http.submitted().is_none());
+    }
+}
+
+#[tokio::test]
+async fn ming_preflight_bounds_responses_and_preserves_cancellation() {
+    for failure in ["malformed", "oversized", "cancelled"] {
+        let (model, hub) = ming_fixture();
+        let http = Comfy::new(move |call, _| {
+            if call.path == "/system_stats" {
+                return json_body(json!({"system": {}}));
+            }
+            assert!(call.path.starts_with("/object_info/"));
+            match failure {
+                "malformed" => Ok((200, b"not-json".to_vec())),
+                "oversized" => Ok((200, vec![b' '; 1024 * 1024 + 1])),
+                _ => Err(HttpError::Cancelled),
+            }
+        });
+        let directory = comfy_dir();
+        let out = tempfile::tempdir().unwrap();
+        let error = client(&http, &hub)
+            .generate(
+                &request(&model, directory.path(), out.path(), None),
+                &CancellationToken::new(),
+            )
+            .await
+            .unwrap_err();
+        if failure == "cancelled" {
+            assert!(matches!(error, GenerationError::Cancelled), "{error}");
+        } else {
+            assert!(matches!(error, GenerationError::Incompatible(_)), "{error}");
+        }
+        assert_eq!(hub.downloads.load(Ordering::SeqCst), 0);
+        assert!(http.submitted().is_none());
     }
 }
 

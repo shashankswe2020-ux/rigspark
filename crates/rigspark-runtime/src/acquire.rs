@@ -779,15 +779,22 @@ impl Acquisition {
                 let count = match response.body.read(&mut buffer).await {
                     Ok(count) => count,
                     Err(error) => {
-                        resumes += 1;
-                        if resumes > MAX_RESUMES {
-                            return Err(error.to_string());
-                        }
-                        tokio::time::sleep(Duration::from_secs(u64::from(resumes.min(5)))).await;
-                        response = transport
-                            .get_from(url.as_str(), total)
-                            .await
-                            .map_err(|resume| format!("{error}; {resume}"))?;
+                        // Transport failures on the resume request itself share the bounded
+                        // budget, so one blip after a dropped body does not discard the download.
+                        let mut failure = error.to_string();
+                        let resumed = loop {
+                            resumes += 1;
+                            if resumes > MAX_RESUMES {
+                                return Err(failure);
+                            }
+                            tokio::time::sleep(Duration::from_secs(u64::from(resumes.min(5))))
+                                .await;
+                            match transport.get_from(url.as_str(), total).await {
+                                Ok(resumed) => break resumed,
+                                Err(resume) => failure = format!("{error}; {resume}"),
+                            }
+                        };
+                        response = resumed;
                         if response.status != 206
                             || response.commit.as_ref().is_none_or(|commit| {
                                 !commit.eq_ignore_ascii_case(&artifact.revision)

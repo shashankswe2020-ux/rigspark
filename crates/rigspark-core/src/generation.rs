@@ -48,11 +48,15 @@ pub enum Workflow {
     Wan22Ti2v,
     /// Qwen-Image text-to-image (https://comfyanonymous.github.io/ComfyUI_examples/qwen_image/).
     QwenImage,
+    /// Candidate only; bundled entries stay fit-only until live generation is verified.
+    MingDesign,
 }
 impl Workflow {
     pub fn kind(self) -> GenerationKind {
         match self {
-            Self::FluxCheckpoint | Self::FluxSplit | Self::QwenImage => GenerationKind::Image,
+            Self::FluxCheckpoint | Self::FluxSplit | Self::QwenImage | Self::MingDesign => {
+                GenerationKind::Image
+            }
             Self::WanT2v | Self::Wan22Ti2v => GenerationKind::Video,
         }
     }
@@ -66,7 +70,7 @@ impl Workflow {
                 FileRole::Clip,
                 FileRole::Vae,
             ],
-            Self::WanT2v | Self::Wan22Ti2v | Self::QwenImage => {
+            Self::WanT2v | Self::Wan22Ti2v | Self::QwenImage | Self::MingDesign => {
                 &[FileRole::Diffusion, FileRole::TextEncoder, FileRole::Vae]
             }
         }

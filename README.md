@@ -206,8 +206,20 @@ stays `unknown` when no defensible measurement is available.
 In `rigspark gui`, switch the composer from **Text** to **Image** or **Video**.
 Generated media renders inline and is never sent to the language model.
 
+For UI/UX mockups, select **ming-image:ming_image_0.1_design_int8_convrot**
+under **Models → Image → Use in Chat**, then generate in Image mode. This exact
+25.94 GB weight pairing was tested with ComfyUI 0.38.0 on a 36 GiB Apple Silicon
+Mac. Other Ming variants remain fit-only; NVIDIA/CUDA and peak inference memory
+are not certified. Generated lettering can be garbled.
+
+```bash
+rigspark generate ming-image:ming_image_0.1_design_int8_convrot \
+  --prompt "A plant-care app onboarding screen, soft green palette, flat UI design" \
+  --comfyui-dir ~/ComfyUI
+```
+
 <p align="center">
-  <img src="site/brand/screens/chat-image-generation.webp" alt="A locally generated image rendered inline in RigSpark chat" width="720">
+  <img src="site/brand/screens/ming-design-gui.png" alt="A real Ming Design plant-care app mockup generated inline in RigSpark chat using local ComfyUI" width="720">
 </p>
 
 [Image and video generation specification →](docs/specs/image-video-generation.md)
