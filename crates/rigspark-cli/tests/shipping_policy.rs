@@ -84,6 +84,28 @@ fn ci_runs_every_native_gate_read_only() {
 }
 
 #[test]
+fn quality_gates_cover_stacked_pull_requests() {
+    for path in [
+        ".github/workflows/ci.yml",
+        ".github/workflows/rust-merge-readiness.yml",
+    ] {
+        let workflow = read(path);
+        let pull_request = workflow
+            .split_once("  pull_request:\n")
+            .expect("quality gates must run on pull requests")
+            .1
+            .lines()
+            .take_while(|line| line.is_empty() || line.starts_with("    "))
+            .collect::<Vec<_>>()
+            .join("\n");
+        assert!(
+            !pull_request.contains("branches:") && !pull_request.contains("branches-ignore:"),
+            "{path}: base-branch filters leave stacked pull requests without quality gates"
+        );
+    }
+}
+
+#[test]
 fn write_capable_workflows_never_push_to_main() {
     let catalog = read(".github/workflows/catalog-refresh.yml");
     assert!(catalog.contains("contents: write\n  pull-requests: write\n  issues: write\n"));
@@ -118,7 +140,7 @@ fn catalog_requests_are_validated_before_a_data_only_draft_pr() {
     assert!(!workflow.contains("gh issue close"));
     assert!(
         read(".github/workflows/ci.yml")
-            .contains("types: [opened, synchronize, reopened, ready_for_review]")
+            .contains("types: [opened, synchronize, reopened, ready_for_review, edited]")
     );
     for required in [
         "types: [opened, reopened, labeled]",
