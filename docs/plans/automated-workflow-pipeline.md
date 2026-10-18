@@ -15,6 +15,9 @@ Date: 2026-10-16
 
 Each phase is one PR that leaves `main` releasable. Every phase must pass fmt,
 Clippy (`-D warnings`), full tests, build and `cargo native-retirement`.
+CI and native merge-readiness checks run for every PR base, including stacked
+feature branches. Required CI also reruns when a PR is retargeted. Land the stack
+in dependency order, with fresh checks and independent approval for each phase.
 
 | Phase | PR | Outcome | Depends on |
 |---|---|---|---|
