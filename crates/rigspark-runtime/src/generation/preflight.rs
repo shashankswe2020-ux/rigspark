@@ -1,10 +1,10 @@
 use super::{ComfyUi, GenerationError, ensure_local_only};
+use rigspark_core::workflow::Marker;
 use serde::Deserialize;
 use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet};
 use tokio_util::sync::CancellationToken;
 
-const MING_MARKER: &str = "TextEncodeMingImageEdit";
 const MAX_NODE_BYTES: usize = 1024 * 1024;
 
 #[cfg(test)]
@@ -75,7 +75,7 @@ struct Limits {
 
 fn incompatible(detail: impl Into<String>) -> GenerationError {
     GenerationError::Incompatible(format!(
-        "Ming Design needs compatible native ComfyUI nodes: {}. \
+        "This workflow needs compatible native ComfyUI nodes: {}. \
          Update ComfyUI and retry; no weights were downloaded.",
         detail.into()
     ))
@@ -157,17 +157,19 @@ fn accepts(
         })
 }
 
-pub(super) async fn ming(
+/// Verifies the running ComfyUI implements every node the graph needs, before downloads.
+pub(super) async fn check(
     client: &ComfyUi<'_>,
     endpoint: &str,
     graph: &Value,
+    markers: &[Marker],
     cancel: &CancellationToken,
 ) -> Result<(), GenerationError> {
     ensure_local_only(graph)?;
     let nodes = graph
         .as_object()
         .ok_or_else(|| incompatible("invalid graph"))?;
-    let mut classes = BTreeSet::from([MING_MARKER]);
+    let mut classes: BTreeSet<&str> = markers.iter().map(|marker| marker.class.as_str()).collect();
     for node in nodes.values() {
         let class = node["class_type"]
             .as_str()
@@ -203,11 +205,14 @@ pub(super) async fn ming(
         }
         schemas.insert(class.to_owned(), info);
     }
-    let marker = &schemas[MING_MARKER];
-    if marker.python_module != "comfy_extras.nodes_ming"
-        || marker.output.first().map(String::as_str) != Some("CONDITIONING")
-    {
-        return Err(incompatible("native Ming support is missing"));
+    for marker in markers {
+        let schema = &schemas[&marker.class];
+        if schema.python_module != marker.module || schema.output.first() != Some(&marker.output) {
+            return Err(incompatible(format!(
+                "native {} support is missing",
+                marker.class
+            )));
+        }
     }
     for node in nodes.values() {
         let class = node["class_type"]

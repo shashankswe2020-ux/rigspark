@@ -1,0 +1,2108 @@
+{
+  "flux-checkpoint": {
+    "cuda:0": {
+      "27": {
+        "class_type": "EmptySD3LatentImage",
+        "inputs": {
+          "batch_size": 1,
+          "height": 1024,
+          "width": 1024
+        }
+      },
+      "30": {
+        "class_type": "CheckpointLoaderSimple",
+        "inputs": {
+          "ckpt_name": "rigspark/comfyui/Org/Repo@rev/checkpoints.safetensors"
+        }
+      },
+      "31": {
+        "class_type": "KSampler",
+        "inputs": {
+          "cfg": 1.0,
+          "denoise": 1.0,
+          "latent_image": [
+            "27",
+            0
+          ],
+          "model": [
+            "30",
+            0
+          ],
+          "negative": [
+            "33",
+            0
+          ],
+          "positive": [
+            "6",
+            0
+          ],
+          "sampler_name": "euler",
+          "scheduler": "simple",
+          "seed": 0,
+          "steps": 4
+        }
+      },
+      "33": {
+        "class_type": "CLIPTextEncode",
+        "inputs": {
+          "clip": [
+            "30",
+            1
+          ],
+          "text": ""
+        }
+      },
+      "6": {
+        "class_type": "CLIPTextEncode",
+        "inputs": {
+          "clip": [
+            "30",
+            1
+          ],
+          "text": "a fox \"in\" snow\n"
+        }
+      },
+      "8": {
+        "class_type": "VAEDecode",
+        "inputs": {
+          "samples": [
+            "31",
+            0
+          ],
+          "vae": [
+            "30",
+            2
+          ]
+        }
+      },
+      "9": {
+        "class_type": "SaveImage",
+        "inputs": {
+          "filename_prefix": "rigspark",
+          "images": [
+            "8",
+            0
+          ]
+        }
+      }
+    },
+    "mps": {
+      "27": {
+        "class_type": "EmptySD3LatentImage",
+        "inputs": {
+          "batch_size": 1,
+          "height": 1024,
+          "width": 1024
+        }
+      },
+      "30": {
+        "class_type": "CheckpointLoaderSimple",
+        "inputs": {
+          "ckpt_name": "rigspark/comfyui/Org/Repo@rev/checkpoints.safetensors"
+        }
+      },
+      "31": {
+        "class_type": "KSampler",
+        "inputs": {
+          "cfg": 1.0,
+          "denoise": 1.0,
+          "latent_image": [
+            "27",
+            0
+          ],
+          "model": [
+            "30",
+            0
+          ],
+          "negative": [
+            "33",
+            0
+          ],
+          "positive": [
+            "6",
+            0
+          ],
+          "sampler_name": "euler",
+          "scheduler": "simple",
+          "seed": 0,
+          "steps": 4
+        }
+      },
+      "33": {
+        "class_type": "CLIPTextEncode",
+        "inputs": {
+          "clip": [
+            "30",
+            1
+          ],
+          "text": ""
+        }
+      },
+      "6": {
+        "class_type": "CLIPTextEncode",
+        "inputs": {
+          "clip": [
+            "30",
+            1
+          ],
+          "text": "a fox \"in\" snow\n"
+        }
+      },
+      "8": {
+        "class_type": "VAEDecode",
+        "inputs": {
+          "samples": [
+            "31",
+            0
+          ],
+          "vae": [
+            "30",
+            2
+          ]
+        }
+      },
+      "9": {
+        "class_type": "SaveImage",
+        "inputs": {
+          "filename_prefix": "rigspark",
+          "images": [
+            "8",
+            0
+          ]
+        }
+      }
+    },
+    "none": {
+      "27": {
+        "class_type": "EmptySD3LatentImage",
+        "inputs": {
+          "batch_size": 1,
+          "height": 1024,
+          "width": 1024
+        }
+      },
+      "30": {
+        "class_type": "CheckpointLoaderSimple",
+        "inputs": {
+          "ckpt_name": "rigspark/comfyui/Org/Repo@rev/checkpoints.safetensors"
+        }
+      },
+      "31": {
+        "class_type": "KSampler",
+        "inputs": {
+          "cfg": 1.0,
+          "denoise": 1.0,
+          "latent_image": [
+            "27",
+            0
+          ],
+          "model": [
+            "30",
+            0
+          ],
+          "negative": [
+            "33",
+            0
+          ],
+          "positive": [
+            "6",
+            0
+          ],
+          "sampler_name": "euler",
+          "scheduler": "simple",
+          "seed": 0,
+          "steps": 4
+        }
+      },
+      "33": {
+        "class_type": "CLIPTextEncode",
+        "inputs": {
+          "clip": [
+            "30",
+            1
+          ],
+          "text": ""
+        }
+      },
+      "6": {
+        "class_type": "CLIPTextEncode",
+        "inputs": {
+          "clip": [
+            "30",
+            1
+          ],
+          "text": "a fox \"in\" snow\n"
+        }
+      },
+      "8": {
+        "class_type": "VAEDecode",
+        "inputs": {
+          "samples": [
+            "31",
+            0
+          ],
+          "vae": [
+            "30",
+            2
+          ]
+        }
+      },
+      "9": {
+        "class_type": "SaveImage",
+        "inputs": {
+          "filename_prefix": "rigspark",
+          "images": [
+            "8",
+            0
+          ]
+        }
+      }
+    }
+  },
+  "flux-split": {
+    "cuda:0": {
+      "10": {
+        "class_type": "VAELoader",
+        "inputs": {
+          "vae_name": "rigspark/comfyui/Org/Repo@rev/vae.safetensors"
+        }
+      },
+      "11": {
+        "class_type": "DualCLIPLoader",
+        "inputs": {
+          "clip_name1": "rigspark/comfyui/Org/Repo@rev/text_encoders.safetensors",
+          "clip_name2": "rigspark/comfyui/Org/Repo@rev/text_encoders.safetensors",
+          "type": "flux"
+        }
+      },
+      "12": {
+        "class_type": "UNETLoader",
+        "inputs": {
+          "unet_name": "rigspark/comfyui/Org/Repo@rev/diffusion_models.safetensors",
+          "weight_dtype": "default"
+        }
+      },
+      "13": {
+        "class_type": "SamplerCustomAdvanced",
+        "inputs": {
+          "guider": [
+            "22",
+            0
+          ],
+          "latent_image": [
+            "5",
+            0
+          ],
+          "noise": [
+            "25",
+            0
+          ],
+          "sampler": [
+            "16",
+            0
+          ],
+          "sigmas": [
+            "17",
+            0
+          ]
+        }
+      },
+      "16": {
+        "class_type": "KSamplerSelect",
+        "inputs": {
+          "sampler_name": "euler"
+        }
+      },
+      "17": {
+        "class_type": "BasicScheduler",
+        "inputs": {
+          "denoise": 1.0,
+          "model": [
+            "12",
+            0
+          ],
+          "scheduler": "simple",
+          "steps": 4
+        }
+      },
+      "22": {
+        "class_type": "BasicGuider",
+        "inputs": {
+          "conditioning": [
+            "6",
+            0
+          ],
+          "model": [
+            "12",
+            0
+          ]
+        }
+      },
+      "25": {
+        "class_type": "RandomNoise",
+        "inputs": {
+          "noise_seed": 0
+        }
+      },
+      "5": {
+        "class_type": "EmptyLatentImage",
+        "inputs": {
+          "batch_size": 1,
+          "height": 1024,
+          "width": 1024
+        }
+      },
+      "6": {
+        "class_type": "CLIPTextEncode",
+        "inputs": {
+          "clip": [
+            "11",
+            0
+          ],
+          "text": "a fox \"in\" snow\n"
+        }
+      },
+      "8": {
+        "class_type": "VAEDecode",
+        "inputs": {
+          "samples": [
+            "13",
+            0
+          ],
+          "vae": [
+            "10",
+            0
+          ]
+        }
+      },
+      "9": {
+        "class_type": "SaveImage",
+        "inputs": {
+          "filename_prefix": "rigspark",
+          "images": [
+            "8",
+            0
+          ]
+        }
+      }
+    },
+    "mps": {
+      "10": {
+        "class_type": "VAELoader",
+        "inputs": {
+          "vae_name": "rigspark/comfyui/Org/Repo@rev/vae.safetensors"
+        }
+      },
+      "11": {
+        "class_type": "DualCLIPLoader",
+        "inputs": {
+          "clip_name1": "rigspark/comfyui/Org/Repo@rev/text_encoders.safetensors",
+          "clip_name2": "rigspark/comfyui/Org/Repo@rev/text_encoders.safetensors",
+          "type": "flux"
+        }
+      },
+      "12": {
+        "class_type": "UNETLoader",
+        "inputs": {
+          "unet_name": "rigspark/comfyui/Org/Repo@rev/diffusion_models.safetensors",
+          "weight_dtype": "default"
+        }
+      },
+      "13": {
+        "class_type": "SamplerCustomAdvanced",
+        "inputs": {
+          "guider": [
+            "22",
+            0
+          ],
+          "latent_image": [
+            "5",
+            0
+          ],
+          "noise": [
+            "25",
+            0
+          ],
+          "sampler": [
+            "16",
+            0
+          ],
+          "sigmas": [
+            "17",
+            0
+          ]
+        }
+      },
+      "16": {
+        "class_type": "KSamplerSelect",
+        "inputs": {
+          "sampler_name": "euler"
+        }
+      },
+      "17": {
+        "class_type": "BasicScheduler",
+        "inputs": {
+          "denoise": 1.0,
+          "model": [
+            "12",
+            0
+          ],
+          "scheduler": "simple",
+          "steps": 4
+        }
+      },
+      "22": {
+        "class_type": "BasicGuider",
+        "inputs": {
+          "conditioning": [
+            "6",
+            0
+          ],
+          "model": [
+            "12",
+            0
+          ]
+        }
+      },
+      "25": {
+        "class_type": "RandomNoise",
+        "inputs": {
+          "noise_seed": 0
+        }
+      },
+      "5": {
+        "class_type": "EmptyLatentImage",
+        "inputs": {
+          "batch_size": 1,
+          "height": 1024,
+          "width": 1024
+        }
+      },
+      "6": {
+        "class_type": "CLIPTextEncode",
+        "inputs": {
+          "clip": [
+            "11",
+            0
+          ],
+          "text": "a fox \"in\" snow\n"
+        }
+      },
+      "8": {
+        "class_type": "VAEDecode",
+        "inputs": {
+          "samples": [
+            "13",
+            0
+          ],
+          "vae": [
+            "10",
+            0
+          ]
+        }
+      },
+      "9": {
+        "class_type": "SaveImage",
+        "inputs": {
+          "filename_prefix": "rigspark",
+          "images": [
+            "8",
+            0
+          ]
+        }
+      }
+    },
+    "none": {
+      "10": {
+        "class_type": "VAELoader",
+        "inputs": {
+          "vae_name": "rigspark/comfyui/Org/Repo@rev/vae.safetensors"
+        }
+      },
+      "11": {
+        "class_type": "DualCLIPLoader",
+        "inputs": {
+          "clip_name1": "rigspark/comfyui/Org/Repo@rev/text_encoders.safetensors",
+          "clip_name2": "rigspark/comfyui/Org/Repo@rev/text_encoders.safetensors",
+          "type": "flux"
+        }
+      },
+      "12": {
+        "class_type": "UNETLoader",
+        "inputs": {
+          "unet_name": "rigspark/comfyui/Org/Repo@rev/diffusion_models.safetensors",
+          "weight_dtype": "default"
+        }
+      },
+      "13": {
+        "class_type": "SamplerCustomAdvanced",
+        "inputs": {
+          "guider": [
+            "22",
+            0
+          ],
+          "latent_image": [
+            "5",
+            0
+          ],
+          "noise": [
+            "25",
+            0
+          ],
+          "sampler": [
+            "16",
+            0
+          ],
+          "sigmas": [
+            "17",
+            0
+          ]
+        }
+      },
+      "16": {
+        "class_type": "KSamplerSelect",
+        "inputs": {
+          "sampler_name": "euler"
+        }
+      },
+      "17": {
+        "class_type": "BasicScheduler",
+        "inputs": {
+          "denoise": 1.0,
+          "model": [
+            "12",
+            0
+          ],
+          "scheduler": "simple",
+          "steps": 4
+        }
+      },
+      "22": {
+        "class_type": "BasicGuider",
+        "inputs": {
+          "conditioning": [
+            "6",
+            0
+          ],
+          "model": [
+            "12",
+            0
+          ]
+        }
+      },
+      "25": {
+        "class_type": "RandomNoise",
+        "inputs": {
+          "noise_seed": 0
+        }
+      },
+      "5": {
+        "class_type": "EmptyLatentImage",
+        "inputs": {
+          "batch_size": 1,
+          "height": 1024,
+          "width": 1024
+        }
+      },
+      "6": {
+        "class_type": "CLIPTextEncode",
+        "inputs": {
+          "clip": [
+            "11",
+            0
+          ],
+          "text": "a fox \"in\" snow\n"
+        }
+      },
+      "8": {
+        "class_type": "VAEDecode",
+        "inputs": {
+          "samples": [
+            "13",
+            0
+          ],
+          "vae": [
+            "10",
+            0
+          ]
+        }
+      },
+      "9": {
+        "class_type": "SaveImage",
+        "inputs": {
+          "filename_prefix": "rigspark",
+          "images": [
+            "8",
+            0
+          ]
+        }
+      }
+    }
+  },
+  "ming-design": {
+    "cuda:0": {
+      "10": {
+        "class_type": "VAELoader",
+        "inputs": {
+          "vae_name": "rigspark/comfyui/Org/Repo@rev/vae.safetensors"
+        }
+      },
+      "11": {
+        "class_type": "CLIPLoader",
+        "inputs": {
+          "clip_name": "rigspark/comfyui/Org/Repo@rev/text_encoders.safetensors",
+          "device": "default",
+          "type": "qwen_image"
+        }
+      },
+      "12": {
+        "class_type": "UNETLoader",
+        "inputs": {
+          "unet_name": "rigspark/comfyui/Org/Repo@rev/diffusion_models.safetensors",
+          "weight_dtype": "default"
+        }
+      },
+      "13": {
+        "class_type": "SamplerCustomAdvanced",
+        "inputs": {
+          "guider": [
+            "22",
+            0
+          ],
+          "latent_image": [
+            "5",
+            0
+          ],
+          "noise": [
+            "25",
+            0
+          ],
+          "sampler": [
+            "16",
+            0
+          ],
+          "sigmas": [
+            "17",
+            0
+          ]
+        }
+      },
+      "16": {
+        "class_type": "KSamplerSelect",
+        "inputs": {
+          "sampler_name": "euler"
+        }
+      },
+      "17": {
+        "class_type": "BasicScheduler",
+        "inputs": {
+          "denoise": 1.0,
+          "model": [
+            "26",
+            0
+          ],
+          "scheduler": "simple",
+          "steps": 12
+        }
+      },
+      "22": {
+        "class_type": "BasicGuider",
+        "inputs": {
+          "conditioning": [
+            "6",
+            0
+          ],
+          "model": [
+            "26",
+            0
+          ]
+        }
+      },
+      "25": {
+        "class_type": "RandomNoise",
+        "inputs": {
+          "noise_seed": 0
+        }
+      },
+      "26": {
+        "class_type": "ModelSamplingFlux",
+        "inputs": {
+          "base_shift": 0.5,
+          "height": 1024,
+          "max_shift": 1.15,
+          "model": [
+            "12",
+            0
+          ],
+          "width": 1024
+        }
+      },
+      "5": {
+        "class_type": "EmptyLatentImage",
+        "inputs": {
+          "batch_size": 1,
+          "height": 1024,
+          "width": 1024
+        }
+      },
+      "6": {
+        "class_type": "CLIPTextEncode",
+        "inputs": {
+          "clip": [
+            "11",
+            0
+          ],
+          "text": "a fox \"in\" snow\n"
+        }
+      },
+      "8": {
+        "class_type": "VAEDecode",
+        "inputs": {
+          "samples": [
+            "13",
+            0
+          ],
+          "vae": [
+            "10",
+            0
+          ]
+        }
+      },
+      "9": {
+        "class_type": "SaveImage",
+        "inputs": {
+          "filename_prefix": "rigspark",
+          "images": [
+            "8",
+            0
+          ]
+        }
+      }
+    },
+    "mps": {
+      "10": {
+        "class_type": "VAELoader",
+        "inputs": {
+          "vae_name": "rigspark/comfyui/Org/Repo@rev/vae.safetensors"
+        }
+      },
+      "11": {
+        "class_type": "CLIPLoader",
+        "inputs": {
+          "clip_name": "rigspark/comfyui/Org/Repo@rev/text_encoders.safetensors",
+          "device": "default",
+          "type": "qwen_image"
+        }
+      },
+      "12": {
+        "class_type": "UNETLoader",
+        "inputs": {
+          "unet_name": "rigspark/comfyui/Org/Repo@rev/diffusion_models.safetensors",
+          "weight_dtype": "default"
+        }
+      },
+      "13": {
+        "class_type": "SamplerCustomAdvanced",
+        "inputs": {
+          "guider": [
+            "22",
+            0
+          ],
+          "latent_image": [
+            "5",
+            0
+          ],
+          "noise": [
+            "25",
+            0
+          ],
+          "sampler": [
+            "16",
+            0
+          ],
+          "sigmas": [
+            "17",
+            0
+          ]
+        }
+      },
+      "16": {
+        "class_type": "KSamplerSelect",
+        "inputs": {
+          "sampler_name": "euler"
+        }
+      },
+      "17": {
+        "class_type": "BasicScheduler",
+        "inputs": {
+          "denoise": 1.0,
+          "model": [
+            "26",
+            0
+          ],
+          "scheduler": "simple",
+          "steps": 12
+        }
+      },
+      "22": {
+        "class_type": "BasicGuider",
+        "inputs": {
+          "conditioning": [
+            "6",
+            0
+          ],
+          "model": [
+            "26",
+            0
+          ]
+        }
+      },
+      "25": {
+        "class_type": "RandomNoise",
+        "inputs": {
+          "noise_seed": 0
+        }
+      },
+      "26": {
+        "class_type": "ModelSamplingFlux",
+        "inputs": {
+          "base_shift": 0.5,
+          "height": 1024,
+          "max_shift": 1.15,
+          "model": [
+            "12",
+            0
+          ],
+          "width": 1024
+        }
+      },
+      "5": {
+        "class_type": "EmptyLatentImage",
+        "inputs": {
+          "batch_size": 1,
+          "height": 1024,
+          "width": 1024
+        }
+      },
+      "6": {
+        "class_type": "CLIPTextEncode",
+        "inputs": {
+          "clip": [
+            "11",
+            0
+          ],
+          "text": "a fox \"in\" snow\n"
+        }
+      },
+      "8": {
+        "class_type": "VAEDecode",
+        "inputs": {
+          "samples": [
+            "13",
+            0
+          ],
+          "vae": [
+            "10",
+            0
+          ]
+        }
+      },
+      "9": {
+        "class_type": "SaveImage",
+        "inputs": {
+          "filename_prefix": "rigspark",
+          "images": [
+            "8",
+            0
+          ]
+        }
+      }
+    },
+    "none": {
+      "10": {
+        "class_type": "VAELoader",
+        "inputs": {
+          "vae_name": "rigspark/comfyui/Org/Repo@rev/vae.safetensors"
+        }
+      },
+      "11": {
+        "class_type": "CLIPLoader",
+        "inputs": {
+          "clip_name": "rigspark/comfyui/Org/Repo@rev/text_encoders.safetensors",
+          "device": "default",
+          "type": "qwen_image"
+        }
+      },
+      "12": {
+        "class_type": "UNETLoader",
+        "inputs": {
+          "unet_name": "rigspark/comfyui/Org/Repo@rev/diffusion_models.safetensors",
+          "weight_dtype": "default"
+        }
+      },
+      "13": {
+        "class_type": "SamplerCustomAdvanced",
+        "inputs": {
+          "guider": [
+            "22",
+            0
+          ],
+          "latent_image": [
+            "5",
+            0
+          ],
+          "noise": [
+            "25",
+            0
+          ],
+          "sampler": [
+            "16",
+            0
+          ],
+          "sigmas": [
+            "17",
+            0
+          ]
+        }
+      },
+      "16": {
+        "class_type": "KSamplerSelect",
+        "inputs": {
+          "sampler_name": "euler"
+        }
+      },
+      "17": {
+        "class_type": "BasicScheduler",
+        "inputs": {
+          "denoise": 1.0,
+          "model": [
+            "26",
+            0
+          ],
+          "scheduler": "simple",
+          "steps": 12
+        }
+      },
+      "22": {
+        "class_type": "BasicGuider",
+        "inputs": {
+          "conditioning": [
+            "6",
+            0
+          ],
+          "model": [
+            "26",
+            0
+          ]
+        }
+      },
+      "25": {
+        "class_type": "RandomNoise",
+        "inputs": {
+          "noise_seed": 0
+        }
+      },
+      "26": {
+        "class_type": "ModelSamplingFlux",
+        "inputs": {
+          "base_shift": 0.5,
+          "height": 1024,
+          "max_shift": 1.15,
+          "model": [
+            "12",
+            0
+          ],
+          "width": 1024
+        }
+      },
+      "5": {
+        "class_type": "EmptyLatentImage",
+        "inputs": {
+          "batch_size": 1,
+          "height": 1024,
+          "width": 1024
+        }
+      },
+      "6": {
+        "class_type": "CLIPTextEncode",
+        "inputs": {
+          "clip": [
+            "11",
+            0
+          ],
+          "text": "a fox \"in\" snow\n"
+        }
+      },
+      "8": {
+        "class_type": "VAEDecode",
+        "inputs": {
+          "samples": [
+            "13",
+            0
+          ],
+          "vae": [
+            "10",
+            0
+          ]
+        }
+      },
+      "9": {
+        "class_type": "SaveImage",
+        "inputs": {
+          "filename_prefix": "rigspark",
+          "images": [
+            "8",
+            0
+          ]
+        }
+      }
+    }
+  },
+  "qwen-image": {
+    "cuda:0": {
+      "3": {
+        "class_type": "KSampler",
+        "inputs": {
+          "cfg": 2.5,
+          "denoise": 1.0,
+          "latent_image": [
+            "58",
+            0
+          ],
+          "model": [
+            "66",
+            0
+          ],
+          "negative": [
+            "7",
+            0
+          ],
+          "positive": [
+            "6",
+            0
+          ],
+          "sampler_name": "euler",
+          "scheduler": "simple",
+          "seed": 0,
+          "steps": 20
+        }
+      },
+      "37": {
+        "class_type": "UNETLoader",
+        "inputs": {
+          "unet_name": "rigspark/comfyui/Org/Repo@rev/diffusion_models.safetensors",
+          "weight_dtype": "default"
+        }
+      },
+      "38": {
+        "class_type": "CLIPLoader",
+        "inputs": {
+          "clip_name": "rigspark/comfyui/Org/Repo@rev/text_encoders.safetensors",
+          "device": "default",
+          "type": "qwen_image"
+        }
+      },
+      "39": {
+        "class_type": "VAELoader",
+        "inputs": {
+          "vae_name": "rigspark/comfyui/Org/Repo@rev/vae.safetensors"
+        }
+      },
+      "58": {
+        "class_type": "EmptySD3LatentImage",
+        "inputs": {
+          "batch_size": 1,
+          "height": 1328,
+          "width": 1328
+        }
+      },
+      "6": {
+        "class_type": "CLIPTextEncode",
+        "inputs": {
+          "clip": [
+            "38",
+            0
+          ],
+          "text": "a fox \"in\" snow\n"
+        }
+      },
+      "60": {
+        "class_type": "SaveImage",
+        "inputs": {
+          "filename_prefix": "rigspark",
+          "images": [
+            "8",
+            0
+          ]
+        }
+      },
+      "66": {
+        "class_type": "ModelSamplingAuraFlow",
+        "inputs": {
+          "model": [
+            "37",
+            0
+          ],
+          "shift": 3.1
+        }
+      },
+      "7": {
+        "class_type": "CLIPTextEncode",
+        "inputs": {
+          "clip": [
+            "38",
+            0
+          ],
+          "text": " "
+        }
+      },
+      "8": {
+        "class_type": "VAEDecode",
+        "inputs": {
+          "samples": [
+            "3",
+            0
+          ],
+          "vae": [
+            "39",
+            0
+          ]
+        }
+      }
+    },
+    "mps": {
+      "3": {
+        "class_type": "KSampler",
+        "inputs": {
+          "cfg": 2.5,
+          "denoise": 1.0,
+          "latent_image": [
+            "58",
+            0
+          ],
+          "model": [
+            "66",
+            0
+          ],
+          "negative": [
+            "7",
+            0
+          ],
+          "positive": [
+            "6",
+            0
+          ],
+          "sampler_name": "euler",
+          "scheduler": "simple",
+          "seed": 0,
+          "steps": 20
+        }
+      },
+      "37": {
+        "class_type": "UNETLoader",
+        "inputs": {
+          "unet_name": "rigspark/comfyui/Org/Repo@rev/diffusion_models.safetensors",
+          "weight_dtype": "default"
+        }
+      },
+      "38": {
+        "class_type": "CLIPLoader",
+        "inputs": {
+          "clip_name": "rigspark/comfyui/Org/Repo@rev/text_encoders.safetensors",
+          "device": "default",
+          "type": "qwen_image"
+        }
+      },
+      "39": {
+        "class_type": "VAELoader",
+        "inputs": {
+          "vae_name": "rigspark/comfyui/Org/Repo@rev/vae.safetensors"
+        }
+      },
+      "58": {
+        "class_type": "EmptySD3LatentImage",
+        "inputs": {
+          "batch_size": 1,
+          "height": 1328,
+          "width": 1328
+        }
+      },
+      "6": {
+        "class_type": "CLIPTextEncode",
+        "inputs": {
+          "clip": [
+            "38",
+            0
+          ],
+          "text": "a fox \"in\" snow\n"
+        }
+      },
+      "60": {
+        "class_type": "SaveImage",
+        "inputs": {
+          "filename_prefix": "rigspark",
+          "images": [
+            "8",
+            0
+          ]
+        }
+      },
+      "66": {
+        "class_type": "ModelSamplingAuraFlow",
+        "inputs": {
+          "model": [
+            "37",
+            0
+          ],
+          "shift": 3.1
+        }
+      },
+      "7": {
+        "class_type": "CLIPTextEncode",
+        "inputs": {
+          "clip": [
+            "38",
+            0
+          ],
+          "text": " "
+        }
+      },
+      "8": {
+        "class_type": "VAEDecode",
+        "inputs": {
+          "samples": [
+            "3",
+            0
+          ],
+          "vae": [
+            "39",
+            0
+          ]
+        }
+      }
+    },
+    "none": {
+      "3": {
+        "class_type": "KSampler",
+        "inputs": {
+          "cfg": 2.5,
+          "denoise": 1.0,
+          "latent_image": [
+            "58",
+            0
+          ],
+          "model": [
+            "66",
+            0
+          ],
+          "negative": [
+            "7",
+            0
+          ],
+          "positive": [
+            "6",
+            0
+          ],
+          "sampler_name": "euler",
+          "scheduler": "simple",
+          "seed": 0,
+          "steps": 20
+        }
+      },
+      "37": {
+        "class_type": "UNETLoader",
+        "inputs": {
+          "unet_name": "rigspark/comfyui/Org/Repo@rev/diffusion_models.safetensors",
+          "weight_dtype": "default"
+        }
+      },
+      "38": {
+        "class_type": "CLIPLoader",
+        "inputs": {
+          "clip_name": "rigspark/comfyui/Org/Repo@rev/text_encoders.safetensors",
+          "device": "default",
+          "type": "qwen_image"
+        }
+      },
+      "39": {
+        "class_type": "VAELoader",
+        "inputs": {
+          "vae_name": "rigspark/comfyui/Org/Repo@rev/vae.safetensors"
+        }
+      },
+      "58": {
+        "class_type": "EmptySD3LatentImage",
+        "inputs": {
+          "batch_size": 1,
+          "height": 1328,
+          "width": 1328
+        }
+      },
+      "6": {
+        "class_type": "CLIPTextEncode",
+        "inputs": {
+          "clip": [
+            "38",
+            0
+          ],
+          "text": "a fox \"in\" snow\n"
+        }
+      },
+      "60": {
+        "class_type": "SaveImage",
+        "inputs": {
+          "filename_prefix": "rigspark",
+          "images": [
+            "8",
+            0
+          ]
+        }
+      },
+      "66": {
+        "class_type": "ModelSamplingAuraFlow",
+        "inputs": {
+          "model": [
+            "37",
+            0
+          ],
+          "shift": 3.1
+        }
+      },
+      "7": {
+        "class_type": "CLIPTextEncode",
+        "inputs": {
+          "clip": [
+            "38",
+            0
+          ],
+          "text": " "
+        }
+      },
+      "8": {
+        "class_type": "VAEDecode",
+        "inputs": {
+          "samples": [
+            "3",
+            0
+          ],
+          "vae": [
+            "39",
+            0
+          ]
+        }
+      }
+    }
+  },
+  "wan-t2v": {
+    "cuda:0": {
+      "28": {
+        "class_type": "SaveAnimatedWEBP",
+        "inputs": {
+          "filename_prefix": "rigspark",
+          "fps": 16.0,
+          "images": [
+            "8",
+            0
+          ],
+          "lossless": false,
+          "method": "default",
+          "quality": 90
+        }
+      },
+      "3": {
+        "class_type": "KSampler",
+        "inputs": {
+          "cfg": 6.0,
+          "denoise": 1.0,
+          "latent_image": [
+            "40",
+            0
+          ],
+          "model": [
+            "48",
+            0
+          ],
+          "negative": [
+            "7",
+            0
+          ],
+          "positive": [
+            "6",
+            0
+          ],
+          "sampler_name": "uni_pc",
+          "scheduler": "simple",
+          "seed": 0,
+          "steps": 30
+        }
+      },
+      "37": {
+        "class_type": "UNETLoader",
+        "inputs": {
+          "unet_name": "rigspark/comfyui/Org/Repo@rev/diffusion_models.safetensors",
+          "weight_dtype": "default"
+        }
+      },
+      "38": {
+        "class_type": "CLIPLoader",
+        "inputs": {
+          "clip_name": "rigspark/comfyui/Org/Repo@rev/text_encoders.safetensors",
+          "device": "default",
+          "type": "wan"
+        }
+      },
+      "39": {
+        "class_type": "VAELoader",
+        "inputs": {
+          "vae_name": "rigspark/comfyui/Org/Repo@rev/vae.safetensors"
+        }
+      },
+      "40": {
+        "class_type": "EmptyHunyuanLatentVideo",
+        "inputs": {
+          "batch_size": 1,
+          "height": 480,
+          "length": 49,
+          "width": 832
+        }
+      },
+      "48": {
+        "class_type": "ModelSamplingSD3",
+        "inputs": {
+          "model": [
+            "37",
+            0
+          ],
+          "shift": 8.0
+        }
+      },
+      "6": {
+        "class_type": "CLIPTextEncode",
+        "inputs": {
+          "clip": [
+            "38",
+            0
+          ],
+          "text": "a fox \"in\" snow\n"
+        }
+      },
+      "7": {
+        "class_type": "CLIPTextEncode",
+        "inputs": {
+          "clip": [
+            "38",
+            0
+          ],
+          "text": "色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走"
+        }
+      },
+      "8": {
+        "class_type": "VAEDecode",
+        "inputs": {
+          "samples": [
+            "3",
+            0
+          ],
+          "vae": [
+            "39",
+            0
+          ]
+        }
+      }
+    },
+    "mps": {
+      "28": {
+        "class_type": "SaveAnimatedWEBP",
+        "inputs": {
+          "filename_prefix": "rigspark",
+          "fps": 16.0,
+          "images": [
+            "8",
+            0
+          ],
+          "lossless": false,
+          "method": "default",
+          "quality": 90
+        }
+      },
+      "3": {
+        "class_type": "KSampler",
+        "inputs": {
+          "cfg": 6.0,
+          "denoise": 1.0,
+          "latent_image": [
+            "40",
+            0
+          ],
+          "model": [
+            "48",
+            0
+          ],
+          "negative": [
+            "7",
+            0
+          ],
+          "positive": [
+            "6",
+            0
+          ],
+          "sampler_name": "euler",
+          "scheduler": "simple",
+          "seed": 0,
+          "steps": 30
+        }
+      },
+      "37": {
+        "class_type": "UNETLoader",
+        "inputs": {
+          "unet_name": "rigspark/comfyui/Org/Repo@rev/diffusion_models.safetensors",
+          "weight_dtype": "default"
+        }
+      },
+      "38": {
+        "class_type": "CLIPLoader",
+        "inputs": {
+          "clip_name": "rigspark/comfyui/Org/Repo@rev/text_encoders.safetensors",
+          "device": "default",
+          "type": "wan"
+        }
+      },
+      "39": {
+        "class_type": "VAELoader",
+        "inputs": {
+          "vae_name": "rigspark/comfyui/Org/Repo@rev/vae.safetensors"
+        }
+      },
+      "40": {
+        "class_type": "EmptyHunyuanLatentVideo",
+        "inputs": {
+          "batch_size": 1,
+          "height": 480,
+          "length": 49,
+          "width": 832
+        }
+      },
+      "48": {
+        "class_type": "ModelSamplingSD3",
+        "inputs": {
+          "model": [
+            "37",
+            0
+          ],
+          "shift": 8.0
+        }
+      },
+      "6": {
+        "class_type": "CLIPTextEncode",
+        "inputs": {
+          "clip": [
+            "38",
+            0
+          ],
+          "text": "a fox \"in\" snow\n"
+        }
+      },
+      "7": {
+        "class_type": "CLIPTextEncode",
+        "inputs": {
+          "clip": [
+            "38",
+            0
+          ],
+          "text": "色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走"
+        }
+      },
+      "8": {
+        "class_type": "VAEDecode",
+        "inputs": {
+          "samples": [
+            "3",
+            0
+          ],
+          "vae": [
+            "39",
+            0
+          ]
+        }
+      }
+    },
+    "none": {
+      "28": {
+        "class_type": "SaveAnimatedWEBP",
+        "inputs": {
+          "filename_prefix": "rigspark",
+          "fps": 16.0,
+          "images": [
+            "8",
+            0
+          ],
+          "lossless": false,
+          "method": "default",
+          "quality": 90
+        }
+      },
+      "3": {
+        "class_type": "KSampler",
+        "inputs": {
+          "cfg": 6.0,
+          "denoise": 1.0,
+          "latent_image": [
+            "40",
+            0
+          ],
+          "model": [
+            "48",
+            0
+          ],
+          "negative": [
+            "7",
+            0
+          ],
+          "positive": [
+            "6",
+            0
+          ],
+          "sampler_name": "uni_pc",
+          "scheduler": "simple",
+          "seed": 0,
+          "steps": 30
+        }
+      },
+      "37": {
+        "class_type": "UNETLoader",
+        "inputs": {
+          "unet_name": "rigspark/comfyui/Org/Repo@rev/diffusion_models.safetensors",
+          "weight_dtype": "default"
+        }
+      },
+      "38": {
+        "class_type": "CLIPLoader",
+        "inputs": {
+          "clip_name": "rigspark/comfyui/Org/Repo@rev/text_encoders.safetensors",
+          "device": "default",
+          "type": "wan"
+        }
+      },
+      "39": {
+        "class_type": "VAELoader",
+        "inputs": {
+          "vae_name": "rigspark/comfyui/Org/Repo@rev/vae.safetensors"
+        }
+      },
+      "40": {
+        "class_type": "EmptyHunyuanLatentVideo",
+        "inputs": {
+          "batch_size": 1,
+          "height": 480,
+          "length": 49,
+          "width": 832
+        }
+      },
+      "48": {
+        "class_type": "ModelSamplingSD3",
+        "inputs": {
+          "model": [
+            "37",
+            0
+          ],
+          "shift": 8.0
+        }
+      },
+      "6": {
+        "class_type": "CLIPTextEncode",
+        "inputs": {
+          "clip": [
+            "38",
+            0
+          ],
+          "text": "a fox \"in\" snow\n"
+        }
+      },
+      "7": {
+        "class_type": "CLIPTextEncode",
+        "inputs": {
+          "clip": [
+            "38",
+            0
+          ],
+          "text": "色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走"
+        }
+      },
+      "8": {
+        "class_type": "VAEDecode",
+        "inputs": {
+          "samples": [
+            "3",
+            0
+          ],
+          "vae": [
+            "39",
+            0
+          ]
+        }
+      }
+    }
+  },
+  "wan22-ti2v": {
+    "cuda:0": {
+      "28": {
+        "class_type": "SaveAnimatedWEBP",
+        "inputs": {
+          "filename_prefix": "rigspark",
+          "fps": 24.0,
+          "images": [
+            "8",
+            0
+          ],
+          "lossless": false,
+          "method": "default",
+          "quality": 90
+        }
+      },
+      "3": {
+        "class_type": "KSampler",
+        "inputs": {
+          "cfg": 5.0,
+          "denoise": 1.0,
+          "latent_image": [
+            "55",
+            0
+          ],
+          "model": [
+            "48",
+            0
+          ],
+          "negative": [
+            "7",
+            0
+          ],
+          "positive": [
+            "6",
+            0
+          ],
+          "sampler_name": "uni_pc",
+          "scheduler": "simple",
+          "seed": 0,
+          "steps": 30
+        }
+      },
+      "37": {
+        "class_type": "UNETLoader",
+        "inputs": {
+          "unet_name": "rigspark/comfyui/Org/Repo@rev/diffusion_models.safetensors",
+          "weight_dtype": "default"
+        }
+      },
+      "38": {
+        "class_type": "CLIPLoader",
+        "inputs": {
+          "clip_name": "rigspark/comfyui/Org/Repo@rev/text_encoders.safetensors",
+          "device": "default",
+          "type": "wan"
+        }
+      },
+      "39": {
+        "class_type": "VAELoader",
+        "inputs": {
+          "vae_name": "rigspark/comfyui/Org/Repo@rev/vae.safetensors"
+        }
+      },
+      "48": {
+        "class_type": "ModelSamplingSD3",
+        "inputs": {
+          "model": [
+            "37",
+            0
+          ],
+          "shift": 8.0
+        }
+      },
+      "55": {
+        "class_type": "Wan22ImageToVideoLatent",
+        "inputs": {
+          "batch_size": 1,
+          "height": 704,
+          "length": 41,
+          "vae": [
+            "39",
+            0
+          ],
+          "width": 1280
+        }
+      },
+      "6": {
+        "class_type": "CLIPTextEncode",
+        "inputs": {
+          "clip": [
+            "38",
+            0
+          ],
+          "text": "a fox \"in\" snow\n"
+        }
+      },
+      "7": {
+        "class_type": "CLIPTextEncode",
+        "inputs": {
+          "clip": [
+            "38",
+            0
+          ],
+          "text": "色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走"
+        }
+      },
+      "8": {
+        "class_type": "VAEDecode",
+        "inputs": {
+          "samples": [
+            "3",
+            0
+          ],
+          "vae": [
+            "39",
+            0
+          ]
+        }
+      }
+    },
+    "mps": {
+      "28": {
+        "class_type": "SaveAnimatedWEBP",
+        "inputs": {
+          "filename_prefix": "rigspark",
+          "fps": 24.0,
+          "images": [
+            "8",
+            0
+          ],
+          "lossless": false,
+          "method": "default",
+          "quality": 90
+        }
+      },
+      "3": {
+        "class_type": "KSampler",
+        "inputs": {
+          "cfg": 5.0,
+          "denoise": 1.0,
+          "latent_image": [
+            "55",
+            0
+          ],
+          "model": [
+            "48",
+            0
+          ],
+          "negative": [
+            "7",
+            0
+          ],
+          "positive": [
+            "6",
+            0
+          ],
+          "sampler_name": "euler",
+          "scheduler": "simple",
+          "seed": 0,
+          "steps": 30
+        }
+      },
+      "37": {
+        "class_type": "UNETLoader",
+        "inputs": {
+          "unet_name": "rigspark/comfyui/Org/Repo@rev/diffusion_models.safetensors",
+          "weight_dtype": "default"
+        }
+      },
+      "38": {
+        "class_type": "CLIPLoader",
+        "inputs": {
+          "clip_name": "rigspark/comfyui/Org/Repo@rev/text_encoders.safetensors",
+          "device": "default",
+          "type": "wan"
+        }
+      },
+      "39": {
+        "class_type": "VAELoader",
+        "inputs": {
+          "vae_name": "rigspark/comfyui/Org/Repo@rev/vae.safetensors"
+        }
+      },
+      "48": {
+        "class_type": "ModelSamplingSD3",
+        "inputs": {
+          "model": [
+            "37",
+            0
+          ],
+          "shift": 8.0
+        }
+      },
+      "55": {
+        "class_type": "Wan22ImageToVideoLatent",
+        "inputs": {
+          "batch_size": 1,
+          "height": 704,
+          "length": 41,
+          "vae": [
+            "39",
+            0
+          ],
+          "width": 1280
+        }
+      },
+      "6": {
+        "class_type": "CLIPTextEncode",
+        "inputs": {
+          "clip": [
+            "38",
+            0
+          ],
+          "text": "a fox \"in\" snow\n"
+        }
+      },
+      "7": {
+        "class_type": "CLIPTextEncode",
+        "inputs": {
+          "clip": [
+            "38",
+            0
+          ],
+          "text": "色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走"
+        }
+      },
+      "8": {
+        "class_type": "VAEDecode",
+        "inputs": {
+          "samples": [
+            "3",
+            0
+          ],
+          "vae": [
+            "39",
+            0
+          ]
+        }
+      }
+    },
+    "none": {
+      "28": {
+        "class_type": "SaveAnimatedWEBP",
+        "inputs": {
+          "filename_prefix": "rigspark",
+          "fps": 24.0,
+          "images": [
+            "8",
+            0
+          ],
+          "lossless": false,
+          "method": "default",
+          "quality": 90
+        }
+      },
+      "3": {
+        "class_type": "KSampler",
+        "inputs": {
+          "cfg": 5.0,
+          "denoise": 1.0,
+          "latent_image": [
+            "55",
+            0
+          ],
+          "model": [
+            "48",
+            0
+          ],
+          "negative": [
+            "7",
+            0
+          ],
+          "positive": [
+            "6",
+            0
+          ],
+          "sampler_name": "uni_pc",
+          "scheduler": "simple",
+          "seed": 0,
+          "steps": 30
+        }
+      },
+      "37": {
+        "class_type": "UNETLoader",
+        "inputs": {
+          "unet_name": "rigspark/comfyui/Org/Repo@rev/diffusion_models.safetensors",
+          "weight_dtype": "default"
+        }
+      },
+      "38": {
+        "class_type": "CLIPLoader",
+        "inputs": {
+          "clip_name": "rigspark/comfyui/Org/Repo@rev/text_encoders.safetensors",
+          "device": "default",
+          "type": "wan"
+        }
+      },
+      "39": {
+        "class_type": "VAELoader",
+        "inputs": {
+          "vae_name": "rigspark/comfyui/Org/Repo@rev/vae.safetensors"
+        }
+      },
+      "48": {
+        "class_type": "ModelSamplingSD3",
+        "inputs": {
+          "model": [
+            "37",
+            0
+          ],
+          "shift": 8.0
+        }
+      },
+      "55": {
+        "class_type": "Wan22ImageToVideoLatent",
+        "inputs": {
+          "batch_size": 1,
+          "height": 704,
+          "length": 41,
+          "vae": [
+            "39",
+            0
+          ],
+          "width": 1280
+        }
+      },
+      "6": {
+        "class_type": "CLIPTextEncode",
+        "inputs": {
+          "clip": [
+            "38",
+            0
+          ],
+          "text": "a fox \"in\" snow\n"
+        }
+      },
+      "7": {
+        "class_type": "CLIPTextEncode",
+        "inputs": {
+          "clip": [
+            "38",
+            0
+          ],
+          "text": "色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走"
+        }
+      },
+      "8": {
+        "class_type": "VAEDecode",
+        "inputs": {
+          "samples": [
+            "3",
+            0
+          ],
+          "vae": [
+            "39",
+            0
+          ]
+        }
+      }
+    }
+  }
+}

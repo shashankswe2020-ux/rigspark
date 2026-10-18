@@ -1,0 +1,167 @@
+{
+  "schemaVersion": 1,
+  "id": "wan-t2v",
+  "kind": "video",
+  "status": "verified",
+  "source": "https://comfyanonymous.github.io/ComfyUI_examples/wan/",
+  "graph": {
+    "3": {
+      "class_type": "KSampler",
+      "inputs": {
+        "cfg": 6.0,
+        "denoise": 1.0,
+        "latent_image": [
+          "40",
+          0
+        ],
+        "model": [
+          "48",
+          0
+        ],
+        "negative": [
+          "7",
+          0
+        ],
+        "positive": [
+          "6",
+          0
+        ],
+        "sampler_name": "uni_pc",
+        "scheduler": "simple",
+        "seed": 0,
+        "steps": 30
+      }
+    },
+    "6": {
+      "class_type": "CLIPTextEncode",
+      "inputs": {
+        "clip": [
+          "38",
+          0
+        ],
+        "text": ""
+      }
+    },
+    "7": {
+      "class_type": "CLIPTextEncode",
+      "inputs": {
+        "clip": [
+          "38",
+          0
+        ],
+        "text": "色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走"
+      }
+    },
+    "8": {
+      "class_type": "VAEDecode",
+      "inputs": {
+        "samples": [
+          "3",
+          0
+        ],
+        "vae": [
+          "39",
+          0
+        ]
+      }
+    },
+    "28": {
+      "class_type": "SaveAnimatedWEBP",
+      "inputs": {
+        "filename_prefix": "rigspark",
+        "fps": 16.0,
+        "images": [
+          "8",
+          0
+        ],
+        "lossless": false,
+        "method": "default",
+        "quality": 90
+      }
+    },
+    "37": {
+      "class_type": "UNETLoader",
+      "inputs": {
+        "unet_name": "",
+        "weight_dtype": "default"
+      }
+    },
+    "38": {
+      "class_type": "CLIPLoader",
+      "inputs": {
+        "clip_name": "",
+        "device": "default",
+        "type": "wan"
+      }
+    },
+    "39": {
+      "class_type": "VAELoader",
+      "inputs": {
+        "vae_name": ""
+      }
+    },
+    "40": {
+      "class_type": "EmptyHunyuanLatentVideo",
+      "inputs": {
+        "batch_size": 1,
+        "height": 480,
+        "length": 49,
+        "width": 832
+      }
+    },
+    "48": {
+      "class_type": "ModelSamplingSD3",
+      "inputs": {
+        "model": [
+          "37",
+          0
+        ],
+        "shift": 8.0
+      }
+    }
+  },
+  "bindings": {
+    "prompt": [
+      {
+        "node": "6",
+        "input": "text"
+      }
+    ],
+    "seed": [
+      {
+        "node": "3",
+        "input": "seed"
+      }
+    ],
+    "output": {
+      "node": "28",
+      "format": "webp"
+    }
+  },
+  "models": [
+    {
+      "node": "37",
+      "input": "unet_name",
+      "role": "diffusion"
+    },
+    {
+      "node": "38",
+      "input": "clip_name",
+      "role": "text-encoder"
+    },
+    {
+      "node": "39",
+      "input": "vae_name",
+      "role": "vae"
+    }
+  ],
+  "overrides": [
+    {
+      "device": "mps",
+      "node": "3",
+      "input": "sampler_name",
+      "value": "euler",
+      "message": "ComfyUI reports Apple MPS: using the euler sampler (uni_pc diverges on MPS)"
+    }
+  ]
+}

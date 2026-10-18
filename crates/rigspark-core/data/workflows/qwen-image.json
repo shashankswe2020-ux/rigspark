@@ -1,0 +1,153 @@
+{
+  "schemaVersion": 1,
+  "id": "qwen-image",
+  "kind": "image",
+  "status": "verified",
+  "source": "https://comfyanonymous.github.io/ComfyUI_examples/qwen_image/",
+  "graph": {
+    "3": {
+      "class_type": "KSampler",
+      "inputs": {
+        "cfg": 2.5,
+        "denoise": 1.0,
+        "latent_image": [
+          "58",
+          0
+        ],
+        "model": [
+          "66",
+          0
+        ],
+        "negative": [
+          "7",
+          0
+        ],
+        "positive": [
+          "6",
+          0
+        ],
+        "sampler_name": "euler",
+        "scheduler": "simple",
+        "seed": 0,
+        "steps": 20
+      }
+    },
+    "6": {
+      "class_type": "CLIPTextEncode",
+      "inputs": {
+        "clip": [
+          "38",
+          0
+        ],
+        "text": ""
+      }
+    },
+    "7": {
+      "class_type": "CLIPTextEncode",
+      "inputs": {
+        "clip": [
+          "38",
+          0
+        ],
+        "text": " "
+      }
+    },
+    "8": {
+      "class_type": "VAEDecode",
+      "inputs": {
+        "samples": [
+          "3",
+          0
+        ],
+        "vae": [
+          "39",
+          0
+        ]
+      }
+    },
+    "37": {
+      "class_type": "UNETLoader",
+      "inputs": {
+        "unet_name": "",
+        "weight_dtype": "default"
+      }
+    },
+    "38": {
+      "class_type": "CLIPLoader",
+      "inputs": {
+        "clip_name": "",
+        "device": "default",
+        "type": "qwen_image"
+      }
+    },
+    "39": {
+      "class_type": "VAELoader",
+      "inputs": {
+        "vae_name": ""
+      }
+    },
+    "58": {
+      "class_type": "EmptySD3LatentImage",
+      "inputs": {
+        "batch_size": 1,
+        "height": 1328,
+        "width": 1328
+      }
+    },
+    "60": {
+      "class_type": "SaveImage",
+      "inputs": {
+        "filename_prefix": "rigspark",
+        "images": [
+          "8",
+          0
+        ]
+      }
+    },
+    "66": {
+      "class_type": "ModelSamplingAuraFlow",
+      "inputs": {
+        "model": [
+          "37",
+          0
+        ],
+        "shift": 3.1
+      }
+    }
+  },
+  "bindings": {
+    "prompt": [
+      {
+        "node": "6",
+        "input": "text"
+      }
+    ],
+    "seed": [
+      {
+        "node": "3",
+        "input": "seed"
+      }
+    ],
+    "output": {
+      "node": "60",
+      "format": "png"
+    }
+  },
+  "models": [
+    {
+      "node": "37",
+      "input": "unet_name",
+      "role": "diffusion"
+    },
+    {
+      "node": "38",
+      "input": "clip_name",
+      "role": "text-encoder"
+    },
+    {
+      "node": "39",
+      "input": "vae_name",
+      "role": "vae"
+    }
+  ]
+}

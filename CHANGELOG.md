@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Internal
+
+- Generation workflows are now bundled data files (`crates/rigspark-core/data/workflows/`)
+  executed by one generic runtime. Graphs are byte-identical to the previous built-in
+  builders. This is phase 1 of the
+  [automated workflow pipeline](docs/specs/automated-workflow-pipeline.md).
+
 ## 3.0.3 (2026-10-16)
 
 ### Generation

@@ -1,7 +1,7 @@
 # Implementation Plan: Automated Generation Workflow Pipeline
 
 Spec: [automated-workflow-pipeline.md](../specs/automated-workflow-pipeline.md)
-Status: approved spec; plan awaiting review
+Status: approved; phase 1 implemented (see below)
 Date: 2026-10-16
 
 ## Approved answers to the spec's open questions
@@ -40,6 +40,30 @@ Phases 4 and 5 can proceed in parallel once phase 3 lands.
 | Template churn upstream | Noisy PRs | Pinned commit, skip unchanged templates, cap 10 candidates, one pending PR |
 | Large models exceed local hardware | Cannot verify | Evidence is per device class; unverified stays fit-only; never claim CUDA from MPS |
 | CPU ComfyUI install in CI is slow or flaky | CI noise | Harvest workflow only; cached venv; pinned ComfyUI commit and Torch CPU wheel |
+
+## Phase 1 status (2026-10-16)
+
+Done: 1.1, 1.2, 1.3, 1.5 and 1.6. The six workflows are bundled data files under
+`crates/rigspark-core/data/workflows/`. The runtime builds every graph through
+`WorkflowFile::apply`. Device overrides, output nodes and native-capability preflight
+markers are data. Builders, `save_node`, the Wan sampler helper and the Ming-only
+preflight are removed. Graphs match the frozen legacy output byte-for-byte for all
+six workflows on MPS, CUDA and no-device runs.
+
+Deferred: **1.4 (catalog schemaVersion 3, string workflow ids) moves to phase 3**,
+where the first non-built-in id appears. Until then the `Workflow` enum stays the id
+type, and the registry enforces exactly one file per id. This avoids a schema change
+with no consumer.
+
+Real-hardware checkpoint (36 GiB Apple Silicon, ComfyUI 0.38.0, owned loopback server):
+
+- Ming Design: complete real generation through the data-driven path, including the
+  generic native-capability preflight. Output: 1024x1024 RGBA PNG.
+- Wan 2.1 1.3B: ComfyUI accepted the data-driven graph, and the running queue showed
+  the MPS `euler` override, the bound prompt and seed, and the pinned FP16 weights at
+  832x480x49. Sampling ran at about 243-333 s/step under memory pressure. The run was
+  stopped by decision after 2 of 30 steps, so **completion was not observed**. The
+  graph is byte-identical to the previously shipped builder.
 
 ## Phase 1 tasks: data-driven runtime
 
