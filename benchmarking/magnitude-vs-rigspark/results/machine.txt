@@ -1,0 +1,8 @@
+date: 2026-10-30T08:28:17Z
+Apple M4 Max
+memory_gb: 36
+26.5
+rigspark 3.0.2
+Warning: could not connect to a running Ollama instance
+Warning: client version is 0.32.5
+0.2.15
