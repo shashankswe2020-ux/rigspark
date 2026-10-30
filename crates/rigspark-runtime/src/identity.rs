@@ -301,6 +301,10 @@ pub trait ProcessProbe: Send + Sync {
     async fn command_line(&self, _pid: u32) -> Result<Vec<String>, StateError> {
         Err(invalid("process command line unavailable"))
     }
+    /// Whether any process holds `pid`; probes that cannot tell must fail closed.
+    async fn alive(&self, _pid: u32) -> Result<bool, StateError> {
+        Err(invalid("process liveness unavailable"))
+    }
 }
 pub struct NativeProcessProbe;
 async fn output(binary: &str, args: &[&str]) -> Result<String, StateError> {
@@ -310,6 +314,23 @@ async fn output(binary: &str, args: &[&str]) -> Result<String, StateError> {
 }
 #[async_trait::async_trait]
 impl ProcessProbe for NativeProcessProbe {
+    async fn alive(&self, pid: u32) -> Result<bool, StateError> {
+        if pid == 0 || pid > i32::MAX as u32 {
+            return Err(invalid("invalid process PID"));
+        }
+        tokio::task::spawn_blocking(move || {
+            let mut system = sysinfo::System::new();
+            let pid = sysinfo::Pid::from_u32(pid);
+            system.refresh_processes_specifics(
+                sysinfo::ProcessesToUpdate::Some(&[pid]),
+                true,
+                sysinfo::ProcessRefreshKind::nothing(),
+            );
+            system.process(pid).is_some()
+        })
+        .await
+        .map_err(|_| invalid("process liveness probe failed"))
+    }
     async fn command_line(&self, pid: u32) -> Result<Vec<String>, StateError> {
         tokio::task::spawn_blocking(move || {
             let mut system = sysinfo::System::new();
