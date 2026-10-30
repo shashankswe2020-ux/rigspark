@@ -183,8 +183,26 @@ fn release_publishes_only_verified_tagged_archives_without_node() {
     assert!(build.contains("cargo native-dist package --target"));
     assert!(build.contains("if: startsWith(github.ref, 'refs/tags/v')"));
     assert!(build.contains("--draft --verify-tag"));
+    let desktop = job("desktop-macos");
+    assert!(desktop.contains("needs: verify"));
+    for target in ["aarch64-apple-darwin", "x86_64-apple-darwin"] {
+        assert!(desktop.contains(&format!("target: {target},")), "{target}");
+    }
+    assert!(desktop.contains("cargo install tauri-cli --version 2.12.4 --locked"));
+    assert!(desktop.contains("--bundles app,dmg"));
+    assert!(desktop.contains("secrets.TAURI_SIGNING_PRIVATE_KEY"));
+    assert!(desktop.contains("if: startsWith(github.ref, 'refs/tags/v')"));
     let publish = job("publish");
-    assert!(publish.contains("needs: build"));
+    assert!(publish.contains("needs: [build, desktop-macos]"));
+    assert!(
+        publish.contains("--pattern 'rigspark-*.tar.gz*'"),
+        "CLI checksums ignore desktop updater archives"
+    );
+    let manifest = publish.find("latest.json").unwrap();
+    assert!(
+        manifest < published_marker(&publish),
+        "the update manifest is attached before publication"
+    );
     assert!(publish.contains("if: startsWith(github.ref, 'refs/tags/v')"));
     assert!(publish.contains("test \"$(ls *.tar.gz | wc -l)\" -eq 5"));
     assert!(publish.contains("sha256sum -c SHA256SUMS"));
@@ -195,7 +213,7 @@ fn release_publishes_only_verified_tagged_archives_without_node() {
         checked < published,
         "checksums must be verified before publication"
     );
-    for step in [verify, build, publish] {
+    for step in [verify, build, desktop, publish] {
         assert!(step.contains("git rev-parse HEAD") && step.contains("$GITHUB_SHA"));
     }
 }
@@ -230,4 +248,8 @@ fn typescript_cli_entries_and_public_package_launchers_are_retired() {
     ] {
         assert!(!root.join(path).exists(), "{path}");
     }
+}
+
+fn published_marker(publish: &str) -> usize {
+    publish.find("--draft=false").unwrap()
 }
