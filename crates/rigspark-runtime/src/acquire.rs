@@ -248,7 +248,7 @@ pub struct Acquired {
     pub cached: bool,
     pub rehashed: bool,
 }
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SizePolicy {
     Exact,
     Ceiling,
@@ -640,9 +640,11 @@ impl Acquisition {
         self.timeout = timeout;
         self
     }
-    fn emit(&self, completed: u64, artifact: &Artifact) {
+    /// Reports progress against `total`, the real size when known; a size ceiling is a
+    /// limit, not a size, so it is never shown as the total.
+    fn emit(&self, completed: u64, total: u64, artifact: &Artifact) {
         if let Some(progress) = &self.progress {
-            progress(completed, artifact.bytes, &artifact.file);
+            progress(completed, total.max(completed), &artifact.file);
         }
     }
     pub async fn acquire(
@@ -705,7 +707,9 @@ impl Acquisition {
         }
         let lock = ArtifactLock::acquire(suffix(&target, ".lock"))?;
         cleanup_partials(parent, crate::state::process_alive)?;
-        self.emit(0, artifact);
+        if size == SizePolicy::Exact {
+            self.emit(0, artifact.bytes, artifact);
+        }
         if let Ok(metadata) = std::fs::symlink_metadata(&target) {
             if !metadata.is_file() || metadata.file_type().is_symlink() {
                 return Err("unsafe cached artifact".into());
@@ -714,7 +718,7 @@ impl Acquisition {
                 && self.already_verified(&target, artifact, &metadata)
             {
                 lock.check()?;
-                self.emit(metadata.len(), artifact);
+                self.emit(metadata.len(), metadata.len(), artifact);
                 return Ok(Acquired {
                     path: target,
                     bytes: metadata.len(),
@@ -726,7 +730,7 @@ impl Acquisition {
             if sha.eq_ignore_ascii_case(&artifact.sha256) && size.accepts(bytes, artifact.bytes) {
                 lock.check()?;
                 self.record_verified(&target, artifact, file_identity(&metadata));
-                self.emit(bytes, artifact);
+                self.emit(bytes, bytes, artifact);
                 return Ok(Acquired {
                     path: target,
                     bytes,
@@ -762,6 +766,13 @@ impl Acquisition {
                 .is_some_and(|length| length > artifact.bytes)
             {
                 return Err("download exceeds byte limit".into());
+            }
+            let expected = match size {
+                SizePolicy::Exact => artifact.bytes,
+                SizePolicy::Ceiling => response.length.unwrap_or(0),
+            };
+            if expected > 0 {
+                self.emit(0, expected, artifact);
             }
             let temporary = tempfile::Builder::new()
                 .prefix(&format!(".llmup-download.{}.", std::process::id()))
@@ -823,7 +834,7 @@ impl Acquisition {
                     .await
                     .map_err(|error| error.to_string())?;
                 if total - reported >= 8 * 1024 * 1024 {
-                    self.emit(total, artifact);
+                    self.emit(total, expected, artifact);
                     reported = total;
                 }
             }
@@ -842,7 +853,7 @@ impl Acquisition {
                 .persist(&target)
                 .map_err(|error| error.to_string())?;
             self.record_verified(&target, artifact, None);
-            self.emit(total, artifact);
+            self.emit(total, total, artifact);
             Ok(Acquired {
                 path: target.clone(),
                 bytes: total,

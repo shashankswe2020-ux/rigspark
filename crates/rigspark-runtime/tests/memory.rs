@@ -254,7 +254,7 @@ fn opening_recovers_crash_between_publication_renames() {
 }
 
 #[tokio::test]
-async fn capture_preserves_layout_facts_and_embedding_failure_leaves_no_turns() {
+async fn capture_keeps_turns_and_facts_when_the_embedder_is_unavailable() {
     use rigspark_runtime::memory::{CaptureOptions, Embedder, EmbeddingOutput};
     struct Broken;
     #[async_trait::async_trait]
@@ -273,22 +273,37 @@ async fn capture_preserves_layout_facts_and_embedding_failure_leaves_no_turns() 
     let root = tempfile::tempdir().unwrap();
     let store = MemoryStore::open(root.path(), "test:latest", "2026-09-17T00:00:00Z").unwrap();
     let cancel = tokio_util::sync::CancellationToken::new();
-    assert!(
-        store
-            .capture(
-                "My name is Ada.",
-                "Hello.",
-                CaptureOptions {
-                    timestamp: "2026-09-17T00:00:00Z",
-                    embedder: Some(&Broken),
-                    embedding_unsupported: false
-                },
-                &cancel
-            )
-            .await
-            .is_err()
+    let degraded = store
+        .capture(
+            "My name is Ada.",
+            "Hello.",
+            CaptureOptions {
+                timestamp: "2026-09-17T00:00:00Z",
+                embedder: Some(&Broken),
+                embedding_unsupported: false,
+            },
+            &cancel,
+        )
+        .await
+        .unwrap();
+    assert_eq!(
+        degraded.turns_appended, 2,
+        "a missing embedding model never loses the reply"
     );
-    assert!(!store.dir.join("conversation.jsonl").exists());
+    assert_eq!(degraded.vectors_embedded, 0, "no vector is fabricated");
+    assert!(
+        degraded
+            .embedding_skipped
+            .as_deref()
+            .is_some_and(|reason| reason.contains("offline"))
+    );
+    let meta = store.read_meta().unwrap();
+    assert_eq!(
+        (meta.embedding.clone(), meta.embedding_unsupported),
+        (None, None),
+        "the embedding space stays unset so a later embedder can still define it"
+    );
+    assert!(!store.dir.join("embeddings/vectors.jsonl").exists());
     let result = store
         .capture(
             "My name is Ada. I prefer Rust.",
@@ -303,9 +318,10 @@ async fn capture_preserves_layout_facts_and_embedding_failure_leaves_no_turns() 
         .await
         .unwrap();
     assert_eq!(result.turns_appended, 2);
-    assert_eq!(result.facts_extracted, 2);
+    assert_eq!(result.facts_extracted, 1, "name was already captured");
+    assert_eq!(result.embedding_skipped, None);
     let memory = store.load().unwrap();
-    assert_eq!(memory.turns.len(), 2);
+    assert_eq!(memory.turns.len(), 4);
     assert!(memory.facts_text.contains("name = Ada"));
     assert_eq!(store.read_meta().unwrap().embedding_unsupported, Some(true));
 }

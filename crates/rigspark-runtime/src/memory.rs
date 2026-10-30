@@ -475,6 +475,9 @@ pub struct CaptureResult {
     pub turns_appended: usize,
     pub facts_extracted: usize,
     pub vectors_embedded: usize,
+    /// Why recall vectors were not written; the turns and facts were still saved.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub embedding_skipped: Option<String>,
 }
 type Files = std::collections::BTreeMap<String, String>;
 fn jsonl<T: serde::de::DeserializeOwned>(raw: &str) -> Result<Vec<T>, MemoryError> {
@@ -905,23 +908,42 @@ impl MemoryStore {
             .filter(|text| !text.is_empty())
             .cloned()
             .collect();
+        let mut embedding_skipped = None;
         let embedding = if !options.embedding_unsupported && !chunks.is_empty() {
             if let Some(embedder) = options.embedder {
-                let result = tokio::select! {biased;_=cancel.cancelled()=>return Err(MemoryError("cancelled".into())),result=tokio::time::timeout(Duration::from_secs(120),embedder.embed(&chunks,cancel))=>result.map_err(|_|MemoryError("embedding timed out".into()))??};
-                validate_embeddings(&result, chunks.len())?;
-                let space = EmbeddingMeta {
-                    model: embedder.model().into(),
-                    dimension: result.dimension,
-                };
-                if space.model.is_empty()
-                    || meta
-                        .embedding
-                        .as_ref()
-                        .is_some_and(|existing| existing != &space)
+                let attempt = tokio::select! {biased;_=cancel.cancelled()=>return Err(MemoryError("cancelled".into())),result=tokio::time::timeout(Duration::from_secs(120),embedder.embed(&chunks,cancel))=>result};
+                // Embeddings only add recall: an embedder that cannot be reached skips the
+                // vectors but never loses the conversation. Malformed output or a changed
+                // embedding space still refuses the capture, and no vector is fabricated.
+                match attempt
+                    .map_err(|_| MemoryError("embedding timed out".into()))
+                    .and_then(|result| result)
                 {
-                    return Err(MemoryError("embedding space mismatch".into()));
+                    Err(error) => {
+                        embedding_skipped = Some(format!(
+                            "{} ({})",
+                            error.0,
+                            rigspark_core::reports::strip_control(embedder.model())
+                        ));
+                        None
+                    }
+                    Ok(result) => {
+                        validate_embeddings(&result, chunks.len())?;
+                        let space = EmbeddingMeta {
+                            model: embedder.model().into(),
+                            dimension: result.dimension,
+                        };
+                        if space.model.is_empty()
+                            || meta
+                                .embedding
+                                .as_ref()
+                                .is_some_and(|existing| existing != &space)
+                        {
+                            return Err(MemoryError("embedding space mismatch".into()));
+                        }
+                        Some((space, result))
+                    }
                 }
-                Some((space, result))
             } else {
                 None
             }
@@ -1011,6 +1033,7 @@ impl MemoryStore {
             turns_appended: source.turns.len() - before,
             facts_extracted: added,
             vectors_embedded: embedded,
+            embedding_skipped,
         })
     }
 }
