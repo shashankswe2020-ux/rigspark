@@ -144,7 +144,16 @@ pub enum RecencyBasis {
     Released,
     Added,
 }
-pub const SCHEMA_VERSION: u8 = 3;
+pub const SCHEMA_VERSION: u8 = 4;
+/// The oldest schema that can carry `models`, so catalogs without v4 fields stay readable
+/// by older clients.
+pub fn required_schema_version(models: &[CatalogModel]) -> u8 {
+    if models.iter().any(|model| model.drafter.is_some()) {
+        4
+    } else {
+        3
+    }
+}
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct CatalogModel {
@@ -170,6 +179,9 @@ pub struct CatalogModel {
     pub kv_bytes_per_token: Option<f64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub benchmark_proxy: Option<f64>,
+    /// Catalog id of a smaller same-family model used as a speculative-decoding drafter.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub drafter: Option<String>,
 }
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -488,12 +500,46 @@ impl Catalog {
             for quant in &mut model.quantizations {
                 quant.name = strip_control(&quant.name);
             }
+            if let Some(drafter) = &mut model.drafter {
+                *drafter = strip_control(drafter);
+            }
         }
         let mut ids = HashSet::new();
         for model in &result.models {
             require(ids.insert(&model.id), "duplicate catalog model id")?;
         }
+        for model in &result.models {
+            if model.drafter.is_none() {
+                continue;
+            }
+            require(
+                result.schema_version >= 4,
+                "drafters require catalog schema v4",
+            )?;
+            let draft = result
+                .drafter_of(model)
+                .ok_or_else(|| ValidationError("unknown or self-referencing drafter".into()))?;
+            require(
+                draft.family == model.family,
+                "drafter must share the target family",
+            )?;
+            require(
+                draft.drafter.is_none(),
+                "a drafter cannot itself have a drafter",
+            )?;
+            require(
+                draft.source.gguf.is_some() && model.source.gguf.is_some(),
+                "drafter and target need pinned GGUF artifacts",
+            )?;
+        }
         Ok(result)
+    }
+    /// The catalog entry `model` names as its drafter, never `model` itself.
+    pub fn drafter_of(&self, model: &CatalogModel) -> Option<&CatalogModel> {
+        let id = model.drafter.as_deref()?;
+        (id != model.id)
+            .then(|| self.models.iter().find(|entry| entry.id == id))
+            .flatten()
     }
 }
 

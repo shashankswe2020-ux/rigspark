@@ -65,6 +65,8 @@ fn committed_curated_fields_match_bootstrap_except_recorded_corrections() {
             "contextLength" => model.context_length = to.as_f64().unwrap(),
             "license" => model.license = to.as_str().unwrap().into(),
             "kvBytesPerToken" => model.kv_bytes_per_token = to.as_f64(),
+            "drafter" => model.drafter = Some(to.as_str().unwrap().into()),
+            "ggufSource" => model.source.gguf = Some(serde_json::from_value(to.clone()).unwrap()),
             "defaultQuantization" => {
                 let index = rigspark_core::registry_collector::pulled_quantization(model).unwrap();
                 let name = to["name"].as_str().unwrap().to_string();
@@ -79,6 +81,7 @@ fn committed_curated_fields_match_bootstrap_except_recorded_corrections() {
             other => panic!("unexpected correction field {other}"),
         }
     }
+    actual.schema_version = rigspark_core::catalog::required_schema_version(&actual.models);
     let skeleton = |catalog: Catalog| {
         let mut value = serde_json::to_value(catalog).unwrap();
         value.as_object_mut().unwrap().remove("generatedAt");

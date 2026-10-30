@@ -1,6 +1,6 @@
 use rigspark_core::sizing::KvCacheType::{self, F16, Q4_0, Q8_0};
 use rigspark_runtime::cache::{
-    CacheError, CacheProfile, FlashAttention, PromptReuse, SpawnDelta, provider,
+    CacheError, CacheProfile, FlashAttention, PromptReuse, SpawnDelta, Speculative, provider,
 };
 use std::collections::BTreeMap;
 
@@ -10,6 +10,7 @@ fn profile(kv_k: KvCacheType, kv_v: KvCacheType, flash: FlashAttention) -> Cache
         kv_v,
         flash_attention: flash,
         prompt_reuse: PromptReuse::Off,
+        ..CacheProfile::default()
     }
 }
 
@@ -263,4 +264,145 @@ fn names_parse_round_trip_and_summaries_are_plain_text() {
     );
     assert!(profile(F16, Q4_0, FlashAttention::Off).validate().is_err());
     profile(Q4_0, F16, FlashAttention::Off).validate().unwrap();
+}
+
+fn launch(speculative: Speculative, parallel: Option<u8>) -> CacheProfile {
+    CacheProfile {
+        speculative,
+        parallel,
+        ..CacheProfile::default()
+    }
+}
+
+#[test]
+fn llama_cpp_receives_speculative_and_slot_flags() {
+    assert_eq!(
+        apply(&launch(Speculative::Draft, None), "llamacpp", true)
+            .unwrap()
+            .args,
+        args(&["--spec-type", "draft-simple"]),
+        "the adapter adds the verified --model-draft path"
+    );
+    assert_eq!(
+        apply(&launch(Speculative::Ngram, None), "llamacpp", true)
+            .unwrap()
+            .args,
+        args(&["--spec-type", "ngram-mod"])
+    );
+    assert_eq!(
+        apply(&launch(Speculative::Auto, None), "llamacpp", true).unwrap(),
+        SpawnDelta::default(),
+        "auto is resolved before launch and never passes flags by itself"
+    );
+    assert_eq!(
+        apply(&launch(Speculative::Off, Some(4)), "llamacpp", true)
+            .unwrap()
+            .args,
+        args(&["--parallel", "4", "--kv-unified"]),
+        "slots share one KV pool"
+    );
+}
+
+#[test]
+fn ollama_takes_slots_from_the_environment_and_owns_its_drafters() {
+    assert_eq!(
+        apply(&launch(Speculative::Off, Some(4)), "ollama", true).unwrap(),
+        SpawnDelta {
+            args: vec![],
+            env: env(&[("OLLAMA_NUM_PARALLEL", "4")]),
+        }
+    );
+    assert!(matches!(
+        apply(&launch(Speculative::Off, Some(4)), "ollama", false),
+        Err(CacheError::Unsupported {
+            backend: "ollama",
+            ..
+        })
+    ));
+    for mode in [Speculative::Draft, Speculative::Ngram] {
+        assert!(
+            matches!(
+                apply(&launch(mode, None), "ollama", true),
+                Err(CacheError::Unsupported {
+                    backend: "ollama",
+                    ..
+                })
+            ),
+            "{mode:?}"
+        );
+    }
+    assert_eq!(
+        apply(&launch(Speculative::Auto, None), "ollama", false).unwrap(),
+        SpawnDelta::default()
+    );
+}
+
+#[test]
+fn unverified_backends_refuse_speculation_and_slots() {
+    for profile in [
+        launch(Speculative::Draft, None),
+        launch(Speculative::Off, Some(2)),
+    ] {
+        assert!(matches!(
+            apply(&profile, "mlx", true),
+            Err(CacheError::Unverified { backend: "mlx" })
+        ));
+        assert!(matches!(
+            apply(&profile, "bitnet", true),
+            Err(CacheError::Unverified { backend: "bitnet" })
+        ));
+    }
+}
+
+#[test]
+fn slot_counts_are_bounded_and_launch_fields_serialize_only_when_set() {
+    for bad in [0, 17] {
+        assert!(launch(Speculative::Off, Some(bad)).validate().is_err());
+    }
+    launch(Speculative::Off, Some(1)).validate().unwrap();
+    launch(Speculative::Off, Some(16)).validate().unwrap();
+    assert_eq!(
+        serde_json::to_value(CacheProfile::default()).unwrap(),
+        serde_json::json!({"kvK":"f16","kvV":"f16","flashAttention":"auto","promptReuse":"off"}),
+        "existing state files stay byte-compatible"
+    );
+    let value = serde_json::to_value(launch(Speculative::Draft, Some(4))).unwrap();
+    assert_eq!(value["speculative"], "draft");
+    assert_eq!(value["parallel"], 4);
+    assert_eq!(
+        serde_json::from_value::<CacheProfile>(value).unwrap(),
+        launch(Speculative::Draft, Some(4))
+    );
+    assert_eq!(
+        launch(Speculative::Draft, Some(4)).summary(),
+        "KV f16, flash attention auto, prompt reuse off, speculative draft, 4 slots"
+    );
+    for mode in [
+        Speculative::Off,
+        Speculative::Auto,
+        Speculative::Draft,
+        Speculative::Ngram,
+    ] {
+        assert_eq!(Speculative::parse(mode.name()), Some(mode));
+    }
+    assert_eq!(Speculative::parse("eagle"), None);
+}
+
+#[test]
+fn speculative_and_slot_flags_layer_over_a_base_profile() {
+    use rigspark_runtime::cache::CacheFlags;
+    let flags = CacheFlags {
+        speculative: Some(Speculative::Ngram),
+        parallel: Some(2),
+        ..CacheFlags::default()
+    };
+    assert!(!flags.is_empty());
+    assert_eq!(
+        flags.over(Some(profile(Q8_0, Q8_0, FlashAttention::Auto))),
+        Some(CacheProfile {
+            speculative: Speculative::Ngram,
+            parallel: Some(2),
+            ..profile(Q8_0, Q8_0, FlashAttention::Auto)
+        })
+    );
 }

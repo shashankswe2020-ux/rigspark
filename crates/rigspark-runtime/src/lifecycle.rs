@@ -320,6 +320,7 @@ impl Lifecycle<'_> {
             .get("ollama")?
             .ready_handle(
                 &ServeRequest {
+                    draft_model_path: None,
                     model_id: target.into(),
                     endpoint: active.endpoint.clone(),
                     model_path: None,

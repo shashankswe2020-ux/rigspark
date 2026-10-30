@@ -15,7 +15,7 @@
 </p>
 
 <p align="center">
-  <a href="https://shashankswe2020-ux.github.io/rigspark/">Website</a> ·
+  <a href="https://www.rigspark.si/">Website</a> ·
   <a href="#install-rigspark">Install</a> ·
   <a href="docs/references/guide.md">Guide</a> ·
   <a href="https://github.com/shashankswe2020-ux/rigspark/releases/latest">Latest release</a>
@@ -155,6 +155,42 @@ See the [per-model benchmark reports](benchmarking/README.md) for the recorded
 BitNet chat results, methodology, and limitations.
 
 [Backend setup and lifecycle details →](docs/references/guide.md#supported-backends)
+
+#### Faster serving: speculative decoding and parallel agents
+
+```bash
+rigspark up qwen3:14b --backend llamacpp           # drafts with qwen3:0.6b automatically
+rigspark up qwen3:8b --backend llamacpp --speculative ngram
+rigspark up qwen3:14b --context 16384 --parallel 4 # four agents at once on Ollama
+rigspark bench --concurrency 4                     # measure the active server
+```
+
+- `--speculative auto|draft|ngram|off`. On llama.cpp, models with a catalog
+  drafter use it by default. RigSpark downloads the drafter, verifies its
+  SHA-256 and reserves its memory before checking fit. If the drafter does not
+  fit, RigSpark starts without it. `ngram` drafts from the context and needs no
+  extra weights. Ollama handles speculative decoding inside its own model tags.
+- `--parallel N` (1–16) sets concurrent request slots. llama.cpp slots share one
+  unified KV pool. Ollama allocates a full context for each slot, so it needs
+  `--context` and known KV geometry to size the memory (or `--bypass`).
+- `rigspark bench` measures the active server with fixed, versioned prompts:
+  time to first token, prefill and decode tok/s, draft acceptance, and
+  combined throughput across concurrent requests. The prefill, decode and draft
+  figures come from the runtime's own counters; anything it does not report
+  shows as `unknown`.
+
+#### Connect your coding agent
+
+```bash
+rigspark connect claude     # Claude Code via the local Anthropic Messages API
+rigspark connect codex      # Codex via the local OpenAI Responses API
+rigspark connect opencode   # OpenCode via an inline provider config
+rigspark connect pi         # prints the snippet for Pi, Hermes, OpenClaw or Cline
+```
+
+`connect` points the agent at the active loopback server for that launch only.
+It never rewrites the agent's own config files. Add `--dry-run` to print the
+command and environment instead of starting the agent.
 
 ### 5. Continue in the browser workspace
 
@@ -304,6 +340,8 @@ opens the same verdicts and a local chat in `rigspark gui`.
 | Open the terminal UI | `rigspark` |
 | Open the browser workspace | `rigspark gui` |
 | Generate local media | `rigspark generate` |
+| Benchmark the active server | `rigspark bench` |
+| Connect a coding agent | `rigspark connect <agent>` |
 | Stop the active model | `rigspark down` |
 
 Run `rigspark --help` for the complete CLI.

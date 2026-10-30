@@ -35,6 +35,7 @@ pub fn build_catalog(candidates: &[RawModel], now: &str) -> Result<Catalog, Vali
             .map(|_| derive_benchmark_proxy(&model.family, &model.params))
             .transpose()?;
     }
+    catalog.schema_version = crate::catalog::required_schema_version(&catalog.models);
     let encoded =
         serde_json::to_string(&catalog).map_err(|error| ValidationError(error.to_string()))?;
     Catalog::parse(&encoded)

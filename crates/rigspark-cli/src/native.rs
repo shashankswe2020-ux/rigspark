@@ -79,7 +79,7 @@ use std::{
     about = "Hardware-aware local model advice, runtime management, and chat"
 )]
 struct Args {
-    #[arg(default_value="recommend", value_parser=["recommend","can-run","plan","catalog","doctor","ls","up","switch","down","chat","migrate","gui","generate"])]
+    #[arg(default_value="recommend", value_parser=["recommend","can-run","plan","catalog","doctor","ls","up","switch","down","chat","migrate","gui","generate","bench","connect"])]
     command: String,
     model: Option<String>,
     #[arg(short = 'm', long = "model")]
@@ -162,6 +162,20 @@ struct Args {
     flash_attn: Option<String>,
     #[arg(long, value_parser = ["off", "reuse"])]
     prompt_cache: Option<String>,
+    #[arg(long, value_parser = ["auto", "draft", "ngram", "off"])]
+    speculative: Option<String>,
+    #[arg(long, value_parser = clap::value_parser!(u8).range(1..=16))]
+    parallel: Option<u8>,
+    #[arg(long, value_parser = clap::value_parser!(u8).range(1..=20))]
+    iterations: Option<u8>,
+    #[arg(long, value_parser = clap::value_parser!(u8).range(0..=5))]
+    warmup: Option<u8>,
+    #[arg(long, value_parser = clap::value_parser!(u32).range(16..=2048))]
+    output_tokens: Option<u32>,
+    #[arg(long, value_parser = clap::value_parser!(u8).range(1..=16))]
+    concurrency: Option<u8>,
+    #[arg(long, value_parser = ["short", "long"])]
+    fixture: Option<String>,
     #[arg(long, conflicts_with = "status")]
     update: bool,
     #[arg(long)]
@@ -190,6 +204,11 @@ impl Args {
             kv: self.kv_cache(),
             flash_attention: self.flash_attn.as_deref().and_then(FlashAttention::parse),
             prompt_reuse: self.prompt_cache.as_deref().and_then(PromptReuse::parse),
+            speculative: self
+                .speculative
+                .as_deref()
+                .and_then(rigspark_runtime::cache::Speculative::parse),
+            parallel: self.parallel,
         }
     }
 }
@@ -1010,7 +1029,7 @@ async fn execute(mut args: Args) -> Result<u8, Box<dyn std::error::Error>> {
         return Ok(0);
     }
     if !args.parity {
-        if !["can-run", "plan", "up", "switch", "down"].contains(&args.command.as_str())
+        if !["can-run", "plan", "up", "switch", "down", "connect"].contains(&args.command.as_str())
             && args.model.is_some()
         {
             return Err("this command does not accept a model argument".into());
@@ -1068,6 +1087,12 @@ async fn execute(mut args: Args) -> Result<u8, Box<dyn std::error::Error>> {
         {
             return Err("installed comparison only supports Ollama context options".into());
         }
+    }
+    if args.command == "bench" && !args.parity {
+        return run_bench(&args).await;
+    }
+    if args.command == "connect" && !args.parity {
+        return run_connect(&args);
     }
     if args.command == "ls" && !args.parity {
         let store =
@@ -2588,5 +2613,148 @@ mod migration_output_tests {
                 }
             }
         }
+    }
+}
+
+/// Benchmarks the active server with fixed prompts; metrics come from the runtime itself.
+async fn run_bench(args: &Args) -> Result<u8, Box<dyn std::error::Error>> {
+    use rigspark_runtime::bench::{self, BenchOptions, Fixture, Protocol};
+    let store = rigspark_runtime::state::StateStore::new(rigspark_runtime::state::Config::load()?);
+    let Some(active) = store.read()?.active else {
+        return Err("no active server to benchmark; run up first".into());
+    };
+    let defaults = BenchOptions::default();
+    let options = BenchOptions {
+        iterations: args.iterations.unwrap_or(defaults.iterations),
+        warmup: args.warmup.unwrap_or(defaults.warmup),
+        output_tokens: args.output_tokens.unwrap_or(defaults.output_tokens),
+        concurrency: args.concurrency.unwrap_or(defaults.concurrency),
+        fixture: if args.fixture.as_deref() == Some("long") {
+            Fixture::Long
+        } else {
+            Fixture::Short
+        },
+    };
+    let protocol = Protocol::for_backend(&active.backend)?;
+    let model = active
+        .runtime_model_id
+        .clone()
+        .unwrap_or_else(|| active.model_id.clone());
+    let transport = rigspark_runtime::http::NativeTransport::new()?;
+    let clock = bench::SystemClock::new();
+    let cancel = tokio_util::sync::CancellationToken::new();
+    let operation = bench::run(
+        &transport,
+        &clock,
+        &active.endpoint,
+        &model,
+        protocol,
+        &options,
+        &cancel,
+    );
+    tokio::pin!(operation);
+    let report = tokio::select! {
+        result = &mut operation => result?,
+        _ = tokio::signal::ctrl_c() => {
+            cancel.cancel();
+            operation.await?
+        }
+    };
+    if args.json {
+        let mut value = serde_json::to_value(&report)?;
+        value["backend"] = json!(active.backend);
+        value["modelId"] = json!(active.model_id);
+        if let Some(cache) = &active.cache {
+            value["launchProfile"] = json!(cache);
+        }
+        println!("{}", serde_json::to_string_pretty(&sanitized(&value))?);
+    } else {
+        if let Some(cache) = &active.cache {
+            println!("Launch profile: {}", cache.summary());
+        }
+        print!("{}", bench::render_text(&report));
+    }
+    Ok(0)
+}
+
+/// Starts a coding agent against the active server, or prints how to configure it.
+fn run_connect(args: &Args) -> Result<u8, Box<dyn std::error::Error>> {
+    use rigspark_runtime::connect::{Agent, ConnectPlan, plan};
+    let name = args
+        .model
+        .as_deref()
+        .ok_or_else(|| format!("name an agent to connect: {}", Agent::NAMES.join(", ")))?;
+    let agent = Agent::parse(name).ok_or_else(|| {
+        format!(
+            "unknown agent {:?}; choose one of {}",
+            strip_control(name),
+            Agent::NAMES.join(", ")
+        )
+    })?;
+    let store = rigspark_runtime::state::StateStore::new(rigspark_runtime::state::Config::load()?);
+    let Some(active) = store.read()?.active else {
+        return Err("no active server to connect; run up first".into());
+    };
+    let model = active
+        .runtime_model_id
+        .clone()
+        .unwrap_or_else(|| active.model_id.clone());
+    match plan(agent, &active.endpoint, &active.backend, &model)? {
+        ConnectPlan::Instructions { text } => {
+            print!("{text}");
+            Ok(0)
+        }
+        ConnectPlan::Launch {
+            binary,
+            args: agent_args,
+            env,
+        } => {
+            if args.dry_run {
+                for (key, value) in &env {
+                    println!("{key}={}", shell_quote(value));
+                }
+                let quoted: Vec<String> = agent_args.iter().map(|arg| shell_quote(arg)).collect();
+                println!("{binary} {}", quoted.join(" "));
+                return Ok(0);
+            }
+            let path = std::env::var_os("PATH")
+                .and_then(|paths| {
+                    std::env::split_paths(&paths)
+                        .filter(|dir| dir.is_absolute())
+                        .map(|dir| dir.join(binary))
+                        .find(|candidate| candidate.is_file())
+                })
+                .ok_or_else(|| {
+                    format!(
+                        "{} ({binary}) is not installed or not on PATH",
+                        agent.label()
+                    )
+                })?;
+            eprintln!(
+                "Connecting {} to {} at {}",
+                agent.label(),
+                strip_control(&active.model_id),
+                strip_control(&active.endpoint)
+            );
+            let status = std::process::Command::new(path)
+                .args(&agent_args)
+                .envs(env)
+                .status()?;
+            Ok(status
+                .code()
+                .map_or(1, |code| u8::try_from(code).unwrap_or(1)))
+        }
+    }
+}
+
+fn shell_quote(value: &str) -> String {
+    if !value.is_empty()
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || b"-_./:=@".contains(&byte))
+    {
+        value.into()
+    } else {
+        format!("'{}'", value.replace('\'', "'\\''"))
     }
 }

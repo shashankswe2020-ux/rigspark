@@ -134,6 +134,7 @@ async fn llama_startup_uses_exact_artifact_and_alias() {
         &control,
     );
     let input = ServeRequest {
+        draft_model_path: None,
         model_id: "test:latest".into(),
         endpoint: "http://127.0.0.1:11435".into(),
         model_path: Some(path.clone()),
@@ -208,6 +209,7 @@ async fn mlx_owned_startup_is_isolated_authenticated_and_bound_to_exact_model() 
         token: None,
     };
     let input = ServeRequest {
+        draft_model_path: None,
         model_id: "test:latest".into(),
         endpoint: "http://127.0.0.1:11435".into(),
         model_path: Some(root.path().to_owned()),
@@ -249,6 +251,7 @@ async fn attach_only_never_spawns_when_daemon_disappears() {
         &control,
     );
     let request = ServeRequest {
+        draft_model_path: None,
         model_id: "test:latest".into(),
         endpoint: "http://127.0.0.1:11435".into(),
         model_path: None,
@@ -341,6 +344,7 @@ async fn legacy_bitnet_verifies_owned_launch_when_props_omit_model_path() {
         &control,
     );
     let request = ServeRequest {
+        draft_model_path: None,
         model_id: "test:latest".into(),
         endpoint: "http://127.0.0.1:11435".into(),
         model_path: Some(path),
@@ -364,6 +368,7 @@ async fn legacy_bitnet_rejects_wrong_launch_metadata_and_modern_identity_mismatc
     let path = root.path().join("weights.gguf");
     std::fs::write(&path, b"verified").unwrap();
     let request = ServeRequest {
+        draft_model_path: None,
         model_id: "test:latest".into(),
         endpoint: "http://127.0.0.1:11435".into(),
         model_path: Some(path.clone()),
@@ -456,6 +461,7 @@ async fn bitnet_uses_cpu_server_custom_port_context_openai_chat_and_owned_stop()
         &control,
     );
     let mut request = ServeRequest {
+        draft_model_path: None,
         model_id: "test:latest".into(),
         endpoint: "http://127.0.0.1:11435".into(),
         model_path: Some(path.clone()),
@@ -604,6 +610,7 @@ async fn ollama_startup_binds_custom_loopback_port_and_cleans_untrusted_readines
         .with_ollama_models(store.path().to_path_buf())
         .unwrap();
         let request = ServeRequest {
+            draft_model_path: None,
             model_id: "test:latest".into(),
             endpoint: "http://127.0.0.1:11435".into(),
             model_path: None,
@@ -685,6 +692,7 @@ async fn attach_preserves_foreign_ownership_and_stop_never_signals_it() {
         };
         let adapter = RuntimeAdapter::new(kind, PathBuf::from(RUNTIME), &Http, &probe, &control);
         let request = ServeRequest {
+            draft_model_path: None,
             model_id: "test:latest".into(),
             endpoint: "http://127.0.0.1:11435".into(),
             model_path: Some(PathBuf::from("/verified/weights.gguf")),
@@ -720,6 +728,7 @@ async fn untrusted_listener_is_rejected_before_attachment() {
         &control,
     );
     let request = ServeRequest {
+        draft_model_path: None,
         model_id: "test:latest".into(),
         endpoint: "http://127.0.0.1:11435".into(),
         model_path: None,
@@ -782,6 +791,7 @@ async fn studio_requires_exact_delegated_path_and_never_owns_listener() {
         token: None,
     };
     let mut request = ServeRequest {
+        draft_model_path: None,
         model_id: "test:latest".into(),
         endpoint: "http://127.0.0.1:11435".into(),
         model_path: Some(PathBuf::from("owner/model/weights.gguf")),
@@ -823,6 +833,7 @@ async fn mlx_never_attaches_to_an_existing_listener() {
         token: None,
     };
     let request = ServeRequest {
+        draft_model_path: None,
         model_id: "test:latest".into(),
         endpoint: "http://127.0.0.1:11435".into(),
         model_path: Some(PathBuf::from("/verified/model")),
@@ -960,6 +971,7 @@ async fn owned_launches_apply_the_cache_profile_and_record_it() {
         &control,
     );
     let request = ServeRequest {
+        draft_model_path: None,
         model_id: "test:latest".into(),
         endpoint: "http://127.0.0.1:11435".into(),
         model_path: Some(path.clone()),
@@ -995,6 +1007,7 @@ async fn owned_launches_apply_the_cache_profile_and_record_it() {
     .with_ollama_models(store.path().to_path_buf())
     .unwrap();
     let request = ServeRequest {
+        draft_model_path: None,
         model_id: "test:latest".into(),
         endpoint: "http://127.0.0.1:11435".into(),
         model_path: None,
@@ -1023,6 +1036,7 @@ async fn cache_settings_are_refused_for_a_runtime_rigspark_did_not_start() {
     for kind in [BackendKind::Ollama, BackendKind::LlamaCpp] {
         let adapter = RuntimeAdapter::new(kind, PathBuf::from(RUNTIME), &Http, &probe, &control);
         let request = ServeRequest {
+            draft_model_path: None,
             model_id: "test:latest".into(),
             endpoint: "http://127.0.0.1:11435".into(),
             model_path: None,
@@ -1036,4 +1050,106 @@ async fn cache_settings_are_refused_for_a_runtime_rigspark_did_not_start() {
         assert!(error.0.contains("starts"), "{}", error.0);
     }
     assert!(control.signals.lock().unwrap().is_empty());
+}
+
+#[tokio::test]
+async fn llama_cpp_launches_a_verified_drafter_and_refuses_unverified_ones() {
+    use rigspark_runtime::cache::{CacheProfile, Speculative};
+    let root = tempfile::tempdir().unwrap();
+    let path = root.path().join("weights.gguf");
+    let draft = root.path().join("draft.gguf");
+    std::fs::write(&path, b"verified").unwrap();
+    std::fs::write(&draft, b"verified drafter").unwrap();
+    let http = ModelHttp {
+        path: path.to_string_lossy().into_owned(),
+        mlx: false,
+    };
+    let probe = Probe {
+        binary: RUNTIME.into(),
+    };
+    let control = SpawnControl {
+        args: Mutex::new(Vec::new()),
+        env: Mutex::new(Default::default()),
+        cleaned: std::sync::Arc::new(Mutex::new(false)),
+    };
+    let llama = RuntimeAdapter::new(
+        BackendKind::LlamaCpp,
+        PathBuf::from(RUNTIME),
+        &http,
+        &probe,
+        &control,
+    );
+    let drafting = CacheProfile {
+        speculative: Speculative::Draft,
+        parallel: Some(4),
+        ..CacheProfile::default()
+    };
+    let request = ServeRequest {
+        model_id: "test:latest".into(),
+        endpoint: "http://127.0.0.1:11435".into(),
+        model_path: Some(path.clone()),
+        draft_model_path: Some(draft.clone()),
+        context: None,
+        cache: Some(drafting),
+    };
+    let handle = llama
+        .serve(&request, &CancellationToken::new())
+        .await
+        .unwrap();
+    assert_eq!(handle.cache, Some(drafting));
+    let draft_text = draft.to_string_lossy().into_owned();
+    assert_eq!(
+        control.args.lock().unwrap()[8..],
+        [
+            "--model-draft",
+            draft_text.as_str(),
+            "--spec-type",
+            "draft-simple",
+            "--parallel",
+            "4",
+            "--kv-unified"
+        ]
+    );
+    let cancel = CancellationToken::new();
+    for bad in [
+        ServeRequest {
+            draft_model_path: None,
+            ..request.clone()
+        },
+        ServeRequest {
+            draft_model_path: Some(root.path().join("missing.gguf")),
+            ..request.clone()
+        },
+        ServeRequest {
+            draft_model_path: Some(path.clone()),
+            ..request.clone()
+        },
+        ServeRequest {
+            cache: None,
+            ..request.clone()
+        },
+    ] {
+        assert!(llama.serve(&bad, &cancel).await.is_err());
+    }
+    let ollama = RuntimeAdapter::new(
+        BackendKind::Ollama,
+        PathBuf::from(RUNTIME),
+        &Http,
+        &probe,
+        &control,
+    );
+    assert!(
+        ollama
+            .serve(
+                &ServeRequest {
+                    model_path: None,
+                    cache: None,
+                    ..request.clone()
+                },
+                &cancel
+            )
+            .await
+            .is_err(),
+        "only llama.cpp takes a drafter"
+    );
 }

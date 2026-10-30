@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "generatedAt": "2026-10-08T12:11:08.720Z",
   "models": [
     {
@@ -5543,7 +5543,13 @@
       "releaseDate": "2025-04-29",
       "source": {
         "ollama": "qwen3:0.6b",
-        "hf": "Qwen/Qwen3-0.6B"
+        "hf": "Qwen/Qwen3-0.6B",
+        "gguf": {
+          "repo": "Qwen/Qwen3-0.6B-GGUF",
+          "revision": "23749fefcc72300e3a2ad315e1317431b06b590a",
+          "file": "Qwen3-0.6B-Q8_0.gguf",
+          "sha256": "9465e63a22add5354d9bb4b99e90117043c7124007664907259bd16d043bb031"
+        }
       },
       "quantizations": [
         {
@@ -5650,7 +5656,8 @@
           "sha256": "a8cc1361f3145dc01f6d77c6c82c9116b9ffe3c97b34716fe20418455876c40e"
         }
       ],
-      "benchmarkProxy": 0.62
+      "benchmarkProxy": 0.62,
+      "drafter": "qwen3:0.6b"
     },
     {
       "id": "qwen3:235b-a22b",
@@ -5718,7 +5725,8 @@
           "sha256": "58574f2e94b99fb9e4391408b57e5aeaaaec10f6384e9a699fc2cb43a5c8eabf"
         }
       ],
-      "benchmarkProxy": 0.74
+      "benchmarkProxy": 0.74,
+      "drafter": "qwen3:0.6b"
     },
     {
       "id": "qwen3:32b",
@@ -5754,7 +5762,8 @@
           "sha256": "3291abe70f16ee9682de7bfae08db5373ea9d6497e614aaad63340ad421d6312"
         }
       ],
-      "benchmarkProxy": 0.74
+      "benchmarkProxy": 0.74,
+      "drafter": "qwen3:0.6b"
     },
     {
       "id": "qwen3:8b",

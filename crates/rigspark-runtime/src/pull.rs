@@ -27,6 +27,7 @@ pub async fn with_ollama_daemon<T>(
         ));
     }
     let request = ServeRequest {
+        draft_model_path: None,
         model_id: "llmup-acquisition".into(),
         endpoint: endpoint.into(),
         model_path: None,

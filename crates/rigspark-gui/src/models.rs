@@ -302,6 +302,7 @@ pub async fn dispatch(host: Arc<Host>, request: Request) -> ApiResult {
                 kv: input.kv_cache,
                 flash_attention: input.flash_attention,
                 prompt_reuse: input.prompt_cache,
+                ..Default::default()
             },
         };
         if let Err(error) = run_native_with_config(

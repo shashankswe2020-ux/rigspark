@@ -629,6 +629,7 @@ pub fn build_entry(input: &AdmissionInput) -> Result<CatalogModel, Rejection> {
         quantizations: vec![quant],
         kv_bytes_per_token: kv_bytes_per_token(gguf),
         benchmark_proxy: None,
+        drafter: None,
     };
     let encoded = json!({"schemaVersion":crate::catalog::SCHEMA_VERSION,"generatedAt":"2026-01-01T00:00:00.000Z","models":[entry]});
     crate::catalog::Catalog::parse(&encoded.to_string())
