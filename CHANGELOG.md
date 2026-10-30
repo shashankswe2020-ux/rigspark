@@ -14,6 +14,12 @@
 
 ### Fixes
 
+- Chat memory no longer drops the conversation when the embedding model
+  (`nomic-embed-text`) is missing or unreachable. The turn and facts are
+  saved, recall vectors are skipped, and chat explains how to enable recall.
+  Malformed embeddings or a changed embedding space still refuse capture.
+- Download progress shows the file's real size instead of the size limit
+  used to check it, both while downloading and for already-cached weights.
 - `rigspark bench` and `rigspark connect` panicked because they were missing
   from the command table. A test now requires every command to have one.
   `connect --dry-run` no longer reports "migration options require migrate".

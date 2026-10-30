@@ -971,6 +971,11 @@ async fn execute(mut args: Args) -> Result<u8, Box<dyn std::error::Error>> {
                 println!();
                 if result["memoryCaptured"] == false {
                     eprintln!("Memory capture failed; the reply was not recorded.");
+                } else if let Some(reason) = result["embeddingSkipped"].as_str() {
+                    eprintln!(
+                        "Saved to memory without recall search: {}. Pull the embedding model (for Ollama: ollama pull nomic-embed-text) to enable it.",
+                        strip_control(reason)
+                    );
                 }
             }
             return Ok(0);

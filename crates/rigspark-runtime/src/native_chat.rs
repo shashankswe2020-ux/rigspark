@@ -215,6 +215,7 @@ pub async fn run_with_history(
         return Err(HarnessError::Cancelled);
     }
     let mut captured = None;
+    let mut embedding_skipped = None;
     if let Some(memory) = memory {
         let backend = active
             .as_ref()
@@ -236,24 +237,29 @@ pub async fn run_with_history(
                 .map(|meta| meta.model)
                 .unwrap_or_else(|| "nomic-embed-text".into()),
         };
-        captured = Some(
-            memory
-                .capture(
-                    &options.message,
-                    &response,
-                    CaptureOptions {
-                        timestamp: &timestamp()?,
-                        embedder: (!unsupported)
-                            .then_some(&embedder as &dyn crate::memory::Embedder),
-                        embedding_unsupported: unsupported,
-                    },
-                    cancel,
-                )
-                .await
-                .is_ok(),
-        );
+        let outcome = memory
+            .capture(
+                &options.message,
+                &response,
+                CaptureOptions {
+                    timestamp: &timestamp()?,
+                    embedder: (!unsupported).then_some(&embedder as &dyn crate::memory::Embedder),
+                    embedding_unsupported: unsupported,
+                },
+                cancel,
+            )
+            .await;
+        embedding_skipped = outcome
+            .as_ref()
+            .ok()
+            .and_then(|result| result.embedding_skipped.clone());
+        captured = Some(outcome.is_ok());
     }
-    Ok(serde_json::json!({"content":response,"harness":options.provider,"memoryCaptured":captured}))
+    let mut report = serde_json::json!({"content":response,"harness":options.provider,"memoryCaptured":captured});
+    if let Some(reason) = embedding_skipped {
+        report["embeddingSkipped"] = serde_json::json!(reason);
+    }
+    Ok(report)
 }
 
 #[cfg(test)]

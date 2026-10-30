@@ -834,3 +834,43 @@ async fn verified_cache_stamps_stay_outside_mlx_repository_folders() {
     assert_eq!(first, second);
     assert_eq!(std::fs::read_dir(&second).unwrap().count(), 3);
 }
+
+#[tokio::test]
+async fn ceiling_downloads_report_the_real_size_not_the_ceiling() {
+    use rigspark_runtime::acquire::SizePolicy;
+    let root = tempfile::tempdir().unwrap();
+    let events = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+    let recorded = events.clone();
+    let acquire =
+        Acquisition::new(root.path())
+            .unwrap()
+            .with_progress(move |completed, total, _| {
+                recorded.lock().unwrap().push((completed, total))
+            });
+    let mut request = artifact(b"verified");
+    request.bytes = 100;
+    let transport = FakeTransport {
+        bytes: b"verified".to_vec(),
+    };
+    let cancel = tokio_util::sync::CancellationToken::new();
+    acquire
+        .acquire_sized(&request, SizePolicy::Ceiling, &transport, &cancel)
+        .await
+        .unwrap();
+    let seen = events.lock().unwrap().clone();
+    assert_eq!(seen.last(), Some(&(8, 8)), "{seen:?}");
+    assert!(
+        seen.iter().all(|(_, total)| *total != 100),
+        "the ceiling is never shown: {seen:?}"
+    );
+    events.lock().unwrap().clear();
+    acquire
+        .acquire_sized(&request, SizePolicy::Ceiling, &transport, &cancel)
+        .await
+        .unwrap();
+    assert_eq!(
+        events.lock().unwrap().last(),
+        Some(&(8, 8)),
+        "cache hits report the file size"
+    );
+}
