@@ -116,17 +116,30 @@ impl CatalogStore {
 
     pub fn load(&self) -> Result<LoadedCatalog, CatalogUpdateError> {
         let mut warnings = Vec::new();
+        let catalog = Catalog::parse(rigspark_core::MODELS_JSON)
+            .map_err(|_| CatalogUpdateError::Invalid("bundled catalog"))?;
+        // A downloaded snapshot only wins while it is at least as new as the catalog
+        // compiled into this binary; otherwise upgrading rigspark would stay pinned to it.
+        let current = |snapshot: &VerifiedCatalog| {
+            generated(&snapshot.catalog.generated_at) >= generated(&catalog.generated_at)
+        };
         match self.read_state() {
             Ok(Some(state)) => {
                 match self.verify_cached(&state.current) {
-                    Ok(snapshot) => return Ok(self.selected(snapshot, "updated", warnings)),
+                    Ok(snapshot) if current(&snapshot) => {
+                        return Ok(self.selected(snapshot, "updated", warnings));
+                    }
+                    Ok(_) => {}
                     Err(_) => {
                         warnings.push("Active catalog failed verification; using fallback.".into())
                     }
                 }
                 if let Some(previous) = state.previous {
                     match self.verify_cached(&previous) {
-                        Ok(snapshot) => return Ok(self.selected(snapshot, "previous", warnings)),
+                        Ok(snapshot) if current(&snapshot) => {
+                            return Ok(self.selected(snapshot, "previous", warnings));
+                        }
+                        Ok(_) => {}
                         Err(_) => warnings.push("Previous catalog failed verification.".into()),
                     }
                 }
@@ -135,8 +148,6 @@ impl CatalogStore {
             Err(_) => warnings
                 .push("Catalog cache is unreadable or invalid; using bundled catalog.".into()),
         }
-        let catalog = Catalog::parse(rigspark_core::MODELS_JSON)
-            .map_err(|_| CatalogUpdateError::Invalid("bundled catalog"))?;
         let status = CatalogStatus {
             source: "bundled",
             revision: None,
@@ -218,4 +229,9 @@ impl CatalogStore {
         directory.write(Path::new(STATE), &encoded, false, false)?;
         Ok(self.selected(snapshot, "updated", Vec::new()).status)
     }
+}
+
+/// Generation time of a validated catalog; unparsable stamps sort first.
+fn generated(stamp: &str) -> Option<time::OffsetDateTime> {
+    time::OffsetDateTime::parse(stamp, &time::format_description::well_known::Rfc3339).ok()
 }
