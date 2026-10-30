@@ -163,11 +163,49 @@ impl Lifecycle<'_> {
             .map_err(|error| BackendError(error.to_string()))?;
         outcome
     }
+    /// Clears a record whose process is provably gone (after a reboot, or when the daemon it
+    /// attached to exited), so a stale pointer cannot wedge every later launch. Never probes
+    /// listeners or signals processes; a live PID or unknown liveness keeps the record.
+    pub async fn forget_dead(
+        &self,
+        cancel: &CancellationToken,
+    ) -> Result<Option<ServerState>, BackendError> {
+        let Some(pid) = self
+            .store
+            .read()
+            .map_err(|error| BackendError(error.to_string()))?
+            .active
+            .and_then(|active| active.pid)
+        else {
+            return Ok(None);
+        };
+        if !matches!(self.probe.alive(pid).await, Ok(false)) {
+            return Ok(None);
+        }
+        let guard = self.lock(cancel).await?;
+        let prior = self
+            .store
+            .read()
+            .map_err(|error| BackendError(error.to_string()))?;
+        let outcome = match &prior.active {
+            Some(active) if active.pid == Some(pid) => self
+                .store
+                .compare_and_write(&guard, &prior, &RuntimeState::default())
+                .map(|()| prior.active.clone())
+                .map_err(|error| BackendError(error.to_string())),
+            _ => Ok(None),
+        };
+        guard
+            .release()
+            .map_err(|error| BackendError(error.to_string()))?;
+        outcome
+    }
     pub async fn review(
         &self,
         target: &str,
         cancel: &CancellationToken,
     ) -> Result<Reviewed, BackendError> {
+        self.forget_dead(cancel).await?;
         let state = self
             .store
             .read()
@@ -440,6 +478,20 @@ impl Lifecycle<'_> {
                 "{target} is not the active model ({})",
                 active.model_id
             )));
+        }
+        // The record the caller asked to stop may be cleared once its process is provably gone.
+        if let Some(pid) = active.pid
+            && matches!(self.probe.alive(pid).await, Ok(false))
+        {
+            let outcome = self
+                .store
+                .compare_and_write(&guard, &prepared, &RuntimeState::default())
+                .map(|()| prepared.active.clone())
+                .map_err(|error| BackendError(error.to_string()));
+            guard
+                .release()
+                .map_err(|error| BackendError(error.to_string()))?;
+            return outcome;
         }
         let operation = if active.owned_by_us {
             Operation::Down

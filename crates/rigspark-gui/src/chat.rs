@@ -240,7 +240,7 @@ pub async fn handle(host: Arc<Host>, request: Request) -> ApiResult {
             }else{service.run(prepared,&harness,&stamp,None,&cancel,&mut sink).await};
             host.approvals.clear();
             if cancel.is_cancelled(){return;}
-            let value=match result {Ok(_)=>json!({"type":"done","turnsAppended":1,"factsExtracted":0,"vectorsEmbedded":0}),Err(_)=>json!({"type":"error","message":"Chat failed; no completed exchange was saved."})};
+            let value=match result {Ok(_)=>json!({"type":"done","turnsAppended":1,"factsExtracted":0,"vectorsEmbedded":0}),Err(error)=>json!({"type":"error","message":failure_message(&error)})};
             let _=sender.send(event(value)).await;
         }));
     }
@@ -250,4 +250,52 @@ pub async fn handle(host: Arc<Host>, request: Request) -> ApiResult {
     })
     .keep_alive(axum::response::sse::KeepAlive::default())
     .into_response())
+}
+
+/// What a failed chat tells the user: the cause class and the next step, never raw details.
+fn failure_message(error: &rigspark_runtime::chat_service::ChatError) -> String {
+    use rigspark_runtime::{chat_service::ChatError, harness::HarnessError};
+    let cause = match error {
+        ChatError::Harness(HarnessError::Drift) | ChatError::Harness(HarnessError::Invalid) => {
+            "The model server is not the one RigSpark started; it may have restarted. Start the model again from Models."
+        }
+        ChatError::Harness(HarnessError::Unavailable) => {
+            "No model is ready. Start one from Models."
+        }
+        ChatError::Harness(
+            HarnessError::Transport | HarnessError::Timeout | HarnessError::Status(_),
+        ) => "The model server did not answer. Check that it is still running in Tools.",
+        ChatError::Harness(HarnessError::Limit) => "The reply was larger than RigSpark allows.",
+        _ => "Chat failed.",
+    };
+    format!("{cause} No completed exchange was saved.")
+}
+
+#[cfg(test)]
+mod failure_tests {
+    use super::failure_message;
+    use rigspark_runtime::{chat_service::ChatError, harness::HarnessError};
+
+    #[test]
+    fn failures_name_the_cause_and_next_step() {
+        assert!(
+            failure_message(&ChatError::Harness(HarnessError::Drift))
+                .contains("Start the model again")
+        );
+        assert!(
+            failure_message(&ChatError::Harness(HarnessError::Unavailable))
+                .contains("Start one from Models")
+        );
+        assert!(
+            failure_message(&ChatError::Harness(HarnessError::Status(500)))
+                .contains("did not answer")
+        );
+        for error in [
+            ChatError::Invalid,
+            ChatError::Library,
+            ChatError::Harness(HarnessError::Drift),
+        ] {
+            assert!(failure_message(&error).ends_with("No completed exchange was saved."));
+        }
+    }
 }
