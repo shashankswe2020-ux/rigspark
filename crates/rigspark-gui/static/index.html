@@ -549,6 +549,30 @@
                 Daemon runtimes start a local server when switched on. Per-model runtimes launch when you start a model from Models.
               </p>
 
+              <h3 class="group-title">Coding agents</h3>
+              <div class="group connect-group">
+                <label class="field">
+                  <span>Agent</span>
+                  <select id="connect-agent" aria-describedby="connect-output"></select>
+                </label>
+                <pre id="connect-output" class="connect-output" aria-live="polite">Start a model, then choose an agent.</pre>
+                <button id="connect-copy" class="chip-btn" type="button" hidden>Copy</button>
+              </div>
+              <p class="group-foot">
+                Agents reach the running model on 127.0.0.1 for that launch only; their own config files are never changed.
+              </p>
+
+              <div id="desktop-settings" hidden>
+                <h3 class="group-title">App</h3>
+                <div class="group desktop-group">
+                  <label class="model-toggle"><span>Launch at login</span><input id="launch-at-login" class="switch" type="checkbox" role="switch" /></label>
+                  <div class="stat-row"><span class="stat-label">Version</span><span id="desktop-version" class="stat-value">—</span></div>
+                  <button id="desktop-update" class="chip-btn" type="button">Check for updates</button>
+                  <p id="desktop-update-status" class="group-foot" aria-live="polite"></p>
+                </div>
+                <p class="group-foot">Closing the window keeps RigSpark in the menu bar. Choose Quit RigSpark there to stop it.</p>
+              </div>
+
               <h3 class="group-title">Guarantees</h3>
               <ul class="group feature-list">
                 <li>Loopback-only bind (127.0.0.1)</li>
@@ -713,6 +737,24 @@
           <option value="q4_0">q4_0 · 28%</option>
         </select>
       </label>
+      <label class="context-control" id="speculative-field" for="speculative" title="Speculative decoding for runtimes rigspark starts. Default uses the catalog drafter on llama.cpp; Ollama manages its own.">
+        <span>Speculative</span>
+        <select id="speculative">
+          <option value="" selected>Default</option>
+          <option value="draft">Drafter</option>
+          <option value="ngram">N-gram</option>
+          <option value="off">Off</option>
+        </select>
+      </label>
+      <label class="context-control" id="parallel-field" for="parallel-slots" title="Concurrent request slots for runtimes rigspark starts. On Ollama each slot needs its own context, so set a context window.">
+        <span>Parallel slots</span>
+        <select id="parallel-slots">
+          <option value="" selected>Default</option>
+          <option value="2">2 agents</option>
+          <option value="4">4 agents</option>
+          <option value="8">8 agents</option>
+        </select>
+      </label>
       <label class="context-control" id="installed-port-field" for="installed-port" hidden>
         <span>Ollama port</span>
         <input id="installed-port" type="number" min="1" max="65535" step="1" value="11434" />
@@ -814,5 +856,6 @@
     <script src="/static/chat.js"></script>
     <script src="/static/telemetry.js"></script>
     <script src="/static/generate.js"></script>
+    <script src="/static/desktop.js"></script>
   </body>
 </html>

@@ -1,5 +1,19 @@
 use std::sync::Arc;
 use tauri::Manager;
+use tauri_plugin_autostart::ManagerExt as _;
+use tauri_plugin_updater::UpdaterExt as _;
+
+/// Argument the login item passes so a login launch starts in the menu bar only.
+#[cfg(not(test))]
+const BACKGROUND_ARG: &str = "--background";
+/// Commands the launch document may invoke; each re-checks window and URL.
+const DESKTOP_COMMANDS: [&str; 5] = [
+    "allow-select-workspace-directory",
+    "allow-desktop-status",
+    "allow-set-launch-at-login",
+    "allow-check-for-update",
+    "allow-install-update",
+];
 
 struct HostState(Arc<rigspark_gui::Host>);
 enum DirectoryPicker {
@@ -51,9 +65,9 @@ impl DirectoryPicker {
         }
     }
 }
-fn picker_capability(entry: &str) -> String {
+fn desktop_capability(entry: &str) -> String {
     let root_pattern = format!("{entry}{{}}");
-    serde_json::json!({"identifier":"main-picker","windows":["main"],"local":false,"remote":{"urls":[root_pattern]},"permissions":["allow-select-workspace-directory"]}).to_string()
+    serde_json::json!({"identifier":"main-desktop","windows":["main"],"local":false,"remote":{"urls":[root_pattern]},"permissions":DESKTOP_COMMANDS}).to_string()
 }
 fn authorized_url(url: &url::Url, origin: &str) -> bool {
     url.origin().ascii_serialization() == origin
@@ -62,29 +76,155 @@ fn authorized_url(url: &url::Url, origin: &str) -> bool {
         && url.username().is_empty()
         && url.password().is_none()
 }
-#[tauri::command]
-async fn select_workspace_directory<R: tauri::Runtime>(
-    window: tauri::WebviewWindow<R>,
-    state: tauri::State<'_, HostState>,
-    picker: tauri::State<'_, DirectoryPicker>,
-) -> Result<Option<String>, String> {
+fn authorize<R: tauri::Runtime>(
+    window: &tauri::WebviewWindow<R>,
+    state: &HostState,
+) -> Result<(), String> {
     if window.label() != "main"
         || !authorized_url(
             &window.url().map_err(|_| "window unavailable")?,
             &state.0.origin(),
         )
     {
-        return Err("directory picker is unavailable to this document".into());
+        return Err("desktop features are unavailable to this document".into());
     }
+    Ok(())
+}
+#[tauri::command]
+async fn select_workspace_directory<R: tauri::Runtime>(
+    window: tauri::WebviewWindow<R>,
+    state: tauri::State<'_, HostState>,
+    picker: tauri::State<'_, DirectoryPicker>,
+) -> Result<Option<String>, String> {
+    authorize(&window, &state)?;
     Ok(picker
         .pick()
         .await
         .map(|path| path.to_string_lossy().into_owned()))
 }
+#[tauri::command]
+async fn desktop_status<R: tauri::Runtime>(
+    window: tauri::WebviewWindow<R>,
+    state: tauri::State<'_, HostState>,
+) -> Result<serde_json::Value, String> {
+    authorize(&window, &state)?;
+    let app = window.app_handle();
+    Ok(serde_json::json!({
+        "version": app.package_info().version.to_string(),
+        "launchAtLogin": app.autolaunch().is_enabled().unwrap_or(false),
+    }))
+}
+#[tauri::command]
+async fn set_launch_at_login<R: tauri::Runtime>(
+    window: tauri::WebviewWindow<R>,
+    state: tauri::State<'_, HostState>,
+    enabled: bool,
+) -> Result<bool, String> {
+    authorize(&window, &state)?;
+    let launcher = window.app_handle().autolaunch();
+    if enabled {
+        launcher.enable()
+    } else {
+        launcher.disable()
+    }
+    .map_err(
+        |_| "the login item could not be changed; check System Settings > General > Login Items",
+    )?;
+    launcher
+        .is_enabled()
+        .map_err(|_| "the login item state is unavailable".into())
+}
+#[tauri::command]
+async fn check_for_update<R: tauri::Runtime>(
+    window: tauri::WebviewWindow<R>,
+    state: tauri::State<'_, HostState>,
+) -> Result<Option<serde_json::Value>, String> {
+    authorize(&window, &state)?;
+    let update = window
+        .app_handle()
+        .updater()
+        .map_err(|_| "updates are unavailable in this build")?
+        .check()
+        .await
+        .map_err(|_| "could not check for updates")?;
+    Ok(update.map(|update| {
+        serde_json::json!({
+            "version": rigspark_core::reports::strip_control(&update.version),
+            "notes": update.body.as_deref().map(rigspark_core::reports::strip_control),
+        })
+    }))
+}
+#[tauri::command]
+async fn install_update<R: tauri::Runtime>(
+    window: tauri::WebviewWindow<R>,
+    state: tauri::State<'_, HostState>,
+) -> Result<(), String> {
+    authorize(&window, &state)?;
+    let app = window.app_handle().clone();
+    let update = app
+        .updater()
+        .map_err(|_| "updates are unavailable in this build")?
+        .check()
+        .await
+        .map_err(|_| "could not check for updates")?
+        .ok_or("RigSpark is up to date")?;
+    // The updater verifies the release signature against the bundled public key.
+    update
+        .download_and_install(|_, _| {}, || {})
+        .await
+        .map_err(|_| "the update could not be verified or installed")?;
+    app.restart()
+}
+#[cfg(not(test))]
+fn show_main<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.show();
+        let _ = window.unminimize();
+        let _ = window.set_focus();
+    }
+}
+#[cfg(not(test))]
+fn build_tray(app: &tauri::App) -> tauri::Result<()> {
+    use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
+    let open = MenuItem::with_id(app, "open", "Open RigSpark", true, None::<&str>)?;
+    let update = MenuItem::with_id(app, "update", "Check for Updates…", true, None::<&str>)?;
+    let quit = MenuItem::with_id(app, "quit", "Quit RigSpark", true, Some("CmdOrCtrl+Q"))?;
+    let menu = Menu::with_items(
+        app,
+        &[
+            &open,
+            &PredefinedMenuItem::separator(app)?,
+            &update,
+            &PredefinedMenuItem::separator(app)?,
+            &quit,
+        ],
+    )?;
+    let mut tray = tauri::tray::TrayIconBuilder::with_id("main")
+        .tooltip("RigSpark")
+        .menu(&menu)
+        .show_menu_on_left_click(true)
+        .on_menu_event(|app, event| match event.id().as_ref() {
+            "open" => show_main(app),
+            "update" => {
+                show_main(app);
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.eval("window.dispatchEvent(new Event('rigspark:check-update'))");
+                }
+            }
+            "quit" => app.exit(0),
+            _ => {}
+        });
+    if let Some(icon) = app.default_window_icon() {
+        tray = tray.icon(icon.clone());
+    }
+    tray.build(app)?;
+    Ok(())
+}
 #[cfg(not(test))]
 fn main() {
     let dialog_smoke = std::env::args().any(|argument| argument == "--dialog-smoke-test");
     let smoke = dialog_smoke || std::env::args().any(|argument| argument == "--smoke-test");
+    let background = !smoke && std::env::args().any(|argument| argument == BACKGROUND_ARG);
     let runtime = tokio::runtime::Runtime::new().expect("native async runtime");
     let config = rigspark_runtime::state::Config::load().expect("native configuration");
     let listener = runtime
@@ -107,16 +247,28 @@ fn main() {
     let app = tauri::Builder::default()
         .manage(HostState(host.clone()))
         .manage(DirectoryPicker::Native { report: dialog_smoke, requests: Default::default() })
-        .invoke_handler(tauri::generate_handler![select_workspace_directory])
+        .plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            Some(vec![BACKGROUND_ARG]),
+        ))
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .invoke_handler(tauri::generate_handler![
+            select_workspace_directory,
+            desktop_status,
+            set_launch_at_login,
+            check_for_update,
+            install_update
+        ])
         .setup(move |app| {
-            app.add_capability(picker_capability(&entry))?;
-            let script = format!("if(window===window.top && location.origin==={} && location.pathname==='/'){{Object.defineProperty(window,'llmupDesktop',{{value:Object.freeze({{selectWorkspaceDirectory:()=>window.__TAURI_INTERNALS__.invoke('select_workspace_directory')}}),writable:false,configurable:false}});}}",serde_json::to_string(&origin)?);
+            app.add_capability(desktop_capability(&entry))?;
+            let script = format!("if(window===window.top && location.origin==={} && location.pathname==='/'){{const invoke=(command,args)=>window.__TAURI_INTERNALS__.invoke(command,args);Object.defineProperty(window,'llmupDesktop',{{value:Object.freeze({{selectWorkspaceDirectory:()=>invoke('select_workspace_directory'),status:()=>invoke('desktop_status'),setLaunchAtLogin:(enabled)=>invoke('set_launch_at_login',{{enabled:enabled===true}}),checkForUpdate:()=>invoke('check_for_update'),installUpdate:()=>invoke('install_update')}}),writable:false,configurable:false}});}}",serde_json::to_string(&origin)?);
             let allowed = origin.clone();
             let navigation_app=app.handle().clone();
             let smoke_app=app.handle().clone();
             if smoke { tauri::async_runtime::spawn(async move { tokio::time::sleep(std::time::Duration::from_secs(if dialog_smoke { 60 } else { 20 })).await; smoke_app.exit(1); }); }
             tauri::WebviewWindowBuilder::new(app,"main",tauri::WebviewUrl::External(entry.parse()?))
                 .title("RigSpark").inner_size(1280.0,840.0).min_inner_size(760.0,540.0)
+                .visible(!background)
                 // Matches the workspace's dark window colour so there is no white flash before paint.
                 .background_color(tauri::window::Color(28,28,30,255))
                 .initialization_script(script)
@@ -131,20 +283,36 @@ fn main() {
                 })
                 .on_page_load(move |window,payload| {
                     if smoke && matches!(payload.event(),tauri::webview::PageLoadEvent::Finished) {
-                        let _=window.eval(if dialog_smoke { include_str!("dialog-smoke.js") } else { "location.href='/__native_smoke/'+(document.title==='RigSpark' && document.querySelector('main') && document.querySelector('textarea') && typeof window.llmupDesktop?.selectWorkspaceDirectory==='function' && typeof window.__TAURI_INTERNALS__?.invoke==='function' ? 'pass':'fail')" });
+                        let _=window.eval(if dialog_smoke { include_str!("dialog-smoke.js") } else { "location.href='/__native_smoke/'+(document.title==='RigSpark' && document.querySelector('main') && document.querySelector('textarea') && typeof window.llmupDesktop?.selectWorkspaceDirectory==='function' && ['status','setLaunchAtLogin','checkForUpdate','installUpdate'].every((name)=>typeof window.llmupDesktop?.[name]==='function') && !document.querySelector('#desktop-settings')?.hidden && typeof window.__TAURI_INTERNALS__?.invoke==='function' ? 'pass':'fail')" });
                     }
                 })
                 .on_new_window(|_,_|tauri::webview::NewWindowResponse::Deny)
                 .on_download(|_,_|false)
                 .build()?;
             let closing = launch_host.clone();
-            app.get_webview_window("main").expect("main window").on_window_event(move |event| { if matches!(event,tauri::WindowEvent::Destroyed) { closing.shutdown.cancel(); } });
+            let window = app.get_webview_window("main").expect("main window");
+            let hidden = window.clone();
+            // Closing the window keeps serving from the menu bar; Quit stops everything.
+            window.on_window_event(move |event| match event {
+                tauri::WindowEvent::CloseRequested { api, .. } if !smoke => {
+                    api.prevent_close();
+                    let _ = hidden.hide();
+                }
+                tauri::WindowEvent::Destroyed => closing.shutdown.cancel(),
+                _ => {}
+            });
+            if !smoke {
+                build_tray(app)?;
+            }
             Ok(())
         })
         .build(tauri::generate_context!()).expect("Tauri application");
-    app.run(move |_, event| {
-        if matches!(event, tauri::RunEvent::Exit) {
-            host.shutdown.cancel();
+    app.run(move |handle, event| match event {
+        tauri::RunEvent::Exit => host.shutdown.cancel(),
+        #[cfg(target_os = "macos")]
+        tauri::RunEvent::Reopen { .. } => show_main(handle),
+        _ => {
+            let _ = handle;
         }
     });
     let _ = runtime.block_on(async {
@@ -164,10 +332,16 @@ mod tests {
         let app = tauri::test::mock_builder()
             .manage(HostState(host))
             .manage(picker)
-            .invoke_handler(tauri::generate_handler![select_workspace_directory])
+            .invoke_handler(tauri::generate_handler![
+                select_workspace_directory,
+                desktop_status,
+                set_launch_at_login,
+                check_for_update,
+                install_update
+            ])
             .build(tauri::generate_context!())
             .unwrap();
-        app.add_capability(picker_capability(&entry)).unwrap();
+        app.add_capability(desktop_capability(&entry)).unwrap();
         (app, entry)
     }
     #[test]

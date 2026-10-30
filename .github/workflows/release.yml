@@ -116,9 +116,85 @@ jobs:
           gh release upload "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --clobber \
             "target/native-dist/$stem.tar.gz" "target/native-dist/$stem.tar.gz.sha256"
 
+  desktop-macos:
+    name: Desktop app (${{ matrix.target }})
+    needs: verify
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - { target: aarch64-apple-darwin, arch: aarch64 }
+          - { target: x86_64-apple-darwin, arch: x86_64 }
+    runs-on: macos-14
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Fetch exact revision without an action runtime
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git init .
+          git remote add origin "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git"
+          AUTH=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\r\n')
+          export GIT_CONFIG_COUNT=1
+          export GIT_CONFIG_KEY_0="http.${GITHUB_SERVER_URL}/.extraheader"
+          export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $AUTH"
+          git fetch --no-tags --depth=1 origin "$GITHUB_SHA"
+          unset AUTH GIT_CONFIG_COUNT GIT_CONFIG_KEY_0 GIT_CONFIG_VALUE_0 GH_TOKEN
+          git checkout --detach FETCH_HEAD
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+      - name: Install target and pinned Tauri CLI
+        run: |
+          rustup show active-toolchain
+          rustup target add "${{ matrix.target }}"
+          cargo install tauri-cli --version 2.12.4 --locked
+      - name: Build unsigned RigSpark.app and dmg
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          CI: "true"
+        run: |
+          set -euo pipefail
+          cd apps/desktop/src-tauri
+          extra=()
+          if [ -z "$TAURI_SIGNING_PRIVATE_KEY" ]; then
+            echo "::notice::TAURI_SIGNING_PRIVATE_KEY is not set; building without in-app update artifacts."
+            extra=(--config '{"bundle":{"createUpdaterArtifacts":false}}')
+          fi
+          cargo tauri build --target "${{ matrix.target }}" --bundles app,dmg "${extra[@]}"
+          out="target/${{ matrix.target }}/release/bundle"
+          mkdir -p ../../../desktop-dist
+          cp "$out"/dmg/*.dmg "../../../desktop-dist/RigSpark_${{ matrix.arch }}.dmg"
+          if [ -f "$out/macos/RigSpark.app.tar.gz.sig" ]; then
+            cp "$out/macos/RigSpark.app.tar.gz" "../../../desktop-dist/RigSpark_${{ matrix.arch }}.app.tar.gz"
+            cp "$out/macos/RigSpark.app.tar.gz.sig" "../../../desktop-dist/RigSpark_${{ matrix.arch }}.app.tar.gz.sig"
+          fi
+          cd ../../../desktop-dist
+          for file in *.dmg *.app.tar.gz; do
+            [ -f "$file" ] && shasum -a 256 "$file" > "$file.sha256"
+          done
+          ls -la
+      - name: Attach to draft release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if ! gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --draft --verify-tag \
+              --title "rigspark $GITHUB_REF_NAME" --notes "Release notes are added when all archives are verified." \
+              || gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null
+          fi
+          gh release upload "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --clobber desktop-dist/*
+
   publish:
     name: Checksums, formula and publication
-    needs: build
+    needs: [build, desktop-macos]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -149,11 +225,38 @@ jobs:
         run: |
           set -euo pipefail
           mkdir release-assets
-          gh release download "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --dir release-assets --pattern '*.tar.gz*'
+          gh release download "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --dir release-assets --pattern 'rigspark-*.tar.gz*'
           cd release-assets
           test "$(ls *.tar.gz | wc -l)" -eq 5
           cat *.tar.gz.sha256 | sort -k2 > SHA256SUMS
           sha256sum -c SHA256SUMS
+      - name: Publish the desktop update manifest
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir desktop-assets
+          gh release download "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --dir desktop-assets --pattern 'RigSpark_*.app.tar.gz.sig' || true
+          if [ "$(ls desktop-assets | wc -l)" -ne 2 ]; then
+            echo "::notice::Desktop updater signatures are missing; latest.json is not published."
+            exit 0
+          fi
+          python3 - "$GITHUB_REF_NAME" "$GITHUB_REPOSITORY" > desktop-assets/latest.json <<'PY'
+          import datetime, json, pathlib, sys
+          tag, repo = sys.argv[1], sys.argv[2]
+          base = f"https://github.com/{repo}/releases/download/{tag}"
+          platforms = {}
+          for arch in ("aarch64", "x86_64"):
+              signature = pathlib.Path(f"desktop-assets/RigSpark_{arch}.app.tar.gz.sig").read_text().strip()
+              platforms[f"darwin-{arch}"] = {"signature": signature, "url": f"{base}/RigSpark_{arch}.app.tar.gz"}
+          print(json.dumps({
+              "version": tag.removeprefix("v"),
+              "notes": f"See https://github.com/{repo}/releases/tag/{tag}",
+              "pub_date": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+              "platforms": platforms,
+          }, indent=2))
+          PY
+          gh release upload "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --clobber desktop-assets/latest.json
       - name: Generate Homebrew formula
         run: |
           version="${GITHUB_REF_NAME#v}"
@@ -168,7 +271,8 @@ jobs:
           test -s release-notes.md
           {
             printf '\n## Install\n\n```bash\nbrew install shashankswe2020-ux/tap/rigspark\ncargo binstall rigspark-cli rigspark-gui\ncargo install rigspark-cli --locked --bin llmup --bin rigspark && cargo install rigspark-gui --locked\n```\n\n'
-            printf 'Archives are unsigned. Verify downloads against `SHA256SUMS`.\n'
+            printf 'Desktop: download `RigSpark_aarch64.dmg` (Apple Silicon) or `RigSpark_x86_64.dmg` (Intel). The app is not notarized yet; on first launch, Control-click RigSpark in Applications and choose Open.\n\n'
+            printf 'Archives are unsigned. Verify downloads against `SHA256SUMS` and each `.sha256` file.\n'
           } >> release-notes.md
           gh release upload "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --clobber release-assets/SHA256SUMS release-assets/rigspark.rb
           gh release edit "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --notes-file release-notes.md --draft=false --latest
