@@ -454,7 +454,6 @@ impl Lifecycle<'_> {
         if cancel.is_cancelled() {
             return Err(BackendError("cancelled".into()));
         }
-        self.forget_dead(cancel).await?;
         if self
             .store
             .read()
@@ -479,6 +478,20 @@ impl Lifecycle<'_> {
                 "{target} is not the active model ({})",
                 active.model_id
             )));
+        }
+        // The record the caller asked to stop may be cleared once its process is provably gone.
+        if let Some(pid) = active.pid
+            && matches!(self.probe.alive(pid).await, Ok(false))
+        {
+            let outcome = self
+                .store
+                .compare_and_write(&guard, &prepared, &RuntimeState::default())
+                .map(|()| prepared.active.clone())
+                .map_err(|error| BackendError(error.to_string()));
+            guard
+                .release()
+                .map_err(|error| BackendError(error.to_string()))?;
+            return outcome;
         }
         let operation = if active.owned_by_us {
             Operation::Down
