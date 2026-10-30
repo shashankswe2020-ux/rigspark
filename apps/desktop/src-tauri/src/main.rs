@@ -225,6 +225,7 @@ fn main() {
     let dialog_smoke = std::env::args().any(|argument| argument == "--dialog-smoke-test");
     let smoke = dialog_smoke || std::env::args().any(|argument| argument == "--smoke-test");
     let background = !smoke && std::env::args().any(|argument| argument == BACKGROUND_ARG);
+    rigspark_runtime::process_control::enable_package_manager_fallback();
     let runtime = tokio::runtime::Runtime::new().expect("native async runtime");
     let config = rigspark_runtime::state::Config::load().expect("native configuration");
     let listener = runtime

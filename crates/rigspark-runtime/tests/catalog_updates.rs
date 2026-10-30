@@ -11,7 +11,7 @@ fn fixture_catalog() -> String {
         "../../rigspark-core/fixtures/catalog-baseline.json"
     ))
     .unwrap();
-    catalog["generatedAt"] = json!("2026-09-30T00:00:00Z");
+    catalog["generatedAt"] = json!("2099-09-30T00:00:00Z");
     catalog.to_string()
 }
 
@@ -19,7 +19,7 @@ fn payload(revision: u64) -> Value {
     json!({
         "formatVersion": 1,
         "revision": revision,
-        "publishedAt": "2026-09-30T00:00:00Z",
+        "publishedAt": "2099-09-30T00:00:00Z",
         "catalog": fixture_catalog(),
     })
 }
@@ -51,7 +51,7 @@ fn rejects_tampering_wrong_key_and_unsigned_catalogs() {
         changed["payload"]
             .as_str()
             .unwrap()
-            .replace("2026-09-30", "2026-09-29")
+            .replace("2099-09-30", "2099-09-29")
     );
     assert!(
         verify(
@@ -102,7 +102,7 @@ fn rejects_incompatible_or_invalid_signed_payloads() {
 fn publication_before_catalog_generation_is_rejected() {
     let mut invalid = payload(1);
     let mut catalog: Value = serde_json::from_str(&fixture_catalog()).unwrap();
-    catalog["generatedAt"] = json!("2026-10-01T00:00:00Z");
+    catalog["generatedAt"] = json!("2099-10-01T00:00:00Z");
     invalid["catalog"] = json!(catalog.to_string());
     assert!(verify(&signed(invalid), &key().verifying_key().to_bytes()).is_err());
 }
@@ -124,7 +124,7 @@ fn publication_round_trips_and_refuses_wrong_signing_key() {
     let document = || CatalogPayload {
         format_version: 1,
         revision: 9,
-        published_at: "2026-09-30T00:00:00Z".into(),
+        published_at: "2099-09-30T00:00:00Z".into(),
         catalog: fixture_catalog(),
     };
     let artifact = sign_catalog(
@@ -166,7 +166,7 @@ fn offline_store_activates_updates_and_preserves_data_on_rejection() {
     assert_eq!(store.load().unwrap().status.revision, Some(2));
     assert!(store.install(&signed(payload(1))).is_err());
     let mut reused = payload(2);
-    reused["publishedAt"] = json!("2026-10-01T00:00:00Z");
+    reused["publishedAt"] = json!("2099-10-01T00:00:00Z");
     assert!(store.install(&signed(reused)).is_err());
     assert!(store.install(b"broken").is_err());
     assert_eq!(store.load().unwrap().status.revision, Some(2));
@@ -290,5 +290,34 @@ fn update_lock_is_exclusive_and_new_models_need_no_binary_rebuild() {
             .models
             .iter()
             .any(|model| model.id == "fixture-new-model:4b")
+    );
+}
+
+#[test]
+fn a_newer_bundled_catalog_wins_over_an_older_cached_update() {
+    use rigspark_runtime::catalog_update::CatalogStore;
+    let home = tempfile::tempdir().unwrap();
+    let store = CatalogStore::new(home.path(), Some(key().verifying_key().to_bytes()));
+    let mut stale = payload(5);
+    let mut catalog: Value = serde_json::from_str(stale["catalog"].as_str().unwrap()).unwrap();
+    catalog["generatedAt"] = json!("2020-01-01T00:00:00Z");
+    stale["catalog"] = json!(catalog.to_string());
+    stale["publishedAt"] = json!("2020-01-02T00:00:00Z");
+    store.install(&signed(stale)).unwrap();
+    let loaded = store.load().unwrap();
+    assert_eq!(
+        loaded.status.source, "bundled",
+        "upgrading rigspark must not stay pinned to an older downloaded catalog"
+    );
+    assert_eq!(loaded.raw, rigspark_core::MODELS_JSON);
+    assert!(
+        store.install(&signed(payload(4))).is_err(),
+        "the rollback high-water mark still holds"
+    );
+    store.install(&signed(payload(6))).unwrap();
+    let newer = store.load().unwrap();
+    assert_eq!(
+        (newer.status.source, newer.status.revision),
+        ("updated", Some(6))
     );
 }
