@@ -69,6 +69,7 @@ pub fn allowed_request(url: &Url) -> bool {
                 == GENERATION_LISTING_URL
                     .split_once('?')
                     .map(|(_, query)| query)
+                || crate::hf_add::is_search_url(url)
         }
         (Some("huggingface.co"), None | Some("blobs=true"), ["api", "models", owner, repo]) => {
             name(owner) && name(repo)

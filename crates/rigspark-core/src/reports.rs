@@ -268,15 +268,23 @@ pub fn can_run_report(
     let report = verdict(&model, hardware, perf, options.context, backend)?;
     let supported = backends(&model, hardware);
     let mut output = json!({"model":model.id,"verdict":report["runnable"],"quant":report["quant"]["name"],"reason":report["reason"],"throughput":report["throughput"],"backends":supported,"throughputBackend":backend});
-    let auto_source = (model.provenance == crate::catalog::EntryProvenance::Auto).then(|| {
-        format!(
-            "Source: auto-sourced from the Ollama library ({})",
-            model.recency_label()
-        )
-    });
-    if auto_source.is_some() {
-        output["provenance"] = json!("auto");
-    }
+    let auto_source = match model.provenance {
+        crate::catalog::EntryProvenance::Auto => {
+            output["provenance"] = json!("auto");
+            Some(format!(
+                "Source: auto-sourced from the Ollama library ({})",
+                model.recency_label()
+            ))
+        }
+        crate::catalog::EntryProvenance::Local => {
+            output["provenance"] = json!("local");
+            Some(format!(
+                "Source: added by you from Hugging Face ({})",
+                model.recency_label()
+            ))
+        }
+        crate::catalog::EntryProvenance::Curated => None,
+    };
     let mut lines = Vec::new();
     if let Some(context) = options.context {
         output["context"] = json!(context);

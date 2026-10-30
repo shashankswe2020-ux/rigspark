@@ -91,7 +91,7 @@ pub fn verify(bytes: &[u8], key: &[u8; 32]) -> Result<VerifiedCatalog, CatalogUp
         .map_err(|_| CatalogUpdateError::Invalid("catalog schema or metadata"))?;
     let generated = OffsetDateTime::parse(&catalog.generated_at, &Rfc3339)
         .map_err(|_| CatalogUpdateError::Invalid("generation date"))?;
-    if catalog.models.is_empty() || generated > published {
+    if catalog.models.is_empty() || generated > published || catalog.has_local() {
         return Err(CatalogUpdateError::Invalid(
             "empty catalog or inconsistent dates",
         ));

@@ -737,3 +737,138 @@ async fn connect_reports_a_terminal_command_or_setup_for_the_active_server() {
         );
     }
 }
+
+fn hugging_face_fixture() -> rigspark_runtime::admission::RecordedAdmissionTransport {
+    fn string(out: &mut Vec<u8>, text: &str) {
+        out.extend((text.len() as u64).to_le_bytes());
+        out.extend(text.as_bytes());
+    }
+    let mut header = b"GGUF".to_vec();
+    header.extend(3u32.to_le_bytes());
+    header.extend(1u64.to_le_bytes());
+    header.extend(3u64.to_le_bytes());
+    for (key, text) in [
+        ("general.architecture", "tiny"),
+        ("general.license", "apache-2.0"),
+    ] {
+        string(&mut header, key);
+        header.extend(8u32.to_le_bytes());
+        string(&mut header, text);
+    }
+    string(&mut header, "tiny.context_length");
+    header.extend(4u32.to_le_bytes());
+    header.extend(32768u32.to_le_bytes());
+    string(&mut header, "output.weight");
+    header.extend(1u32.to_le_bytes());
+    header.extend(1_000_000_000u64.to_le_bytes());
+    header.extend(12u32.to_le_bytes());
+    header.extend(0u64.to_le_bytes());
+    let revision = "a".repeat(40);
+    let metadata = json!({
+        "id": "owner/Tiny-1B-GGUF", "sha": revision, "gated": false, "private": false,
+        "tags": ["gguf", "license:apache-2.0"], "pipeline_tag": "text-generation",
+        "siblings": [
+            {"rfilename": "Tiny-1B-Q4_K_M.gguf", "lfs": {"sha256": "b".repeat(64), "size": 700_000_000}},
+            {"rfilename": "Tiny-1B-Q8_0.gguf", "lfs": {"sha256": "c".repeat(64), "size": 1_100_000_000}}
+        ]
+    });
+    let search = rigspark_runtime::hf_add::search_url("tiny")
+        .unwrap()
+        .to_string();
+    rigspark_runtime::admission::RecordedAdmissionTransport::new(
+        [
+            (
+                "https://huggingface.co/api/models/owner/Tiny-1B-GGUF?blobs=true".to_string(),
+                (200, serde_json::to_vec(&metadata).unwrap()),
+            ),
+            (
+                format!("https://huggingface.co/owner/Tiny-1B-GGUF/resolve/{revision}/Tiny-1B-Q4_K_M.gguf"),
+                (206, header),
+            ),
+            (
+                search,
+                (200, serde_json::to_vec(&json!([{"id": "owner/Tiny-1B-GGUF", "downloads": 9}])).unwrap()),
+            ),
+        ]
+        .into_iter()
+        .collect(),
+    )
+    .unwrap()
+}
+
+#[tokio::test]
+async fn hugging_face_models_are_searched_inspected_added_and_removed() {
+    let (_home, host) = host(Arc::default());
+    host.set_hugging_face(Arc::new(hugging_face_fixture()));
+    let (_, found) = json_call(
+        &host,
+        "POST",
+        "/api/catalog/local/search",
+        json!({"query":"tiny"}),
+    )
+    .await;
+    assert_eq!(found["results"][0]["id"], "owner/Tiny-1B-GGUF");
+    let (_, inspected) = json_call(
+        &host,
+        "POST",
+        "/api/catalog/local/inspect",
+        json!({"reference":"https://huggingface.co/owner/Tiny-1B-GGUF"}),
+    )
+    .await;
+    assert_eq!(inspected["license"], "apache-2.0");
+    let quants: Vec<&str> = inspected["choices"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|choice| choice["quant"].as_str().unwrap())
+        .collect();
+    assert_eq!(quants, ["Q4_K_M", "Q8_0"]);
+    assert!(inspected["choices"][0]["fits"].is_boolean());
+    let (_, added) = json_call(
+        &host,
+        "POST",
+        "/api/catalog/local/add",
+        json!({"reference":"owner/Tiny-1B-GGUF","quant":"Q8_0","bypass":true}),
+    )
+    .await;
+    assert_eq!(added["model"], "hf.co/owner/tiny-1b-gguf:q8_0");
+    let (_, listed) = json_call(&host, "GET", "/api/catalog/local", Value::Null).await;
+    assert_eq!(listed["models"][0]["id"], "hf.co/owner/tiny-1b-gguf:q8_0");
+    let (_, status) = json_call(&host, "GET", "/api/catalog/status", Value::Null).await;
+    assert_eq!(status["catalog"]["localCount"], 1);
+    let (_, removed) = json_call(
+        &host,
+        "POST",
+        "/api/catalog/local/remove",
+        json!({"id":"hf.co/owner/tiny-1b-gguf:q8_0"}),
+    )
+    .await;
+    assert_eq!(removed["removed"], true);
+}
+
+#[tokio::test]
+async fn hugging_face_requests_are_validated() {
+    let (_home, host) = host(Arc::default());
+    host.set_hugging_face(Arc::new(hugging_face_fixture()));
+    for (path, body) in [
+        ("/api/catalog/local/search", json!({"query":"a&b"})),
+        (
+            "/api/catalog/local/inspect",
+            json!({"reference":"../etc/passwd"}),
+        ),
+        (
+            "/api/catalog/local/inspect",
+            json!({"reference":"owner/Tiny-1B-GGUF","extra":1}),
+        ),
+        (
+            "/api/catalog/local/add",
+            json!({"reference":"owner/Tiny-1B-GGUF","quant":"Q3_K_S"}),
+        ),
+        ("/api/catalog/local/remove", json!({"id":"missing"})),
+    ] {
+        let (status, _) = call(&host, "POST", path, body.clone()).await;
+        assert!(status.is_client_error(), "{path} {body} -> {status}");
+    }
+    let (_, listed) = json_call(&host, "GET", "/api/catalog/local", Value::Null).await;
+    assert_eq!(listed["models"], json!([]));
+}

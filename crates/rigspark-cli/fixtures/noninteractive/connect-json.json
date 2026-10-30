@@ -1,0 +1,5 @@
+{
+  "agent": "cline",
+  "kind": "instructions",
+  "text": "In Cline: Settings > API Configuration > API Provider = OpenAI Compatible.\n  Base URL: http://127.0.0.1:11434/v1\n  API key:  (leave blank)\n  Model ID: qwen2.5:1.5b\nSet the context window to at least 32K tokens.\n"
+}

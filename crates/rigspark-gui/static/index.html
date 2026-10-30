@@ -295,6 +295,7 @@
                 <div class="catalog-update-bar">
                   <p id="catalog-status" class="section-note" role="status">Catalog status pending</p>
                   <a id="request-model" class="link-btn" href="https://github.com/shashankswe2020-ux/rigspark/issues/new?title=%5BModel%20request%5D%3A%20&amp;body=%23%23%23%20Hugging%20Face%20model%20URL%0A%0A%0A%0A%23%23%23%20Reason%20or%20use%20case%0A%0A%0A%0A%23%23%23%20Integrity%20requirements%0A%0A-%20%5B%20%5D%20I%20understand%20that%20admission%20requires%20public%2C%20license-compatible%2C%20integrity-pinned%20runnable%20weights.&amp;labels=catalog%3Arequest" target="_blank" rel="noopener noreferrer" title="Open a prefilled public model request on GitHub">Request a model</a>
+                  <button id="hf-add-open" class="link-btn" type="button" aria-haspopup="dialog" aria-controls="hf-sheet" title="Search Hugging Face and add a GGUF model to your catalog">Add from Hugging Face</button>
                   <button id="update-catalog" class="link-btn" type="button" title="Download the latest signed catalog" disabled>Update catalog</button>
                 </div>
                 <p class="section-note catalog-request-note">Requires GitHub sign-in. Requests are public.</p>
@@ -773,6 +774,31 @@
       <label class="model-toggle"><span>Bypass estimated fit</span><input id="model-bypass" class="switch" type="checkbox" role="switch" /></label>
     </div>
 
+    <div id="hf-sheet" class="sheet-scrim" hidden>
+      <div class="sheet hf-sheet" role="dialog" aria-modal="true" aria-labelledby="hf-sheet-title">
+        <h3 id="hf-sheet-title">Add from Hugging Face</h3>
+        <form id="hf-search-form" class="sheet-form">
+          <label class="field">
+            <span>Search or paste owner/repo</span>
+            <input id="hf-query" class="mono-input" type="text" placeholder="qwen3 coder  ·  unsloth/Qwen3-0.6B-GGUF" maxlength="200" autocomplete="off" />
+          </label>
+          <div class="form-actions">
+            <button type="submit" class="accent-btn">Search</button>
+          </div>
+        </form>
+        <ul id="hf-results" class="hf-list" aria-label="Repositories" hidden></ul>
+        <div id="hf-choices" class="hf-choices" hidden>
+          <p id="hf-repo" class="section-note"></p>
+          <ul id="hf-quant-list" class="hf-list" role="radiogroup" aria-label="Quantization"></ul>
+        </div>
+        <p id="hf-status" class="section-note" role="status" aria-live="polite">Searches Hugging Face only when you ask. Downloads are pinned to a commit and checked against their SHA-256 when you start the model.</p>
+        <div class="form-actions">
+          <button type="button" class="ghost-btn" data-hf-close>Close</button>
+          <button id="hf-add" type="button" class="accent-btn" disabled>Add model</button>
+        </div>
+      </div>
+    </div>
+
     <div id="connector-sheet" class="sheet-scrim" hidden>
       <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="connector-sheet-title">
         <h3 id="connector-sheet-title">Add connector</h3>
@@ -857,5 +883,6 @@
     <script src="/static/telemetry.js"></script>
     <script src="/static/generate.js"></script>
     <script src="/static/desktop.js"></script>
+    <script src="/static/hf-add.js"></script>
   </body>
 </html>

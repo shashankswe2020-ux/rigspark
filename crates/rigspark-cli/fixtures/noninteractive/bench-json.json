@@ -1,0 +1,50 @@
+{
+  "aggregateDecodeTps": null,
+  "backend": "ollama",
+  "decodeTps": {
+    "median": 126.38130820451656,
+    "n": 1,
+    "p10": 126.38130820451656,
+    "p90": 126.38130820451656
+  },
+  "draftAcceptance": null,
+  "fixture": {
+    "id": "short",
+    "sha256": "7f3951fab5d5316889c1cf4b240c2dae4b483b0d6c9211ff27270726493323ff",
+    "version": 1
+  },
+  "model": "qwen2.5:1.5b",
+  "modelId": "qwen2.5:1.5b",
+  "options": {
+    "concurrency": 1,
+    "fixture": "short",
+    "iterations": 1,
+    "outputTokens": 16,
+    "warmup": 0
+  },
+  "prefillTps": {
+    "median": 7245.744216499345,
+    "n": 1,
+    "p10": 7245.744216499345,
+    "p90": 7245.744216499345
+  },
+  "protocol": "ollama",
+  "samples": [
+    {
+      "decodeTps": 126.38130820451656,
+      "draftAccepted": null,
+      "draftTokens": null,
+      "generatedTokens": 16,
+      "prefillTps": 7245.744216499345,
+      "promptTokens": 83,
+      "ttftMs": 281.06625,
+      "wallMs": 409.058625
+    }
+  ],
+  "ttftMs": {
+    "median": 281.06625,
+    "n": 1,
+    "p10": 281.06625,
+    "p90": 281.06625
+  }
+}

@@ -1,0 +1,1 @@
+hf.co/unsloth/qwen3-0.6b-gguf:q4_k_m  (apache-2.0)

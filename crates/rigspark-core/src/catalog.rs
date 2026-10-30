@@ -132,6 +132,8 @@ pub enum EntryProvenance {
     #[default]
     Curated,
     Auto,
+    /// Added by the user from Hugging Face; only the local overlay may carry it.
+    Local,
 }
 impl EntryProvenance {
     pub(crate) fn is_curated(&self) -> bool {
@@ -316,6 +318,16 @@ impl CatalogModel {
                 self.release_date.is_some(),
                 "curated entry needs releaseDate",
             )?,
+            EntryProvenance::Local => require(
+                self.added_at.is_some()
+                    && self.benchmark_proxy.is_none()
+                    && self.source.gguf.is_some()
+                    && self
+                        .quantizations
+                        .iter()
+                        .all(|quant| quant.sha256.is_some()),
+                "local entry needs addedAt, a pinned GGUF artifact and no benchmarkProxy",
+            )?,
             // Auto entries carry only sourced facts and must stay integrity-pinned.
             EntryProvenance::Auto => require(
                 self.added_at.is_some()
@@ -465,10 +477,32 @@ impl Catalog {
         Ok(())
     }
     pub fn parse(raw: &str) -> Result<Self, ValidationError> {
+        Self::parse_as(raw, false)
+    }
+    /// The user's local overlay: only `local` entries, possibly none.
+    pub fn parse_local(raw: &str) -> Result<Self, ValidationError> {
+        Self::parse_as(raw, true)
+    }
+    /// Whether any entry was added locally; published catalogs must have none.
+    pub fn has_local(&self) -> bool {
+        self.models
+            .iter()
+            .any(|model| model.provenance == EntryProvenance::Local)
+    }
+    fn parse_as(raw: &str, local: bool) -> Result<Self, ValidationError> {
         let mut result: Self = parse_document(raw)?;
         require(
-            (2..=SCHEMA_VERSION).contains(&result.schema_version) && !result.models.is_empty(),
+            (2..=SCHEMA_VERSION).contains(&result.schema_version)
+                && (local || !result.models.is_empty()),
             "unsupported or empty catalog",
+        )?;
+        require(
+            !local
+                || result
+                    .models
+                    .iter()
+                    .all(|model| model.provenance == EntryProvenance::Local),
+            "the local catalog only holds models you added",
         )?;
         timestamp(&result.generated_at)?;
         for model in &result.models {

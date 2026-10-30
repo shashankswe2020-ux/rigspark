@@ -83,6 +83,8 @@ const COMMANDS: &[CommandSpec] = &[
             "kv_cache",
             "flash_attn",
             "prompt_cache",
+            "speculative",
+            "parallel",
         ],
         model: true,
         ui: true,
@@ -102,6 +104,8 @@ const COMMANDS: &[CommandSpec] = &[
             "kv_cache",
             "flash_attn",
             "prompt_cache",
+            "speculative",
+            "parallel",
         ],
         model: true,
         ui: true,
@@ -183,6 +187,33 @@ const COMMANDS: &[CommandSpec] = &[
         ui: false,
     },
     CommandSpec {
+        name: "bench",
+        description: "Measure TTFT, prefill and decode speed of the active server",
+        flags: &[
+            "iterations",
+            "warmup",
+            "output_tokens",
+            "concurrency",
+            "fixture",
+        ],
+        model: false,
+        ui: false,
+    },
+    CommandSpec {
+        name: "connect",
+        description: "Start a coding agent against the active server, or show how to configure it",
+        flags: &["dry_run"],
+        model: true,
+        ui: false,
+    },
+    CommandSpec {
+        name: "add",
+        description: "Add a GGUF model from Hugging Face to your catalog (requires network)",
+        flags: &["search", "remove", "dry_run", "bypass"],
+        model: true,
+        ui: false,
+    },
+    CommandSpec {
         name: "generate",
         description: "Generate an image or video locally through ComfyUI",
         flags: &["prompt", "output", "seed", "comfyui_dir", "port", "bypass"],
@@ -207,6 +238,12 @@ fn help_command(spec: &CommandSpec, flat: &Command) -> Command {
         if spec.accepts(id) {
             let mut argument = argument.clone().help(match id {
                 "model" if spec.name == "down" => "Guard shutdown against a different active model",
+                "model" if spec.name == "connect" => {
+                    "Agent: claude, codex, opencode, pi, hermes, openclaw, cline"
+                }
+                "model" if spec.name == "add" => {
+                    "owner/repo[:QUANT] or a Hugging Face URL; with --remove, an added model id"
+                }
                 "model" if spec.name == "generate" => {
                     "image, video, or a model id from `catalog --generation`"
                 }
@@ -226,7 +263,22 @@ fn help_command(spec: &CommandSpec, flat: &Command) -> Command {
                 "from" => "Source model whose memory will be migrated",
                 "to" => "Target model receiving migrated memory",
                 "move_memory" => "Delete source memory after successful migration (requires --yes)",
+                "dry_run" if spec.name == "connect" => {
+                    "Print the command and environment instead of starting the agent"
+                }
+                "dry_run" if spec.name == "add" => "List quantizations and fit without adding",
                 "dry_run" => "Preview migration without writing memory",
+                "speculative" => {
+                    "Speculative decoding for a runtime rigspark starts: auto, draft, ngram, off"
+                }
+                "parallel" => "Concurrent request slots for a runtime rigspark starts (1-16)",
+                "iterations" => "Measured runs (1-20, default 5)",
+                "warmup" => "Warmup runs excluded from results (0-5, default 1)",
+                "output_tokens" => "Maximum tokens generated per run (16-2048, default 128)",
+                "concurrency" => "Requests sent at once per run (1-16, default 1)",
+                "fixture" => "Prompt fixture: short or long",
+                "search" => "Search Hugging Face for GGUF repositories (requires network)",
+                "remove" => "Remove a model you added",
                 "yes" => "Skip confirmation; retain drift protection (migration requires --move)",
                 "forget" => {
                     "Clear a stale attached-server pointer without probing or stopping any process"
@@ -258,6 +310,9 @@ fn help_command(spec: &CommandSpec, flat: &Command) -> Command {
                     "Ollama port for --installed (default: 11434)"
                 }
                 "port" => "Backend server port (default: 11434)",
+                "bypass" if spec.name == "add" => {
+                    "Add a quantization even when it does not fit this machine"
+                }
                 "bypass" if spec.name == "generate" => {
                     "Generate even when weights do not fit memory; retain integrity checks"
                 }
@@ -400,4 +455,34 @@ pub(super) fn parse() -> Result<Option<Args>, clap::Error> {
         return Ok(None);
     }
     Ok(Some(args))
+}
+
+#[cfg(test)]
+mod command_table_tests {
+    use super::*;
+
+    #[test]
+    fn every_parsable_command_has_a_spec_and_help() {
+        let flat = Args::command();
+        let command = flat
+            .get_arguments()
+            .find(|argument| argument.get_id() == "command")
+            .unwrap();
+        let names: Vec<String> = command
+            .get_possible_values()
+            .iter()
+            .map(|value| value.get_name().to_owned())
+            .collect();
+        assert!(names.len() > 10, "{names:?}");
+        for name in &names {
+            let spec = COMMANDS
+                .iter()
+                .find(|spec| spec.name == name)
+                .unwrap_or_else(|| panic!("{name} parses but has no command spec"));
+            help_command(spec, &flat);
+        }
+        for spec in COMMANDS {
+            assert!(names.iter().any(|name| name == spec.name), "{}", spec.name);
+        }
+    }
 }
