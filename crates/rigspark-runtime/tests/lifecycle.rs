@@ -214,6 +214,7 @@ async fn health_checks_identity_and_readiness_without_mutating_state() {
     };
     let active = state().active.unwrap();
     let request = ServeRequest {
+        draft_model_path: None,
         model_id: active.model_id.clone(),
         endpoint: active.endpoint.clone(),
         model_path: None,
@@ -468,6 +469,7 @@ async fn replacement_failure_preserves_foreign_state_and_drift_prevents_startup(
     let cancel = CancellationToken::new();
     let reviewed = lifecycle.review("next:latest", &cancel).await.unwrap();
     let request = ServeRequest {
+        draft_model_path: None,
         model_id: "next:latest".into(),
         endpoint: "http://127.0.0.1:11435".into(),
         model_path: None,
@@ -516,6 +518,7 @@ async fn owned_replacement_failure_clears_stale_pid_and_detach_does_not_stop_for
     let cancel = CancellationToken::new();
     let reviewed = lifecycle.review("next:latest", &cancel).await.unwrap();
     let request = ServeRequest {
+        draft_model_path: None,
         model_id: "next:latest".into(),
         endpoint: "http://127.0.0.1:11435".into(),
         model_path: None,
@@ -549,6 +552,7 @@ async fn successful_replacement_and_detach_preserve_foreign_process() {
     let cancel = CancellationToken::new();
     let review = lifecycle.review("next:latest", &cancel).await.unwrap();
     let request = ServeRequest {
+        draft_model_path: None,
         model_id: "next:latest".into(),
         endpoint: "http://127.0.0.1:11435".into(),
         model_path: None,
@@ -597,6 +601,7 @@ async fn state_changed_during_activation_is_not_overwritten() {
     let cancel = CancellationToken::new();
     let reviewed = lifecycle.review("next:latest", &cancel).await.unwrap();
     let request = ServeRequest {
+        draft_model_path: None,
         model_id: "next:latest".into(),
         endpoint: "http://127.0.0.1:11435".into(),
         model_path: None,
@@ -751,6 +756,7 @@ async fn installed_attachment_retains_ownership_of_same_recorded_daemon() {
     let cancel = CancellationToken::new();
     let review = lifecycle.review("next:latest", &cancel).await.unwrap();
     let request = ServeRequest {
+        draft_model_path: None,
         model_id: "next:latest".into(),
         endpoint: "http://127.0.0.1:11435".into(),
         model_path: None,
@@ -784,6 +790,7 @@ async fn cancelled_replacement_never_rewrites_state() {
     let review = lifecycle.review("next:latest", &cancel).await.unwrap();
     cancel.cancel();
     let request = ServeRequest {
+        draft_model_path: None,
         model_id: "next:latest".into(),
         endpoint: "http://127.0.0.1:11435".into(),
         model_path: None,
@@ -1236,6 +1243,7 @@ async fn owned_runtime_is_stopped_when_persisting_state_fails() {
     let cancel = CancellationToken::new();
     let reviewed = lifecycle.review("next:latest", &cancel).await.unwrap();
     let request = ServeRequest {
+        draft_model_path: None,
         model_id: "next:latest".into(),
         endpoint: "http://127.0.0.1:11435".into(),
         model_path: None,
@@ -1277,6 +1285,7 @@ async fn an_unappliable_cache_profile_is_refused_before_the_running_server_is_to
     let cancel = CancellationToken::new();
     let reviewed = lifecycle.review("next:latest", &cancel).await.unwrap();
     let request = ServeRequest {
+        draft_model_path: None,
         model_id: "next:latest".into(),
         endpoint: "http://127.0.0.1:11435".into(),
         model_path: None,

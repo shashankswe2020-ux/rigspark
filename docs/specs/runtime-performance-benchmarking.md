@@ -1,7 +1,8 @@
 # Spec: Runtime Performance Benchmarking and Evidence-Driven Tuning
 
 > Status: **Draft (v0.3) — architecture, security, and test-strategy feedback incorporated; pending human approval.**
-> Last updated: 2026-08-08
+> Last updated: 2026-10-30
+> Implementation: active mode ships as `rigspark bench` (`crates/rigspark-runtime/src/bench.rs`) with `--iterations`, `--warmup`, `--output-tokens`, `--concurrency` and `--fixture short|long`. Ephemeral mode, memory sampling and regression baselines remain pending.
 > Related: [rigspark.md](./rigspark.md),
 > [hardware-advisor.md](./hardware-advisor.md),
 > [context-window-sizing.md](./context-window-sizing.md), and

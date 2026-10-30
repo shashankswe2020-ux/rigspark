@@ -18,6 +18,7 @@ pub(crate) enum LifecycleWarning {
     InstalledBypass,
     EstimatedFit,
     SizeOnly,
+    DrafterSkipped,
 }
 
 impl LifecycleWarning {
@@ -31,6 +32,9 @@ impl LifecycleWarning {
             }
             Self::SizeOnly => {
                 "up: weights passed a size-floor check; no catalog SHA-256 was available"
+            }
+            Self::DrafterSkipped => {
+                "up: skipped the speculative drafter because it does not fit beside the model"
             }
         }
     }
@@ -402,6 +406,7 @@ mod tests {
 
     fn request() -> ServeRequest {
         ServeRequest {
+            draft_model_path: None,
             model_id: "model:latest".into(),
             endpoint: "http://127.0.0.1:11434".into(),
             model_path: None,

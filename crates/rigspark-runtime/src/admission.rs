@@ -619,7 +619,7 @@ pub async fn admit(
     let changed =
         !outcome.added.is_empty() || !outcome.updated.is_empty() || !outcome.removed.is_empty();
     let encoded = json!({
-        "schemaVersion": SCHEMA_VERSION,
+        "schemaVersion": rigspark_core::catalog::required_schema_version(&models),
         "generatedAt": if changed { stamp.clone() } else { catalog.generated_at.clone() },
         "models": models,
     });

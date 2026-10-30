@@ -1,7 +1,7 @@
 use crate::admission::{AdmissionTransport, Fetched};
 use rigspark_core::{
     admission::{Gguf, GgufError, active_params, kv_bytes_per_token, license_id, parse_gguf},
-    catalog::{Catalog, CatalogModel, EntryProvenance, GgufSource, SCHEMA_VERSION, Source},
+    catalog::{Catalog, CatalogModel, EntryProvenance, GgufSource, Source},
     catalog_request::Repository,
     enrich::sized_quantization,
     generation::GenerationCatalog,
@@ -270,7 +270,7 @@ pub async fn evaluate_request(
     models.sort_by(|left, right| left.id.cmp(&right.id));
     let stamp = stamp(now)?;
     let encoded = json!({
-        "schemaVersion": SCHEMA_VERSION,
+        "schemaVersion": rigspark_core::catalog::required_schema_version(&models),
         "generatedAt": stamp,
         "models": models,
     });
@@ -386,6 +386,7 @@ fn build_entry(
         quantizations: vec![quantization],
         kv_bytes_per_token: kv_bytes_per_token(gguf),
         benchmark_proxy: None,
+        drafter: None,
     })
 }
 
