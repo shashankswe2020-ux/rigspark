@@ -15,7 +15,7 @@
 </p>
 
 <p align="center">
-  <a href="https://shashankswe2020-ux.github.io/rigspark/">Website</a> ·
+  <a href="https://www.rigspark.si/">Website</a> ·
   <a href="#install-rigspark">Install</a> ·
   <a href="docs/references/guide.md">Guide</a> ·
   <a href="https://github.com/shashankswe2020-ux/rigspark/releases/latest">Latest release</a>
