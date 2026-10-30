@@ -245,7 +245,7 @@ async fn sequences_split_across_deltas_never_reach_the_browser() {
 }
 
 #[tokio::test]
-async fn backend_failure_streams_a_generic_error_and_saves_nothing() {
+async fn backend_failure_streams_an_actionable_error_and_saves_nothing() {
     let (_home, host) = host(Arc::default());
     let (status, stream) = call(
         &host,
@@ -256,7 +256,9 @@ async fn backend_failure_streams_a_generic_error_and_saves_nothing() {
     .await;
     assert_eq!(status, StatusCode::OK);
     assert!(
-        stream.contains(r#""message":"Chat failed; no completed exchange was saved.""#),
+        stream.contains(
+            r#""message":"No model is ready. Start one from Models. No completed exchange was saved.""#
+        ),
         "{stream}"
     );
     assert!(!stream.contains("\"type\":\"done\"") && !stream.contains("unavailable"));
