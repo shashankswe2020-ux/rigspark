@@ -1381,7 +1381,7 @@ document.addEventListener("DOMContentLoaded", () => {
         model.releaseDate
           ? `${model.family} · released ${model.releaseDate}`
           : model.addedAt
-            ? `${model.family} · added ${model.addedAt} · auto-sourced`
+            ? `${model.family} · added ${model.addedAt} · ${model.provenance === "local" ? "added by you from Hugging Face" : "auto-sourced"}`
             : `${model.family} · released unknown`,
       ),
     );
@@ -1800,7 +1800,7 @@ document.addEventListener("DOMContentLoaded", () => {
           ? ` · ${formatTokens(model.contextTokens)} context tokens · context fit unknown`
           : ` · ${formatTokens(model.contextTokens)} context tokens${model.kvPrecision && model.kvPrecision !== "fp16" ? ` · KV ${model.kvPrecision}` : ""}`
         : "";
-      const origin = model.provenance === "auto" ? " · auto-sourced" : "";
+      const origin = model.provenance === "auto" ? " · auto-sourced" : model.provenance === "local" ? " · added by you" : "";
       meta.textContent = `${model.params} · ${model.quant} · ${formatSize(model.diskBytes)}${context}${origin}`;
       head.append(title, meta);
 

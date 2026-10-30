@@ -289,6 +289,32 @@ rigspark generate ming-image:ming_image_0.1_design_int8_convrot \
 - **One adapter boundary.** Ollama, llama.cpp, MLX, LM Studio, and BitNet sit behind the
   same runtime lifecycle and safety gates.
 
+## Add any GGUF model from Hugging Face
+
+The bundled catalog is curated and signed. For anything newer or more
+specific, add it yourself:
+
+```bash
+rigspark add --search "qwen3 coder"          # search GGUF repositories
+rigspark add unsloth/Qwen3-0.6B-GGUF          # list quants, add the largest that fits
+rigspark add unsloth/Qwen3-0.6B-GGUF:Q4_K_M  # or name one
+rigspark up hf.co/unsloth/qwen3-0.6b-gguf:q4_k_m --backend llamacpp
+```
+
+In the browser workspace, use **Models → Add from Hugging Face**.
+
+RigSpark reads the repository and one GGUF header to size every
+quantization against your machine. It then pins the repository commit and
+each file's SHA-256 in `~/.rigspark/catalog/local.json`. `up` downloads
+through llama.cpp or Ollama (`hf.co/owner/repo:quant`) and refuses to
+serve weights whose digest does not match. Repositories need a recognized
+open-weight license. Projector files and split (multi-part) GGUFs are
+skipped.
+
+Added models appear in `recommend`, `can-run` and the GUI marked *added by
+you*. Remove one with `rigspark add --remove <id>`. Network access happens
+only when you search or add; advice stays offline.
+
 ## Update the catalog when you choose
 
 Catalog updates are explicit; recommendations and normal startup remain
@@ -350,6 +376,7 @@ opens the same verdicts and a local chat in `rigspark gui`.
 | Generate local media | `rigspark generate` |
 | Benchmark the active server | `rigspark bench` |
 | Connect a coding agent | `rigspark connect <agent>` |
+| Add a model from Hugging Face | `rigspark add <owner/repo>` |
 | Stop the active model | `rigspark down` |
 
 Run `rigspark --help` for the complete CLI.

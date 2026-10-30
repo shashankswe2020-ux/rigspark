@@ -469,7 +469,9 @@ fn local_entries_load_only_from_the_local_overlay() {
         "the merged view keeps local entries visible to advice"
     );
     assert!(
-        !Catalog::parse(rigspark_core::MODELS_JSON).unwrap().has_local(),
+        !Catalog::parse(rigspark_core::MODELS_JSON)
+            .unwrap()
+            .has_local(),
         "the bundled catalog never carries local entries"
     );
     let mut mixed = local.clone();

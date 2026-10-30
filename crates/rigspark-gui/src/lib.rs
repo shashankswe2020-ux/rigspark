@@ -62,6 +62,9 @@ pub struct Host {
     pub runtimes: Mutex<runtime::RuntimeController>,
     pub generation: generation::Jobs,
     pub generator: Arc<dyn rigspark_runtime::generation::Generator>,
+    /// Hugging Face access for Add from Hugging Face; native unless a test injects one.
+    hugging_face:
+        std::sync::Mutex<Option<Arc<dyn rigspark_runtime::admission::AdmissionTransport>>>,
 }
 pub struct UiState {
     pub harness: String,
@@ -70,6 +73,30 @@ pub struct UiState {
     pub workspace: Option<String>,
 }
 impl Host {
+    /// Replaces Hugging Face access (tests use recorded responses instead of the network).
+    pub fn set_hugging_face(
+        &self,
+        transport: Arc<dyn rigspark_runtime::admission::AdmissionTransport>,
+    ) {
+        if let Ok(mut slot) = self.hugging_face.lock() {
+            *slot = Some(transport);
+        }
+    }
+    pub(crate) fn hugging_face(
+        &self,
+    ) -> std::io::Result<Arc<dyn rigspark_runtime::admission::AdmissionTransport>> {
+        let mut slot = self
+            .hugging_face
+            .lock()
+            .map_err(|_| std::io::Error::other("Hugging Face access is unavailable"))?;
+        if let Some(transport) = slot.as_ref() {
+            return Ok(transport.clone());
+        }
+        let transport: Arc<dyn rigspark_runtime::admission::AdmissionTransport> =
+            Arc::new(rigspark_runtime::admission::NativeAdmissionTransport::new()?);
+        *slot = Some(transport.clone());
+        Ok(transport)
+    }
     pub fn new(home: &Path, port: u16) -> Result<Arc<Self>, Box<dyn std::error::Error>> {
         Self::with_engine(
             home,
@@ -115,6 +142,7 @@ impl Host {
             runtimes: Mutex::new(Default::default()),
             generation: Default::default(),
             generator,
+            hugging_face: std::sync::Mutex::new(None),
             approvals: approval::Approvals::default(),
             grants: Mutex::new(Default::default()),
             admission: Arc::new(tokio::sync::Semaphore::new(1)),

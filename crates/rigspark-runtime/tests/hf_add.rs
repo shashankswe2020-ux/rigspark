@@ -73,12 +73,10 @@ fn transport(license: &str) -> RecordedAdmissionTransport {
         format!("https://huggingface.co/api/models/{REPOSITORY}?blobs=true"),
         (200, serde_json::to_vec(&metadata).unwrap()),
     )]);
-    for file in ["Tiny-1B-IQ2_XS.gguf"] {
-        responses.insert(
-            format!("https://huggingface.co/{REPOSITORY}/resolve/{REVISION}/{file}"),
-            (206, header()),
-        );
-    }
+    responses.insert(
+        format!("https://huggingface.co/{REPOSITORY}/resolve/{REVISION}/Tiny-1B-IQ2_XS.gguf"),
+        (206, header()),
+    );
     responses.insert(
         search_url("tiny").unwrap().to_string(),
         (
@@ -242,6 +240,16 @@ async fn one_header_sizes_every_quant_and_the_best_fit_is_the_largest_that_fits(
     let pick = |gib| best_fit(&all, &machine(gib)).map(|model| model.quantizations[0].name.clone());
     assert_eq!(pick(64.0).as_deref(), Some("Q8_0"));
     assert_eq!(pick(0.25), None, "nothing fits: no silent pick");
+    let mut with_bf16 = all.clone();
+    let mut bf16 = all[2].clone();
+    bf16.quantizations[0].name = "BF16".into();
+    bf16.quantizations[0].disk_bytes *= 2.0;
+    with_bf16.push(bf16);
+    assert_eq!(
+        best_fit(&with_bf16, &machine(64.0)).map(|model| model.quantizations[0].name.as_str()),
+        Some("Q8_0"),
+        "unquantized files are a last resort"
+    );
     // Grow memory until Q4_K_M first fits: Q8_0 must not fit yet, so Q4_K_M is chosen.
     let first = (1..=256)
         .map(|step| f64::from(step) / 16.0)

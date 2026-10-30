@@ -1,0 +1,38 @@
+{
+  "models": [
+    {
+      "addedAt": "2026-10-30",
+      "architecture": "dense",
+      "capabilities": [
+        "chat"
+      ],
+      "contextLength": 40960.0,
+      "family": "qwen3",
+      "id": "hf.co/unsloth/qwen3-0.6b-gguf:q4_k_m",
+      "kvBytesPerToken": 114688.0,
+      "license": "apache-2.0",
+      "openWeight": true,
+      "params": "596M",
+      "provenance": "local",
+      "quantizations": [
+        {
+          "diskBytes": 396705472.0,
+          "minRamBytes": 456211293.0,
+          "minVramBytes": 456211293.0,
+          "name": "Q4_K_M",
+          "sha256": "ac2d97712095a558e31573f62f466a3f9d93990898b0ec79d7c974c1780d524a"
+        }
+      ],
+      "source": {
+        "gguf": {
+          "file": "Qwen3-0.6B-Q4_K_M.gguf",
+          "repo": "unsloth/Qwen3-0.6B-GGUF",
+          "revision": "50968a4468ef4233ed78cd7c3de230dd1d61a56b",
+          "sha256": "ac2d97712095a558e31573f62f466a3f9d93990898b0ec79d7c974c1780d524a"
+        },
+        "hf": "Qwen/Qwen3-0.6B",
+        "ollama": "hf.co/unsloth/qwen3-0.6b-gguf:q4_k_m"
+      }
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+In Cline: Settings > API Configuration > API Provider = OpenAI Compatible.
+  Base URL: http://127.0.0.1:11434/v1
+  API key:  (leave blank)
+  Model ID: qwen2.5:1.5b
+Set the context window to at least 32K tokens.

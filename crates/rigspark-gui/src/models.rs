@@ -132,6 +132,9 @@ pub async fn dispatch(host: Arc<Host>, request: Request) -> ApiResult {
     let method = request.method().as_str().to_owned();
     let url = url::Url::parse(&format!("{}{}", host.origin(), request.uri())).map_err(|_| bad())?;
     let path = url.path();
+    if path == "/api/catalog/local" || path.starts_with("/api/catalog/local/") {
+        return local_catalog(host, request, path, &method).await;
+    }
     if path.starts_with("/api/catalog/") {
         use rigspark_runtime::catalog_update::{CatalogStore, OfficialCatalogTransport};
         let store = CatalogStore::official(&host.home);
@@ -363,4 +366,116 @@ pub async fn dispatch(host: Arc<Host>, request: Request) -> ApiResult {
         return Ok(json_response(json!({"active":active})));
     }
     Err(crate::routes::missing())
+}
+
+/// Add from Hugging Face: search, inspect, add and remove models in the local overlay.
+async fn local_catalog(host: Arc<Host>, request: Request, path: &str, method: &str) -> ApiResult {
+    use rigspark_runtime::{hf_add, local_catalog::LocalCatalog};
+    let refused = |message: String| Ok(crate::error(axum::http::StatusCode::BAD_REQUEST, &message));
+    let local = LocalCatalog::new(&host.home);
+    if request.uri().query().is_some() {
+        return Err(bad());
+    }
+    if path == "/api/catalog/local" && method == "GET" {
+        let models: Vec<Value> = local
+            .models()
+            .map_err(|_| bad())?
+            .iter()
+            .map(|model| json!({"id":model.id,"license":model.license,"quant":model.quantizations[0].name,"bytes":model.quantizations[0].disk_bytes}))
+            .collect();
+        return Ok(json_response(json!({"models": models})));
+    }
+    if method != "POST" {
+        return Err(bad());
+    }
+    let cancel = host.shutdown.child_token();
+    match path {
+        "/api/catalog/local/search" => {
+            #[derive(Deserialize)]
+            #[serde(deny_unknown_fields)]
+            struct Search {
+                query: String,
+            }
+            let input: Search = body(request, 4096).await?;
+            let transport = host.hugging_face().map_err(|_| bad())?;
+            match hf_add::search(&input.query, transport.as_ref(), &cancel).await {
+                Ok(results) => Ok(json_response(json!({"results": results}))),
+                Err(error) => refused(error.to_string()),
+            }
+        }
+        "/api/catalog/local/inspect" | "/api/catalog/local/add" => {
+            #[derive(Deserialize)]
+            #[serde(deny_unknown_fields)]
+            struct Add {
+                reference: String,
+                quant: Option<String>,
+                #[serde(default)]
+                bypass: bool,
+            }
+            let input: Add = body(request, 4096).await?;
+            let (repository, named) = match hf_add::parse_reference(&input.reference) {
+                Ok(parsed) => parsed,
+                Err(error) => return refused(error.to_string()),
+            };
+            let transport = host.hugging_face().map_err(|_| bad())?;
+            let inspection = match hf_add::inspect(&repository, transport.as_ref(), &cancel).await {
+                Ok(inspection) => inspection,
+                Err(error) => return refused(error.to_string()),
+            };
+            let entries =
+                match hf_add::entries(&inspection, transport.as_ref(), &hf_add::now(), &cancel)
+                    .await
+                {
+                    Ok(entries) => entries,
+                    Err(error) => return refused(error.to_string()),
+                };
+            let (hardware, _) = rigspark_runtime::hardware::detect()
+                .await
+                .map_err(|_| bad())?;
+            if path.ends_with("/inspect") {
+                let selected = hf_add::best_fit(&entries, &hardware).map(|model| model.id.clone());
+                let choices: Vec<Value> = entries
+                    .iter()
+                    .map(|model| json!({"id":model.id,"quant":model.quantizations[0].name,"bytes":model.quantizations[0].disk_bytes,"fits":hf_add::fits(model,&hardware)}))
+                    .collect();
+                return Ok(json_response(
+                    json!({"repository":inspection.repository,"revision":inspection.revision,"license":inspection.license,"choices":choices,"selected":selected}),
+                ));
+            }
+            let quant = input.quant.or(named);
+            let model = match quant {
+                Some(quant) => entries
+                    .iter()
+                    .find(|model| model.quantizations[0].name.eq_ignore_ascii_case(&quant)),
+                None => hf_add::best_fit(&entries, &hardware),
+            };
+            let Some(model) = model else {
+                return refused("Choose one of this repository's quantizations.".into());
+            };
+            if !input.bypass && !hf_add::fits(model, &hardware) {
+                return refused(format!(
+                    "{} does not fit this machine.",
+                    model.quantizations[0].name
+                ));
+            }
+            match local.add(model.clone()) {
+                Ok(()) => Ok(json_response(json!({"model": model.id}))),
+                Err(error) => refused(error.to_string()),
+            }
+        }
+        "/api/catalog/local/remove" => {
+            #[derive(Deserialize)]
+            #[serde(deny_unknown_fields)]
+            struct Remove {
+                id: String,
+            }
+            let input: Remove = body(request, 4096).await?;
+            match local.remove(&input.id) {
+                Ok(true) => Ok(json_response(json!({"removed": true}))),
+                Ok(false) => refused("That model is not one you added.".into()),
+                Err(error) => refused(error.to_string()),
+            }
+        }
+        _ => Err(bad()),
+    }
 }

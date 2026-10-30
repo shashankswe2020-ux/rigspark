@@ -13,6 +13,7 @@ pub mod cancellation;
 pub mod dialog_smoke;
 pub mod distribution;
 pub mod gui_launcher;
+pub mod hf_add;
 pub mod maintenance_file;
 pub mod performance;
 pub mod retirement;

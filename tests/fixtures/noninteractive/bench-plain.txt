@@ -1,0 +1,9 @@
+Runtime: Ollama
+Model:   qwen2.5:1.5b
+Fixture: short v1 (sha256 7f3951fab5d5316889c1cf4b240c2dae4b483b0d6c9211ff27270726493323ff)
+Runs:    1 measured after 0 warmup · 16 output tokens max · concurrency 1
+
+TTFT (wall clock):     252.7 ms (p10 252.7 · p90 252.7, n=1)
+Prefill (runtime):     5945.1 tok/s (p10 5945.1 · p90 5945.1, n=1)
+Decode (runtime):      123.7 tok/s (p10 123.7 · p90 123.7, n=1)
+Draft acceptance:      unknown (runtime did not report speculative draft counters)

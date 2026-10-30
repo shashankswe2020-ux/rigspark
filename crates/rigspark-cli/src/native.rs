@@ -79,7 +79,7 @@ use std::{
     about = "Hardware-aware local model advice, runtime management, and chat"
 )]
 struct Args {
-    #[arg(default_value="recommend", value_parser=["recommend","can-run","plan","catalog","doctor","ls","up","switch","down","chat","migrate","gui","generate","bench","connect"])]
+    #[arg(default_value="recommend", value_parser=["recommend","can-run","plan","catalog","doctor","ls","up","switch","down","chat","migrate","gui","generate","bench","connect","add"])]
     command: String,
     model: Option<String>,
     #[arg(short = 'm', long = "model")]
@@ -176,6 +176,10 @@ struct Args {
     concurrency: Option<u8>,
     #[arg(long, value_parser = ["short", "long"])]
     fixture: Option<String>,
+    #[arg(long)]
+    search: Option<String>,
+    #[arg(long)]
+    remove: bool,
     #[arg(long, conflicts_with = "status")]
     update: bool,
     #[arg(long)]
@@ -807,7 +811,7 @@ async fn execute(mut args: Args) -> Result<u8, Box<dyn std::error::Error>> {
         && (args.from.is_some()
             || args.to.is_some()
             || args.move_memory
-            || args.dry_run
+            || (args.dry_run && !["connect", "add"].contains(&args.command.as_str()))
             || (args.yes && args.command != "down"))
     {
         return Err("migration options require migrate".into());
@@ -1029,7 +1033,8 @@ async fn execute(mut args: Args) -> Result<u8, Box<dyn std::error::Error>> {
         return Ok(0);
     }
     if !args.parity {
-        if !["can-run", "plan", "up", "switch", "down", "connect"].contains(&args.command.as_str())
+        if !["can-run", "plan", "up", "switch", "down", "connect", "add"]
+            .contains(&args.command.as_str())
             && args.model.is_some()
         {
             return Err("this command does not accept a model argument".into());
@@ -1063,7 +1068,7 @@ async fn execute(mut args: Args) -> Result<u8, Box<dyn std::error::Error>> {
         {
             return Err("model is required".into());
         }
-        if !["up", "switch"].contains(&args.command.as_str())
+        if !["up", "switch", "add"].contains(&args.command.as_str())
             && (args.bypass
                 || ((port.is_some() || args.installed)
                     && !(args.installed
@@ -1093,6 +1098,9 @@ async fn execute(mut args: Args) -> Result<u8, Box<dyn std::error::Error>> {
     }
     if args.command == "connect" && !args.parity {
         return run_connect(&args);
+    }
+    if args.command == "add" && !args.parity {
+        return run_add(&args).await;
     }
     if args.command == "ls" && !args.parity {
         let store =
@@ -2700,8 +2708,34 @@ fn run_connect(args: &Args) -> Result<u8, Box<dyn std::error::Error>> {
         .clone()
         .unwrap_or_else(|| active.model_id.clone());
     match plan(agent, &active.endpoint, &active.backend, &model)? {
+        ConnectPlan::Instructions { text } if args.json => {
+            println!(
+                "{}",
+                serde_json::to_string_pretty(
+                    &json!({"agent": name, "kind": "instructions", "text": text})
+                )?
+            );
+            Ok(0)
+        }
         ConnectPlan::Instructions { text } => {
             print!("{text}");
+            Ok(0)
+        }
+        ConnectPlan::Launch {
+            binary,
+            args: agent_args,
+            env,
+        } if args.json => {
+            let env: serde_json::Map<String, Value> = env
+                .into_iter()
+                .map(|(key, value)| (key, json!(value)))
+                .collect();
+            println!(
+                "{}",
+                serde_json::to_string_pretty(
+                    &json!({"agent": name, "kind": "launch", "binary": binary, "args": agent_args, "env": env})
+                )?
+            );
             Ok(0)
         }
         ConnectPlan::Launch {
@@ -2757,4 +2791,130 @@ fn shell_quote(value: &str) -> String {
     } else {
         format!("'{}'", value.replace('\'', "'\\''"))
     }
+}
+
+/// `rigspark add [<owner/repo[:QUANT]>] [--search <query>] [--remove] [--dry-run] [--bypass]`
+async fn run_add(args: &Args) -> Result<u8, Box<dyn std::error::Error>> {
+    use rigspark_cli::hf_add::{Selection, choice_table, select};
+    use rigspark_runtime::{
+        admission::NativeAdmissionTransport, hf_add, local_catalog::LocalCatalog,
+    };
+    let config = rigspark_runtime::state::Config::load()?;
+    let local = LocalCatalog::new(&config.home);
+    let cancel = tokio_util::sync::CancellationToken::new();
+    if let Some(query) = &args.search {
+        let transport = NativeAdmissionTransport::new()?;
+        let hits = hf_add::search(query, &transport, &cancel).await?;
+        if args.json {
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&json!({"results": hits}))?
+            );
+        } else if hits.is_empty() {
+            println!("No GGUF repositories match {:?}.", strip_control(query));
+        } else {
+            for hit in &hits {
+                println!(
+                    "{:<60} {:>10} downloads",
+                    strip_control(&hit.id),
+                    hit.downloads
+                );
+            }
+            println!("\nAdd one with: rigspark add <owner/repo>");
+        }
+        return Ok(0);
+    }
+    let Some(reference) = args.model.as_deref() else {
+        let models = local.models()?;
+        if args.json {
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&json!({"models": models}))?
+            );
+        } else if models.is_empty() {
+            println!("You have not added any models. Try: rigspark add --search qwen");
+        } else {
+            for model in &models {
+                println!(
+                    "{}  ({})",
+                    strip_control(&model.id),
+                    strip_control(&model.license)
+                );
+            }
+        }
+        return Ok(0);
+    };
+    if args.remove {
+        if local.remove(reference.trim())? {
+            println!("Removed {}.", strip_control(reference.trim()));
+            return Ok(0);
+        }
+        return Err(format!(
+            "{} is not one of your added models",
+            strip_control(reference)
+        )
+        .into());
+    }
+    let (repository, quant) = hf_add::parse_reference(reference)?;
+    let transport = NativeAdmissionTransport::new()?;
+    eprintln!("Inspecting {} on Hugging Face…", repository.as_str());
+    let inspection = hf_add::inspect(&repository, &transport, &cancel).await?;
+    let now = hf_add::now();
+    let entries = hf_add::entries(&inspection, &transport, &now, &cancel).await?;
+    let hardware = detected_hardware().await?;
+    let selection = select(&entries, quant.as_deref(), &hardware, args.bypass);
+    let chosen = match &selection {
+        Selection::Chosen(model) => Some(model.id.as_str()),
+        _ => None,
+    };
+    if args.json {
+        let rows: Vec<Value> = entries
+            .iter()
+            .map(|model| json!({"id": model.id, "quant": model.quantizations[0].name, "bytes": model.quantizations[0].disk_bytes, "fits": hf_add::fits(model, &hardware)}))
+            .collect();
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&sanitized(
+                &json!({"repository": inspection.repository, "revision": inspection.revision, "license": inspection.license, "choices": rows, "selected": chosen, "dryRun": args.dry_run})
+            ))?
+        );
+    } else {
+        println!(
+            "{} @ {} ({})\n",
+            strip_control(&inspection.repository),
+            &inspection.revision[..12],
+            inspection.license
+        );
+        print!("{}", choice_table(&entries, &hardware, chosen));
+    }
+    let model = match selection {
+        Selection::Chosen(model) => model,
+        Selection::TooLarge(model) => {
+            return Err(format!(
+                "{} does not fit this machine; add --bypass to add it anyway",
+                model.quantizations[0].name
+            )
+            .into());
+        }
+        Selection::NoneFits => {
+            return Err("no quantization fits this machine; name one with :QUANT and --bypass to add it anyway".into());
+        }
+        Selection::Unknown(quant) => {
+            return Err(format!("{quant} is not one of this repository's quantizations").into());
+        }
+    };
+    if args.dry_run {
+        if !args.json {
+            println!("\nDry run: nothing was added.");
+        }
+        return Ok(0);
+    }
+    local.add(model.clone())?;
+    if !args.json {
+        println!(
+            "\nAdded {}. Start it with:\n  rigspark up {} --backend llamacpp\n  rigspark up {}            # Ollama",
+            model.id, model.id, model.id
+        );
+    }
+    Ok(0)
 }

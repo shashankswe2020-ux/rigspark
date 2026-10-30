@@ -4,6 +4,21 @@
 
 ### Features
 
+- Add from Hugging Face: `rigspark add` and **Models → Add from Hugging Face**
+  search GGUF repositories and list every single-file quantization with a
+  fit verdict. The chosen one goes into a local catalog
+  (`~/.rigspark/catalog/local.json`), pinned to the commit and SHA-256 and
+  marked *added by you*. It runs on llama.cpp or Ollama with the usual
+  fail-closed digest check. Only repositories with a recognized open-weight
+  license are accepted.
+
+### Fixes
+
+- `rigspark bench` and `rigspark connect` panicked because they were missing
+  from the command table. A test now requires every command to have one.
+  `connect --dry-run` no longer reports "migration options require migrate".
+- `up`/`switch` accept `--speculative` and `--parallel`.
+
 - Mac desktop app: releases include `RigSpark_aarch64.dmg` and
   `RigSpark_x86_64.dmg` (unsigned, not yet notarized). RigSpark stays in the
   menu bar when its window closes, can launch at login, and installs updates

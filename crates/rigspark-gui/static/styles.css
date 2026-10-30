@@ -5181,3 +5181,43 @@ input.switch:checked::after {
 .desktop-group > .group-foot {
   margin: 0 14px 10px;
 }
+
+.hf-sheet {
+  width: min(560px, calc(100vw - 32px));
+}
+
+.hf-list {
+  display: grid;
+  gap: 4px;
+  max-height: 260px;
+  margin: 8px 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.hf-list button,
+.hf-list label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--raised);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.hf-list small {
+  color: var(--text3);
+  font-family: var(--mono);
+}
+
+.hf-list input[type="radio"] {
+  margin-right: 8px;
+}

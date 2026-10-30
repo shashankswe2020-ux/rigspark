@@ -269,18 +269,24 @@ pub async fn entry(
         .ok_or_else(|| HfAddError::UnknownQuant(quant.to_ascii_uppercase()))
 }
 
-/// The largest quantization whose weights fit this machine, or `None` when none does.
+/// The largest quantized file that fits this machine; unquantized F16/BF16/F32 files only
+/// when nothing smaller fits. `None` when nothing fits.
 pub fn best_fit<'a>(
     entries: &'a [CatalogModel],
     hardware: &rigspark_core::sizing::Hardware,
 ) -> Option<&'a CatalogModel> {
+    let unquantized = |model: &CatalogModel| {
+        ["F16", "BF16", "F32"].contains(&model.quantizations[0].name.as_str())
+    };
     entries
         .iter()
         .filter(|model| fits(model, hardware))
         .max_by(|left, right| {
-            left.quantizations[0]
-                .disk_bytes
-                .total_cmp(&right.quantizations[0].disk_bytes)
+            (!unquantized(left)).cmp(&!unquantized(right)).then(
+                left.quantizations[0]
+                    .disk_bytes
+                    .total_cmp(&right.quantizations[0].disk_bytes),
+            )
         })
 }
 
@@ -351,4 +357,11 @@ pub async fn search(
             likes: hit.likes,
         })
         .collect())
+}
+
+/// The current time in the RFC 3339 form `entries` expects.
+pub fn now() -> String {
+    time::OffsetDateTime::now_utc()
+        .format(&time::format_description::well_known::Rfc3339)
+        .unwrap_or_else(|_| "1970-01-01T00:00:00Z".into())
 }

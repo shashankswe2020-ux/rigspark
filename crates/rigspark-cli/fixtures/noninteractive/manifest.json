@@ -12,7 +12,10 @@
     "catalog": "../../tests/fixtures/noninteractive/catalog-plain.txt",
     "doctor": "../../tests/fixtures/noninteractive/doctor-plain.txt",
     "plan": "../../tests/fixtures/noninteractive/plan-plain.txt",
-    "generate": "../../tests/fixtures/noninteractive/generate-plain.txt"
+    "generate": "../../tests/fixtures/noninteractive/generate-plain.txt",
+    "bench": "../../tests/fixtures/noninteractive/bench-plain.txt",
+    "connect": "../../tests/fixtures/noninteractive/connect-plain.txt",
+    "add": "../../tests/fixtures/noninteractive/add-plain.txt"
   },
   "json": {
     "recommend": "../../tests/fixtures/noninteractive/recommend-json.json",
@@ -26,6 +29,9 @@
     "ls": "fixtures/noninteractive/ls-json.json",
     "doctor": "../../tests/fixtures/noninteractive/doctor-json.json",
     "plan": "../../tests/fixtures/noninteractive/plan-json.json",
-    "generate": "fixtures/noninteractive/generate-json.json"
+    "generate": "fixtures/noninteractive/generate-json.json",
+    "bench": "fixtures/noninteractive/bench-json.json",
+    "connect": "fixtures/noninteractive/connect-json.json",
+    "add": "fixtures/noninteractive/add-json.json"
   }
 }
