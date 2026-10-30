@@ -195,8 +195,9 @@ pub fn same_process(actual: &ProcessIdentity, expected: &ProcessIdentity) -> boo
         && actual.executable == expected.executable
         && actual.started == expected.started
 }
-/// Package-manager directories searched after `PATH`: apps opened from Finder or a
-/// launcher inherit only the system `PATH` and would otherwise miss Homebrew runtimes.
+/// Package-manager directories searched after `PATH` once
+/// [`enable_package_manager_fallback`] is called: apps opened from Finder or a launcher
+/// inherit only the system `PATH` and would otherwise miss Homebrew runtimes.
 #[cfg(target_os = "macos")]
 pub const FALLBACK_BINARY_DIRS: &[&str] = &["/opt/homebrew/bin", "/usr/local/bin"];
 #[cfg(target_os = "linux")]
@@ -204,8 +205,22 @@ pub const FALLBACK_BINARY_DIRS: &[&str] = &["/usr/local/bin", "/home/linuxbrew/.
 #[cfg(not(any(target_os = "macos", target_os = "linux")))]
 pub const FALLBACK_BINARY_DIRS: &[&str] = &[];
 
+static PACKAGE_MANAGER_FALLBACK: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+
+/// Lets a GUI-launched app, whose `PATH` is the system default, also find runtimes in
+/// [`FALLBACK_BINARY_DIRS`]. Command-line use keeps the caller's `PATH` exactly.
+pub fn enable_package_manager_fallback() {
+    PACKAGE_MANAGER_FALLBACK.store(true, std::sync::atomic::Ordering::Relaxed);
+}
+
 pub fn resolve_binary(binary: &str) -> Result<PathBuf, String> {
-    let fallbacks: Vec<&Path> = FALLBACK_BINARY_DIRS.iter().map(Path::new).collect();
+    let fallbacks: Vec<&Path> =
+        if PACKAGE_MANAGER_FALLBACK.load(std::sync::atomic::Ordering::Relaxed) {
+            FALLBACK_BINARY_DIRS.iter().map(Path::new).collect()
+        } else {
+            Vec::new()
+        };
     resolve_binary_in(
         binary,
         &std::env::var_os("PATH").unwrap_or_default(),
