@@ -23,6 +23,8 @@ pub struct CatalogStatus {
     pub generated_at: String,
     pub published_at: Option<String>,
     pub model_count: usize,
+    /// Models the user added from Hugging Face, included in `model_count`.
+    pub local_count: usize,
     pub updates_configured: bool,
     pub warnings: Vec<String>,
 }
@@ -104,6 +106,7 @@ impl CatalogStore {
             generated_at: snapshot.catalog.generated_at.clone(),
             published_at: Some(snapshot.published_at),
             model_count: snapshot.catalog.models.len(),
+            local_count: 0,
             updates_configured: self.key.is_some(),
             warnings,
         };
@@ -114,7 +117,52 @@ impl CatalogStore {
         }
     }
 
+    /// The signed or bundled catalog plus the models the user added from Hugging Face.
     pub fn load(&self) -> Result<LoadedCatalog, CatalogUpdateError> {
+        let mut loaded = self.load_snapshot()?;
+        match crate::local_catalog::LocalCatalog::new(&self.home).models() {
+            Ok(added) => {
+                let added: Vec<_> = added
+                    .into_iter()
+                    .filter(|entry| {
+                        !loaded
+                            .catalog
+                            .models
+                            .iter()
+                            .any(|model| model.id == entry.id)
+                    })
+                    .collect();
+                if !added.is_empty() {
+                    let mut catalog = loaded.catalog.clone();
+                    catalog.models.extend(added.iter().cloned());
+                    catalog.schema_version =
+                        rigspark_core::catalog::required_schema_version(&catalog.models)
+                            .max(catalog.schema_version)
+                            .max(3);
+                    let raw = serde_json::to_string(&catalog)
+                        .map_err(|_| CatalogUpdateError::Invalid("merged catalog"))?;
+                    let catalog = Catalog::parse(&raw)
+                        .map_err(|_| CatalogUpdateError::Invalid("merged catalog"))?;
+                    loaded.status.local_count = added.len();
+                    loaded.status.model_count = catalog.models.len();
+                    loaded.catalog = catalog;
+                    loaded.raw = raw;
+                }
+            }
+            Err(error) => loaded
+                .status
+                .warnings
+                .push(format!("Models you added are hidden: {error}")),
+        }
+        Ok(loaded)
+    }
+
+    /// Only the signed or bundled catalog, without models the user added.
+    pub fn load_published(&self) -> Result<Catalog, CatalogUpdateError> {
+        Ok(self.load_snapshot()?.catalog)
+    }
+
+    fn load_snapshot(&self) -> Result<LoadedCatalog, CatalogUpdateError> {
         let mut warnings = Vec::new();
         let catalog = Catalog::parse(rigspark_core::MODELS_JSON)
             .map_err(|_| CatalogUpdateError::Invalid("bundled catalog"))?;
@@ -158,6 +206,7 @@ impl CatalogStore {
             generated_at: catalog.generated_at.clone(),
             published_at: None,
             model_count: catalog.models.len(),
+            local_count: 0,
             updates_configured: self.key.is_some(),
             warnings,
         };

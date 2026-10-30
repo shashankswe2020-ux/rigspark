@@ -69,7 +69,7 @@ impl RequestOutcome {
     }
 }
 
-async fn get(
+pub(crate) async fn get(
     transport: &dyn AdmissionTransport,
     cancel: &CancellationToken,
     raw: &str,
@@ -107,7 +107,7 @@ async fn get(
     Ok(body)
 }
 
-async fn gguf(
+pub(crate) async fn gguf(
     transport: &dyn AdmissionTransport,
     cancel: &CancellationToken,
     url: &str,
@@ -243,6 +243,7 @@ pub async fn evaluate_request(
         file: &file.rfilename,
         sha256: &artifact.sha256,
         bytes: artifact.size,
+        quant: "Q4_K_M",
     };
     let entry = match build_entry(repository, &model, &parsed, &selected, tag_license, &today) {
         Ok(entry) => entry,
@@ -305,13 +306,14 @@ pub async fn evaluate_request(
     })
 }
 
-struct SelectedGguf<'a> {
-    file: &'a str,
-    sha256: &'a str,
-    bytes: u64,
+pub(crate) struct SelectedGguf<'a> {
+    pub(crate) file: &'a str,
+    pub(crate) sha256: &'a str,
+    pub(crate) bytes: u64,
+    pub(crate) quant: &'a str,
 }
 
-fn build_entry(
+pub(crate) fn build_entry(
     repository: &Repository,
     model: &HfModel,
     gguf: &Gguf,
@@ -350,7 +352,7 @@ fn build_entry(
     let quantization = sized_quantization(
         total as f64,
         &architecture_kind,
-        "Q4_K_M",
+        artifact.quant,
         artifact.bytes as f64,
         Some(artifact.sha256.to_owned()),
         Vec::new(),
@@ -359,7 +361,11 @@ fn build_entry(
     let source_hf = model
         .base_model()
         .unwrap_or_else(|| repository.as_str().to_owned());
-    let id = format!("{}:q4_k_m", source_hf.to_ascii_lowercase());
+    let id = format!(
+        "{}:{}",
+        source_hf.to_ascii_lowercase(),
+        artifact.quant.to_ascii_lowercase()
+    );
     Ok(CatalogModel {
         id,
         family: architecture.into(),
@@ -416,6 +422,6 @@ fn stamp(raw: &str) -> io::Result<String> {
         .map_err(io::Error::other)
 }
 
-fn today(raw: &str) -> io::Result<String> {
+pub(crate) fn today(raw: &str) -> io::Result<String> {
     Ok(stamp(raw)?[..10].into())
 }

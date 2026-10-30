@@ -431,3 +431,86 @@ fn drafter_rules_fail_closed() {
         "drafters cannot chain"
     );
 }
+
+fn local_entry() -> Value {
+    let mut value = catalog();
+    let mut model = value["models"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|model| model["id"] == "qwen2.5:0.5b")
+        .unwrap()
+        .clone();
+    let object = model.as_object_mut().unwrap();
+    object.remove("releaseDate");
+    object.remove("benchmarkProxy");
+    object.insert(
+        "id".into(),
+        json!("hf.co/qwen/qwen2.5-0.5b-instruct-gguf:q4_k_m"),
+    );
+    object.insert("provenance".into(), json!("local"));
+    object.insert("addedAt".into(), json!("2026-10-30"));
+    value["schemaVersion"] = json!(4);
+    value["models"] = json!([model]);
+    value
+}
+
+#[test]
+fn local_entries_load_only_from_the_local_overlay() {
+    let local = local_entry();
+    let loaded = Catalog::parse_local(&local.to_string()).unwrap();
+    assert_eq!(loaded.models[0].provenance, EntryProvenance::Local);
+    assert_eq!(
+        serde_json::to_value(&loaded).unwrap()["models"][0]["provenance"],
+        "local"
+    );
+    assert!(
+        Catalog::parse(&local.to_string()).unwrap().has_local(),
+        "the merged view keeps local entries visible to advice"
+    );
+    assert!(
+        !Catalog::parse(rigspark_core::MODELS_JSON).unwrap().has_local(),
+        "the bundled catalog never carries local entries"
+    );
+    let mut mixed = local.clone();
+    mixed["models"]
+        .as_array_mut()
+        .unwrap()
+        .push(catalog()["models"][0].clone());
+    assert!(
+        Catalog::parse_local(&mixed.to_string()).is_err(),
+        "the overlay only holds entries the user added"
+    );
+    let mut empty = local.clone();
+    empty["models"] = json!([]);
+    assert!(
+        Catalog::parse_local(&empty.to_string())
+            .unwrap()
+            .models
+            .is_empty(),
+        "an emptied overlay is valid"
+    );
+}
+
+#[test]
+fn local_entries_stay_integrity_pinned() {
+    let reject = |edit: &dyn Fn(&mut Value)| {
+        let mut value = local_entry();
+        edit(&mut value["models"][0]);
+        Catalog::parse_local(&value.to_string()).is_err()
+    };
+    assert!(reject(&|model| {
+        model["source"].as_object_mut().unwrap().remove("gguf");
+    }));
+    assert!(reject(&|model| {
+        model["quantizations"][0]
+            .as_object_mut()
+            .unwrap()
+            .remove("sha256");
+    }));
+    assert!(reject(&|model| {
+        model.as_object_mut().unwrap().remove("addedAt");
+    }));
+    assert!(reject(&|model| model["benchmarkProxy"] = json!(0.5)));
+    assert!(reject(&|model| model["openWeight"] = json!(false)));
+}

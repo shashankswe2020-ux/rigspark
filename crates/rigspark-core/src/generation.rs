@@ -219,6 +219,7 @@ impl GenerationModel {
                 self.added_at.is_some(),
                 "auto generation entries need addedAt",
             )?,
+            EntryProvenance::Local => require(false, "generation catalog has no local entries")?,
         }
         https(&self.source)?;
         require(
