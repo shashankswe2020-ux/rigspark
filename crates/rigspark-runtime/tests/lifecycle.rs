@@ -1305,3 +1305,83 @@ async fn an_unappliable_cache_profile_is_refused_before_the_running_server_is_to
     assert_eq!(std::fs::read(&store.config.state).unwrap(), before);
     assert!(!store.config.lock.exists());
 }
+
+struct GoneProbe {
+    alive: Result<bool, ()>,
+    asked: Mutex<Vec<u32>>,
+}
+#[async_trait::async_trait]
+impl ProcessProbe for GoneProbe {
+    async fn listener(&self, port: u16, host: &str) -> Result<Listener, StateError> {
+        RestartedProbe.listener(port, host).await
+    }
+    async fn process(&self, pid: u32) -> Result<ProcessIdentity, StateError> {
+        RestartedProbe.process(pid).await
+    }
+    async fn alive(&self, pid: u32) -> Result<bool, StateError> {
+        self.asked.lock().unwrap().push(pid);
+        self.alive.map_err(|()| StateError {
+            kind: "invalid",
+            message: "probe failed".into(),
+        })
+    }
+}
+
+#[tokio::test]
+async fn a_record_whose_process_is_gone_is_cleared_before_replacement() {
+    // (owned, liveness answer, cleared)
+    for (owned, alive, cleared) in [
+        (true, Ok(false), true),
+        (true, Ok(true), false),
+        (true, Err(()), false),
+        (false, Ok(false), true),
+        (false, Ok(true), false),
+    ] {
+        let home = tempfile::tempdir().unwrap();
+        let store = StateStore::new(Config::from_home(home.path()).unwrap());
+        let mut prior = state();
+        prior.active.as_mut().unwrap().owned_by_us = owned;
+        let guard = store.lock(Duration::from_millis(10)).unwrap();
+        store.write(&guard, &prior).unwrap();
+        guard.release().unwrap();
+        let adapter = Adapter {
+            fail: false,
+            stopped: Mutex::new(false),
+        };
+        let registry = Registry::new(vec![&adapter]);
+        let probe = GoneProbe {
+            alive,
+            asked: Mutex::new(Vec::new()),
+        };
+        let lifecycle = Lifecycle {
+            store: &store,
+            registry: &registry,
+            probe: &probe,
+        };
+        let reviewed = lifecycle
+            .review("next:latest", &CancellationToken::new())
+            .await;
+        let case = format!("owned={owned} alive={alive:?}");
+        assert!(!*adapter.stopped.lock().unwrap(), "{case}: never signals");
+        assert!(!store.config.lock.exists(), "{case}");
+        if cleared {
+            assert!(reviewed.is_ok(), "{case}: {:?}", reviewed.err());
+            assert!(store.read().unwrap().active.is_none(), "{case}");
+            assert_eq!(*probe.asked.lock().unwrap(), [123], "{case}");
+        } else {
+            let error = reviewed.err().unwrap().to_string();
+            assert!(error.contains("does not match"), "{case}: {error}");
+            assert_eq!(store.read().unwrap(), prior, "{case}: record kept");
+        }
+        let guard = store.lock(Duration::from_millis(10)).unwrap();
+        store.write(&guard, &prior).unwrap();
+        guard.release().unwrap();
+        let down = lifecycle.down(&CancellationToken::new()).await;
+        assert!(
+            !*adapter.stopped.lock().unwrap(),
+            "{case}: down never signals a dead or foreign process"
+        );
+        assert_eq!(down.is_ok(), cleared, "{case}: {down:?}");
+        assert_eq!(store.read().unwrap().active.is_none(), cleared, "{case}");
+    }
+}
