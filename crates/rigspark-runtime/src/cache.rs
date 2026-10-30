@@ -48,6 +48,39 @@ impl PromptReuse {
     }
 }
 
+/// Speculative decoding: `draft` uses the catalog drafter, `ngram` drafts from the
+/// context itself, and `auto` resolves to `draft` or `off` before launch.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Speculative {
+    #[default]
+    Off,
+    Auto,
+    Draft,
+    Ngram,
+}
+
+impl Speculative {
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::Off => "off",
+            Self::Auto => "auto",
+            Self::Draft => "draft",
+            Self::Ngram => "ngram",
+        }
+    }
+    pub fn parse(value: &str) -> Option<Self> {
+        [Self::Off, Self::Auto, Self::Draft, Self::Ngram]
+            .into_iter()
+            .find(|kind| kind.name() == value)
+    }
+    pub fn is_off(&self) -> bool {
+        *self == Self::Off
+    }
+}
+
+pub const MAX_PARALLEL: u8 = 16;
+
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default, rename_all = "camelCase", deny_unknown_fields)]
 pub struct CacheProfile {
@@ -55,6 +88,11 @@ pub struct CacheProfile {
     pub kv_v: KvCacheType,
     pub flash_attention: FlashAttention,
     pub prompt_reuse: PromptReuse,
+    #[serde(skip_serializing_if = "Speculative::is_off")]
+    pub speculative: Speculative,
+    /// Concurrent request slots; `None` keeps the backend default.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub parallel: Option<u8>,
 }
 
 impl CacheProfile {
@@ -65,6 +103,12 @@ impl CacheProfile {
                 "a quantized V cache requires flash attention",
             ));
         }
+        if self
+            .parallel
+            .is_some_and(|slots| !(1..=MAX_PARALLEL).contains(&slots))
+        {
+            return Err(CacheError::Invalid("parallel slots must be 1 to 16"));
+        }
         Ok(())
     }
     pub fn summary(&self) -> String {
@@ -73,11 +117,18 @@ impl CacheProfile {
         } else {
             format!("K {} / V {}", self.kv_k.name(), self.kv_v.name())
         };
-        format!(
+        let mut text = format!(
             "KV {kv}, flash attention {}, prompt reuse {}",
             self.flash_attention.name(),
             self.prompt_reuse.name()
-        )
+        );
+        if !self.speculative.is_off() {
+            text.push_str(&format!(", speculative {}", self.speculative.name()));
+        }
+        if let Some(slots) = self.parallel {
+            text.push_str(&format!(", {slots} slots"));
+        }
+        text
     }
 }
 
@@ -87,6 +138,8 @@ pub struct CacheFlags {
     pub kv: Option<KvCacheType>,
     pub flash_attention: Option<FlashAttention>,
     pub prompt_reuse: Option<PromptReuse>,
+    pub speculative: Option<Speculative>,
+    pub parallel: Option<u8>,
 }
 
 impl CacheFlags {
@@ -108,6 +161,12 @@ impl CacheFlags {
         }
         if let Some(reuse) = self.prompt_reuse {
             profile.prompt_reuse = reuse;
+        }
+        if let Some(speculative) = self.speculative {
+            profile.speculative = speculative;
+        }
+        if let Some(slots) = self.parallel {
+            profile.parallel = Some(slots);
         }
         Some(profile)
     }
@@ -202,6 +261,14 @@ impl CacheProvider for NativeCacheProvider {
             return Err(CacheError::Invalid("unknown backend"));
         }
         profile.validate()?;
+        // An unresolved `auto` asks for nothing by itself.
+        let profile = &CacheProfile {
+            speculative: match profile.speculative {
+                Speculative::Auto => Speculative::Off,
+                mode => mode,
+            },
+            ..*profile
+        };
         if *profile == CacheProfile::default() {
             return Ok(SpawnDelta::default());
         }
@@ -245,6 +312,18 @@ fn llama_cpp(profile: &CacheProfile) -> SpawnDelta {
     if profile.prompt_reuse == PromptReuse::Reuse {
         args.extend(["--cache-reuse".into(), "256".into()]);
     }
+    match profile.speculative {
+        Speculative::Draft => args.extend(["--spec-type".into(), "draft-simple".into()]),
+        Speculative::Ngram => args.extend(["--spec-type".into(), "ngram-mod".into()]),
+        Speculative::Off | Speculative::Auto => {}
+    }
+    if let Some(slots) = profile.parallel {
+        args.extend([
+            "--parallel".into(),
+            slots.to_string(),
+            "--kv-unified".into(),
+        ]);
+    }
     SpawnDelta {
         args,
         env: BTreeMap::new(),
@@ -268,6 +347,14 @@ fn ollama(profile: &CacheProfile, owned: bool) -> Result<SpawnDelta, CacheError>
     }
     if profile.kv_k != KvCacheType::F16 {
         env.insert("OLLAMA_KV_CACHE_TYPE".into(), profile.kv_k.name().into());
+    }
+    if matches!(profile.speculative, Speculative::Draft | Speculative::Ngram) {
+        return Err(unsupported(
+            "Ollama ships speculative decoding inside its model tags; use llama.cpp to choose a drafter",
+        ));
+    }
+    if let Some(slots) = profile.parallel {
+        env.insert("OLLAMA_NUM_PARALLEL".into(), slots.to_string());
     }
     // Prompt-prefix reuse is Ollama's default behaviour and needs no setting.
     if !env.is_empty() && !owned {

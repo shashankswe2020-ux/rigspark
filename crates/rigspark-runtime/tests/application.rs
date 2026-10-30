@@ -598,3 +598,169 @@ fn cache_options_apply_only_to_launches_rigspark_owns() {
         assert!(error.contains("does not accept cache options"), "{error}");
     }
 }
+
+fn shipped() -> rigspark_core::catalog::Catalog {
+    rigspark_core::catalog::Catalog::parse(include_str!("../../rigspark-core/data/models.json"))
+        .unwrap()
+}
+
+fn launch(
+    speculative: rigspark_runtime::cache::Speculative,
+    parallel: Option<u8>,
+) -> Option<rigspark_runtime::cache::CacheProfile> {
+    Some(rigspark_runtime::cache::CacheProfile {
+        speculative,
+        parallel,
+        ..Default::default()
+    })
+}
+
+#[test]
+fn llama_cpp_drafts_with_the_catalog_drafter_by_default() {
+    use rigspark_runtime::{application::plan_speculation, cache::Speculative};
+    let catalog = shipped();
+    let target = catalog.models.iter().find(|m| m.id == "qwen3:14b").unwrap();
+    let plain = catalog.models.iter().find(|m| m.id == "qwen3:8b").unwrap();
+
+    let plan = plan_speculation(&catalog, target, "llamacpp", None, false).unwrap();
+    assert_eq!(plan.drafter.unwrap().id, "qwen3:0.6b");
+    assert_eq!(plan.profile.unwrap().speculative, Speculative::Draft);
+    assert!(plan.implicit, "no flag: rigspark chose to draft");
+
+    let off = plan_speculation(
+        &catalog,
+        target,
+        "llamacpp",
+        launch(Speculative::Off, None),
+        true,
+    )
+    .unwrap();
+    assert!(
+        off.drafter.is_none() && off.profile.is_none(),
+        "explicit off wins"
+    );
+
+    for backend in ["ollama", "mlx"] {
+        let plan = plan_speculation(&catalog, target, backend, None, false).unwrap();
+        assert!(
+            plan.drafter.is_none() && plan.profile.is_none(),
+            "{backend}"
+        );
+    }
+    let plan = plan_speculation(
+        &catalog,
+        plain,
+        "llamacpp",
+        launch(Speculative::Auto, None),
+        true,
+    )
+    .unwrap();
+    assert!(
+        plan.drafter.is_none() && plan.profile.is_none(),
+        "auto without a drafter is off"
+    );
+    assert!(
+        plan_speculation(
+            &catalog,
+            plain,
+            "llamacpp",
+            launch(Speculative::Draft, None),
+            true
+        )
+        .is_err(),
+        "explicit draft needs a catalog drafter"
+    );
+    assert!(
+        plan_speculation(
+            &catalog,
+            target,
+            "ollama",
+            launch(Speculative::Draft, None),
+            true
+        )
+        .is_err()
+    );
+    let ngram = plan_speculation(
+        &catalog,
+        plain,
+        "llamacpp",
+        launch(Speculative::Ngram, Some(2)),
+        true,
+    )
+    .unwrap();
+    assert!(ngram.drafter.is_none());
+    assert_eq!(ngram.profile, launch(Speculative::Ngram, Some(2)));
+}
+
+#[test]
+fn a_drafter_reserves_its_catalog_memory_and_disk() {
+    use rigspark_core::sizing::{CpuArch, Gpu, GpuVendor, Hardware, Platform};
+    use rigspark_runtime::application::drafter_reserve;
+    let catalog = shipped();
+    let draft = catalog
+        .models
+        .iter()
+        .find(|m| m.id == "qwen3:0.6b")
+        .unwrap();
+    let need = draft.quantizations[0].min_ram_bytes;
+    let hardware = Hardware {
+        arch: CpuArch::X64,
+        platform: Platform::Linux,
+        total_ram_bytes: 32e9,
+        free_ram_bytes: 16e9,
+        free_disk_bytes: 100e9,
+        gpu: vec![Gpu {
+            vendor: GpuVendor::Nvidia,
+            vram_bytes: 12e9,
+        }],
+        unified_memory: None,
+    };
+    let reduced = drafter_reserve(&hardware, draft);
+    assert_eq!(reduced.total_ram_bytes, 32e9 - need);
+    assert_eq!(reduced.free_ram_bytes, 16e9 - need);
+    assert_eq!(reduced.gpu[0].vram_bytes, 12e9 - need);
+    assert!(reduced.free_disk_bytes < hardware.free_disk_bytes);
+    let tiny = Hardware {
+        free_ram_bytes: 1.0,
+        ..hardware
+    };
+    assert_eq!(drafter_reserve(&tiny, draft).free_ram_bytes, 0.0);
+}
+
+#[test]
+fn ollama_slots_multiply_sourced_kv_memory_and_refuse_unknown_geometry() {
+    use rigspark_runtime::{application::slot_sizing_model, cache::Speculative};
+    let catalog = shipped();
+    let known = catalog
+        .models
+        .iter()
+        .find(|m| m.kv_bytes_per_token.is_some() && m.source.ollama.is_some())
+        .unwrap();
+    let unknown = catalog
+        .models
+        .iter()
+        .find(|m| m.kv_bytes_per_token.is_none() && m.source.ollama.is_some())
+        .unwrap();
+    let four = launch(Speculative::Off, Some(4));
+    let sized = slot_sizing_model(known, four.as_ref(), "ollama", Some(8192), false).unwrap();
+    assert_eq!(
+        sized.kv_bytes_per_token,
+        known.kv_bytes_per_token.map(|rate| rate * 4.0)
+    );
+    assert!(
+        slot_sizing_model(known, four.as_ref(), "ollama", None, false).is_err(),
+        "Ollama's default context is not sourced; slots need --context"
+    );
+    assert!(slot_sizing_model(unknown, four.as_ref(), "ollama", Some(8192), false).is_err());
+    assert!(
+        slot_sizing_model(unknown, four.as_ref(), "ollama", Some(8192), true).is_ok(),
+        "--bypass accepts the unknown"
+    );
+    let unified = slot_sizing_model(unknown, four.as_ref(), "llamacpp", None, false).unwrap();
+    assert_eq!(
+        unified.kv_bytes_per_token, unknown.kv_bytes_per_token,
+        "llama.cpp slots share one unified KV pool"
+    );
+    let single = slot_sizing_model(known, None, "ollama", None, false).unwrap();
+    assert_eq!(single.kv_bytes_per_token, known.kv_bytes_per_token);
+}

@@ -278,7 +278,7 @@ fn schema_v3_rejects_unsourced_or_unpinned_auto_entries_and_v3_fields_in_v2() {
         reject(&|value| value["schemaVersion"] = json!(2)),
         "v2 cannot carry auto entries"
     );
-    assert!(reject(&|value| value["schemaVersion"] = json!(4)));
+    assert!(reject(&|value| value["schemaVersion"] = json!(5)));
     assert!(
         reject(&|value| {
             value["models"][1]
@@ -324,4 +324,110 @@ fn recency_window_keeps_entries_released_or_added_within_calendar_months() {
     );
     assert!(!ids.contains(&value["models"][2]["id"].as_str().unwrap()));
     assert!(loaded.models.len() < total);
+}
+
+fn with_drafter(schema: u8) -> Value {
+    let mut value = catalog();
+    value["schemaVersion"] = json!(schema);
+    let models = value["models"].as_array_mut().unwrap();
+    let draft = models
+        .iter_mut()
+        .find(|model| model["id"] == "qwen3:0.6b")
+        .unwrap();
+    draft["source"]["gguf"] = json!({
+        "repo": "Qwen/Qwen3-0.6B-GGUF",
+        "revision": "23749fefcc72300e3a2ad315e1317431b06b590a",
+        "file": "Qwen3-0.6B-Q8_0.gguf",
+        "sha256": "9465e63a22add5354d9bb4b99e90117043c7124007664907259bd16d043bb031"
+    });
+    let target = models
+        .iter_mut()
+        .find(|model| model["id"] == "qwen3:14b")
+        .unwrap();
+    target["drafter"] = json!("qwen3:0.6b");
+    value
+}
+
+fn drafter_target(value: &mut Value) -> &mut Value {
+    value["models"]
+        .as_array_mut()
+        .unwrap()
+        .iter_mut()
+        .find(|model| model["id"] == "qwen3:14b")
+        .unwrap()
+}
+
+#[test]
+fn schema_v4_accepts_a_same_family_gguf_drafter() {
+    let loaded = Catalog::parse(&with_drafter(4).to_string()).unwrap();
+    let target = loaded.models.iter().find(|m| m.id == "qwen3:14b").unwrap();
+    assert_eq!(target.drafter.as_deref(), Some("qwen3:0.6b"));
+    assert_eq!(loaded.drafter_of(target).unwrap().id, "qwen3:0.6b");
+    assert_eq!(
+        rigspark_core::catalog::required_schema_version(&loaded.models),
+        4
+    );
+    let encoded = serde_json::to_value(&loaded).unwrap();
+    assert!(
+        encoded["models"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|m| m.get("drafter").is_some())
+            .count()
+            == 1,
+        "drafter is omitted when absent"
+    );
+    let plain = Catalog::parse(&catalog().to_string()).unwrap();
+    assert_eq!(
+        rigspark_core::catalog::required_schema_version(&plain.models),
+        3
+    );
+}
+
+#[test]
+fn drafter_rules_fail_closed() {
+    let reject = |edit: &dyn Fn(&mut Value)| {
+        let mut value = with_drafter(4);
+        edit(&mut value);
+        Catalog::parse(&value.to_string()).is_err()
+    };
+    assert!(
+        reject(&|value| value["schemaVersion"] = json!(3)),
+        "v3 cannot carry drafters"
+    );
+    assert!(reject(
+        &|value| drafter_target(value)["drafter"] = json!("missing:1b")
+    ));
+    assert!(reject(
+        &|value| drafter_target(value)["drafter"] = json!("qwen3:14b")
+    ));
+    assert!(
+        reject(&|value| drafter_target(value)["drafter"] = json!("qwen2.5:0.5b")),
+        "drafter must share the target family (tokenizer)"
+    );
+    assert!(
+        reject(&|value| drafter_target(value)["drafter"] = json!("qwen3:1.7b")),
+        "drafter needs a pinned GGUF artifact"
+    );
+    assert!(
+        reject(&|value| {
+            drafter_target(value)["source"]
+                .as_object_mut()
+                .unwrap()
+                .remove("gguf");
+        }),
+        "target needs a pinned GGUF artifact"
+    );
+    assert!(
+        reject(&|value| {
+            let models = value["models"].as_array_mut().unwrap();
+            let draft = models
+                .iter_mut()
+                .find(|model| model["id"] == "qwen3:0.6b")
+                .unwrap();
+            draft["drafter"] = json!("qwen3:14b");
+        }),
+        "drafters cannot chain"
+    );
 }

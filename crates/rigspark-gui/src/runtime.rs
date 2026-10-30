@@ -16,6 +16,7 @@ fn view(name: &str, installed: bool, running: bool, owned: bool, endpoint: Strin
 }
 fn request(name: &str) -> ServeRequest {
     ServeRequest {
+        draft_model_path: None,
         model_id: "llmup-daemon".into(),
         endpoint: format!(
             "http://127.0.0.1:{}",

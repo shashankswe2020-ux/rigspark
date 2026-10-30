@@ -48,6 +48,8 @@ pub struct ServeRequest {
     pub model_id: String,
     pub endpoint: String,
     pub model_path: Option<PathBuf>,
+    /// Verified GGUF drafter for llama.cpp speculative decoding.
+    pub draft_model_path: Option<PathBuf>,
     pub context: Option<u32>,
     pub cache: Option<crate::cache::CacheProfile>,
 }
@@ -190,6 +192,11 @@ impl<'runtime> RuntimeAdapter<'runtime> {
     }
     fn validate(&self, request: &ServeRequest) -> Result<url::Url, BackendError> {
         model_id(&request.model_id)?;
+        if request.draft_model_path.is_some() && self.kind != BackendKind::LlamaCpp {
+            return Err(BackendError(
+                "a drafter applies only to llama.cpp draft decoding".into(),
+            ));
+        }
         if self.kind == BackendKind::BitNet
             && request
                 .context
@@ -237,6 +244,32 @@ impl<'runtime> RuntimeAdapter<'runtime> {
         }
         if self.kind == BackendKind::BitNet {
             args.extend(["-ngl".into(), "0".into()]);
+        }
+        let drafting = request
+            .cache
+            .is_some_and(|profile| profile.speculative == crate::cache::Speculative::Draft);
+        match (&request.draft_model_path, drafting) {
+            (None, false) => {}
+            (Some(draft), true) if self.kind == BackendKind::LlamaCpp => {
+                if !(draft.is_absolute() && draft.is_file())
+                    || Some(draft) == request.model_path.as_ref()
+                {
+                    return Err(BackendError(
+                        "verified absolute drafter GGUF path required".into(),
+                    ));
+                }
+                args.extend(["--model-draft".into(), draft.to_string_lossy().into_owned()]);
+            }
+            (None, true) => {
+                return Err(BackendError(
+                    "speculative draft decoding needs a verified drafter".into(),
+                ));
+            }
+            _ => {
+                return Err(BackendError(
+                    "a drafter applies only to llama.cpp draft decoding".into(),
+                ));
+            }
         }
         Ok(args)
     }

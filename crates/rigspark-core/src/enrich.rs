@@ -127,6 +127,7 @@ impl RawModel {
             quantizations,
             kv_bytes_per_token: prior.and_then(|model| model.kv_bytes_per_token),
             benchmark_proxy: prior.and_then(|model| model.benchmark_proxy),
+            drafter: prior.and_then(|model| model.drafter.clone()),
         };
         model.validate()?;
         Ok(model)

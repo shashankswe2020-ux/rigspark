@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+### Features
+
+- Speculative decoding: on llama.cpp, `up` drafts with the model's catalog
+  drafter (`qwen3:0.6b` for Qwen3 14B, 30B-A3B and 32B). The drafter's weights
+  must match their SHA-256 before serving, and its memory is reserved before the
+  fit check. `--speculative auto|draft|ngram|off` overrides the default. Catalog
+  schema v4 adds the optional `drafter` field; catalogs without drafters are
+  still published as v3.
+- `--parallel N` runs concurrent request slots: a unified KV pool on llama.cpp,
+  and `OLLAMA_NUM_PARALLEL` on Ollama, where memory is sized per slot.
+- `rigspark bench` measures the active server: TTFT, prefill and decode tok/s,
+  draft acceptance and combined throughput across concurrent requests, using
+  fixed, versioned prompts. Figures the runtime does not report show as
+  `unknown`.
+- `rigspark connect <agent>` launches Claude Code, Codex or OpenCode against the
+  active server without editing their config files, and prints setup snippets
+  for Pi, Hermes, OpenClaw and Cline.
+
 ## 3.0.3 (2026-10-16)
 
 ### Generation

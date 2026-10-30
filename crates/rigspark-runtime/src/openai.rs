@@ -103,6 +103,7 @@ impl OpenAiInference<'_> {
             self.adapter
                 .ready_handle(
                     &ServeRequest {
+                        draft_model_path: None,
                         model_id: handle.model_id.clone(),
                         endpoint: handle.endpoint.clone(),
                         model_path: handle.model_path.as_ref().map(PathBuf::from),

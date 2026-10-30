@@ -345,6 +345,55 @@
       "to": 32768.0
     },
     {
+      "correctedAt": "2026-10-30T09:00:00.000Z",
+      "field": "ggufSource",
+      "from": null,
+      "id": "qwen3:0.6b",
+      "sources": [
+        "https://huggingface.co/Qwen/Qwen3-0.6B-GGUF/tree/23749fefcc72300e3a2ad315e1317431b06b590a",
+        "https://huggingface.co/api/models/Qwen/Qwen3-0.6B-GGUF?blobs=true"
+      ],
+      "to": {
+        "file": "Qwen3-0.6B-Q8_0.gguf",
+        "repo": "Qwen/Qwen3-0.6B-GGUF",
+        "revision": "23749fefcc72300e3a2ad315e1317431b06b590a",
+        "sha256": "9465e63a22add5354d9bb4b99e90117043c7124007664907259bd16d043bb031"
+      }
+    },
+    {
+      "correctedAt": "2026-10-30T09:00:00.000Z",
+      "field": "drafter",
+      "from": null,
+      "id": "qwen3:14b",
+      "sources": [
+        "https://qwenlm.github.io/blog/qwen3/",
+        "https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md"
+      ],
+      "to": "qwen3:0.6b"
+    },
+    {
+      "correctedAt": "2026-10-30T09:00:00.000Z",
+      "field": "drafter",
+      "from": null,
+      "id": "qwen3:30b-a3b",
+      "sources": [
+        "https://qwenlm.github.io/blog/qwen3/",
+        "https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md"
+      ],
+      "to": "qwen3:0.6b"
+    },
+    {
+      "correctedAt": "2026-10-30T09:00:00.000Z",
+      "field": "drafter",
+      "from": null,
+      "id": "qwen3:32b",
+      "sources": [
+        "https://qwenlm.github.io/blog/qwen3/",
+        "https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md"
+      ],
+      "to": "qwen3:0.6b"
+    },
+    {
       "correctedAt": "2026-10-08T12:11:08.720396201Z",
       "field": "defaultQuantization",
       "from": {

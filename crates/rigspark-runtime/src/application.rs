@@ -416,6 +416,109 @@ pub fn plan_quantization(
         estimated_fit: !options.simple_switch && !fit.fit.fits,
     })
 }
+/// How a launch will speculate, decided before any side effect.
+#[derive(Debug)]
+pub struct SpeculationPlan<'catalog> {
+    pub profile: Option<crate::cache::CacheProfile>,
+    pub drafter: Option<&'catalog CatalogModel>,
+    /// rigspark chose to draft without being asked, so it may fall back silently.
+    pub implicit: bool,
+}
+/// Resolves `auto` (and the llama.cpp default when no flag was given) to a concrete mode.
+pub fn plan_speculation<'catalog>(
+    catalog: &'catalog Catalog,
+    model: &CatalogModel,
+    backend: &str,
+    requested: Option<crate::cache::CacheProfile>,
+    flag_given: bool,
+) -> Result<SpeculationPlan<'catalog>, BackendError> {
+    use crate::cache::Speculative;
+    let mut profile = requested.unwrap_or_default();
+    let drafter = catalog.drafter_of(model).filter(|_| backend == "llamacpp");
+    // Without a flag, an inherited or default mode follows this model's catalog drafter.
+    if !flag_given && matches!(profile.speculative, Speculative::Off | Speculative::Draft) {
+        profile.speculative = if drafter.is_some() {
+            Speculative::Auto
+        } else {
+            Speculative::Off
+        };
+    }
+    let implicit = !flag_given && profile.speculative == Speculative::Auto;
+    let drafter = match profile.speculative {
+        Speculative::Auto => {
+            profile.speculative = if drafter.is_some() {
+                Speculative::Draft
+            } else {
+                Speculative::Off
+            };
+            drafter
+        }
+        Speculative::Draft => Some(drafter.ok_or_else(|| {
+            BackendError(if backend == "llamacpp" {
+                "this model has no catalog drafter; try --speculative ngram".into()
+            } else {
+                "draft speculative decoding requires --backend llamacpp".into()
+            })
+        })?),
+        Speculative::Off | Speculative::Ngram => None,
+    };
+    Ok(SpeculationPlan {
+        profile: crate::cache::effective(Some(&profile)),
+        drafter,
+        implicit,
+    })
+}
+/// `hardware` with the drafter's catalog memory and download ceiling set aside.
+pub fn drafter_reserve(hardware: &Hardware, drafter: &CatalogModel) -> Hardware {
+    let memory = drafter
+        .quantizations
+        .iter()
+        .map(|quant| quant.min_ram_bytes)
+        .fold(0.0, f64::max);
+    let disk = drafter
+        .quantizations
+        .iter()
+        .map(|quant| quant.disk_bytes * 1.5)
+        .fold(0.0, f64::max);
+    let mut reduced = hardware.clone();
+    reduced.total_ram_bytes = (reduced.total_ram_bytes - memory).max(0.0);
+    reduced.free_ram_bytes = (reduced.free_ram_bytes - memory).max(0.0);
+    reduced.free_disk_bytes = (reduced.free_disk_bytes - disk).max(0.0);
+    for gpu in &mut reduced.gpu {
+        gpu.vram_bytes = (gpu.vram_bytes - memory).max(0.0);
+    }
+    reduced
+}
+/// The model as sized for concurrent slots: Ollama allocates a full context per slot,
+/// llama.cpp shares one unified KV pool.
+pub fn slot_sizing_model(
+    model: &CatalogModel,
+    profile: Option<&crate::cache::CacheProfile>,
+    backend: &str,
+    context: Option<u32>,
+    bypass: bool,
+) -> Result<CatalogModel, BackendError> {
+    let slots = profile.and_then(|profile| profile.parallel).unwrap_or(1);
+    let mut sized = model.clone();
+    if backend != "ollama" || slots <= 1 {
+        return Ok(sized);
+    }
+    if context.is_none() {
+        return Err(BackendError(
+            "Ollama sizes every slot at the full context; pass --context with --parallel".into(),
+        ));
+    }
+    match model.kv_bytes_per_token {
+        Some(rate) => sized.kv_bytes_per_token = Some(rate * f64::from(slots)),
+        None if bypass => {}
+        None => {
+            return Err(BackendError(
+                "KV geometry for this model is unknown, so memory for parallel slots cannot be sized; use --bypass to accept that".into(),
+            ));
+        }
+    }
+    Ok(sized)
+}
 fn catalog_pull_request(
     model: &CatalogModel,
     quant: &rigspark_core::sizing::Quantization,
@@ -694,6 +797,7 @@ pub async fn run_native_with_config_observed(
             active.model_path.as_ref().map(PathBuf::from)
         };
         let request = ServeRequest {
+            draft_model_path: None,
             model_id: active.model_id.clone(),
             endpoint: active.endpoint.clone(),
             model_path: path,
@@ -821,6 +925,7 @@ pub async fn run_native_with_config_observed(
             observer,
         };
         let request = ServeRequest {
+            draft_model_path: None,
             model_id: model.id,
             endpoint,
             model_path: None,
@@ -935,22 +1040,61 @@ pub async fn run_native_with_config_observed(
         backend_known(&backend) && paths[backend_index(&backend)].is_some(),
     )?;
     let index = backend_index(&backend);
+    let speculation = plan_speculation(
+        catalog,
+        model,
+        &backend,
+        requested,
+        options.cache.speculative.is_some(),
+    )?;
+    let mut requested = speculation.profile;
+    let mut drafter = speculation.drafter;
     crate::cache::launch_delta(requested.as_ref(), &backend, true)
         .map_err(|error| BackendError(error.to_string()))?;
-    let plan = plan_quantization(
+    let sized = slot_sizing_model(
         model,
+        requested.as_ref(),
+        &backend,
+        options.context,
+        options.bypass,
+    )?;
+    let plan_options = |requested: Option<crate::cache::CacheProfile>| PlanOptions {
+        simple_switch,
+        bypass: options.bypass,
+        context: options.context,
+        kv_cache: requested
+            .filter(|profile| profile.kv_k == profile.kv_v)
+            .map(|profile| profile.kv_k),
+    };
+    let reserved = drafter.map(|drafter| drafter_reserve(hardware, drafter));
+    let plan = match plan_quantization(
+        &sized,
         resolved.quant,
         &backend,
-        hardware,
-        PlanOptions {
-            simple_switch,
-            bypass: options.bypass,
-            context: options.context,
-            kv_cache: requested
-                .filter(|profile| profile.kv_k == profile.kv_v)
-                .map(|profile| profile.kv_k),
-        },
-    )?;
+        reserved.as_ref().unwrap_or(hardware),
+        plan_options(requested),
+    ) {
+        Err(_) if speculation.implicit => {
+            warning(observer, LifecycleWarning::DrafterSkipped);
+            drafter = None;
+            requested = crate::cache::effective(
+                requested
+                    .map(|profile| crate::cache::CacheProfile {
+                        speculative: crate::cache::Speculative::Off,
+                        ..profile
+                    })
+                    .as_ref(),
+            );
+            plan_quantization(
+                &sized,
+                resolved.quant,
+                &backend,
+                hardware,
+                plan_options(requested),
+            )?
+        }
+        result => result?,
+    };
     let quant = plan.quant;
     let reviewed = lifecycle.review(&model.id, cancel).await?;
     let pull_request = catalog_pull_request(model, &quant, &backend)?;
@@ -997,6 +1141,34 @@ pub async fn run_native_with_config_observed(
     if !prepared.digest_verified {
         warning(observer, LifecycleWarning::SizeOnly);
     }
+    let draft_model_path = match drafter {
+        Some(drafter) => {
+            let quant = drafter
+                .quantizations
+                .first()
+                .ok_or_else(|| BackendError("drafter has no quantization".into()))?;
+            let drafted = pulls
+                .pull_at_observed(
+                    &catalog_pull_request(drafter, quant, &backend)?,
+                    &pull_binary,
+                    &endpoint,
+                    cancel,
+                    observer,
+                )
+                .await?;
+            if !drafted.digest_verified {
+                return Err(BackendError(
+                    "refusing an unverified speculative drafter".into(),
+                ));
+            }
+            Some(
+                drafted
+                    .model_path
+                    .ok_or_else(|| BackendError("drafter path unavailable".into()))?,
+            )
+        }
+        None => None,
+    };
     if simple_switch {
         let active = lifecycle
             .switch_pointer(&model.id, &reviewed, cancel)
@@ -1007,6 +1179,7 @@ pub async fn run_native_with_config_observed(
         ));
     }
     let request = ServeRequest {
+        draft_model_path,
         model_id: model.id.clone(),
         endpoint,
         model_path: prepared.model_path,
