@@ -195,7 +195,29 @@ pub fn same_process(actual: &ProcessIdentity, expected: &ProcessIdentity) -> boo
         && actual.executable == expected.executable
         && actual.started == expected.started
 }
+/// Package-manager directories searched after `PATH`: apps opened from Finder or a
+/// launcher inherit only the system `PATH` and would otherwise miss Homebrew runtimes.
+#[cfg(target_os = "macos")]
+pub const FALLBACK_BINARY_DIRS: &[&str] = &["/opt/homebrew/bin", "/usr/local/bin"];
+#[cfg(target_os = "linux")]
+pub const FALLBACK_BINARY_DIRS: &[&str] = &["/usr/local/bin", "/home/linuxbrew/.linuxbrew/bin"];
+#[cfg(not(any(target_os = "macos", target_os = "linux")))]
+pub const FALLBACK_BINARY_DIRS: &[&str] = &[];
+
 pub fn resolve_binary(binary: &str) -> Result<PathBuf, String> {
+    let fallbacks: Vec<&Path> = FALLBACK_BINARY_DIRS.iter().map(Path::new).collect();
+    resolve_binary_in(
+        binary,
+        &std::env::var_os("PATH").unwrap_or_default(),
+        &fallbacks,
+    )
+}
+
+pub fn resolve_binary_in(
+    binary: &str,
+    path_var: &std::ffi::OsStr,
+    fallbacks: &[&Path],
+) -> Result<PathBuf, String> {
     let path = Path::new(binary);
     if path.is_absolute() {
         return path
@@ -203,8 +225,9 @@ pub fn resolve_binary(binary: &str) -> Result<PathBuf, String> {
             .map_err(|_| "runtime executable unavailable".into());
     }
 
-    for directory in std::env::split_paths(&std::env::var_os("PATH").unwrap_or_default()) {
-        if directory.as_os_str().is_empty() {
+    let fixed = fallbacks.iter().map(|dir| dir.to_path_buf());
+    for directory in std::env::split_paths(path_var).chain(fixed) {
+        if directory.as_os_str().is_empty() || !directory.is_absolute() {
             continue;
         }
         for name in [binary.to_owned(), format!("{binary}.exe")] {

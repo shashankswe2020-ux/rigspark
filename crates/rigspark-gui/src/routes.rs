@@ -116,6 +116,8 @@ pub async fn dispatch(host: Arc<Host>, request: Request) -> ApiResult {
         || request.uri().path().starts_with("/api/catalog/")
         || request.uri().path().starts_with("/api/runtimes")
         || request.uri().path() == "/api/hardware"
+        || request.uri().path() == "/api/connect"
+        || request.uri().path().starts_with("/api/connect/")
     {
         return crate::models::dispatch(host, request).await;
     }

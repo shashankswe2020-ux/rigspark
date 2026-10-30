@@ -6,16 +6,19 @@ rust-version = "1.98"
 publish = false
 
 [dependencies]
-tauri = { version = "2.11.5", features = ["dynamic-acl"] }
+tauri = { version = "2.11.5", features = ["dynamic-acl", "image-png", "tray-icon"] }
 rfd = "0.15"
 rigspark-gui = { path = "../../../crates/rigspark-gui" }
 rigspark-runtime = { path = "../../../crates/rigspark-runtime" }
 tokio = { version = "1", features = ["rt-multi-thread", "net", "sync"] }
 serde_json = "1"
 url = "2"
+tauri-plugin-autostart = "2.7.0"
+tauri-plugin-updater = "2.14.1"
+rigspark-core = { version = "3.0.3", path = "../../../crates/rigspark-core" }
 
 [build-dependencies]
-tauri-build = "2.6.3"
+tauri-build = { version = "2.6.3", features = [] }
 
 [dev-dependencies]
 tauri = { version = "2.11.5", features = ["test"] }

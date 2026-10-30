@@ -4,6 +4,16 @@
 
 ### Features
 
+- Mac desktop app: releases include `RigSpark_aarch64.dmg` and
+  `RigSpark_x86_64.dmg` (unsigned, not yet notarized). RigSpark stays in the
+  menu bar when its window closes, can launch at login, and installs updates
+  only after verifying their signature against the key built into the app.
+  When launched from Finder it finds runtimes in `/opt/homebrew/bin` and
+  `/usr/local/bin`.
+- GUI: a **Coding agents** panel in Tools shows how to connect Claude Code,
+  Codex, OpenCode, Pi, Hermes, OpenClaw or Cline to the running model. Fit
+  settings add **Speculative** and **Parallel slots**. In the desktop app the
+  theme follows the macOS appearance until you choose one.
 - Speculative decoding: on llama.cpp, `up` drafts with the model's catalog
   drafter (`qwen3:0.6b` for Qwen3 14B, 30B-A3B and 32B). The drafter's weights
   must match their SHA-256 before serving, and its memory is reserved before the

@@ -61,6 +61,14 @@ Homebrew on macOS or Linux:
 brew install shashankswe2020-ux/tap/rigspark
 ```
 
+On a Mac you can also install the desktop app: download `RigSpark_aarch64.dmg`
+(Apple Silicon) or `RigSpark_x86_64.dmg` (Intel) from the
+[latest release](https://github.com/shashankswe2020-ux/rigspark/releases/latest)
+and drag RigSpark to Applications. The app is not notarized yet, so the first
+time you open it, Control-click it and choose **Open**. It lives in the menu
+bar: closing the window keeps your model serving, and **Quit RigSpark** stops
+it. Settings in **Tools** turn on launch at login and install verified updates.
+
 On Windows and other platforms, download a
 [prebuilt archive](https://github.com/shashankswe2020-ux/rigspark/releases/latest),
 extract it, and add the folder to `PATH`. Keep `rigspark`, `llmup`, and

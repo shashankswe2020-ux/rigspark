@@ -31,6 +31,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const modelBypass = document.querySelector("#model-bypass");
   const kvCache = document.querySelector("#kv-cache");
   const kvCacheField = document.querySelector("#kv-cache-field");
+  const speculative = document.querySelector("#speculative");
+  const speculativeField = document.querySelector("#speculative-field");
+  const parallelSlots = document.querySelector("#parallel-slots");
+  const parallelField = document.querySelector("#parallel-field");
   const modelCatalogPanel = document.querySelector("#model-catalog-panel");
   const modelDetail = document.querySelector("#model-detail");
   const modelDetailBack = document.querySelector("#model-detail-back");
@@ -1697,7 +1701,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function cacheLabel(cache) {
     const kv = cache.kvK === cache.kvV ? cache.kvK : `K ${cache.kvK} / V ${cache.kvV}`;
-    return `KV ${kv}, flash attention ${cache.flashAttention}`;
+    let label = `KV ${kv}, flash attention ${cache.flashAttention}`;
+    if (cache.speculative && cache.speculative !== "off") label += `, speculative ${cache.speculative}`;
+    if (Number.isInteger(cache.parallel)) label += `, ${cache.parallel} slots`;
+    return label;
   }
 
   async function startModel(id, button, backend, extra = {}) {
@@ -1716,14 +1723,17 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!payload.installed) {
         const kv = selectedKvCache();
         if (kv) payload.kvCache = kv;
+        if (speculative?.value) payload.speculative = speculative.value;
+        const slots = Number(parallelSlots?.value);
+        if (Number.isInteger(slots) && slots > 1) payload.parallel = slots;
       }
       if (payload.installed) {
         if (!installedPort?.reportValidity()) throw new Error("Invalid Ollama port");
         payload.port = Number(installedPort.value);
         if (!payload.bypass) throw new Error("Installed models require explicit bypass consent");
       }
-      if ((payload.bypass || payload.context !== undefined || payload.kvCache) && !globalThis.confirm(
-        `Start ${id} at ${payload.context ?? "default"} context?${payload.bypass ? " Estimated fit may be wrong or unknown; memory exhaustion or CPU offload is possible." : ""}${payload.installed ? " Local manifest integrity will be checked, not catalog provenance." : " Weight integrity checks remain enabled."}${payload.context !== undefined && payload.backend === "ollama" ? " A separate runtime model tag will be created; the source tag stays unchanged." : ""}${payload.kvCache ? ` KV cache ${payload.kvCache} applies only to a runtime rigspark starts; an already running server is refused, not changed.` : ""}`,
+      if ((payload.bypass || payload.context !== undefined || payload.kvCache || payload.parallel) && !globalThis.confirm(
+        `Start ${id} at ${payload.context ?? "default"} context?${payload.bypass ? " Estimated fit may be wrong or unknown; memory exhaustion or CPU offload is possible." : ""}${payload.installed ? " Local manifest integrity will be checked, not catalog provenance." : " Weight integrity checks remain enabled."}${payload.context !== undefined && payload.backend === "ollama" ? " A separate runtime model tag will be created; the source tag stays unchanged." : ""}${payload.kvCache ? ` KV cache ${payload.kvCache} applies only to a runtime rigspark starts; an already running server is refused, not changed.` : ""}${payload.parallel ? ` ${payload.parallel} parallel slots need memory for each slot on Ollama.` : ""}`,
       )) return;
       const response = await globalThis.fetch("/api/models/up", {
         method: "POST",
@@ -2074,6 +2084,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const installed = modelSource.value === "installed";
     if (installedPortField) installedPortField.hidden = !installed;
     if (kvCacheField) kvCacheField.hidden = installed;
+    if (speculativeField) speculativeField.hidden = installed;
+    if (parallelField) parallelField.hidden = installed;
     if (installed && contextWindow && !["custom", "65536"].includes(contextWindow.value)) contextWindow.value = "65536";
     if (contextTokensField) contextTokensField.hidden = contextWindow?.value !== "custom";
     if (modelBypass) modelBypass.checked = false;

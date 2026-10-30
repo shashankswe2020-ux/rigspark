@@ -499,6 +499,11 @@ async fn up_requests_are_validated_before_state_or_runtime_access() {
         json!({"model":"x","kvCache":"q2_k"}),
         json!({"model":"x","flashAttention":"yes"}),
         json!({"model":"x","installed":true,"bypass":true,"kvCache":"q8_0"}),
+        json!({"model":"x","speculative":"eagle"}),
+        json!({"model":"x","parallel":0}),
+        json!({"model":"x","parallel":17}),
+        json!({"model":"x","parallel":-1}),
+        json!({"model":"x","installed":true,"bypass":true,"parallel":2}),
     ] {
         assert_eq!(
             call(&host, "POST", "/api/models/up", body.clone()).await.0,
@@ -667,4 +672,66 @@ async fn attachments_inject_selected_lines_and_record_a_manifest() {
             .iter()
             .any(|message| message.content.contains("FILE:"))
     );
+}
+
+#[tokio::test]
+async fn connect_reports_a_terminal_command_or_setup_for_the_active_server() {
+    use rigspark_runtime::state::{Config, RuntimeState, ServerState, StateStore};
+    let (home, host) = host(Arc::default());
+    let (status, _) = call(&host, "GET", "/api/connect/claude", Value::Null).await;
+    assert_eq!(
+        status,
+        StatusCode::CONFLICT,
+        "nothing to connect without a running model"
+    );
+    let store = StateStore::new(Config::from_home(home.path()).unwrap());
+    let guard = store.lock(std::time::Duration::from_secs(5)).unwrap();
+    let active = ServerState {
+        backend: "ollama".into(),
+        model_id: "qwen3:14b".into(),
+        endpoint: "http://127.0.0.1:11434".into(),
+        port: 11434,
+        owned_by_us: false,
+        pid: None,
+        runtime_model_id: None,
+        context: None,
+        integrity: None,
+        local_manifest_digest: None,
+        model_path: None,
+        process_executable: None,
+        process_started_at: None,
+        auth_token: None,
+        cache: None,
+    };
+    store
+        .write(&guard, &RuntimeState::for_active(active))
+        .unwrap();
+    drop(guard);
+    let (_, claude) = json_call(&host, "GET", "/api/connect/claude", Value::Null).await;
+    assert_eq!(claude["kind"], "launch");
+    assert_eq!(claude["label"], "Claude Code");
+    assert_eq!(claude["command"], "rigspark connect claude");
+    let (_, cline) = json_call(&host, "GET", "/api/connect/cline", Value::Null).await;
+    assert_eq!(cline["kind"], "instructions");
+    assert!(
+        cline["text"]
+            .as_str()
+            .unwrap()
+            .contains("http://127.0.0.1:11434/v1")
+    );
+    let (_, agents) = json_call(&host, "GET", "/api/connect", Value::Null).await;
+    assert_eq!(agents["agents"].as_array().unwrap().len(), 7);
+    for bad in [
+        "/api/connect/bash",
+        "/api/connect/../claude",
+        "/api/connect/Claude",
+    ] {
+        assert!(
+            call(&host, "GET", bad, Value::Null)
+                .await
+                .0
+                .is_client_error(),
+            "{bad}"
+        );
+    }
 }

@@ -5147,3 +5147,37 @@ input.switch:checked::after {
     transition: none;
   }
 }
+
+.connect-group,
+.desktop-group {
+  padding: 4px 0;
+}
+
+.connect-group > .field,
+.desktop-group > .model-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+}
+
+.connect-output {
+  margin: 0;
+  padding: 12px 14px;
+  overflow-x: auto;
+  color: var(--text2);
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.connect-group > .chip-btn,
+.desktop-group > .chip-btn {
+  margin: 8px 14px 10px;
+}
+
+.desktop-group > .group-foot {
+  margin: 0 14px 10px;
+}

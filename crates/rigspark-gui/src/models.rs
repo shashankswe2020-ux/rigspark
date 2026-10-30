@@ -161,6 +161,41 @@ pub async fn dispatch(host: Arc<Host>, request: Request) -> ApiResult {
     if path == "/api/models/active" && method == "GET" {
         return Ok(json_response(json!({"active":active(&host)?})));
     }
+    if (path == "/api/connect" || path.starts_with("/api/connect/")) && method == "GET" {
+        use rigspark_runtime::connect::{Agent, ConnectPlan, plan};
+        let Some(name) = path.strip_prefix("/api/connect/") else {
+            let agents: Vec<Value> = Agent::NAMES
+                .iter()
+                .filter_map(|name| Agent::parse(name).map(|agent| (name, agent)))
+                .map(|(name, agent)| json!({"id":name,"label":agent.label()}))
+                .collect();
+            return Ok(json_response(json!({"agents":agents})));
+        };
+        let agent = Agent::parse(name).ok_or_else(bad)?;
+        let store = StateStore::new(Config::from_home(&host.home).map_err(|_| bad())?);
+        let Some(active) = store.read().map_err(|_| bad())?.active else {
+            return Ok(crate::error(
+                axum::http::StatusCode::CONFLICT,
+                "Start a model first, then connect an agent to it.",
+            ));
+        };
+        let model = active
+            .runtime_model_id
+            .clone()
+            .unwrap_or_else(|| active.model_id.clone());
+        return match plan(agent, &active.endpoint, &active.backend, &model) {
+            Ok(ConnectPlan::Launch { .. }) => Ok(json_response(
+                json!({"agent":name,"label":agent.label(),"kind":"launch","command":format!("rigspark connect {name}")}),
+            )),
+            Ok(ConnectPlan::Instructions { text }) => Ok(json_response(
+                json!({"agent":name,"label":agent.label(),"kind":"instructions","text":text}),
+            )),
+            Err(error) => Ok(crate::error(
+                axum::http::StatusCode::CONFLICT,
+                &error.to_string(),
+            )),
+        };
+    }
     if path == "/api/runtimes" && method == "GET" {
         return Ok(json_response(
             json!({"runtimes":rigspark_core::catalog::BACKENDS}),
@@ -288,6 +323,8 @@ pub async fn dispatch(host: Arc<Host>, request: Request) -> ApiResult {
             kv_cache: Option<rigspark_core::sizing::KvCacheType>,
             flash_attention: Option<rigspark_runtime::cache::FlashAttention>,
             prompt_cache: Option<rigspark_runtime::cache::PromptReuse>,
+            speculative: Option<rigspark_runtime::cache::Speculative>,
+            parallel: Option<u8>,
         }
         let input: Up = body(request, crate::MAX_REQUEST_BYTES).await?;
         let options = LifecycleOptions {
@@ -302,7 +339,8 @@ pub async fn dispatch(host: Arc<Host>, request: Request) -> ApiResult {
                 kv: input.kv_cache,
                 flash_attention: input.flash_attention,
                 prompt_reuse: input.prompt_cache,
-                ..Default::default()
+                speculative: input.speculative,
+                parallel: input.parallel,
             },
         };
         if let Err(error) = run_native_with_config(

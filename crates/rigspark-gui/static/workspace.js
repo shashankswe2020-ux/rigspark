@@ -21,7 +21,13 @@
     }
   };
 
-  root.dataset.theme = read(THEME_KEY) === "light" ? "light" : "dark";
+  // The desktop app follows the macOS appearance until a theme is chosen explicitly.
+  const systemLight = globalThis.llmupDesktop ? globalThis.matchMedia?.("(prefers-color-scheme: light)") : null;
+  const savedTheme = () => {
+    const saved = read(THEME_KEY);
+    return saved === "light" || saved === "dark" ? saved : null;
+  };
+  root.dataset.theme = savedTheme() ?? (systemLight?.matches ? "light" : "dark");
 
   const isDark = () => root.dataset.theme !== "light";
   const face = (name) => {
@@ -67,6 +73,13 @@
       themeToggle.setAttribute("aria-label", isDark() ? "Switch to light theme" : "Switch to dark theme");
     };
     syncThemeToggle();
+    systemLight?.addEventListener?.("change", (event) => {
+      if (savedTheme()) return;
+      root.dataset.theme = event.matches ? "light" : "dark";
+      syncThemeToggle();
+      refreshFaces();
+      globalThis.dispatchEvent(new Event("resize"));
+    });
     themeToggle?.addEventListener("click", () => {
       root.dataset.theme = isDark() ? "light" : "dark";
       write(THEME_KEY, root.dataset.theme);

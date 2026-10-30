@@ -3,15 +3,41 @@
   "productName": "RigSpark",
   "version": "3.0.3",
   "identifier": "org.rigspark.desktop",
-  "build": { "frontendDist": "../../../crates/rigspark-gui/static" },
+  "build": {
+    "frontendDist": "../../../crates/rigspark-gui/static"
+  },
   "app": {
     "windows": [],
     "withGlobalTauri": false,
-    "security": { "capabilities": [] }
+    "security": {
+      "capabilities": []
+    }
   },
   "bundle": {
-    "active": false,
+    "active": true,
     "category": "DeveloperTool",
-    "icon": ["../build/icon.png", "../build/icon.icns", "../build/icon.ico"]
+    "icon": [
+      "../build/icon.png",
+      "../build/icon.icns",
+      "../build/icon.ico"
+    ],
+    "targets": [
+      "app",
+      "dmg"
+    ],
+    "createUpdaterArtifacts": true,
+    "shortDescription": "Hardware-aware local LLMs",
+    "copyright": "Copyright © RigSpark contributors",
+    "macOS": {
+      "minimumSystemVersion": "12.0"
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEEwNjAwNERDNTM1RTkzQTgKUldTb2sxNVQzQVJnb1BVRGY5U3BYVXRkZTA2N2lTazkxVmlrektuZkZuMjhJeUtJMk4wOVVSTVYK",
+      "endpoints": [
+        "https://github.com/shashankswe2020-ux/rigspark/releases/latest/download/latest.json"
+      ]
+    }
   }
 }
