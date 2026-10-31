@@ -116,8 +116,8 @@ path = "src/catalog_request.rs"
 required-features = ["maintainer-tools"]
 
 [dependencies]
-rigspark-core = { path = "../rigspark-core", version = "3.0.3" }
-rigspark-runtime = { path = "../rigspark-runtime", version = "3.0.3" }
+rigspark-core = { path = "../rigspark-core", version = "3.0.4" }
+rigspark-runtime = { path = "../rigspark-runtime", version = "3.0.4" }
 clap = { version = "4", features = ["derive"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "signal"] }
 tokio-util = { version = "0.7", features = ["rt"] }
