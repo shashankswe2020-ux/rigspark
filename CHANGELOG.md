@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 3.0.6 (2026-10-31)
+
 ### Features
 
 - **Windows installer.** Releases include `RigSpark_x64-setup.exe`, the desktop

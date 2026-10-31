@@ -1,6 +1,6 @@
 [package]
 name = "rigspark-desktop"
-version = "3.0.5"
+version = "3.0.6"
 edition = "2024"
 rust-version = "1.98"
 publish = false
@@ -15,7 +15,7 @@ serde_json = "1"
 url = "2"
 tauri-plugin-autostart = "2.7.0"
 tauri-plugin-updater = "2.14.1"
-rigspark-core = { version = "3.0.5", path = "../../../crates/rigspark-core" }
+rigspark-core = { version = "3.0.6", path = "../../../crates/rigspark-core" }
 
 [build-dependencies]
 tauri-build = { version = "2.6.3", features = [] }
