@@ -44,6 +44,36 @@ fn plain_recommendation(json: bool) -> String {
     String::from_utf8(output.stdout).unwrap()
 }
 
+/// Drops CSI and OSC sequences so text checks hold when ConPTY splits a word with SGR updates.
+fn visible_text(output: &str) -> String {
+    let mut text = String::with_capacity(output.len());
+    let mut chars = output.chars().peekable();
+    while let Some(character) = chars.next() {
+        if character != '\x1b' {
+            text.push(character);
+            continue;
+        }
+        match chars.next() {
+            Some('[') => {
+                for next in chars.by_ref() {
+                    if ('\x40'..='\x7e').contains(&next) {
+                        break;
+                    }
+                }
+            }
+            Some(']') => {
+                while let Some(next) = chars.next() {
+                    if next == '\x07' || (next == '\x1b' && chars.next_if_eq(&'\\').is_some()) {
+                        break;
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+    text
+}
+
 fn entered(output: &str) -> bool {
     output.contains(if cfg!(windows) {
         "\x1b[?2004h"
@@ -556,7 +586,7 @@ fn visual_doctor_unhealthy_diagnostics_restore_terminal_and_exit_one() {
     assert_eq!(exit, 1, "{output}");
     assert!(entered(&output), "{output}");
     assert!(restored(&output), "{output}");
-    assert!(output.contains("doctor"), "{output}");
+    assert!(visible_text(&output).contains("doctor"), "{output}");
     let final_text = final_output(&output);
     assert!(final_text.contains("not installed"), "{output}");
     assert_eq!(
