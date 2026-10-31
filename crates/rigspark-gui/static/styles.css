@@ -5221,3 +5221,22 @@ input.switch:checked::after {
 .hf-list input[type="radio"] {
   margin-right: 8px;
 }
+
+.page-head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.hf-add-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.hf-add-open[hidden] {
+  display: none;
+}
