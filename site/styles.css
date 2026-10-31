@@ -1103,6 +1103,21 @@ html:not(.js) .spin .cap,
 .for-you .fine {
   margin-top: 10px;
 }
+.show-all {
+  font: inherit;
+  color: var(--spark-700);
+  text-decoration: underline;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+.install.is-focused #all-downloads {
+  display: none;
+}
+.install.is-focused.show-everything #all-downloads {
+  display: block;
+}
 .os {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
