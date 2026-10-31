@@ -190,6 +190,13 @@ fn release_publishes_only_verified_tagged_archives_without_node() {
     }
     assert!(desktop.contains("cargo install tauri-cli --version 2.12.4 --locked"));
     assert!(desktop.contains("--bundles app,dmg"));
+    assert!(desktop.contains("scripts/build-bundled-llama-server.sh \"${{ matrix.target }}\""));
+    assert!(desktop.contains("--config tauri.bundled.conf.json"));
+    assert!(
+        desktop.contains("codesign --verify --deep --strict"),
+        "a bundle whose seal is broken is reported as damaged"
+    );
+    assert!(desktop.contains("Contents/MacOS/llama-server"));
     assert!(desktop.contains("secrets.TAURI_SIGNING_PRIVATE_KEY"));
     assert!(desktop.contains("if: startsWith(github.ref, 'refs/tags/v')"));
     let publish = job("publish");

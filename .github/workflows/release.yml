@@ -153,7 +153,9 @@ jobs:
           rustup show active-toolchain
           rustup target add "${{ matrix.target }}"
           cargo install tauri-cli --version 2.12.4 --locked
-      - name: Build unsigned RigSpark.app and dmg
+      - name: Build bundled llama-server from pinned llama.cpp
+        run: scripts/build-bundled-llama-server.sh "${{ matrix.target }}"
+      - name: Build ad-hoc signed RigSpark.app and dmg
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
@@ -166,8 +168,13 @@ jobs:
             echo "::notice::TAURI_SIGNING_PRIVATE_KEY is not set; building without in-app update artifacts."
             extra=(--config '{"bundle":{"createUpdaterArtifacts":false}}')
           fi
-          cargo tauri build --target "${{ matrix.target }}" --bundles app,dmg ${extra[@]+"${extra[@]}"}
+          cargo tauri build --target "${{ matrix.target }}" --bundles app,dmg --config tauri.bundled.conf.json ${extra[@]+"${extra[@]}"}
           out="target/${{ matrix.target }}/release/bundle"
+          app="$out/macos/RigSpark.app"
+          codesign --verify --deep --strict --verbose=2 "$app"
+          test -x "$app/Contents/MacOS/llama-server"
+          case "${{ matrix.arch }}" in aarch64) want=arm64 ;; *) want=x86_64 ;; esac
+          test "$(lipo -archs "$app/Contents/MacOS/llama-server")" = "$want"
           mkdir -p ../../../desktop-dist
           cp "$out"/dmg/*.dmg "../../../desktop-dist/RigSpark_${{ matrix.arch }}.dmg"
           if [ -f "$out/macos/RigSpark.app.tar.gz.sig" ]; then
@@ -271,7 +278,7 @@ jobs:
           test -s release-notes.md
           {
             printf '\n## Install\n\n```bash\nbrew install shashankswe2020-ux/tap/rigspark\ncargo binstall rigspark-cli rigspark-gui\ncargo install rigspark-cli --locked --bin llmup --bin rigspark && cargo install rigspark-gui --locked\n```\n\n'
-            printf 'Desktop: download `RigSpark_aarch64.dmg` (Apple Silicon) or `RigSpark_x86_64.dmg` (Intel). The app is not notarized yet; on first launch, Control-click RigSpark in Applications and choose Open.\n\n'
+            printf 'Desktop: download `RigSpark_aarch64.dmg` (Apple Silicon) or `RigSpark_x86_64.dmg` (Intel). The app is not notarized yet; on first launch open System Settings > Privacy & Security and click Open Anyway.\n\n'
             printf 'Archives are unsigned. Verify downloads against `SHA256SUMS` and each `.sha256` file.\n'
           } >> release-notes.md
           gh release upload "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --clobber release-assets/SHA256SUMS release-assets/rigspark.rb
