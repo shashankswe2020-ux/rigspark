@@ -80,7 +80,7 @@ document.querySelectorAll(".copy-btn").forEach((btn) => {
   const choose = async () => {
     const arch = await architecture();
     if (platform.includes("win") || ua.includes("windows")) {
-      return { os: "win", label: "Windows", note: arch === "arm" ? "x64 build, runs on Windows on Arm." : "" };
+      return { os: "win-app", label: "Windows", note: arch === "arm" ? "x64 build, runs on Windows on Arm." : "" };
     }
     if (platform.includes("mac") || ua.includes("mac os")) {
       const chip = arch || macGpuArch();
@@ -113,6 +113,7 @@ document.querySelectorAll(".copy-btn").forEach((btn) => {
     const toggle = document.getElementById("show-all");
     install?.classList.add("is-focused");
     if (!pick.os.startsWith("mac")) document.getElementById("mac-first-launch")?.setAttribute("hidden", "");
+    if (pick.os !== "win-app") document.getElementById("win-first-launch")?.setAttribute("hidden", "");
     toggle?.addEventListener("click", () => {
       const open = install.classList.toggle("show-everything");
       toggle.setAttribute("aria-expanded", String(open));

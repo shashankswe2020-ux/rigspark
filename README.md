@@ -72,7 +72,14 @@ that fits your Mac. It lives in the menu bar and launches at login (turn that
 off in **Tools**); closing the window keeps your model serving, and
 **Quit RigSpark** stops it. Updates install after their signature is verified.
 
-On Windows and other platforms, download a
+On Windows, download `RigSpark_x64-setup.exe` from the
+[latest release](https://github.com/shashankswe2020-ux/rigspark/releases/latest)
+and run it. It installs for the current user without admin rights. The installer
+is not code-signed yet, so if SmartScreen warns, choose **More info → Run
+anyway**. The Windows app bundles a CPU build of llama.cpp, and its advice for
+that runtime counts system memory only.
+
+For the command line on Windows and other platforms, download a
 [prebuilt archive](https://github.com/shashankswe2020-ux/rigspark/releases/latest),
 extract it, and add the folder to `PATH`. Keep `rigspark`, `llmup`, and
 `rigspark-gui` together.

@@ -101,9 +101,9 @@
     </script>
     <link rel="stylesheet" href="brand/fonts/fonts.css" />
     <link rel="stylesheet" href="brand/tokens/tokens.css" />
-    <link rel="stylesheet" href="styles.css?v=3.0.5-2" />
+    <link rel="stylesheet" href="styles.css?v=3.0.6" />
     <script src="data/latest.js?v=3.0.5" defer></script>
-    <script src="main.js?v=3.0.5-2" defer></script>
+    <script src="main.js?v=3.0.6" defer></script>
   </head>
   <body>
     <a class="skip" href="#main">Skip to content</a>
@@ -445,7 +445,7 @@ Run the top pick:  <span class="t-acc">rigspark up qwen3:30b-a3b</span>
       <section class="install" id="install" aria-labelledby="install-title">
         <div class="wrap center reveal">
           <h2 class="h2" id="install-title">Get RigSpark.</h2>
-          <p class="lead narrow">Mac app or command line. No Node.js, Python or compiler needed.</p>
+          <p class="lead narrow">Desktop app or command line. No Node.js, Python or compiler needed.</p>
           <div class="for-you" id="for-you" hidden>
             <a class="pill" id="for-you-link" href="#install">Download</a>
             <p class="fine"><span id="for-you-note"></span> <button class="show-all" id="show-all" type="button" aria-expanded="false" aria-controls="all-downloads">Other downloads</button></p>
@@ -453,10 +453,11 @@ Run the top pick:  <span class="t-acc">rigspark up qwen3:30b-a3b</span>
         </div>
         <div class="wrap">
           <div id="all-downloads">
-          <p class="os-label reveal">Mac app</p>
-          <ul class="os os-app reveal" aria-label="Download the Mac app">
+          <p class="os-label reveal">Desktop app</p>
+          <ul class="os os-app reveal" aria-label="Download the desktop app">
             <li><a class="dl" data-os="mac-app-arm" href="https://github.com/shashankswe2020-ux/rigspark/releases/latest/download/RigSpark_aarch64.dmg"><span class="i"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7.5c0-2 1.5-4 3.5-4 0 2-1.5 4-3.5 4Z"/><path d="M16.8 12.6c0-2 1.6-3 1.7-3.1-1-1.4-2.4-1.6-2.9-1.6-1.2-.1-2.4.7-3 .7-.7 0-1.6-.7-2.7-.7-1.4 0-2.7.8-3.4 2.1-1.5 2.5-.4 6.3 1 8.4.7 1 1.5 2.1 2.6 2.1 1 0 1.4-.7 2.7-.7 1.2 0 1.6.7 2.7.7 1.1 0 1.8-1 2.5-2 .8-1.2 1.1-2.3 1.1-2.4 0 0-2.3-.9-2.3-3.5Z"/></svg></span><b>Apple Silicon</b><span>.dmg</span></a></li>
             <li><a class="dl" data-os="mac-app-intel" href="https://github.com/shashankswe2020-ux/rigspark/releases/latest/download/RigSpark_x86_64.dmg"><span class="i"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7.5c0-2 1.5-4 3.5-4 0 2-1.5 4-3.5 4Z"/><path d="M16.8 12.6c0-2 1.6-3 1.7-3.1-1-1.4-2.4-1.6-2.9-1.6-1.2-.1-2.4.7-3 .7-.7 0-1.6-.7-2.7-.7-1.4 0-2.7.8-3.4 2.1-1.5 2.5-.4 6.3 1 8.4.7 1 1.5 2.1 2.6 2.1 1 0 1.4-.7 2.7-.7 1.2 0 1.6.7 2.7.7 1.1 0 1.8-1 2.5-2 .8-1.2 1.1-2.3 1.1-2.4 0 0-2.3-.9-2.3-3.5Z"/></svg></span><b>Intel</b><span>.dmg</span></a></li>
+            <li><a class="dl" data-os="win-app" href="https://github.com/shashankswe2020-ux/rigspark/releases/latest/download/RigSpark_x64-setup.exe"><span class="i"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5.5 10.5 4.5v7h-7v-6ZM13 4.2 20.5 3v8.5H13V4.2ZM3.5 12.5h7v7l-7-1v-6ZM13 12.5h7.5V21L13 19.8v-7.3Z"/></svg></span><b>Windows</b><span>.exe</span></a></li>
           </ul>
           <p class="os-label reveal">Command line</p>
           <ul class="os reveal" aria-label="Download a release archive">
@@ -475,6 +476,7 @@ Run the top pick:  <span class="t-acc">rigspark up qwen3:30b-a3b</span>
           <p class="fine center">Archives are unsigned. Verify them against <a href="https://github.com/shashankswe2020-ux/rigspark/releases/latest/download/SHA256SUMS">SHA256SUMS</a>. On macOS, clear quarantine with <code>xattr -dr com.apple.quarantine rigspark-*</code>. The container is an older CLI image that sees only the container&rsquo;s resources.</p>
           </div>
           <p class="fine center" id="mac-first-launch">First launch of the Mac app: System Settings &rarr; Privacy &amp; Security &rarr; Open Anyway.</p>
+          <p class="fine center" id="win-first-launch">If Windows SmartScreen warns about the installer: More info &rarr; Run anyway.</p>
           <p class="fine center">If Sparky helps you, please consider sponsoring the project: <a href="https://buymeacoffee.com/shashanksw9" rel="noopener">buymeacoffee.com/shashanksw9</a></p>
         </div>
       </section>
