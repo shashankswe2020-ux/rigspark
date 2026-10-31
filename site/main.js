@@ -107,8 +107,17 @@ document.querySelectorAll(".copy-btn").forEach((btn) => {
     if (!box || !link || !note) return;
     link.href = card.href;
     link.textContent = `Download for ${pick.label}`;
-    if (pick.note) note.textContent = pick.note;
+    note.textContent = pick.note || "";
     box.hidden = false;
+    const install = document.getElementById("install");
+    const toggle = document.getElementById("show-all");
+    install?.classList.add("is-focused");
+    if (!pick.os.startsWith("mac")) document.getElementById("mac-first-launch")?.setAttribute("hidden", "");
+    toggle?.addEventListener("click", () => {
+      const open = install.classList.toggle("show-everything");
+      toggle.setAttribute("aria-expanded", String(open));
+      toggle.textContent = open ? "Hide other downloads" : "Other downloads";
+    });
   });
 })();
 
