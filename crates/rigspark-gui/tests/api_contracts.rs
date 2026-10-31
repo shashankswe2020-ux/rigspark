@@ -872,3 +872,17 @@ async fn hugging_face_requests_are_validated() {
     let (_, listed) = json_call(&host, "GET", "/api/catalog/local", Value::Null).await;
     assert_eq!(listed["models"], json!([]));
 }
+
+#[tokio::test]
+async fn add_from_hugging_face_sits_in_the_models_header() {
+    let (_home, host) = host(Arc::default());
+    let (_, html) = call(&host, "GET", "/", Value::Null).await;
+    let header = html.find("<h2>Models</h2>").unwrap();
+    let button = html.find("id=\"hf-add-open\"").unwrap();
+    let panel = html.find("id=\"model-catalog-panel\"").unwrap();
+    assert!(
+        header < button && button < panel,
+        "the button belongs to the Models page head"
+    );
+    assert_eq!(html.matches("id=\"hf-add-open\"").count(), 1);
+}

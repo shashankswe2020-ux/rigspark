@@ -186,6 +186,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const text = kind === "text";
     textPanel.hidden = !text;
     generationPanel.hidden = text;
+    // Hugging Face additions are GGUF text models only.
+    const addFromHub = document.querySelector("#hf-add-open");
+    if (addFromHub) addFromHub.hidden = !text;
     for (const tab of tabs) {
       const selected = tab.dataset.modelKind === kind;
       tab.setAttribute("aria-selected", String(selected));
