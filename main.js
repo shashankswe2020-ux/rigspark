@@ -54,7 +54,7 @@ document.querySelectorAll(".copy-btn").forEach((btn) => {
   let label = null;
   if (/iphone|ipad|ipod|android/.test(ua) || (navigator.maxTouchPoints > 1 && ua.includes("mac os"))) return;
   if (platform.includes("win") || ua.includes("windows")) [os, label] = ["win", "Windows"];
-  else if (platform.includes("mac") || ua.includes("mac os")) [os, label] = ["mac-arm", "macOS"];
+  else if (platform.includes("mac") || ua.includes("mac os")) [os, label] = ["mac-app-arm", "macOS"];
   else if (ua.includes("linux") && !ua.includes("android")) {
     [os, label] = [ua.includes("aarch64") || ua.includes("arm64") ? "linux-arm" : "linux-x64", "Linux"];
   }
