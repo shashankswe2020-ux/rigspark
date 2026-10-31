@@ -37,7 +37,9 @@
         output.textContent = typeof data.error === "string" ? data.error : "Start a model, then choose an agent.";
         return;
       }
-      if (data.kind === "launch" && typeof data.command === "string") {
+      if (data.kind === "unavailable") {
+        output.textContent = typeof data.reason === "string" ? data.reason : "Start a model, then choose an agent.";
+      } else if (data.kind === "launch" && typeof data.command === "string") {
         output.textContent = `Run in a terminal:\n\n  ${data.command}`;
         copy.dataset.copy = data.command;
         copy.hidden = false;

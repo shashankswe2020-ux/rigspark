@@ -176,11 +176,15 @@ pub async fn dispatch(host: Arc<Host>, request: Request) -> ApiResult {
         };
         let agent = Agent::parse(name).ok_or_else(bad)?;
         let store = StateStore::new(Config::from_home(&host.home).map_err(|_| bad())?);
+        // Expected states (nothing running, an API the runtime lacks) are answered with
+        // 200 so the page never logs them as failed requests.
+        let unavailable = |reason: &str| {
+            Ok(json_response(
+                json!({"agent":name,"label":agent.label(),"kind":"unavailable","reason":reason}),
+            ))
+        };
         let Some(active) = store.read().map_err(|_| bad())?.active else {
-            return Ok(crate::error(
-                axum::http::StatusCode::CONFLICT,
-                "Start a model first, then connect an agent to it.",
-            ));
+            return unavailable("Start a model first, then connect an agent to it.");
         };
         let model = active
             .runtime_model_id
@@ -193,10 +197,7 @@ pub async fn dispatch(host: Arc<Host>, request: Request) -> ApiResult {
             Ok(ConnectPlan::Instructions { text }) => Ok(json_response(
                 json!({"agent":name,"label":agent.label(),"kind":"instructions","text":text}),
             )),
-            Err(error) => Ok(crate::error(
-                axum::http::StatusCode::CONFLICT,
-                &error.to_string(),
-            )),
+            Err(error) => unavailable(&error.to_string()),
         };
     }
     if path == "/api/runtimes" && method == "GET" {

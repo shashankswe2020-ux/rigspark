@@ -680,12 +680,13 @@ async fn attachments_inject_selected_lines_and_record_a_manifest() {
 async fn connect_reports_a_terminal_command_or_setup_for_the_active_server() {
     use rigspark_runtime::state::{Config, RuntimeState, ServerState, StateStore};
     let (home, host) = host(Arc::default());
-    let (status, _) = call(&host, "GET", "/api/connect/claude", Value::Null).await;
+    let (status, idle) = json_call(&host, "GET", "/api/connect/claude", Value::Null).await;
     assert_eq!(
-        status,
-        StatusCode::CONFLICT,
-        "nothing to connect without a running model"
+        (status, idle["kind"].as_str()),
+        (StatusCode::OK, Some("unavailable")),
+        "no running model is an expected state, not an HTTP error"
     );
+    assert!(idle["reason"].as_str().unwrap().contains("Start a model"));
     let store = StateStore::new(Config::from_home(home.path()).unwrap());
     let guard = store.lock(std::time::Duration::from_secs(5)).unwrap();
     let active = ServerState {

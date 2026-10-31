@@ -2,68 +2,84 @@
 
 ## Unreleased
 
+## 3.0.4 (2026-10-31)
+
 ### Features
 
-- Add from Hugging Face: `rigspark add` and **Models → Add from Hugging Face**
-  search GGUF repositories and list every single-file quantization with a
-  fit verdict. The chosen one goes into a local catalog
-  (`~/.rigspark/catalog/local.json`), pinned to the commit and SHA-256 and
-  marked *added by you*. It runs on llama.cpp or Ollama with the usual
-  fail-closed digest check. Only repositories with a recognized open-weight
-  license are accepted.
+- **Mac desktop app.** Releases include `RigSpark_aarch64.dmg` (Apple Silicon)
+  and `RigSpark_x86_64.dmg` (Intel). They are unsigned and not yet notarized,
+  so on first launch Control-click the app and choose Open.
+  - RigSpark stays in the menu bar when its window closes, and can launch at
+    login.
+  - In-app updates install only after their signature is verified against the
+    key built into the app.
+  - When opened from Finder, it finds runtimes in `/opt/homebrew/bin` and
+    `/usr/local/bin`.
+- **Add from Hugging Face.** `rigspark add` and the **Add from Hugging Face**
+  button at the top right of Models search GGUF repositories and list every
+  single-file quantization with a fit verdict.
+  - The chosen quantization is pinned to its commit and SHA-256 in a local
+    catalog (`~/.rigspark/catalog/local.json`) and marked *added by you*.
+  - It runs on llama.cpp or Ollama with the usual fail-closed digest check.
+  - Only repositories with a recognized open-weight license are accepted.
+- **Speculative decoding** on llama.cpp: models with a catalog drafter use it
+  by default (`qwen3:0.6b` for Qwen3 14B, 30B-A3B and 32B).
+  - The drafter's SHA-256 is verified, and its memory is reserved before the
+    fit check.
+  - `--speculative auto|draft|ngram|off` overrides the default.
+  - Catalog schema v4 adds the optional `drafter` field; catalogs without
+    drafters are still published as v3.
+- **Parallel slots.** `--parallel N` runs concurrent requests: one unified KV
+  pool on llama.cpp, and `OLLAMA_NUM_PARALLEL` on Ollama, with memory sized
+  per slot.
+- **`rigspark bench`** measures the active server with fixed, versioned
+  prompts: time to first token, prefill and decode tok/s, draft acceptance,
+  and combined throughput across concurrent requests. Figures the runtime
+  does not report show as `unknown`.
+- **`rigspark connect <agent>`** starts Claude Code, Codex or OpenCode against
+  the active server without editing their config files, and prints setup
+  steps for Pi, Hermes, OpenClaw and Cline.
+- **GUI.**
+  - A **Coding agents** panel in Tools.
+  - **Speculative** and **Parallel slots** settings under Fit settings.
+  - In the desktop app, the theme follows the macOS appearance until you
+    choose one.
 
 ### Fixes
 
-- Ollama 0.40+ support: rigspark reads Ollama's new content-addressed manifest
-  store (`manifests-v2`) and the upstream manifest digest it now reports. The
-  linked blob must hash to its address, and an embedded digest is trusted only
-  when its blob verifies. Integrity checks stay fail-closed.
-- After starting a model on Ollama, rigspark loads it once. A runtime that
-  cannot run it (for example an unknown architecture) now fails at start with
-  Ollama's reason, instead of on the first chat. A chat error from the server
-  now says the runtime may be too old.
-- llama.cpp accepts an explicit context window, as it already passes
-  `--ctx-size`.
-- Starting a model whose memory needs at a context can't be sized now uses 8K,
-  instead of a percentage of its maximum (for example 524,288 of a 1M-token
-  window) or a runtime default that fills free memory.
-- Escape closes Add from Hugging Face even after focus has left the dialog.
-- Chat memory no longer drops the conversation when the embedding model
-  (`nomic-embed-text`) is missing or unreachable. The turn and facts are
-  saved, recall vectors are skipped, and chat explains how to enable recall.
-  Malformed embeddings or a changed embedding space still refuse capture.
-- Download progress shows the file's real size instead of the size limit
-  used to check it, both while downloading and for already-cached weights.
-- `rigspark bench` and `rigspark connect` panicked because they were missing
-  from the command table. A test now requires every command to have one.
-  `connect --dry-run` no longer reports "migration options require migrate".
-- `up`/`switch` accept `--speculative` and `--parallel`.
-
-- Mac desktop app: releases include `RigSpark_aarch64.dmg` and
-  `RigSpark_x86_64.dmg` (unsigned, not yet notarized). RigSpark stays in the
-  menu bar when its window closes, can launch at login, and installs updates
-  only after verifying their signature against the key built into the app.
-  When launched from Finder it finds runtimes in `/opt/homebrew/bin` and
-  `/usr/local/bin`.
-- GUI: a **Coding agents** panel in Tools shows how to connect Claude Code,
-  Codex, OpenCode, Pi, Hermes, OpenClaw or Cline to the running model. Fit
-  settings add **Speculative** and **Parallel slots**. In the desktop app the
-  theme follows the macOS appearance until you choose one.
-- Speculative decoding: on llama.cpp, `up` drafts with the model's catalog
-  drafter (`qwen3:0.6b` for Qwen3 14B, 30B-A3B and 32B). The drafter's weights
-  must match their SHA-256 before serving, and its memory is reserved before the
-  fit check. `--speculative auto|draft|ngram|off` overrides the default. Catalog
-  schema v4 adds the optional `drafter` field; catalogs without drafters are
-  still published as v3.
-- `--parallel N` runs concurrent request slots: a unified KV pool on llama.cpp,
-  and `OLLAMA_NUM_PARALLEL` on Ollama, where memory is sized per slot.
-- `rigspark bench` measures the active server: TTFT, prefill and decode tok/s,
-  draft acceptance and combined throughput across concurrent requests, using
-  fixed, versioned prompts. Figures the runtime does not report show as
-  `unknown`.
-- `rigspark connect <agent>` launches Claude Code, Codex or OpenCode against the
-  active server without editing their config files, and prints setup snippets
-  for Pi, Hermes, OpenClaw and Cline.
+- **New models reach users again.** The weekly model-admission job had failed
+  since Oct 12, because a test hard-coded a date that went stale once the job
+  re-stamped the catalog.
+- **Upgrading uses the newer catalog.** A newer catalog bundled with an
+  upgrade now replaces an older downloaded one, instead of staying pinned to
+  the last `catalog --update`.
+- **A gone model server no longer blocks you.** After a reboot or a daemon
+  exit, `up`, `switch` and `down` clear its stale record instead of refusing
+  to continue. No running process is ever signalled. Chat errors now name
+  the cause and the next step.
+- **Ollama 0.40+.** rigspark reads Ollama's new content-addressed manifest
+  store (`manifests-v2`) and the upstream manifest digest Ollama now reports.
+  A linked blob must hash to its address, and an embedded digest is trusted
+  only when its blob verifies.
+- **Start catches models the runtime can't run.** After switching to an
+  Ollama model, rigspark loads it once, so a runtime that cannot run it (for
+  example an unknown architecture) fails at start with Ollama's reason
+  instead of on the first chat.
+- **Safer context defaults.** A model whose memory at a given context can't be
+  sized now starts at 8K, instead of a percentage of its maximum or a runtime
+  default that fills free memory. llama.cpp accepts an explicit context
+  window.
+- **Chat memory without an embedding model.** Chat no longer drops the
+  conversation when `nomic-embed-text` is missing or unreachable: the turn
+  and facts are saved, and chat explains how to enable recall search.
+- **Download progress** shows the file's real size instead of the limit used
+  to check it.
+- **Command-line fixes.**
+  - `rigspark bench` and `rigspark connect` no longer panic.
+  - `connect --dry-run` is accepted.
+  - The Homebrew `PATH` fallback applies only to the desktop app.
+- **Dialog.** Escape closes Add from Hugging Face even after focus has left
+  the dialog.
 
 ## 3.0.3 (2026-10-16)
 
