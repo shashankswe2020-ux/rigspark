@@ -2,6 +2,27 @@
 
 ## Unreleased
 
+### Features
+
+- **Ready to run after install.** The Mac app bundles a `llama-server` built
+  from pinned llama.cpp v0.8.0 (Metal, no other dependencies), so a model runs
+  without installing Ollama or llama.cpp.
+  - A user-installed llama.cpp still takes precedence over the bundled one.
+  - On first launch the chat screen offers a starter model that runs well on
+    this machine (Qwen3 8B, 4B or smaller), with one **Download & start**
+    click. On llama.cpp it starts at an 8K context.
+  - `qwen3:4b` and `qwen3:8b` gain pinned official Qwen GGUF sources, with
+    cited records in `docs/references/catalog-corrections.json`.
+- **Launch at login is on by default** after the first launch, starting in the
+  menu bar. Turn it off in **Tools**.
+
+### Fixes
+
+- **The Mac app is no longer reported as damaged.** Release bundles are now
+  sealed with an ad-hoc signature, and the release job verifies the seal with
+  `codesign --verify --deep --strict`. macOS asks once to approve the
+  un-notarized app (**Open Anyway**) instead of refusing to open it.
+
 ## 3.0.4 (2026-10-31)
 
 ### Features

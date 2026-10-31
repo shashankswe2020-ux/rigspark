@@ -29,7 +29,8 @@
     "shortDescription": "Hardware-aware local LLMs",
     "copyright": "Copyright © RigSpark contributors",
     "macOS": {
-      "minimumSystemVersion": "12.0"
+      "minimumSystemVersion": "12.0",
+      "signingIdentity": "-"
     }
   },
   "plugins": {

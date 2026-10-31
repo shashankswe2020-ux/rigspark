@@ -286,7 +286,9 @@
       "quant": "Q4_K_M",
       "reason": null,
       "backends": [
-        "ollama"
+        "ollama",
+        "llamacpp",
+        "lmstudio"
       ],
       "throughputBackend": "ollama",
       "requiredBytes": 6009180671,
@@ -296,7 +298,7 @@
         "unknownReason": null
       }
     },
-    "expected": "rigspark / Can Run / Accessible\n1. Target\nqwen3:8b\n2. Verdict\nyes; quant Q4_K_M; reason none; 6009180671 of 25769803776 usable bytes\n3. Throughput\n96.2–178.7 tok/s; source offline-estimate; backend ollama\n4. Backends\nollama\nNext: rigspark up qwen3:8b\n5. Controls\nCommands: ? help; q quit\n"
+    "expected": "rigspark / Can Run / Accessible\n1. Target\nqwen3:8b\n2. Verdict\nyes; quant Q4_K_M; reason none; 6009180671 of 25769803776 usable bytes\n3. Throughput\n96.2–178.7 tok/s; source offline-estimate; backend ollama\n4. Backends\nollama, llamacpp, lmstudio\nNext: rigspark up qwen3:8b\n5. Controls\nCommands: ? help; q quit\n"
   },
   {
     "hardware": {
@@ -327,7 +329,9 @@
       "quant": "Q4_K_M",
       "reason": null,
       "backends": [
-        "ollama"
+        "ollama",
+        "llamacpp",
+        "lmstudio"
       ],
       "throughputBackend": "llamacpp",
       "requiredBytes": 6009180671,
@@ -337,7 +341,7 @@
         "unknownReason": null
       }
     },
-    "expected": "rigspark / Can Run / Accessible\n1. Target\nqwen3:8b\n2. Verdict\nyes; quant Q4_K_M; reason none; 6009180671 of 25769803776 usable bytes\n3. Throughput\n96.2–178.7 tok/s; source offline-estimate; backend llamacpp\n4. Backends\nollama\nNext: rigspark up qwen3:8b\n5. Controls\nCommands: ? help; q quit\n"
+    "expected": "rigspark / Can Run / Accessible\n1. Target\nqwen3:8b\n2. Verdict\nyes; quant Q4_K_M; reason none; 6009180671 of 25769803776 usable bytes\n3. Throughput\n96.2–178.7 tok/s; source offline-estimate; backend llamacpp\n4. Backends\nollama, llamacpp, lmstudio\nNext: rigspark up qwen3:8b\n5. Controls\nCommands: ? help; q quit\n"
   },
   {
     "hardware": {
@@ -371,7 +375,9 @@
       "quant": "Q4_K_M",
       "reason": null,
       "backends": [
-        "ollama"
+        "ollama",
+        "llamacpp",
+        "lmstudio"
       ],
       "throughputBackend": "ollama",
       "requiredBytes": 6009180671,
@@ -381,7 +387,7 @@
         "unknownReason": null
       }
     },
-    "expected": "rigspark / Can Run / Accessible\n1. Target\nqwen3:8b\n2. Verdict\nyes; quant Q4_K_M; reason none; 6009180671 of 25769803776 usable bytes\n3. Throughput\n96.2–178.7 tok/s; source offline-estimate; backend ollama\n4. Backends\nollama\nNext: rigspark up qwen3:8b\n5. Controls\nCommands: ? help; q quit\n"
+    "expected": "rigspark / Can Run / Accessible\n1. Target\nqwen3:8b\n2. Verdict\nyes; quant Q4_K_M; reason none; 6009180671 of 25769803776 usable bytes\n3. Throughput\n96.2–178.7 tok/s; source offline-estimate; backend ollama\n4. Backends\nollama, llamacpp, lmstudio\nNext: rigspark up qwen3:8b\n5. Controls\nCommands: ? help; q quit\n"
   },
   {
     "hardware": {
@@ -415,7 +421,9 @@
       "quant": "Q4_K_M",
       "reason": null,
       "backends": [
-        "ollama"
+        "ollama",
+        "llamacpp",
+        "lmstudio"
       ],
       "throughputBackend": "llamacpp",
       "requiredBytes": 6009180671,
@@ -425,7 +433,7 @@
         "unknownReason": null
       }
     },
-    "expected": "rigspark / Can Run / Accessible\n1. Target\nqwen3:8b\n2. Verdict\nyes; quant Q4_K_M; reason none; 6009180671 of 25769803776 usable bytes\n3. Throughput\n96.2–178.7 tok/s; source offline-estimate; backend llamacpp\n4. Backends\nollama\nNext: rigspark up qwen3:8b\n5. Controls\nCommands: ? help; q quit\n"
+    "expected": "rigspark / Can Run / Accessible\n1. Target\nqwen3:8b\n2. Verdict\nyes; quant Q4_K_M; reason none; 6009180671 of 25769803776 usable bytes\n3. Throughput\n96.2–178.7 tok/s; source offline-estimate; backend llamacpp\n4. Backends\nollama, llamacpp, lmstudio\nNext: rigspark up qwen3:8b\n5. Controls\nCommands: ? help; q quit\n"
   },
   {
     "hardware": {
@@ -459,7 +467,9 @@
       "quant": null,
       "reason": "context-bound",
       "backends": [
-        "ollama"
+        "ollama",
+        "llamacpp",
+        "lmstudio"
       ],
       "throughputBackend": "ollama",
       "requiredBytes": null,
@@ -469,7 +479,7 @@
         "unknownReason": "not-evaluated-model-does-not-fit"
       }
     },
-    "expected": "rigspark / Can Run / Accessible\n1. Target\nqwen3:8b\n2. Verdict\nno; quant unknown; reason context-bound; does not fit: context-bound\n3. Throughput\nunknown; source offline-estimate; not-evaluated-model-does-not-fit; backend ollama\nUnknown reason: not-evaluated-model-does-not-fit\n4. Backends\nollama\n5. Controls\nCommands: ? help; q quit\n"
+    "expected": "rigspark / Can Run / Accessible\n1. Target\nqwen3:8b\n2. Verdict\nno; quant unknown; reason context-bound; does not fit: context-bound\n3. Throughput\nunknown; source offline-estimate; not-evaluated-model-does-not-fit; backend ollama\nUnknown reason: not-evaluated-model-does-not-fit\n4. Backends\nollama, llamacpp, lmstudio\n5. Controls\nCommands: ? help; q quit\n"
   },
   {
     "hardware": {
@@ -503,7 +513,9 @@
       "quant": null,
       "reason": "context-bound",
       "backends": [
-        "ollama"
+        "ollama",
+        "llamacpp",
+        "lmstudio"
       ],
       "throughputBackend": "llamacpp",
       "requiredBytes": null,
@@ -513,7 +525,7 @@
         "unknownReason": "not-evaluated-model-does-not-fit"
       }
     },
-    "expected": "rigspark / Can Run / Accessible\n1. Target\nqwen3:8b\n2. Verdict\nno; quant unknown; reason context-bound; does not fit: context-bound\n3. Throughput\nunknown; source offline-estimate; not-evaluated-model-does-not-fit; backend llamacpp\nUnknown reason: not-evaluated-model-does-not-fit\n4. Backends\nollama\n5. Controls\nCommands: ? help; q quit\n"
+    "expected": "rigspark / Can Run / Accessible\n1. Target\nqwen3:8b\n2. Verdict\nno; quant unknown; reason context-bound; does not fit: context-bound\n3. Throughput\nunknown; source offline-estimate; not-evaluated-model-does-not-fit; backend llamacpp\nUnknown reason: not-evaluated-model-does-not-fit\n4. Backends\nollama, llamacpp, lmstudio\n5. Controls\nCommands: ? help; q quit\n"
   },
   {
     "hardware": {
@@ -1025,7 +1037,9 @@
       "quant": null,
       "reason": "ram-bound",
       "backends": [
-        "ollama"
+        "ollama",
+        "llamacpp",
+        "lmstudio"
       ],
       "throughputBackend": "ollama",
       "requiredBytes": 6009180671,
@@ -1035,7 +1049,7 @@
         "unknownReason": "not-evaluated-model-does-not-fit"
       }
     },
-    "expected": "rigspark / Can Run / Accessible\n1. Target\nqwen3:8b\n2. Verdict\nno; quant unknown; reason ram-bound; 6009180671 of 4852516352 usable bytes\n3. Throughput\nunknown; source offline-estimate; not-evaluated-model-does-not-fit; backend ollama\nUnknown reason: not-evaluated-model-does-not-fit\n4. Backends\nollama\n5. Controls\nCommands: ? help; q quit\n"
+    "expected": "rigspark / Can Run / Accessible\n1. Target\nqwen3:8b\n2. Verdict\nno; quant unknown; reason ram-bound; 6009180671 of 4852516352 usable bytes\n3. Throughput\nunknown; source offline-estimate; not-evaluated-model-does-not-fit; backend ollama\nUnknown reason: not-evaluated-model-does-not-fit\n4. Backends\nollama, llamacpp, lmstudio\n5. Controls\nCommands: ? help; q quit\n"
   },
   {
     "hardware": {
@@ -1061,7 +1075,9 @@
       "quant": null,
       "reason": "ram-bound",
       "backends": [
-        "ollama"
+        "ollama",
+        "llamacpp",
+        "lmstudio"
       ],
       "throughputBackend": "llamacpp",
       "requiredBytes": 6009180671,
@@ -1071,7 +1087,7 @@
         "unknownReason": "not-evaluated-model-does-not-fit"
       }
     },
-    "expected": "rigspark / Can Run / Accessible\n1. Target\nqwen3:8b\n2. Verdict\nno; quant unknown; reason ram-bound; 6009180671 of 4852516352 usable bytes\n3. Throughput\nunknown; source offline-estimate; not-evaluated-model-does-not-fit; backend llamacpp\nUnknown reason: not-evaluated-model-does-not-fit\n4. Backends\nollama\n5. Controls\nCommands: ? help; q quit\n"
+    "expected": "rigspark / Can Run / Accessible\n1. Target\nqwen3:8b\n2. Verdict\nno; quant unknown; reason ram-bound; 6009180671 of 4852516352 usable bytes\n3. Throughput\nunknown; source offline-estimate; not-evaluated-model-does-not-fit; backend llamacpp\nUnknown reason: not-evaluated-model-does-not-fit\n4. Backends\nollama, llamacpp, lmstudio\n5. Controls\nCommands: ? help; q quit\n"
   },
   {
     "hardware": {
@@ -1100,7 +1116,9 @@
       "quant": null,
       "reason": "ram-bound",
       "backends": [
-        "ollama"
+        "ollama",
+        "llamacpp",
+        "lmstudio"
       ],
       "throughputBackend": "ollama",
       "requiredBytes": 6009180671,
@@ -1110,7 +1128,7 @@
         "unknownReason": "not-evaluated-model-does-not-fit"
       }
     },
-    "expected": "rigspark / Can Run / Accessible\n1. Target\nqwen3:8b\n2. Verdict\nno; quant unknown; reason ram-bound; 6009180671 of 4852516352 usable bytes\n3. Throughput\nunknown; source offline-estimate; not-evaluated-model-does-not-fit; backend ollama\nUnknown reason: not-evaluated-model-does-not-fit\n4. Backends\nollama\n5. Controls\nCommands: ? help; q quit\n"
+    "expected": "rigspark / Can Run / Accessible\n1. Target\nqwen3:8b\n2. Verdict\nno; quant unknown; reason ram-bound; 6009180671 of 4852516352 usable bytes\n3. Throughput\nunknown; source offline-estimate; not-evaluated-model-does-not-fit; backend ollama\nUnknown reason: not-evaluated-model-does-not-fit\n4. Backends\nollama, llamacpp, lmstudio\n5. Controls\nCommands: ? help; q quit\n"
   },
   {
     "hardware": {
@@ -1139,7 +1157,9 @@
       "quant": null,
       "reason": "ram-bound",
       "backends": [
-        "ollama"
+        "ollama",
+        "llamacpp",
+        "lmstudio"
       ],
       "throughputBackend": "llamacpp",
       "requiredBytes": 6009180671,
@@ -1149,7 +1169,7 @@
         "unknownReason": "not-evaluated-model-does-not-fit"
       }
     },
-    "expected": "rigspark / Can Run / Accessible\n1. Target\nqwen3:8b\n2. Verdict\nno; quant unknown; reason ram-bound; 6009180671 of 4852516352 usable bytes\n3. Throughput\nunknown; source offline-estimate; not-evaluated-model-does-not-fit; backend llamacpp\nUnknown reason: not-evaluated-model-does-not-fit\n4. Backends\nollama\n5. Controls\nCommands: ? help; q quit\n"
+    "expected": "rigspark / Can Run / Accessible\n1. Target\nqwen3:8b\n2. Verdict\nno; quant unknown; reason ram-bound; 6009180671 of 4852516352 usable bytes\n3. Throughput\nunknown; source offline-estimate; not-evaluated-model-does-not-fit; backend llamacpp\nUnknown reason: not-evaluated-model-does-not-fit\n4. Backends\nollama, llamacpp, lmstudio\n5. Controls\nCommands: ? help; q quit\n"
   },
   {
     "hardware": {
@@ -1178,7 +1198,9 @@
       "quant": null,
       "reason": "context-bound",
       "backends": [
-        "ollama"
+        "ollama",
+        "llamacpp",
+        "lmstudio"
       ],
       "throughputBackend": "ollama",
       "requiredBytes": null,
@@ -1188,7 +1210,7 @@
         "unknownReason": "not-evaluated-model-does-not-fit"
       }
     },
-    "expected": "rigspark / Can Run / Accessible\n1. Target\nqwen3:8b\n2. Verdict\nno; quant unknown; reason context-bound; does not fit: context-bound\n3. Throughput\nunknown; source offline-estimate; not-evaluated-model-does-not-fit; backend ollama\nUnknown reason: not-evaluated-model-does-not-fit\n4. Backends\nollama\n5. Controls\nCommands: ? help; q quit\n"
+    "expected": "rigspark / Can Run / Accessible\n1. Target\nqwen3:8b\n2. Verdict\nno; quant unknown; reason context-bound; does not fit: context-bound\n3. Throughput\nunknown; source offline-estimate; not-evaluated-model-does-not-fit; backend ollama\nUnknown reason: not-evaluated-model-does-not-fit\n4. Backends\nollama, llamacpp, lmstudio\n5. Controls\nCommands: ? help; q quit\n"
   },
   {
     "hardware": {
@@ -1217,7 +1239,9 @@
       "quant": null,
       "reason": "context-bound",
       "backends": [
-        "ollama"
+        "ollama",
+        "llamacpp",
+        "lmstudio"
       ],
       "throughputBackend": "llamacpp",
       "requiredBytes": null,
@@ -1227,7 +1251,7 @@
         "unknownReason": "not-evaluated-model-does-not-fit"
       }
     },
-    "expected": "rigspark / Can Run / Accessible\n1. Target\nqwen3:8b\n2. Verdict\nno; quant unknown; reason context-bound; does not fit: context-bound\n3. Throughput\nunknown; source offline-estimate; not-evaluated-model-does-not-fit; backend llamacpp\nUnknown reason: not-evaluated-model-does-not-fit\n4. Backends\nollama\n5. Controls\nCommands: ? help; q quit\n"
+    "expected": "rigspark / Can Run / Accessible\n1. Target\nqwen3:8b\n2. Verdict\nno; quant unknown; reason context-bound; does not fit: context-bound\n3. Throughput\nunknown; source offline-estimate; not-evaluated-model-does-not-fit; backend llamacpp\nUnknown reason: not-evaluated-model-does-not-fit\n4. Backends\nollama, llamacpp, lmstudio\n5. Controls\nCommands: ? help; q quit\n"
   },
   {
     "hardware": {
@@ -1744,7 +1768,9 @@
       "quant": "Q4_K_M",
       "reason": null,
       "backends": [
-        "ollama"
+        "ollama",
+        "llamacpp",
+        "lmstudio"
       ],
       "throughputBackend": "ollama",
       "requiredBytes": 6009180671,
@@ -1754,7 +1780,7 @@
         "unknownReason": null
       }
     },
-    "expected": "rigspark / Can Run / Accessible\n1. Target\nqwen3:8b\n2. Verdict\nyes; quant Q4_K_M; reason none; 6009180671 of 36507222016 usable bytes\n3. Throughput\n20.9–38.7 tok/s; source offline-estimate; backend ollama\n4. Backends\nollama\nNext: rigspark up qwen3:8b\n5. Controls\nCommands: ? help; q quit\n"
+    "expected": "rigspark / Can Run / Accessible\n1. Target\nqwen3:8b\n2. Verdict\nyes; quant Q4_K_M; reason none; 6009180671 of 36507222016 usable bytes\n3. Throughput\n20.9–38.7 tok/s; source offline-estimate; backend ollama\n4. Backends\nollama, llamacpp, lmstudio\nNext: rigspark up qwen3:8b\n5. Controls\nCommands: ? help; q quit\n"
   },
   {
     "hardware": {
@@ -1785,7 +1811,9 @@
       "quant": "Q4_K_M",
       "reason": null,
       "backends": [
-        "ollama"
+        "ollama",
+        "llamacpp",
+        "lmstudio"
       ],
       "throughputBackend": "llamacpp",
       "requiredBytes": 6009180671,
@@ -1795,7 +1823,7 @@
         "unknownReason": null
       }
     },
-    "expected": "rigspark / Can Run / Accessible\n1. Target\nqwen3:8b\n2. Verdict\nyes; quant Q4_K_M; reason none; 6009180671 of 36507222016 usable bytes\n3. Throughput\n20.9–38.7 tok/s; source offline-estimate; backend llamacpp\n4. Backends\nollama\nNext: rigspark up qwen3:8b\n5. Controls\nCommands: ? help; q quit\n"
+    "expected": "rigspark / Can Run / Accessible\n1. Target\nqwen3:8b\n2. Verdict\nyes; quant Q4_K_M; reason none; 6009180671 of 36507222016 usable bytes\n3. Throughput\n20.9–38.7 tok/s; source offline-estimate; backend llamacpp\n4. Backends\nollama, llamacpp, lmstudio\nNext: rigspark up qwen3:8b\n5. Controls\nCommands: ? help; q quit\n"
   },
   {
     "hardware": {
@@ -1829,7 +1857,9 @@
       "quant": "Q4_K_M",
       "reason": null,
       "backends": [
-        "ollama"
+        "ollama",
+        "llamacpp",
+        "lmstudio"
       ],
       "throughputBackend": "ollama",
       "requiredBytes": 6009180671,
@@ -1839,7 +1869,7 @@
         "unknownReason": null
       }
     },
-    "expected": "rigspark / Can Run / Accessible\n1. Target\nqwen3:8b\n2. Verdict\nyes; quant Q4_K_M; reason none; 6009180671 of 36507222016 usable bytes\n3. Throughput\n20.9–38.7 tok/s; source offline-estimate; backend ollama\n4. Backends\nollama\nNext: rigspark up qwen3:8b\n5. Controls\nCommands: ? help; q quit\n"
+    "expected": "rigspark / Can Run / Accessible\n1. Target\nqwen3:8b\n2. Verdict\nyes; quant Q4_K_M; reason none; 6009180671 of 36507222016 usable bytes\n3. Throughput\n20.9–38.7 tok/s; source offline-estimate; backend ollama\n4. Backends\nollama, llamacpp, lmstudio\nNext: rigspark up qwen3:8b\n5. Controls\nCommands: ? help; q quit\n"
   },
   {
     "hardware": {
@@ -1873,7 +1903,9 @@
       "quant": "Q4_K_M",
       "reason": null,
       "backends": [
-        "ollama"
+        "ollama",
+        "llamacpp",
+        "lmstudio"
       ],
       "throughputBackend": "llamacpp",
       "requiredBytes": 6009180671,
@@ -1883,7 +1915,7 @@
         "unknownReason": null
       }
     },
-    "expected": "rigspark / Can Run / Accessible\n1. Target\nqwen3:8b\n2. Verdict\nyes; quant Q4_K_M; reason none; 6009180671 of 36507222016 usable bytes\n3. Throughput\n20.9–38.7 tok/s; source offline-estimate; backend llamacpp\n4. Backends\nollama\nNext: rigspark up qwen3:8b\n5. Controls\nCommands: ? help; q quit\n"
+    "expected": "rigspark / Can Run / Accessible\n1. Target\nqwen3:8b\n2. Verdict\nyes; quant Q4_K_M; reason none; 6009180671 of 36507222016 usable bytes\n3. Throughput\n20.9–38.7 tok/s; source offline-estimate; backend llamacpp\n4. Backends\nollama, llamacpp, lmstudio\nNext: rigspark up qwen3:8b\n5. Controls\nCommands: ? help; q quit\n"
   },
   {
     "hardware": {
@@ -1917,7 +1949,9 @@
       "quant": null,
       "reason": "context-bound",
       "backends": [
-        "ollama"
+        "ollama",
+        "llamacpp",
+        "lmstudio"
       ],
       "throughputBackend": "ollama",
       "requiredBytes": null,
@@ -1927,7 +1961,7 @@
         "unknownReason": "not-evaluated-model-does-not-fit"
       }
     },
-    "expected": "rigspark / Can Run / Accessible\n1. Target\nqwen3:8b\n2. Verdict\nno; quant unknown; reason context-bound; does not fit: context-bound\n3. Throughput\nunknown; source offline-estimate; not-evaluated-model-does-not-fit; backend ollama\nUnknown reason: not-evaluated-model-does-not-fit\n4. Backends\nollama\n5. Controls\nCommands: ? help; q quit\n"
+    "expected": "rigspark / Can Run / Accessible\n1. Target\nqwen3:8b\n2. Verdict\nno; quant unknown; reason context-bound; does not fit: context-bound\n3. Throughput\nunknown; source offline-estimate; not-evaluated-model-does-not-fit; backend ollama\nUnknown reason: not-evaluated-model-does-not-fit\n4. Backends\nollama, llamacpp, lmstudio\n5. Controls\nCommands: ? help; q quit\n"
   },
   {
     "hardware": {
@@ -1961,7 +1995,9 @@
       "quant": null,
       "reason": "context-bound",
       "backends": [
-        "ollama"
+        "ollama",
+        "llamacpp",
+        "lmstudio"
       ],
       "throughputBackend": "llamacpp",
       "requiredBytes": null,
@@ -1971,7 +2007,7 @@
         "unknownReason": "not-evaluated-model-does-not-fit"
       }
     },
-    "expected": "rigspark / Can Run / Accessible\n1. Target\nqwen3:8b\n2. Verdict\nno; quant unknown; reason context-bound; does not fit: context-bound\n3. Throughput\nunknown; source offline-estimate; not-evaluated-model-does-not-fit; backend llamacpp\nUnknown reason: not-evaluated-model-does-not-fit\n4. Backends\nollama\n5. Controls\nCommands: ? help; q quit\n"
+    "expected": "rigspark / Can Run / Accessible\n1. Target\nqwen3:8b\n2. Verdict\nno; quant unknown; reason context-bound; does not fit: context-bound\n3. Throughput\nunknown; source offline-estimate; not-evaluated-model-does-not-fit; backend llamacpp\nUnknown reason: not-evaluated-model-does-not-fit\n4. Backends\nollama, llamacpp, lmstudio\n5. Controls\nCommands: ? help; q quit\n"
   },
   {
     "hardware": {

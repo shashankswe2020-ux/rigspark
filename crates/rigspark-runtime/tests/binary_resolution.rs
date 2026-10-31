@@ -1,4 +1,6 @@
-use rigspark_runtime::process_control::{FALLBACK_BINARY_DIRS, resolve_binary_in};
+use rigspark_runtime::process_control::{
+    FALLBACK_BINARY_DIRS, fallback_directories, resolve_binary_in,
+};
 use std::ffi::OsString;
 
 fn executable(dir: &std::path::Path, name: &str) -> std::path::PathBuf {
@@ -43,6 +45,41 @@ fn fallback_directories_are_absolute_and_fixed() {
         assert!(std::path::Path::new(dir).is_absolute(), "{dir}");
         assert!(!dir.contains(".."), "{dir}");
     }
+}
+
+#[test]
+fn only_bundled_runtimes_fall_back_to_the_app_bundle_after_user_installs() {
+    let homebrew = tempfile::tempdir().unwrap();
+    let bundle = tempfile::tempdir().unwrap();
+    let bundled = executable(bundle.path(), "llama-server");
+    executable(bundle.path(), "git");
+    let dirs = fallback_directories("llama-server", &[homebrew.path()], Some(bundle.path()));
+    assert_eq!(dirs, [homebrew.path(), bundle.path()]);
+    assert_eq!(
+        resolve_binary_in("llama-server", &OsString::from("/usr/bin:/bin"), &dirs).unwrap(),
+        bundled
+    );
+    let user = executable(homebrew.path(), "llama-server");
+    assert_eq!(
+        resolve_binary_in("llama-server", &OsString::from("/usr/bin:/bin"), &dirs).unwrap(),
+        user,
+        "a user-installed llama.cpp wins over the bundled one"
+    );
+    for other in ["git", "ollama", "python3"] {
+        assert_eq!(
+            fallback_directories(other, &[homebrew.path()], Some(bundle.path())),
+            [homebrew.path()],
+            "{other} must never resolve from the app bundle"
+        );
+    }
+    assert_eq!(
+        fallback_directories(
+            "llama-server",
+            &[],
+            Some(std::path::Path::new("relative/bin"))
+        ),
+        Vec::<&std::path::Path>::new()
+    );
 }
 
 #[test]

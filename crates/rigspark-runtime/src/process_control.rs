@@ -214,13 +214,49 @@ pub fn enable_package_manager_fallback() {
     PACKAGE_MANAGER_FALLBACK.store(true, std::sync::atomic::Ordering::Relaxed);
 }
 
+/// Runtimes an app may ship inside its own bundle; nothing else resolves from there.
+pub const BUNDLED_RUNTIMES: &[&str] = &["llama-server"];
+
+static BUNDLED_RUNTIME_DIR: std::sync::OnceLock<PathBuf> = std::sync::OnceLock::new();
+
+/// Registers the directory holding an app's bundled [`BUNDLED_RUNTIMES`]. They are
+/// searched last, so a runtime the user installed still wins.
+pub fn register_bundled_runtime_dir(dir: PathBuf) -> Result<(), String> {
+    if !dir.is_absolute() {
+        return Err("bundled runtime directory must be absolute".into());
+    }
+    BUNDLED_RUNTIME_DIR
+        .set(dir)
+        .map_err(|_| "bundled runtime directory is already registered".into())
+}
+
+/// Directories searched after `PATH` for `binary`, in order.
+pub fn fallback_directories<'a>(
+    binary: &str,
+    package_manager: &[&'a Path],
+    bundled: Option<&'a Path>,
+) -> Vec<&'a Path> {
+    let mut dirs = package_manager.to_vec();
+    if BUNDLED_RUNTIMES.contains(&binary)
+        && let Some(dir) = bundled.filter(|dir| dir.is_absolute())
+    {
+        dirs.push(dir);
+    }
+    dirs
+}
+
 pub fn resolve_binary(binary: &str) -> Result<PathBuf, String> {
-    let fallbacks: Vec<&Path> =
+    let package_manager: Vec<&Path> =
         if PACKAGE_MANAGER_FALLBACK.load(std::sync::atomic::Ordering::Relaxed) {
             FALLBACK_BINARY_DIRS.iter().map(Path::new).collect()
         } else {
             Vec::new()
         };
+    let fallbacks = fallback_directories(
+        binary,
+        &package_manager,
+        BUNDLED_RUNTIME_DIR.get().map(PathBuf::as_path),
+    );
     resolve_binary_in(
         binary,
         &std::env::var_os("PATH").unwrap_or_default(),

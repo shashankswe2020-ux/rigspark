@@ -226,6 +226,9 @@ fn main() {
     let smoke = dialog_smoke || std::env::args().any(|argument| argument == "--smoke-test");
     let background = !smoke && std::env::args().any(|argument| argument == BACKGROUND_ARG);
     rigspark_runtime::process_control::enable_package_manager_fallback();
+    if let Some(dir) = bundled_runtime_dir() {
+        let _ = rigspark_runtime::process_control::register_bundled_runtime_dir(dir);
+    }
     let runtime = tokio::runtime::Runtime::new().expect("native async runtime");
     let config = rigspark_runtime::state::Config::load().expect("native configuration");
     let listener = runtime
@@ -261,6 +264,13 @@ fn main() {
             install_update
         ])
         .setup(move |app| {
+            if !smoke
+                && let Ok(dir) = app.path().app_config_dir()
+                && first_run(&dir)
+            {
+                // Ready to go after install: start in the menu bar at login until the user opts out.
+                let _ = app.autolaunch().enable();
+            }
             app.add_capability(desktop_capability(&entry))?;
             let script = format!("if(window===window.top && location.origin==={} && location.pathname==='/'){{const invoke=(command,args)=>window.__TAURI_INTERNALS__.invoke(command,args);Object.defineProperty(window,'llmupDesktop',{{value:Object.freeze({{selectWorkspaceDirectory:()=>invoke('select_workspace_directory'),status:()=>invoke('desktop_status'),setLaunchAtLogin:(enabled)=>invoke('set_launch_at_login',{{enabled:enabled===true}}),checkForUpdate:()=>invoke('check_for_update'),installUpdate:()=>invoke('install_update')}}),writable:false,configurable:false}});}}",serde_json::to_string(&origin)?);
             let allowed = origin.clone();
@@ -321,6 +331,26 @@ fn main() {
     });
 }
 
+#[cfg(not(test))]
+/// The bundled `llama-server` sits beside the app executable (`Contents/MacOS`).
+fn bundled_runtime_dir() -> Option<std::path::PathBuf> {
+    let dir = std::env::current_exe()
+        .ok()?
+        .canonicalize()
+        .ok()?
+        .parent()?
+        .to_path_buf();
+    dir.join("llama-server").is_file().then_some(dir)
+}
+/// True exactly once per install: the first launch records a marker in `dir`.
+fn first_run(dir: &std::path::Path) -> bool {
+    std::fs::create_dir_all(dir).is_ok()
+        && std::fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(dir.join("first-run-complete"))
+            .is_ok()
+}
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -447,6 +477,20 @@ mod tests {
             result.unwrap().deserialize::<Option<String>>().unwrap(),
             None
         );
+    }
+    #[test]
+    fn first_run_is_true_once_and_survives_restarts() {
+        let home = tempfile::tempdir().unwrap();
+        let dir = home.path().join("org.rigspark.desktop");
+        assert!(first_run(&dir));
+        assert!(!first_run(&dir));
+        assert!(!first_run(&dir));
+    }
+    #[test]
+    fn bundle_signing_is_ad_hoc_so_downloads_are_not_reported_damaged() {
+        let config: serde_json::Value =
+            serde_json::from_str(include_str!("../tauri.conf.json")).unwrap();
+        assert_eq!(config["bundle"]["macOS"]["signingIdentity"], "-");
     }
     #[test]
     fn desktop_product_name_is_filesystem_safe() {
