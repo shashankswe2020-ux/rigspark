@@ -199,9 +199,91 @@ jobs:
           fi
           gh release upload "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --clobber desktop-dist/*
 
+  desktop-windows:
+    name: Desktop app (x86_64-pc-windows-msvc)
+    needs: verify
+    runs-on: windows-2022
+    timeout-minutes: 75
+    permissions:
+      contents: write
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Fetch exact revision without an action runtime
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git init .
+          git remote add origin "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git"
+          AUTH=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\r\n')
+          export GIT_CONFIG_COUNT=1
+          export GIT_CONFIG_KEY_0="http.${GITHUB_SERVER_URL}/.extraheader"
+          export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $AUTH"
+          git fetch --no-tags --depth=1 origin "$GITHUB_SHA"
+          unset AUTH GIT_CONFIG_COUNT GIT_CONFIG_KEY_0 GIT_CONFIG_VALUE_0 GH_TOKEN
+          git checkout --detach FETCH_HEAD
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+      - name: Install pinned Tauri CLI
+        run: |
+          rustup show active-toolchain
+          cargo install tauri-cli --version 2.12.4 --locked
+      - name: Build bundled llama-server from pinned llama.cpp
+        run: scripts/build-bundled-llama-server.sh x86_64-pc-windows-msvc
+      - name: Build RigSpark installer
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          CI: "true"
+        run: |
+          set -euo pipefail
+          cd apps/desktop/src-tauri
+          extra=()
+          if [ -z "$TAURI_SIGNING_PRIVATE_KEY" ]; then
+            echo "::notice::TAURI_SIGNING_PRIVATE_KEY is not set; building without in-app update artifacts."
+            extra=(--config '{"bundle":{"createUpdaterArtifacts":false}}')
+          fi
+          cargo tauri build --target x86_64-pc-windows-msvc --bundles nsis --config tauri.bundled.conf.json ${extra[@]+"${extra[@]}"}
+          out="target/x86_64-pc-windows-msvc/release/bundle/nsis"
+          setup=$(ls "$out"/*-setup.exe)
+          mkdir -p ../../../desktop-dist
+          cp "$setup" ../../../desktop-dist/RigSpark_x64-setup.exe
+          if [ -f "$setup.sig" ]; then
+            cp "$setup.sig" ../../../desktop-dist/RigSpark_x64-setup.exe.sig
+          fi
+          cd ../../../desktop-dist
+          sha256sum RigSpark_x64-setup.exe > RigSpark_x64-setup.exe.sha256
+          ls -la
+      - name: Install silently and check the bundled runtime
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $setup = Start-Process -FilePath desktop-dist\RigSpark_x64-setup.exe -ArgumentList "/S" -Wait -PassThru
+          if ($setup.ExitCode -ne 0) { throw "installer exited with $($setup.ExitCode)" }
+          $dir = Join-Path $env:LOCALAPPDATA "RigSpark"
+          Get-ChildItem $dir
+          if (-not (Test-Path (Join-Path $dir "rigspark-desktop.exe"))) { throw "rigspark-desktop.exe was not installed" }
+          $server = Join-Path $dir "llama-server.exe"
+          if (-not (Test-Path $server)) { throw "llama-server.exe was not installed" }
+          $version = & $server --version 2>&1 | Out-String
+          if ($version -notmatch "version: ") { throw "installed llama-server did not run: $version" }
+      - name: Attach to draft release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if ! gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --draft --verify-tag \
+              --title "rigspark $GITHUB_REF_NAME" --notes "Release notes are added when all archives are verified." \
+              || gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null
+          fi
+          gh release upload "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --clobber desktop-dist/*
+
   publish:
     name: Checksums, formula and publication
-    needs: [build, desktop-macos]
+    needs: [build, desktop-macos, desktop-windows]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -243,8 +325,8 @@ jobs:
         run: |
           set -euo pipefail
           mkdir desktop-assets
-          gh release download "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --dir desktop-assets --pattern 'RigSpark_*.app.tar.gz.sig' || true
-          if [ "$(ls desktop-assets | wc -l)" -ne 2 ]; then
+          gh release download "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --dir desktop-assets --pattern 'RigSpark_*.app.tar.gz.sig' --pattern 'RigSpark_x64-setup.exe.sig' || true
+          if [ "$(ls desktop-assets | wc -l)" -ne 3 ]; then
             echo "::notice::Desktop updater signatures are missing; latest.json is not published."
             exit 0
           fi
@@ -256,6 +338,8 @@ jobs:
           for arch in ("aarch64", "x86_64"):
               signature = pathlib.Path(f"desktop-assets/RigSpark_{arch}.app.tar.gz.sig").read_text().strip()
               platforms[f"darwin-{arch}"] = {"signature": signature, "url": f"{base}/RigSpark_{arch}.app.tar.gz"}
+          windows = pathlib.Path("desktop-assets/RigSpark_x64-setup.exe.sig").read_text().strip()
+          platforms["windows-x86_64"] = {"signature": windows, "url": f"{base}/RigSpark_x64-setup.exe"}
           print(json.dumps({
               "version": tag.removeprefix("v"),
               "notes": f"See https://github.com/{repo}/releases/tag/{tag}",
@@ -278,7 +362,7 @@ jobs:
           test -s release-notes.md
           {
             printf '\n## Install\n\n```bash\nbrew install shashankswe2020-ux/tap/rigspark\ncargo binstall rigspark-cli rigspark-gui\ncargo install rigspark-cli --locked --bin llmup --bin rigspark && cargo install rigspark-gui --locked\n```\n\n'
-            printf 'Desktop: download `RigSpark_aarch64.dmg` (Apple Silicon) or `RigSpark_x86_64.dmg` (Intel). The app is not notarized yet; on first launch open System Settings > Privacy & Security and click Open Anyway.\n\n'
+            printf 'Desktop: download `RigSpark_aarch64.dmg` (Apple Silicon), `RigSpark_x86_64.dmg` (Intel Mac) or `RigSpark_x64-setup.exe` (Windows). The app is not notarized yet; on first launch open System Settings > Privacy & Security and click Open Anyway.\n\n'
             printf 'Archives are unsigned. Verify downloads against `SHA256SUMS` and each `.sha256` file.\n'
           } >> release-notes.md
           gh release upload "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --clobber release-assets/SHA256SUMS release-assets/rigspark.rb

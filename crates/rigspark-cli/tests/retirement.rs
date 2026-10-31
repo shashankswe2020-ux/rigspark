@@ -197,10 +197,22 @@ fn release_publishes_only_verified_tagged_archives_without_node() {
         "a bundle whose seal is broken is reported as damaged"
     );
     assert!(desktop.contains("Contents/MacOS/llama-server"));
+    let windows = job("desktop-windows");
+    assert!(windows.contains("needs: verify"));
+    assert!(windows.contains("runs-on: windows-2022"));
+    assert!(windows.contains("scripts/build-bundled-llama-server.sh x86_64-pc-windows-msvc"));
+    assert!(windows.contains("--bundles nsis --config tauri.bundled.conf.json"));
+    assert!(
+        windows.contains("-ArgumentList \"/S\"")
+            && windows.contains("llama-server.exe was not installed"),
+        "the installer is installed and its bundled runtime checked before upload"
+    );
+    assert!(windows.contains("RigSpark_x64-setup.exe"));
     assert!(desktop.contains("secrets.TAURI_SIGNING_PRIVATE_KEY"));
     assert!(desktop.contains("if: startsWith(github.ref, 'refs/tags/v')"));
     let publish = job("publish");
-    assert!(publish.contains("needs: [build, desktop-macos]"));
+    assert!(publish.contains("needs: [build, desktop-macos, desktop-windows]"));
+    assert!(publish.contains("windows-x86_64"));
     assert!(
         publish.contains("--pattern 'rigspark-*.tar.gz*'"),
         "CLI checksums ignore desktop updater archives"
@@ -220,7 +232,7 @@ fn release_publishes_only_verified_tagged_archives_without_node() {
         checked < published,
         "checksums must be verified before publication"
     );
-    for step in [verify, build, desktop, publish] {
+    for step in [verify, build, desktop, windows, publish] {
         assert!(step.contains("git rev-parse HEAD") && step.contains("$GITHUB_SHA"));
     }
 }

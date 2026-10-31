@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Builds the llama-server the Mac app bundles, from one pinned llama.cpp commit.
-# The result is a single static executable with the Metal shaders embedded, so the
-# app needs no dylibs and runs a model right after install.
+# Builds the llama-server the desktop app bundles, from one pinned llama.cpp commit.
+# The result is a single self-contained executable, so the app runs a model right
+# after install: macOS builds embed the Metal shaders; Windows builds are CPU-only
+# (AVX2) with the C runtime linked statically.
 #
 # Usage: scripts/build-bundled-llama-server.sh <rust-target-triple>
 set -euo pipefail
@@ -9,10 +10,11 @@ set -euo pipefail
 LLAMA_CPP_TAG="v0.8.0"
 LLAMA_CPP_COMMIT="8642541b255bfb5dc39cd351a178be09013a55d6"
 
-target="${1:?usage: build-bundled-llama-server.sh <aarch64-apple-darwin|x86_64-apple-darwin>}"
+target="${1:?usage: build-bundled-llama-server.sh <aarch64-apple-darwin|x86_64-apple-darwin|x86_64-pc-windows-msvc>}"
 case "$target" in
   aarch64-apple-darwin) arch=arm64 ;;
   x86_64-apple-darwin) arch=x86_64 ;;
+  x86_64-pc-windows-msvc) arch=x64 ;;
   *) echo "unsupported target: $target" >&2; exit 2 ;;
 esac
 
@@ -31,22 +33,40 @@ if [ "$actual" != "$LLAMA_CPP_COMMIT" ]; then
   exit 1
 fi
 
-cmake -S "$work/src" -B "$work/build" \
+common=(
+  -DBUILD_SHARED_LIBS=OFF
+  -DGGML_NATIVE=OFF
+  -DLLAMA_CURL=OFF
+  -DLLAMA_OPENSSL=OFF
+  -DLLAMA_BUILD_TESTS=OFF
+  -DLLAMA_BUILD_EXAMPLES=OFF
+  -DLLAMA_BUILD_TOOLS=ON
+  -DLLAMA_BUILD_SERVER=ON
+)
+fail() { tail -40 "$work/build.log" >&2; exit 1; }
+if [ "$arch" = x64 ]; then
+  cmake -S "$work/src" -B "$work/build" -G "Visual Studio 17 2022" -A x64 "${common[@]}" \
+    -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded \
+    -DGGML_AVX2=ON -DGGML_FMA=ON -DGGML_F16C=ON -DGGML_BMI2=ON \
+    >"$work/build.log" 2>&1 || fail
+  cmake --build "$work/build" --config Release --target llama-server --parallel >>"$work/build.log" 2>&1 || fail
+  binary="$work/build/bin/Release/llama-server.exe"
+  test -f "$binary"
+  "$binary" --version 2>&1 | grep -q 'version: '
+  cp "$binary" "$out.exe"
+  echo "$out.exe"
+  exit 0
+fi
+
+cmake -S "$work/src" -B "$work/build" "${common[@]}" \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_OSX_ARCHITECTURES="$arch" \
   -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0 \
-  -DBUILD_SHARED_LIBS=OFF \
-  -DGGML_NATIVE=OFF \
   -DGGML_METAL=ON \
   -DGGML_METAL_EMBED_LIBRARY=ON \
   -DGGML_BLAS=OFF \
-  -DLLAMA_CURL=OFF \
-  -DLLAMA_OPENSSL=OFF \
-  -DLLAMA_BUILD_TESTS=OFF \
-  -DLLAMA_BUILD_EXAMPLES=OFF \
-  -DLLAMA_BUILD_TOOLS=ON \
-  -DLLAMA_BUILD_SERVER=ON >"$work/build.log" 2>&1 || { tail -40 "$work/build.log" >&2; exit 1; }
-cmake --build "$work/build" --config Release --target llama-server -j "$(sysctl -n hw.ncpu)" >>"$work/build.log" 2>&1 || { tail -40 "$work/build.log" >&2; exit 1; }
+  >"$work/build.log" 2>&1 || fail
+cmake --build "$work/build" --config Release --target llama-server -j "$(sysctl -n hw.ncpu)" >>"$work/build.log" 2>&1 || fail
 
 binary="$work/build/bin/llama-server"
 test -x "$binary"
