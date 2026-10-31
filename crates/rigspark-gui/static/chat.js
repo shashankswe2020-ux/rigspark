@@ -1442,7 +1442,7 @@ document.addEventListener("DOMContentLoaded", () => {
       start.disabled = true;
     } else {
       start.addEventListener("click", () =>
-        startModel(model.id, start, backendSelect ? backendSelect.value : backends.includes("bitnet") ? "bitnet" : "", model.contextTokens !== undefined ? { context: model.contextTokens } : {}),
+        startModel(model.id, start, backendSelect ? backendSelect.value : backends.includes("bitnet") ? "bitnet" : "", presetContext(model)),
       );
     }
     actions.appendChild(start);
@@ -1707,6 +1707,16 @@ document.addEventListener("DOMContentLoaded", () => {
     return label;
   }
 
+  // A percentage preset is only applied when this model's memory at that context is known.
+  // Otherwise start at a modest 8K: half of a 1M-token window, or a runtime that sizes its
+  // context to fill free memory, can exhaust RAM.
+  const UNKNOWN_FIT_CONTEXT = 8192;
+  function presetContext(model) {
+    if (model.contextTokens === undefined) return {};
+    if (model.contextFitKnown !== false) return { context: model.contextTokens };
+    return { context: Math.min(model.contextTokens, UNKNOWN_FIT_CONTEXT) };
+  }
+
   async function startModel(id, button, backend, extra = {}) {
     if (modelError) {
       modelError.hidden = true;
@@ -1855,7 +1865,7 @@ document.addEventListener("DOMContentLoaded", () => {
       } else {
         button.textContent = model.verdict === "no" ? "Start anyway" : "Start";
         button.addEventListener("click", () =>
-          startModel(model.id, button, backendSelect ? backendSelect.value : backends.includes("bitnet") ? "bitnet" : "", model.contextTokens !== undefined ? { context: model.contextTokens } : {}),
+          startModel(model.id, button, backendSelect ? backendSelect.value : backends.includes("bitnet") ? "bitnet" : "", presetContext(model)),
         );
       }
       actions.appendChild(button);

@@ -169,12 +169,13 @@ impl Activation for ContextActivation<'_> {
             .inspect(&handle.endpoint, &self.source, cancel)
             .await
             .map_err(|error| BackendError(error.to_string()))?;
-        if self
-            .expected_manifest
-            .as_ref()
-            .is_some_and(|digest| digest != &model.digest)
-        {
-            return Err(BackendError("installed source changed; retry".into()));
+        if let Some(expected) = &self.expected_manifest {
+            // Ollama 0.40+ reports the embedded upstream manifest rather than the file digest.
+            let digests = crate::ollama_installed::manifest_digests(&self.root, &self.source)
+                .map_err(|error| BackendError(error.to_string()))?;
+            if digests.first() != Some(expected) || !digests.contains(&model.digest) {
+                return Err(BackendError("installed source changed; retry".into()));
+            }
         }
         observe(
             self.observer,
@@ -350,9 +351,9 @@ pub fn plan_quantization(
             ));
         }
     }
-    if options.context.is_some() && !["ollama", "bitnet"].contains(&backend) {
+    if options.context.is_some() && !["ollama", "llamacpp", "bitnet"].contains(&backend) {
         return Err(BackendError(
-            "explicit runtime context currently requires Ollama".into(),
+            "explicit runtime context currently requires Ollama or llama.cpp".into(),
         ));
     }
     let mut sizing = match options.kv_cache {
@@ -1216,6 +1217,29 @@ pub async fn run_native_with_config_observed(
             .replace(&backend, &request, &reviewed, cancel)
             .await?
     };
+    // Load the model once now that it is the only one being served, so a runtime that
+    // cannot run it (an unknown architecture, or no memory at this context) fails here with
+    // Ollama's reason instead of on the first chat.
+    if active.backend == "ollama"
+        && model
+            .capabilities
+            .iter()
+            .any(|capability| capability != "embedding")
+    {
+        let tag = active
+            .runtime_model_id
+            .clone()
+            .or_else(|| model.source.ollama.clone())
+            .unwrap_or_else(|| active.model_id.clone());
+        crate::ollama_inference::preload(&http, &active.endpoint, &tag, cancel)
+            .await
+            .map_err(|reason| {
+                BackendError(format!(
+                    "{} started but Ollama cannot load it: {reason}. Update Ollama, or start it with another runtime.",
+                    strip_control(&model.id)
+                ))
+            })?;
+    }
     Ok(up_output(
         &active,
         if prepared.digest_verified {

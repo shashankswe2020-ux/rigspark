@@ -145,7 +145,8 @@
   sheet.addEventListener("pointerdown", (event) => {
     if (event.target === sheet) hide();
   });
-  sheet.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") hide();
+  // Escape closes the dialog even after focus left it (Add disables its own button).
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !sheet.hidden) hide();
   });
 })();
