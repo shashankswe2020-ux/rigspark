@@ -1097,6 +1097,12 @@ html:not(.js) .spin .cap,
 .install {
   padding: 140px 0 120px;
 }
+.for-you {
+  margin-top: 32px;
+}
+.for-you .fine {
+  margin-top: 10px;
+}
 .os {
   display: grid;
   grid-template-columns: repeat(5, 1fr);

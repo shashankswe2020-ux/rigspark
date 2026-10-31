@@ -46,23 +46,70 @@ document.querySelectorAll(".copy-btn").forEach((btn) => {
   });
 })();
 
-// Highlight the download that matches this visitor and tailor the hero action.
+// Recommend the download that matches this visitor's OS and CPU, and tailor the hero action.
 (() => {
   const ua = navigator.userAgent.toLowerCase();
-  const platform = (navigator.userAgentData?.platform || navigator.platform || "").toLowerCase();
-  let os = null;
-  let label = null;
+  const hints = navigator.userAgentData;
+  const platform = (hints?.platform || navigator.platform || "").toLowerCase();
   if (/iphone|ipad|ipod|android/.test(ua) || (navigator.maxTouchPoints > 1 && ua.includes("mac os"))) return;
-  if (platform.includes("win") || ua.includes("windows")) [os, label] = ["win", "Windows"];
-  else if (platform.includes("mac") || ua.includes("mac os")) [os, label] = ["mac-app-arm", "macOS"];
-  else if (ua.includes("linux") && !ua.includes("android")) {
-    [os, label] = [ua.includes("aarch64") || ua.includes("arm64") ? "linux-arm" : "linux-x64", "Linux"];
-  }
-  const card = os && document.querySelector(`.dl[data-os="${os}"]`);
-  if (!card) return;
-  card.classList.add("is-current");
-  const hero = document.querySelector('.hero .pill[href="#install"]');
-  if (hero) hero.textContent = `Download for ${label}`;
+
+  // Safari and Firefox report "Intel Mac OS X" on every Mac; the GPU name still tells chips apart.
+  const macGpuArch = () => {
+    try {
+      const gl = document.createElement("canvas").getContext("webgl");
+      const info = gl && gl.getExtension("WEBGL_debug_renderer_info");
+      const renderer = String((info && gl.getParameter(info.UNMASKED_RENDERER_WEBGL)) || "");
+      if (/apple m\d/i.test(renderer)) return "arm";
+      if (/intel|amd|radeon|nvidia/i.test(renderer)) return "x86";
+    } catch {
+      // No WebGL: fall through to unknown.
+    }
+    return null;
+  };
+
+  const architecture = async () => {
+    try {
+      const values = await hints?.getHighEntropyValues?.(["architecture"]);
+      if (values?.architecture) return values.architecture.toLowerCase();
+    } catch {
+      // Hints refused: fall back below.
+    }
+    return null;
+  };
+
+  const choose = async () => {
+    const arch = await architecture();
+    if (platform.includes("win") || ua.includes("windows")) {
+      return { os: "win", label: "Windows", note: arch === "arm" ? "x64 build, runs on Windows on Arm." : "" };
+    }
+    if (platform.includes("mac") || ua.includes("mac os")) {
+      const chip = arch || macGpuArch();
+      if (chip === "x86") return { os: "mac-app-intel", label: "Mac (Intel)" };
+      if (chip === "arm") return { os: "mac-app-arm", label: "Mac (Apple Silicon)" };
+      return { os: "mac-app-arm", label: "Mac", note: "Apple Silicon build. Intel Mac? Pick Intel below." };
+    }
+    if (platform.includes("linux") || ua.includes("linux")) {
+      const arm = arch === "arm" || /aarch64|arm64/.test(ua) || platform.includes("aarch64");
+      return { os: arm ? "linux-arm" : "linux-x64", label: arm ? "Linux (ARM64)" : "Linux (x64)" };
+    }
+    return null;
+  };
+
+  choose().then((pick) => {
+    const card = pick && document.querySelector(`.dl[data-os="${pick.os}"]`);
+    if (!card) return;
+    card.classList.add("is-current");
+    const hero = document.querySelector('.hero .pill[href="#install"]');
+    if (hero) hero.textContent = `Download for ${pick.label}`;
+    const box = document.getElementById("for-you");
+    const link = document.getElementById("for-you-link");
+    const note = document.getElementById("for-you-note");
+    if (!box || !link || !note) return;
+    link.href = card.href;
+    link.textContent = `Download for ${pick.label}`;
+    if (pick.note) note.textContent = pick.note;
+    box.hidden = false;
+  });
 })();
 
 // Respect reduced motion for autoplaying video.
