@@ -34,7 +34,11 @@ fn path_wins_and_fixed_directories_are_only_a_fallback() {
 
 #[test]
 fn fallback_directories_are_absolute_and_fixed() {
-    assert!(!FALLBACK_BINARY_DIRS.is_empty());
+    // Windows has no package-manager directories outside PATH to add.
+    assert_eq!(
+        FALLBACK_BINARY_DIRS.is_empty(),
+        cfg!(not(any(target_os = "macos", target_os = "linux")))
+    );
     for dir in FALLBACK_BINARY_DIRS {
         assert!(std::path::Path::new(dir).is_absolute(), "{dir}");
         assert!(!dir.contains(".."), "{dir}");
