@@ -222,3 +222,30 @@ fn comparator_rejects_structural_type_and_order_drift() {
     let error = compare(&json!([{"score":0}]), &json!([{"score":1}]), "case").unwrap_err();
     assert!(error.starts_with("case[0].score:"));
 }
+
+#[test]
+fn bundled_cpu_only_llama_cpp_is_judged_on_system_memory_alone() {
+    let hardware: Hardware = serde_json::from_value(json!({
+        "arch": "x64", "platform": "win32", "totalRamBytes": 17179869184_u64,
+        "freeRamBytes": 12000000000_u64, "freeDiskBytes": 500000000000_u64,
+        "gpu": [{"vendor": "nvidia", "vramBytes": 8589934592_u64}]
+    }))
+    .unwrap();
+    let cpu = rigspark_gui::models::advice_hardware(hardware.clone(), Some("llamacpp"), true);
+    assert!(cpu.gpu.is_empty());
+    assert_eq!(cpu.unified_memory, Some(false));
+    assert_eq!(cpu.total_ram_bytes, hardware.total_ram_bytes);
+    for (runtime, bundled_cpu_only) in [
+        (Some("llamacpp"), false),
+        (Some("ollama"), true),
+        (None, true),
+    ] {
+        assert_eq!(
+            rigspark_gui::models::advice_hardware(hardware.clone(), runtime, bundled_cpu_only)
+                .gpu
+                .len(),
+            1,
+            "{runtime:?} {bundled_cpu_only}"
+        );
+    }
+}

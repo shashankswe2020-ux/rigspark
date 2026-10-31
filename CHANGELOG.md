@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### Features
+
+- **Windows installer.** Releases include `RigSpark_x64-setup.exe`, the desktop
+  app as a per-user NSIS installer with no admin prompt. The download section
+  on the site offers it to Windows visitors.
+  - It bundles a CPU-only (AVX2) `llama-server` built from the same pinned
+    llama.cpp commit, with a static C runtime, so the starter model runs
+    without installing anything else.
+  - While that bundled build serves llama.cpp, model advice ignores discrete
+    GPUs, so verdicts reflect how it actually runs.
+  - Before uploading, the release job installs it silently and checks that
+    the app and `llama-server.exe` were installed and that `llama-server.exe`
+    runs.
+  - In-app updates cover Windows: `latest.json` gains `windows-x86_64`.
+
 ## 3.0.5 (2026-10-31)
 
 ### Features

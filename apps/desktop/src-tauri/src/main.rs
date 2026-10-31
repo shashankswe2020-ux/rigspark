@@ -332,7 +332,8 @@ fn main() {
 }
 
 #[cfg(not(test))]
-/// The bundled `llama-server` sits beside the app executable (`Contents/MacOS`).
+/// The bundled `llama-server` sits beside the app executable (`Contents/MacOS` on macOS,
+/// the install directory on Windows).
 fn bundled_runtime_dir() -> Option<std::path::PathBuf> {
     let dir = std::env::current_exe()
         .ok()?
@@ -340,7 +341,12 @@ fn bundled_runtime_dir() -> Option<std::path::PathBuf> {
         .ok()?
         .parent()?
         .to_path_buf();
-    dir.join("llama-server").is_file().then_some(dir)
+    let name = if cfg!(windows) {
+        "llama-server.exe"
+    } else {
+        "llama-server"
+    };
+    dir.join(name).is_file().then_some(dir)
 }
 /// True exactly once per install: the first launch records a marker in `dir`.
 fn first_run(dir: &std::path::Path) -> bool {

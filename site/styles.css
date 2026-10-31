@@ -1136,8 +1136,8 @@ html:not(.js) .spin .cap,
   margin-top: 14px;
 }
 .os-app {
-  grid-template-columns: repeat(2, 1fr);
-  max-width: 560px;
+  grid-template-columns: repeat(3, 1fr);
+  max-width: 820px;
   margin-inline: auto;
 }
 .dl {
