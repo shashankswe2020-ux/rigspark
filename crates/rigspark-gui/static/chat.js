@@ -2815,9 +2815,123 @@ document.addEventListener("DOMContentLoaded", () => {
       grid.appendChild(btn);
     }
 
-    hero.append(mark, title, sub, grid);
+    hero.append(mark, title, sub, buildStarter(), grid);
     empty.appendChild(hero);
     return empty;
+  }
+
+  // General chat models in order of preference; the first that runs well here is offered.
+  const STARTER_MODELS = ["qwen3:8b", "qwen3:4b", "llama3.2:3b", "qwen3:1.7b", "qwen3:0.6b"];
+  const STARTER_LLAMACPP_CONTEXT = 8192;
+
+  function starterRuntime(runtimes) {
+    const installed = (name) => Array.isArray(runtimes) && runtimes.some((runtime) => runtime.name === name && runtime.installed);
+    if (installed("ollama")) return "ollama";
+    if (installed("llamacpp")) return "llamacpp";
+    return null;
+  }
+
+  function pickStarter(models, runtime) {
+    const byId = new Map((Array.isArray(models) ? models : []).map((model) => [model.id, model]));
+    for (const id of STARTER_MODELS) {
+      const model = byId.get(id);
+      if (
+        model &&
+        model.verdict === "yes" &&
+        model.contextFitKnown !== false &&
+        Array.isArray(model.backends) &&
+        model.backends.includes(runtime) &&
+        Array.isArray(model.capabilities) &&
+        model.capabilities.includes("chat")
+      ) {
+        return model;
+      }
+    }
+    return null;
+  }
+
+  function buildStarter() {
+    const slot = document.createElement("div");
+    slot.className = "welcome-starter";
+    slot.hidden = true;
+    void fillStarter(slot);
+    return slot;
+  }
+
+  async function fillStarter(slot) {
+    try {
+      const active = await loadActive(false);
+      if (active !== null) return;
+      const status = await globalThis.fetch("/api/runtimes/status");
+      if (!status.ok) return;
+      const runtime = starterRuntime((await status.json()).runtimes);
+      if (!runtime) {
+        const text = document.createElement("span");
+        text.className = "starter-text";
+        text.textContent = "Install Ollama or llama.cpp to run a model.";
+        const open = document.createElement("button");
+        open.type = "button";
+        open.className = "starter-go";
+        open.textContent = "Open Runtime";
+        open.addEventListener("click", () => switchView("tools"));
+        slot.replaceChildren(text, open);
+        slot.hidden = false;
+        return;
+      }
+      const response = await globalThis.fetch(`/api/models/recommended?limit=1000&runtime=${encodeURIComponent(runtime)}`);
+      if (!response.ok) return;
+      const model = pickStarter((await response.json()).models, runtime);
+      if (!model || !slot.isConnected) return;
+      renderStarter(slot, model, runtime);
+    } catch {
+      slot.hidden = true;
+    }
+  }
+
+  function renderStarter(slot, model, runtime) {
+    const text = document.createElement("span");
+    text.className = "starter-text";
+    const name = document.createElement("b");
+    name.textContent = model.id;
+    const meta = document.createElement("span");
+    meta.className = "starter-meta";
+    meta.textContent = `${formatSize(model.diskBytes)} · ${verdictLabel(model.verdict, model.throughput)}`;
+    text.append(name, meta);
+    const go = document.createElement("button");
+    go.type = "button";
+    go.className = "starter-go";
+    go.textContent = "Download & start";
+    const error = document.createElement("p");
+    error.className = "starter-error";
+    error.setAttribute("role", "alert");
+    error.hidden = true;
+    go.addEventListener("click", async () => {
+      go.disabled = true;
+      go.textContent = "Downloading…";
+      error.hidden = true;
+      try {
+        const payload = { model: model.id, backend: runtime };
+        if (runtime === "llamacpp") payload.context = STARTER_LLAMACPP_CONTEXT;
+        const response = await globalThis.fetch("/api/models/up", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || `request failed (${response.status})`);
+        renderActive(data.active);
+        slot.remove();
+        await loadStatus();
+        prompt.focus();
+      } catch (failure) {
+        error.textContent = `Could not start ${model.id}: ${failure.message}`;
+        error.hidden = false;
+        go.disabled = false;
+        go.textContent = "Try again";
+      }
+    });
+    slot.replaceChildren(modelFace("yes"), text, go, error);
+    slot.hidden = false;
   }
 
   function renderSessionMessages(list) {

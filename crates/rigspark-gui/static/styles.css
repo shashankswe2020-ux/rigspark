@@ -3233,6 +3233,64 @@ input.switch:checked::after {
   background: var(--hover);
 }
 
+.welcome-starter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 22px;
+  padding: 12px 12px 12px 14px;
+  border: 1px solid var(--amber-line);
+  border-radius: 14px;
+  background: var(--amber-soft);
+  max-width: 520px;
+}
+
+.welcome-starter .model-face {
+  width: 32px;
+  height: 32px;
+}
+
+.starter-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  color: var(--text);
+  text-align: left;
+}
+
+.starter-text b {
+  font-family: var(--mono, ui-monospace, monospace);
+  font-weight: 600;
+}
+
+.starter-meta {
+  color: var(--text2);
+  font-size: 13px;
+}
+
+.starter-go {
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--amber);
+  color: #1c1c1e;
+  font-weight: 600;
+}
+
+.starter-go:disabled {
+  opacity: 0.7;
+}
+
+.starter-error {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--danger, #ff6b6b);
+  font-size: 13px;
+  text-align: left;
+}
+
 .message {
   /* Contains the visually hidden role label; otherwise it escapes the log's clipping and adds
      phantom page scroll. */
