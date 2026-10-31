@@ -262,9 +262,12 @@ fn failure_message(error: &rigspark_runtime::chat_service::ChatError) -> String 
         ChatError::Harness(HarnessError::Unavailable) => {
             "No model is ready. Start one from Models."
         }
-        ChatError::Harness(
-            HarnessError::Transport | HarnessError::Timeout | HarnessError::Status(_),
-        ) => "The model server did not answer. Check that it is still running in Tools.",
+        ChatError::Harness(HarnessError::Transport | HarnessError::Timeout) => {
+            "The model server did not answer. Check that it is still running in Tools."
+        }
+        ChatError::Harness(HarnessError::Status(_)) => {
+            "The model server could not run this model; its runtime may be too old for it. Start the model again from Models to see why, or update the runtime."
+        }
         ChatError::Harness(HarnessError::Limit) => "The reply was larger than RigSpark allows.",
         _ => "Chat failed.",
     };
@@ -288,7 +291,10 @@ mod failure_tests {
         );
         assert!(
             failure_message(&ChatError::Harness(HarnessError::Status(500)))
-                .contains("did not answer")
+                .contains("could not run this model")
+        );
+        assert!(
+            failure_message(&ChatError::Harness(HarnessError::Timeout)).contains("did not answer")
         );
         for error in [
             ChatError::Invalid,

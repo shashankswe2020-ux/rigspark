@@ -14,6 +14,20 @@
 
 ### Fixes
 
+- Ollama 0.40+ support: rigspark reads Ollama's new content-addressed manifest
+  store (`manifests-v2`) and the upstream manifest digest it now reports. The
+  linked blob must hash to its address, and an embedded digest is trusted only
+  when its blob verifies. Integrity checks stay fail-closed.
+- After starting a model on Ollama, rigspark loads it once. A runtime that
+  cannot run it (for example an unknown architecture) now fails at start with
+  Ollama's reason, instead of on the first chat. A chat error from the server
+  now says the runtime may be too old.
+- llama.cpp accepts an explicit context window, as it already passes
+  `--ctx-size`.
+- Starting a model whose memory needs at a context can't be sized now uses 8K,
+  instead of a percentage of its maximum (for example 524,288 of a 1M-token
+  window) or a runtime default that fills free memory.
+- Escape closes Add from Hugging Face even after focus has left the dialog.
 - Chat memory no longer drops the conversation when the embedding model
   (`nomic-embed-text`) is missing or unreachable. The turn and facts are
   saved, recall vectors are skipped, and chat explains how to enable recall.

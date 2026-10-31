@@ -382,3 +382,61 @@ impl<'runtime> OllamaInference<'runtime> {
         Ok(EmbedResult { vectors, dimension })
     }
 }
+
+/// Loads `model` in Ollama with a one-token generation so a runtime that cannot run it
+/// (for example an unknown architecture) fails now, with Ollama's reason, rather than on
+/// the first chat. The reason is sanitized and bounded.
+pub async fn preload(
+    transport: &dyn Transport,
+    endpoint: &str,
+    model: &str,
+    cancel: &CancellationToken,
+) -> Result<(), String> {
+    let request = Request::new(
+        endpoint,
+        "/api/generate",
+        Some(serde_json::json!({
+            "model": model,
+            "prompt": "Hi",
+            "stream": false,
+            "options": {"num_predict": 1},
+            "keep_alive": "30s",
+        })),
+        None,
+    )
+    .map_err(|error| error.to_string())?;
+    let operation = async {
+        let response = transport
+            .send(request)
+            .await
+            .map_err(|error| error.to_string())?;
+        let mut bytes = Vec::new();
+        response
+            .body
+            .take(64 * 1024)
+            .read_to_end(&mut bytes)
+            .await
+            .map_err(|_| "unreadable Ollama response".to_owned())?;
+        if (200..300).contains(&response.status) {
+            return Ok(());
+        }
+        let reason = serde_json::from_slice::<Value>(&bytes)
+            .ok()
+            .and_then(|value| {
+                value
+                    .get("error")
+                    .and_then(Value::as_str)
+                    .map(str::to_owned)
+            })
+            .map(|text| {
+                rigspark_core::reports::strip_control(&text)
+                    .chars()
+                    .take(400)
+                    .collect::<String>()
+            })
+            .filter(|text| !text.trim().is_empty())
+            .unwrap_or_else(|| format!("Ollama returned HTTP {}", response.status));
+        Err(reason)
+    };
+    tokio::select! {biased;_=cancel.cancelled()=>Err("cancelled".into()),result=tokio::time::timeout(Duration::from_secs(600),operation)=>result.map_err(|_|"loading the model timed out".to_owned())?}
+}

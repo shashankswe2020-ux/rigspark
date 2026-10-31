@@ -307,17 +307,33 @@ fn disk_preflight_uses_one_message_for_auto_and_explicit_quants_except_delegated
 #[test]
 fn explicit_context_and_pointer_switches_are_ollama_only() {
     let model = universal();
+    let llama = plan_quantization(
+        &model,
+        None,
+        "llamacpp",
+        &roomy(),
+        options(false, Some(8192)),
+    );
+    assert!(
+        llama
+            .as_ref()
+            .err()
+            .is_none_or(|error| !error.0.contains("requires Ollama")),
+        "llama.cpp starts with --ctx-size: {llama:?}"
+    );
     for backend in ["llamacpp", "mlx", "lmstudio"] {
-        assert!(
-            error(plan_quantization(
-                &model,
-                None,
-                backend,
-                &roomy(),
-                options(false, Some(8192))
-            ))
-            .contains("requires Ollama")
-        );
+        if backend != "llamacpp" {
+            assert!(
+                error(plan_quantization(
+                    &model,
+                    None,
+                    backend,
+                    &roomy(),
+                    options(false, Some(8192))
+                ))
+                .contains("requires Ollama or llama.cpp")
+            );
+        }
         let switch = PlanOptions {
             simple_switch: true,
             bypass: false,

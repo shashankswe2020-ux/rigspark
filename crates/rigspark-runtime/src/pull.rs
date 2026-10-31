@@ -3,12 +3,10 @@ use crate::{
     adapters::{BackendAdapter, BackendError, ServeRequest, model_id},
     application::events::{LifecycleObserver, LifecycleScope, LifecycleStage, observe},
     command::{CommandRunner, OllamaCommandContext},
-    ollama_installed::{model_path, verify_catalog_manifest},
-    state::secure_read,
+    ollama_installed::verify_catalog_manifest,
 };
 use rigspark_core::catalog::{GgufSource, MlxSource};
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
 use std::{
     path::{Path, PathBuf},
     time::Duration,
@@ -182,11 +180,14 @@ impl PullService<'_> {
                     LifecycleScope::Runtime,
                     LifecycleStage::Verification,
                     async {
-                        let path = model_path(self.ollama_models, &request.model_id)
-                            .map_err(|error| BackendError(error.to_string()))?;
-                        let raw = secure_read(&path, 4 * 1024 * 1024, false)
-                            .map_err(|error| BackendError(error.to_string()))?;
-                        let digest = format!("{:x}", Sha256::digest(raw.as_bytes()));
+                        let digest = crate::ollama_installed::manifest_digests(
+                            self.ollama_models,
+                            &request.model_id,
+                        )
+                        .map_err(|error| BackendError(error.to_string()))?
+                        .into_iter()
+                        .next()
+                        .ok_or_else(|| BackendError("manifest digest unavailable".into()))?;
                         verify_catalog_manifest(
                             self.ollama_models,
                             &request.model_id,

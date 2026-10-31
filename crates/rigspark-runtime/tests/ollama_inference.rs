@@ -277,3 +277,65 @@ async fn tool_calls_with_ollama_call_ids_and_indexes_are_not_dropped() {
     assert_eq!(streamed.tool_calls.len(), 1);
     assert_eq!(streamed.tool_calls[0].name, "get_today");
 }
+
+struct Loader {
+    status: u16,
+    body: &'static str,
+    seen: std::sync::Mutex<Vec<(String, serde_json::Value)>>,
+}
+#[async_trait::async_trait]
+impl Transport for Loader {
+    async fn send(&self, request: Request) -> Result<Response, HttpError> {
+        self.seen.lock().unwrap().push((
+            request.url.path().to_owned(),
+            request.body().cloned().unwrap_or_default(),
+        ));
+        Ok(Response {
+            status: self.status,
+            body: Box::pin(std::io::Cursor::new(self.body.as_bytes().to_vec())),
+        })
+    }
+}
+
+#[tokio::test]
+async fn preload_loads_one_token_and_reports_why_ollama_cannot_load_a_model() {
+    use rigspark_runtime::ollama_inference::preload;
+    let cancel = tokio_util::sync::CancellationToken::new();
+    let ok = Loader {
+        status: 200,
+        body: r#"{"done":true}"#,
+        seen: Default::default(),
+    };
+    preload(&ok, "http://127.0.0.1:11434", "hf.co/a/b:q4_k_m", &cancel)
+        .await
+        .unwrap();
+    let (path, body) = ok.seen.lock().unwrap()[0].clone();
+    assert_eq!(path, "/api/generate");
+    assert_eq!(body["model"], "hf.co/a/b:q4_k_m");
+    assert_eq!(body["options"]["num_predict"], 1);
+    assert_eq!(body["stream"], false);
+    let unsupported = Loader {
+        status: 500,
+        body: "{\"error\":\"llama-server process has terminated: error loading model: unknown model architecture: 'spark2_5'\\u001b[31m\"}",
+        seen: Default::default(),
+    };
+    let reason = preload(&unsupported, "http://127.0.0.1:11434", "m:latest", &cancel)
+        .await
+        .unwrap_err();
+    assert!(
+        reason.contains("unknown model architecture: 'spark2_5'"),
+        "{reason}"
+    );
+    assert!(!reason.contains('\u{1b}'), "runtime text is sanitized");
+    let opaque = Loader {
+        status: 502,
+        body: "<html>",
+        seen: Default::default(),
+    };
+    assert_eq!(
+        preload(&opaque, "http://127.0.0.1:11434", "m:latest", &cancel)
+            .await
+            .unwrap_err(),
+        "Ollama returned HTTP 502"
+    );
+}

@@ -270,6 +270,99 @@ pub async fn verify_manifest(
     .await
 }
 
+const EMBEDDED_MANIFEST: &str = "application/vnd.docker.distribution.manifest.v2+json";
+
+/// Digests that identify a local Ollama manifest, the primary one first. In Ollama 0.40+'s
+/// content-addressed store that is the manifest blob's digest; in the older store it is the
+/// manifest file's SHA-256, followed by any embedded upstream manifest whose blob verifies.
+pub fn manifest_digests(root: &Path, id: &str) -> Result<Vec<String>, OllamaError> {
+    Ok(read_manifest(root, id)?.1)
+}
+
+/// The local manifest for `id` and the digests that identify it.
+fn read_manifest(root: &Path, id: &str) -> Result<(String, Vec<String>), OllamaError> {
+    let root = root
+        .canonicalize()
+        .map_err(|_| OllamaError::Integrity("model root unavailable"))?;
+    if let Some(found) = read_v2_manifest(&root, id)? {
+        return Ok(found);
+    }
+    let path = model_path(&root, id)?;
+    contained(&root, &path)?;
+    let raw = crate::state::secure_read(&path, 4 * 1024 * 1024, false)
+        .map_err(|_| OllamaError::Integrity("manifest unavailable"))?;
+    let digests = identities(&root, &raw);
+    Ok((raw, digests))
+}
+
+/// Ollama 0.40+ links `manifests-v2/<registry>/<namespace>/<name>/<tag>` to the manifest's
+/// content-addressed blob. Only a link to exactly `blobs/sha256-<hex>` whose content hashes
+/// to `<hex>` is accepted.
+fn read_v2_manifest(root: &Path, id: &str) -> Result<Option<(String, Vec<String>)>, OllamaError> {
+    let v1 = model_path(root, id)?;
+    let relative = v1
+        .strip_prefix(root.join("manifests"))
+        .map_err(|_| OllamaError::Invalid("installed model path"))?;
+    let mut parts: Vec<_> = relative.components().map(|part| part.as_os_str()).collect();
+    if parts
+        .first()
+        .is_some_and(|registry| *registry == "registry.ollama.ai")
+    {
+        parts[0] = std::ffi::OsStr::new("ollama.com");
+    }
+    let link = parts
+        .iter()
+        .fold(root.join("manifests-v2"), |path, part| path.join(part));
+    let target = match std::fs::read_link(&link) {
+        Ok(target) => target,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+        Err(_) => return Err(OllamaError::Integrity("manifest link unreadable")),
+    };
+    let target = target.to_string_lossy();
+    let hex = target
+        .strip_prefix("../../../../blobs/sha256-")
+        .filter(|hex| digest(hex))
+        .ok_or(OllamaError::Integrity("manifest link escapes blobs"))?;
+    let blob = root.join("blobs").join(format!("sha256-{hex}"));
+    contained(root, &blob)?;
+    let raw = crate::state::secure_read(&blob, 4 * 1024 * 1024, false)
+        .map_err(|_| OllamaError::Integrity("manifest unavailable"))?;
+    if format!("{:x}", Sha256::digest(raw.as_bytes())) != hex {
+        return Err(OllamaError::Integrity(
+            "manifest does not match its address",
+        ));
+    }
+    Ok(Some((raw, vec![hex.to_owned()])))
+}
+
+fn identities(root: &Path, raw: &str) -> Vec<String> {
+    let mut digests = vec![format!("{:x}", Sha256::digest(raw.as_bytes()))];
+    let Ok(manifest) = serde_json::from_str::<Manifest>(raw) else {
+        return digests;
+    };
+    for layer in manifest
+        .layers
+        .iter()
+        .filter(|layer| layer.media_type == EMBEDDED_MANIFEST && layer.size <= 64 * 1024)
+    {
+        let Some(hex) = layer
+            .digest
+            .strip_prefix("sha256:")
+            .filter(|hex| digest(hex))
+        else {
+            continue;
+        };
+        let blob = root.join("blobs").join(format!("sha256-{hex}"));
+        let verified = contained(root, &blob).is_ok()
+            && crate::state::secure_read(&blob, 64 * 1024, false)
+                .is_ok_and(|text| format!("{:x}", Sha256::digest(text.as_bytes())) == hex);
+        if verified && !digests.iter().any(|known| known == hex) {
+            digests.push(hex.to_owned());
+        }
+    }
+    digests
+}
+
 pub async fn verify_catalog_manifest(
     root: &Path,
     id: &str,
@@ -291,11 +384,8 @@ pub async fn verify_catalog_manifest(
     let root = root
         .canonicalize()
         .map_err(|_| OllamaError::Integrity("model root unavailable"))?;
-    let path = model_path(&root, id)?;
-    contained(&root, &path)?;
-    let raw = crate::state::secure_read(&path, 4 * 1024 * 1024, false)
-        .map_err(|_| OllamaError::Integrity("manifest unavailable"))?;
-    if format!("{:x}", Sha256::digest(raw.as_bytes())) != expected_manifest {
+    let (raw, digests) = read_manifest(&root, id)?;
+    if !digests.iter().any(|known| known == expected_manifest) {
         return Err(OllamaError::Integrity("manifest digest mismatch"));
     }
     let manifest: Manifest =
@@ -370,10 +460,7 @@ pub async fn verify_catalog_manifest(
             return Err(OllamaError::Integrity("blob digest or size mismatch"));
         }
     }
-    if crate::state::secure_read(&path, 4 * 1024 * 1024, false)
-        .map_err(|_| OllamaError::Integrity("manifest unavailable"))?
-        != raw
-    {
+    if read_manifest(&root, id)?.0 != raw {
         return Err(OllamaError::Integrity(
             "manifest changed during verification",
         ));

@@ -316,3 +316,116 @@ async fn context_activation_verifies_variant_and_detects_source_drift() {
         );
     }
 }
+
+#[test]
+fn ollama_identity_accepts_the_file_digest_or_a_verified_embedded_manifest() {
+    use rigspark_runtime::ollama_installed::manifest_digests;
+    use sha2::{Digest, Sha256};
+    let root = tempfile::tempdir().unwrap();
+    let hex = |bytes: &[u8]| format!("{:x}", Sha256::digest(bytes));
+    let upstream = br#"{"schemaVersion":2,"layers":[]}"#;
+    let upstream_digest = hex(upstream);
+    std::fs::create_dir_all(root.path().join("blobs")).unwrap();
+    std::fs::write(
+        root.path()
+            .join("blobs")
+            .join(format!("sha256-{upstream_digest}")),
+        upstream,
+    )
+    .unwrap();
+    let manifest = serde_json::json!({
+        "schemaVersion": 2,
+        "config": {"mediaType": "application/vnd.docker.container.image.v1+json", "digest": format!("sha256:{}", "c".repeat(64)), "size": 1},
+        "layers": [
+            {"mediaType": "application/vnd.ollama.image.model", "digest": format!("sha256:{}", "a".repeat(64)), "size": 10},
+            {"mediaType": "application/vnd.docker.distribution.manifest.v2+json", "digest": format!("sha256:{upstream_digest}"), "size": upstream.len()},
+            {"mediaType": "application/vnd.docker.distribution.manifest.v2+json", "digest": format!("sha256:{}", "d".repeat(64)), "size": 5}
+        ]
+    })
+    .to_string();
+    let path = root.path().join("manifests/hf.co/owner/repo/q4_k_m");
+    std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+    std::fs::write(&path, &manifest).unwrap();
+    let digests = manifest_digests(root.path(), "hf.co/owner/repo:q4_k_m").unwrap();
+    assert_eq!(
+        digests[0],
+        hex(manifest.as_bytes()),
+        "the file digest comes first"
+    );
+    assert!(
+        digests.contains(&upstream_digest),
+        "Ollama 0.40+ reports the embedded manifest"
+    );
+    assert!(
+        !digests.contains(&"d".repeat(64)),
+        "an embedded digest without a matching blob is never trusted"
+    );
+    assert_eq!(digests.len(), 2);
+    std::fs::write(
+        root.path()
+            .join("blobs")
+            .join(format!("sha256-{upstream_digest}")),
+        b"tampered",
+    )
+    .unwrap();
+    assert_eq!(
+        manifest_digests(root.path(), "hf.co/owner/repo:q4_k_m")
+            .unwrap()
+            .len(),
+        1,
+        "a tampered embedded manifest is not an identity"
+    );
+}
+
+#[cfg(unix)]
+#[test]
+fn ollama_v2_content_addressed_manifests_are_read_and_verified() {
+    use rigspark_runtime::ollama_installed::manifest_digests;
+    use sha2::{Digest, Sha256};
+    let root = tempfile::tempdir().unwrap();
+    let manifest = br#"{"schemaVersion":2,"config":{"mediaType":"x","digest":"sha256:aa","size":1},"layers":[]}"#;
+    let hex = format!("{:x}", Sha256::digest(manifest));
+    std::fs::create_dir_all(root.path().join("blobs")).unwrap();
+    std::fs::write(
+        root.path().join("blobs").join(format!("sha256-{hex}")),
+        manifest,
+    )
+    .unwrap();
+    let link = |id_path: &str, target: &str| {
+        let path = root.path().join("manifests-v2").join(id_path);
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        let _ = std::fs::remove_file(&path);
+        std::os::unix::fs::symlink(target, &path).unwrap();
+    };
+    let target = format!("../../../../blobs/sha256-{hex}");
+    link("ollama.com/library/llmup-context-x/8192", &target);
+    link("hf.co/owner/repo/q4_k_m", &target);
+    assert_eq!(
+        manifest_digests(root.path(), "llmup-context-x:8192").unwrap(),
+        std::slice::from_ref(&hex),
+        "library models live under ollama.com in the v2 store"
+    );
+    assert_eq!(
+        manifest_digests(root.path(), "hf.co/owner/repo:q4_k_m").unwrap(),
+        std::slice::from_ref(&hex)
+    );
+    std::fs::write(
+        root.path().join("blobs").join(format!("sha256-{hex}")),
+        b"tampered",
+    )
+    .unwrap();
+    assert!(
+        manifest_digests(root.path(), "llmup-context-x:8192").is_err(),
+        "content must match its address"
+    );
+    std::fs::write(
+        root.path().join("blobs").join(format!("sha256-{hex}")),
+        manifest,
+    )
+    .unwrap();
+    link("hf.co/owner/repo/q4_k_m", "../../../../../outside");
+    assert!(
+        manifest_digests(root.path(), "hf.co/owner/repo:q4_k_m").is_err(),
+        "links only point into blobs/"
+    );
+}
