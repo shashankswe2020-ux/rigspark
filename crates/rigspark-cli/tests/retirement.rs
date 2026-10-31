@@ -163,7 +163,7 @@ fn release_publishes_only_verified_tagged_archives_without_node() {
         "cargo fmt --all -- --check",
         "cargo clippy --workspace --all-targets --locked -- -D warnings",
         "cargo test --workspace --locked",
-        "macos-14",
+        "macos-15",
         "ubuntu-24.04",
         "windows-2022",
     ] {
