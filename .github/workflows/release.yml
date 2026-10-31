@@ -166,7 +166,7 @@ jobs:
             echo "::notice::TAURI_SIGNING_PRIVATE_KEY is not set; building without in-app update artifacts."
             extra=(--config '{"bundle":{"createUpdaterArtifacts":false}}')
           fi
-          cargo tauri build --target "${{ matrix.target }}" --bundles app,dmg "${extra[@]}"
+          cargo tauri build --target "${{ matrix.target }}" --bundles app,dmg ${extra[@]+"${extra[@]}"}
           out="target/${{ matrix.target }}/release/bundle"
           mkdir -p ../../../desktop-dist
           cp "$out"/dmg/*.dmg "../../../desktop-dist/RigSpark_${{ matrix.arch }}.dmg"
