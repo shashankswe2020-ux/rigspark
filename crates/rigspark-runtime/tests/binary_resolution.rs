@@ -87,4 +87,7 @@ fn the_cli_keeps_its_path_exactly_until_an_app_opts_in() {
     // Process-wide flag: this test binary never enables it, so PATH stays authoritative.
     let missing = format!("rigspark-test-missing-{}", std::process::id());
     assert!(rigspark_runtime::process_control::resolve_binary(&missing).is_err());
+    assert!(!rigspark_runtime::process_control::resolves_to_bundled(
+        "llama-server"
+    ));
 }

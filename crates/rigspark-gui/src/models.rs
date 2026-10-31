@@ -104,6 +104,19 @@ fn active(host: &Host) -> Result<Value, crate::routes::ApiError> {
         }
     })
 }
+/// Hardware to advise against. The Windows app bundles a CPU-only llama.cpp, so when
+/// that build serves llama.cpp, discrete GPUs must not count toward fit or speed.
+pub fn advice_hardware(
+    mut hardware: rigspark_core::sizing::Hardware,
+    runtime: Option<&str>,
+    bundled_cpu_only: bool,
+) -> rigspark_core::sizing::Hardware {
+    if bundled_cpu_only && runtime == Some("llamacpp") {
+        hardware.gpu.clear();
+        hardware.unified_memory = Some(false);
+    }
+    hardware
+}
 pub fn recommended(
     catalog: &Catalog,
     hardware: &rigspark_core::sizing::Hardware,
@@ -279,6 +292,11 @@ pub async fn dispatch(host: Arc<Host>, request: Request) -> ApiResult {
         if !(1..=MAX_RECOMMENDED_LIMIT).contains(&limit) {
             return Err(bad());
         }
+        let hardware = advice_hardware(
+            hardware,
+            query.get("runtime").map(String::as_str),
+            cfg!(windows) && rigspark_runtime::process_control::resolves_to_bundled("llama-server"),
+        );
         let models = recommended(&catalog, &hardware, &perf, &options, limit).map_err(|_| bad())?;
         return Ok(json_response(
             json!({"models":models,"runtime":query.get("runtime"),"contextPreset":query.get("context"),"kvCache":kv_cache}),

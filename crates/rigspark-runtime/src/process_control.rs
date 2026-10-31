@@ -230,6 +230,14 @@ pub fn register_bundled_runtime_dir(dir: PathBuf) -> Result<(), String> {
         .map_err(|_| "bundled runtime directory is already registered".into())
 }
 
+/// Whether `binary` resolves to the copy shipped in the registered app bundle.
+pub fn resolves_to_bundled(binary: &str) -> bool {
+    let (Some(dir), Ok(path)) = (BUNDLED_RUNTIME_DIR.get(), resolve_binary(binary)) else {
+        return false;
+    };
+    dir.canonicalize().is_ok_and(|dir| path.starts_with(dir))
+}
+
 /// Directories searched after `PATH` for `binary`, in order.
 pub fn fallback_directories<'a>(
     binary: &str,
