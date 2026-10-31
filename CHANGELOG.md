@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 3.0.5 (2026-10-31)
+
 ### Features
 
 - **Ready to run after install.** The Mac app bundles a `llama-server` built
