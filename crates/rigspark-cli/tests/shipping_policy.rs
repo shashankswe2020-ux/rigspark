@@ -383,9 +383,14 @@ fn site_downloads_every_release_archive_through_stable_latest_links() {
         assert!(site.contains(&url), "{url}");
     }
     assert!(site.contains("releases/latest/download/SHA256SUMS"));
+    for app in ["RigSpark_aarch64.dmg", "RigSpark_x86_64.dmg"] {
+        let url = format!(
+            "https://github.com/shashankswe2020-ux/rigspark/releases/latest/download/{app}"
+        );
+        assert!(site.contains(&url), "{url}");
+    }
     for stale in [
         "releases/download/v0.",
-        ".dmg",
         ".AppImage",
         "setup.exe",
         "Electron",

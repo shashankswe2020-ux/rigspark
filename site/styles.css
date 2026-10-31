@@ -1103,6 +1103,22 @@ html:not(.js) .spin .cap,
   gap: 12px;
   margin-top: 56px;
 }
+.os-label {
+  margin-top: 48px;
+  font: 600 13px var(--font-ui);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-500);
+  text-align: center;
+}
+.os-label + .os {
+  margin-top: 14px;
+}
+.os-app {
+  grid-template-columns: repeat(2, 1fr);
+  max-width: 560px;
+  margin-inline: auto;
+}
 .dl {
   display: block;
   height: 100%;

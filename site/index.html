@@ -101,9 +101,9 @@
     </script>
     <link rel="stylesheet" href="brand/fonts/fonts.css" />
     <link rel="stylesheet" href="brand/tokens/tokens.css" />
-    <link rel="stylesheet" href="styles.css?v=3.0.4" />
+    <link rel="stylesheet" href="styles.css?v=3.0.4-1" />
     <script src="data/latest.js?v=3.0.4" defer></script>
-    <script src="main.js?v=3.0.4" defer></script>
+    <script src="main.js?v=3.0.4-1" defer></script>
   </head>
   <body>
     <a class="skip" href="#main">Skip to content</a>
@@ -312,15 +312,15 @@ Run the top pick:  <span class="t-acc">rigspark up qwen3:30b-a3b</span>
         <article class="tile night reveal">
           <span class="badge-new">New in 3.0.4</span>
           <h3>Add from Hugging Face</h3>
-          <p>Paste a Hugging Face GGUF repo. RigSpark adds it to your catalog, checks the fit and runs it on Ollama or llama.cpp.</p>
+          <p>Paste a GGUF repo. Run it.</p>
           <div class="ctas"><a class="more" href="https://github.com/shashankswe2020-ux/rigspark/blob/main/CHANGELOG.md">Read the changelog</a></div>
           <img class="shot" src="brand/screens/hugging-face-models.webp" alt="RigSpark Models view with the Add from Hugging Face button and a freshly added Hugging Face model running on Ollama" width="1584" height="1176" loading="lazy" />
         </article>
         <article class="tile amber reveal">
           <span class="badge-new">New in 3.0.4</span>
           <h3>A real Mac app</h3>
-          <p>Lives in your menu bar, opens at login and updates itself with signed releases. Apple Silicon and Intel.</p>
-          <div class="ctas"><a class="more" href="https://github.com/shashankswe2020-ux/rigspark/releases/latest">Download for Mac</a></div>
+          <p>Menu bar, launch at login, signed updates.</p>
+          <div class="ctas"><a class="more" href="#install">Download for Mac</a></div>
           <img class="art" src="brand/3d/sparky-wave.webp" alt="Sparky waving hello" width="1097" height="914" loading="lazy" />
         </article>
         <article class="tile reveal">
@@ -445,9 +445,15 @@ Run the top pick:  <span class="t-acc">rigspark up qwen3:30b-a3b</span>
       <section class="install" id="install" aria-labelledby="install-title">
         <div class="wrap center reveal">
           <h2 class="h2" id="install-title">Get RigSpark.</h2>
-          <p class="lead narrow">One archive. Three native binaries: <code>rigspark</code>, the <code>llmup</code> alias and <code>rigspark-gui</code>. No Node.js, Python or compiler needed.</p>
+          <p class="lead narrow">Mac app or command line. No Node.js, Python or compiler needed.</p>
         </div>
         <div class="wrap">
+          <p class="os-label reveal">Mac app</p>
+          <ul class="os os-app reveal" aria-label="Download the Mac app">
+            <li><a class="dl" data-os="mac-app-arm" href="https://github.com/shashankswe2020-ux/rigspark/releases/latest/download/RigSpark_aarch64.dmg"><span class="i"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7.5c0-2 1.5-4 3.5-4 0 2-1.5 4-3.5 4Z"/><path d="M16.8 12.6c0-2 1.6-3 1.7-3.1-1-1.4-2.4-1.6-2.9-1.6-1.2-.1-2.4.7-3 .7-.7 0-1.6-.7-2.7-.7-1.4 0-2.7.8-3.4 2.1-1.5 2.5-.4 6.3 1 8.4.7 1 1.5 2.1 2.6 2.1 1 0 1.4-.7 2.7-.7 1.2 0 1.6.7 2.7.7 1.1 0 1.8-1 2.5-2 .8-1.2 1.1-2.3 1.1-2.4 0 0-2.3-.9-2.3-3.5Z"/></svg></span><b>Apple Silicon</b><span>.dmg</span></a></li>
+            <li><a class="dl" data-os="mac-app-intel" href="https://github.com/shashankswe2020-ux/rigspark/releases/latest/download/RigSpark_x86_64.dmg"><span class="i"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7.5c0-2 1.5-4 3.5-4 0 2-1.5 4-3.5 4Z"/><path d="M16.8 12.6c0-2 1.6-3 1.7-3.1-1-1.4-2.4-1.6-2.9-1.6-1.2-.1-2.4.7-3 .7-.7 0-1.6-.7-2.7-.7-1.4 0-2.7.8-3.4 2.1-1.5 2.5-.4 6.3 1 8.4.7 1 1.5 2.1 2.6 2.1 1 0 1.4-.7 2.7-.7 1.2 0 1.6.7 2.7.7 1.1 0 1.8-1 2.5-2 .8-1.2 1.1-2.3 1.1-2.4 0 0-2.3-.9-2.3-3.5Z"/></svg></span><b>Intel</b><span>.dmg</span></a></li>
+          </ul>
+          <p class="os-label reveal">Command line</p>
           <ul class="os reveal" aria-label="Download a release archive">
             <li><a class="dl" data-os="mac-arm" href="https://github.com/shashankswe2020-ux/rigspark/releases/latest/download/rigspark-aarch64-apple-darwin.tar.gz"><span class="i"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7.5c0-2 1.5-4 3.5-4 0 2-1.5 4-3.5 4Z"/><path d="M16.8 12.6c0-2 1.6-3 1.7-3.1-1-1.4-2.4-1.6-2.9-1.6-1.2-.1-2.4.7-3 .7-.7 0-1.6-.7-2.7-.7-1.4 0-2.7.8-3.4 2.1-1.5 2.5-.4 6.3 1 8.4.7 1 1.5 2.1 2.6 2.1 1 0 1.4-.7 2.7-.7 1.2 0 1.6.7 2.7.7 1.1 0 1.8-1 2.5-2 .8-1.2 1.1-2.3 1.1-2.4 0 0-2.3-.9-2.3-3.5Z"/></svg></span><b>macOS</b><span>Apple Silicon</span></a></li>
             <li><a class="dl" data-os="mac-intel" href="https://github.com/shashankswe2020-ux/rigspark/releases/latest/download/rigspark-x86_64-apple-darwin.tar.gz"><span class="i"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7.5c0-2 1.5-4 3.5-4 0 2-1.5 4-3.5 4Z"/><path d="M16.8 12.6c0-2 1.6-3 1.7-3.1-1-1.4-2.4-1.6-2.9-1.6-1.2-.1-2.4.7-3 .7-.7 0-1.6-.7-2.7-.7-1.4 0-2.7.8-3.4 2.1-1.5 2.5-.4 6.3 1 8.4.7 1 1.5 2.1 2.6 2.1 1 0 1.4-.7 2.7-.7 1.2 0 1.6.7 2.7.7 1.1 0 1.8-1 2.5-2 .8-1.2 1.1-2.3 1.1-2.4 0 0-2.3-.9-2.3-3.5Z"/></svg></span><b>macOS</b><span>Intel</span></a></li>
@@ -462,7 +468,7 @@ Run the top pick:  <span class="t-acc">rigspark up qwen3:30b-a3b</span>
             <div class="cmd" data-copy="docker pull ghcr.io/shashankswe2020-ux/rigspark:latest"><small>Container</small><code>docker pull ghcr.io/shashankswe2020-ux/rigspark:latest</code><button class="copy-btn" type="button" aria-label="Copy docker pull command"><span class="i"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="8.5" y="8.5" width="12" height="12" rx="2.5"/><path d="M15.5 8.5V6A2.5 2.5 0 0 0 13 3.5H6A2.5 2.5 0 0 0 3.5 6v7A2.5 2.5 0 0 0 6 15.5h2.5"/></svg></span></button></div>
           </div>
           <p class="fine center">If Sparky helps you, please consider sponsoring the project: <a href="https://buymeacoffee.com/shashanksw9" rel="noopener">buymeacoffee.com/shashanksw9</a></p>
-          <p class="fine center">Archives are unsigned. Verify them against <a href="https://github.com/shashankswe2020-ux/rigspark/releases/latest/download/SHA256SUMS">SHA256SUMS</a>. On macOS, clear quarantine with <code>xattr -dr com.apple.quarantine rigspark-*</code>. The container is an older CLI image that sees only the container&rsquo;s resources.</p>
+          <p class="fine center">First launch of the Mac app: right-click, Open. Archives are unsigned. Verify them against <a href="https://github.com/shashankswe2020-ux/rigspark/releases/latest/download/SHA256SUMS">SHA256SUMS</a>. On macOS, clear quarantine with <code>xattr -dr com.apple.quarantine rigspark-*</code>. The container is an older CLI image that sees only the container&rsquo;s resources.</p>
         </div>
       </section>
 
