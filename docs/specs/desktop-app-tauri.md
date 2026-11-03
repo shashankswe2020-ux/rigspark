@@ -2,7 +2,7 @@
 
 > Status: **Draft (v0.1)** — pending sub-agent review and human approval.
 > Last updated: 2026-10-30
-> Implementation: macOS packaging (`.app`/`.dmg`, unsigned), menu-bar tray with close-to-hide, launch at login (`tauri-plugin-autostart`) and signature-verified updates (`tauri-plugin-updater`, `latest.json` on GitHub releases) ship in `apps/desktop/src-tauri`. Notarization, Windows and Linux installers remain pending.
+> Implementation: macOS packaging (`.app`/`.dmg`, Developer ID signed with the Hardened Runtime and notarized), menu-bar tray with close-to-hide, launch at login (`tauri-plugin-autostart`) and signature-verified updates (`tauri-plugin-updater`, `latest.json` on GitHub releases) ship in `apps/desktop/src-tauri`. Windows code signing and Linux installers remain pending.
 > Related: [gui-and-harness-adapters.md](./gui-and-harness-adapters.md),
 > [rigspark.md](./rigspark.md),
 > [terminal-user-interface.md](./terminal-user-interface.md)

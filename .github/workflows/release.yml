@@ -155,10 +155,54 @@ jobs:
           cargo install tauri-cli --version 2.12.4 --locked
       - name: Build bundled llama-server from pinned llama.cpp
         run: scripts/build-bundled-llama-server.sh "${{ matrix.target }}"
-      - name: Build ad-hoc signed RigSpark.app and dmg
+      - name: Import Developer ID certificate into a temporary keychain
+        id: identity
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "$APPLE_CERTIFICATE" ]; then
+            if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+              echo "::error::APPLE_CERTIFICATE is not set; tagged releases must ship a Developer ID signed and notarized dmg."
+              exit 1
+            fi
+            echo "::notice::APPLE_CERTIFICATE is not set; building an ad-hoc signed app (not for distribution)."
+            echo "identity=-" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          keychain="$RUNNER_TEMP/rigspark-signing.keychain-db"
+          keychain_password="$(openssl rand -hex 24)"
+          cert="$RUNNER_TEMP/developer-id.p12"
+          printf '%s' "$APPLE_CERTIFICATE" | base64 --decode > "$cert"
+          security create-keychain -p "$keychain_password" "$keychain"
+          security set-keychain-settings -lut 3600 "$keychain"
+          security unlock-keychain -p "$keychain_password" "$keychain"
+          security import "$cert" -k "$keychain" -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign -T /usr/bin/security
+          rm -f "$cert"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$keychain_password" "$keychain" >/dev/null
+          security list-keychains -d user -s "$keychain" $(security list-keychains -d user | tr -d '"')
+          identity="$(security find-identity -v -p codesigning "$keychain" | sed -n 's/.*"\(Developer ID Application: [^"]*\)".*/\1/p' | head -1)"
+          if [ -z "$identity" ]; then
+            echo "::error::APPLE_CERTIFICATE does not contain a Developer ID Application identity."
+            security find-identity -v -p codesigning "$keychain"
+            exit 1
+          fi
+          echo "::add-mask::$keychain_password"
+          echo "Signing as: $identity"
+          echo "identity=$identity" >> "$GITHUB_OUTPUT"
+          echo "keychain=$keychain" >> "$GITHUB_OUTPUT"
+      - name: Build, sign and notarize RigSpark.app and dmg
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          SIGNING_IDENTITY: ${{ steps.identity.outputs.identity }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8 }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           CI: "true"
         run: |
           set -euo pipefail
@@ -168,15 +212,50 @@ jobs:
             echo "::notice::TAURI_SIGNING_PRIVATE_KEY is not set; building without in-app update artifacts."
             extra=(--config '{"bundle":{"createUpdaterArtifacts":false}}')
           fi
-          cargo tauri build --target "${{ matrix.target }}" --bundles app,dmg --config tauri.bundled.conf.json ${extra[@]+"${extra[@]}"}
+          notary=()
+          if [ "$SIGNING_IDENTITY" != "-" ]; then
+            # Tauri signs every binary (including llama-server) with the Hardened Runtime,
+            # then notarizes and staples RigSpark.app when Apple credentials are present.
+            if [ -n "$APPLE_API_ISSUER" ] && [ -n "$APPLE_API_KEY" ] && [ -n "$APPLE_API_KEY_P8" ]; then
+              export APPLE_API_KEY_PATH="$RUNNER_TEMP/AuthKey_$APPLE_API_KEY.p8"
+              printf '%s' "$APPLE_API_KEY_P8" | base64 --decode > "$APPLE_API_KEY_PATH"
+              unset APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID
+              notary=(--key "$APPLE_API_KEY_PATH" --key-id "$APPLE_API_KEY" --issuer "$APPLE_API_ISSUER")
+            elif [ -n "$APPLE_ID" ] && [ -n "$APPLE_PASSWORD" ] && [ -n "$APPLE_TEAM_ID" ]; then
+              unset APPLE_API_ISSUER APPLE_API_KEY
+              notary=(--apple-id "$APPLE_ID" --password "$APPLE_PASSWORD" --team-id "$APPLE_TEAM_ID")
+            else
+              echo "::error::Signing identity is set but notarization credentials are missing. Set APPLE_API_ISSUER, APPLE_API_KEY_ID and APPLE_API_KEY_P8, or APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD and APPLE_TEAM_ID."
+              exit 1
+            fi
+          fi
+          unset APPLE_API_KEY_P8
+          identity_config="$(python3 -c 'import json,sys; print(json.dumps({"bundle":{"macOS":{"signingIdentity":sys.argv[1]}}}))' "$SIGNING_IDENTITY")"
+          cargo tauri build --target "${{ matrix.target }}" --bundles app,dmg --config tauri.bundled.conf.json --config "$identity_config" ${extra[@]+"${extra[@]}"}
           out="target/${{ matrix.target }}/release/bundle"
           app="$out/macos/RigSpark.app"
           codesign --verify --deep --strict --verbose=2 "$app"
           test -x "$app/Contents/MacOS/llama-server"
           case "${{ matrix.arch }}" in aarch64) want=arm64 ;; *) want=x86_64 ;; esac
           test "$(lipo -archs "$app/Contents/MacOS/llama-server")" = "$want"
+          dmg="$(ls "$out"/dmg/*.dmg)"
+          if [ "$SIGNING_IDENTITY" != "-" ]; then
+            codesign --display --verbose=2 "$app/Contents/MacOS/llama-server" 2>&1 | grep -q "Authority=Developer ID Application"
+            codesign --display --verbose=2 "$app" 2>&1 | grep -q "flags=.*runtime"
+            xcrun stapler validate "$app"
+            spctl --assess --type execute --verbose=2 "$app"
+            # The dmg is the download, so it carries its own signature and notarization ticket.
+            if ! codesign --display "$dmg" >/dev/null 2>&1; then
+              codesign --sign "$SIGNING_IDENTITY" --timestamp "$dmg"
+            fi
+            codesign --verify --strict --verbose=2 "$dmg"
+            xcrun notarytool submit "$dmg" "${notary[@]}" --wait --timeout 30m
+            xcrun stapler staple "$dmg"
+            xcrun stapler validate "$dmg"
+            spctl --assess --type open --context context:primary-signature --verbose=2 "$dmg"
+          fi
           mkdir -p ../../../desktop-dist
-          cp "$out"/dmg/*.dmg "../../../desktop-dist/RigSpark_${{ matrix.arch }}.dmg"
+          cp "$dmg" "../../../desktop-dist/RigSpark_${{ matrix.arch }}.dmg"
           if [ -f "$out/macos/RigSpark.app.tar.gz.sig" ]; then
             cp "$out/macos/RigSpark.app.tar.gz" "../../../desktop-dist/RigSpark_${{ matrix.arch }}.app.tar.gz"
             cp "$out/macos/RigSpark.app.tar.gz.sig" "../../../desktop-dist/RigSpark_${{ matrix.arch }}.app.tar.gz.sig"
@@ -186,6 +265,13 @@ jobs:
             [ -f "$file" ] && shasum -a 256 "$file" > "$file.sha256"
           done
           ls -la
+      - name: Remove temporary signing keychain and keys
+        if: always()
+        env:
+          KEYCHAIN: ${{ steps.identity.outputs.keychain }}
+        run: |
+          [ -n "$KEYCHAIN" ] && security delete-keychain "$KEYCHAIN" || true
+          rm -f "$RUNNER_TEMP"/AuthKey_*.p8 "$RUNNER_TEMP"/developer-id.p12
       - name: Attach to draft release
         if: startsWith(github.ref, 'refs/tags/v')
         env:
@@ -362,7 +448,7 @@ jobs:
           test -s release-notes.md
           {
             printf '\n## Install\n\n```bash\nbrew install shashankswe2020-ux/tap/rigspark\ncargo binstall rigspark-cli rigspark-gui\ncargo install rigspark-cli --locked --bin llmup --bin rigspark && cargo install rigspark-gui --locked\n```\n\n'
-            printf 'Desktop: download `RigSpark_aarch64.dmg` (Apple Silicon), `RigSpark_x86_64.dmg` (Intel Mac) or `RigSpark_x64-setup.exe` (Windows). The app is not notarized yet; on first launch open System Settings > Privacy & Security and click Open Anyway.\n\n'
+            printf 'Desktop: download `RigSpark_aarch64.dmg` (Apple Silicon), `RigSpark_x86_64.dmg` (Intel Mac) or `RigSpark_x64-setup.exe` (Windows). The Mac app is signed with a Developer ID and notarized by Apple, so it opens like any other app.\n\n'
             printf 'Archives are unsigned. Verify downloads against `SHA256SUMS` and each `.sha256` file.\n'
           } >> release-notes.md
           gh release upload "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --clobber release-assets/SHA256SUMS release-assets/rigspark.rb
