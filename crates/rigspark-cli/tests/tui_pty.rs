@@ -295,12 +295,38 @@ fn run_session(
         original_terminal,
         "terminal attributes were not restored"
     );
+    // On Unix the reader reaches EOF once the exited child's side of the PTY is closed, so
+    // drain before releasing the master: closing it first discards output still in the
+    // PTY buffer (seen on macOS as a final report cut off mid-line).
+    #[cfg(unix)]
+    let mut reader_done = false;
+    #[cfg(unix)]
+    {
+        let drain_deadline = Instant::now() + Duration::from_secs(5);
+        loop {
+            match receiver.recv_timeout(Duration::from_millis(50)) {
+                Ok(bytes) => output.extend_from_slice(&bytes),
+                Err(mpsc::RecvTimeoutError::Disconnected) => {
+                    reader_done = true;
+                    break;
+                }
+                Err(mpsc::RecvTimeoutError::Timeout) if Instant::now() >= drain_deadline => break,
+                Err(mpsc::RecvTimeoutError::Timeout) => {}
+            }
+        }
+    }
+    #[cfg(not(unix))]
+    let reader_done = false;
     drop(writer);
     // ConPTY only reaches EOF once the child handle and master are released.
     drop(child);
     drop(pair.master);
     let drain_deadline = Instant::now() + Duration::from_secs(5);
     loop {
+        if reader_done {
+            reader_thread.join().unwrap();
+            break;
+        }
         match receiver.recv_timeout(Duration::from_millis(50)) {
             Ok(bytes) => output.extend_from_slice(&bytes),
             Err(mpsc::RecvTimeoutError::Disconnected) => {
