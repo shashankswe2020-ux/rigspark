@@ -197,6 +197,21 @@ fn release_publishes_only_verified_tagged_archives_without_node() {
         "a bundle whose seal is broken is reported as damaged"
     );
     assert!(desktop.contains("Contents/MacOS/llama-server"));
+    for required in [
+        "secrets.APPLE_CERTIFICATE",
+        "Developer ID Application",
+        "tagged releases must ship a Developer ID signed and notarized dmg",
+        "xcrun notarytool submit \"$dmg\"",
+        "xcrun stapler staple \"$dmg\"",
+        "xcrun stapler validate \"$app\"",
+        "spctl --assess --type open",
+        "security delete-keychain",
+    ] {
+        assert!(
+            desktop.contains(required),
+            "macOS releases are signed and notarized: {required}"
+        );
+    }
     let windows = job("desktop-windows");
     assert!(windows.contains("needs: verify"));
     assert!(windows.contains("runs-on: windows-2022"));

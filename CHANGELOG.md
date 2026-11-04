@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+### Features
+
+- **Signed and notarized Mac app.** `RigSpark_aarch64.dmg` and
+  `RigSpark_x86_64.dmg` are signed with a Developer ID, use the Hardened
+  Runtime and are notarized and stapled by Apple, so macOS opens them without
+  the "Open Anyway" step.
+  - The bundled `llama-server` is signed with the same identity.
+  - Tagged releases fail instead of shipping an unsigned dmg when the signing
+    or notarization secrets are missing; see
+    [docs/references/macos-signing.md](docs/references/macos-signing.md).
+
 ## 3.0.6 (2026-10-31)
 
 ### Features

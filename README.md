@@ -64,9 +64,8 @@ brew install shashankswe2020-ux/tap/rigspark
 On a Mac you can also install the desktop app: download `RigSpark_aarch64.dmg`
 (Apple Silicon) or `RigSpark_x86_64.dmg` (Intel) from the
 [latest release](https://github.com/shashankswe2020-ux/rigspark/releases/latest)
-and drag RigSpark to Applications. The app is not notarized yet, so the first
-time you open it macOS blocks it: open **System Settings → Privacy & Security**
-and click **Open Anyway**. The app bundles llama.cpp, so it needs no other
+and drag RigSpark to Applications. The app is signed with a Developer ID and
+notarized by Apple, so it opens without a Gatekeeper warning. The app bundles llama.cpp, so it needs no other
 runtime: on first launch, **Download & start** fetches a verified starter model
 that fits your Mac. It lives in the menu bar and launches at login (turn that
 off in **Tools**); closing the window keeps your model serving, and
