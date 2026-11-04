@@ -80,45 +80,49 @@ document.querySelectorAll(".copy-btn").forEach((btn) => {
   const choose = async () => {
     const arch = await architecture();
     if (platform.includes("win") || ua.includes("windows")) {
-      return { os: "win-app", label: "Windows", note: arch === "arm" ? "x64 build, runs on Windows on Arm." : "" };
+      const note = arch === "arm" ? "x64 build, runs on Windows on Arm" : "x64 installer, no admin rights needed";
+      return { os: "win-app", label: "Windows", meta: `Free and open source · ${note}` };
     }
     if (platform.includes("mac") || ua.includes("mac os")) {
       const chip = arch || macGpuArch();
-      if (chip === "x86") return { os: "mac-app-intel", label: "Mac (Intel)" };
-      if (chip === "arm") return { os: "mac-app-arm", label: "Mac (Apple Silicon)" };
-      return { os: "mac-app-arm", label: "Mac", note: "Apple Silicon build. Intel Mac? Pick Intel below." };
+      if (chip === "x86") {
+        return { os: "mac-app-intel", label: "macOS", meta: "Free and open source · Intel · macOS 12 or later" };
+      }
+      if (chip === "arm") {
+        return { os: "mac-app-arm", label: "macOS", meta: "Free and open source · Apple Silicon · macOS 12 or later" };
+      }
+      return { os: "mac-app-arm", label: "macOS", meta: "Apple Silicon build · Intel Mac? See other platforms" };
     }
     if (platform.includes("linux") || ua.includes("linux")) {
       const arm = arch === "arm" || /aarch64|arm64/.test(ua) || platform.includes("aarch64");
-      return { os: arm ? "linux-arm" : "linux-x64", label: arm ? "Linux (ARM64)" : "Linux (x64)" };
+      return {
+        os: arm ? "linux-arm" : "linux-x64",
+        label: "Linux",
+        meta: `Command line · ${arm ? "ARM64" : "x64"} · .tar.gz`,
+      };
     }
     return null;
   };
 
   choose().then((pick) => {
-    const card = pick && document.querySelector(`.dl[data-os="${pick.os}"]`);
+    const card = pick && document.querySelector(`[data-os="${pick.os}"]`);
     if (!card) return;
     card.classList.add("is-current");
-    const hero = document.querySelector('.hero .pill[href="#install"]');
-    if (hero) hero.textContent = `Download for ${pick.label}`;
-    const box = document.getElementById("for-you");
-    const link = document.getElementById("for-you-link");
-    const note = document.getElementById("for-you-note");
-    if (!box || !link || !note) return;
-    link.href = card.href;
-    link.textContent = `Download for ${pick.label}`;
-    note.textContent = pick.note || "";
-    box.hidden = false;
-    const install = document.getElementById("install");
-    const toggle = document.getElementById("show-all");
-    install?.classList.add("is-focused");
+    // The hero pill always works without JS (Apple Silicon dmg); here it follows the visitor.
+    const hero = document.getElementById("hero-download");
+    if (hero) {
+      hero.href = card.href;
+      hero.querySelector(".get-label").textContent = `Download for ${pick.label}`;
+      const icon = card.querySelector(".i");
+      const slot = hero.querySelector(".i");
+      if (icon && slot) slot.innerHTML = icon.innerHTML;
+    }
+    const meta = document.getElementById("hero-download-meta");
+    if (meta) meta.textContent = pick.meta;
+    // Linux has no desktop app yet, so show the command-line downloads straight away.
+    if (pick.os.startsWith("linux")) document.getElementById("more-downloads")?.setAttribute("open", "");
     if (!pick.os.startsWith("mac")) document.getElementById("mac-first-launch")?.setAttribute("hidden", "");
     if (pick.os !== "win-app") document.getElementById("win-first-launch")?.setAttribute("hidden", "");
-    toggle?.addEventListener("click", () => {
-      const open = install.classList.toggle("show-everything");
-      toggle.setAttribute("aria-expanded", String(open));
-      toggle.textContent = open ? "Hide other downloads" : "Other downloads";
-    });
   });
 })();
 
