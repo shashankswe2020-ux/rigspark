@@ -76,8 +76,16 @@ fn visible_text(output: &str) -> String {
 
 /// Replays printable text, CR/LF and cursor moves (CUP `H`, CUF `C`) onto a grid, so a word
 /// ConPTY repaints in pieces ("doct", then `ESC[1;17H` "or") still reads as one word.
+/// Each row is recorded whenever the cursor leaves it, because ConPTY has no alternate
+/// screen and the final plain output later overwrites the TUI rows.
 fn screen_text(output: &str) -> String {
     let mut rows: Vec<Vec<char>> = vec![Vec::new()];
+    let mut seen: Vec<String> = Vec::new();
+    let snapshot = |rows: &Vec<Vec<char>>, row: usize, seen: &mut Vec<String>| {
+        if let Some(line) = rows.get(row) {
+            seen.push(line.iter().collect());
+        }
+    };
     let (mut row, mut col) = (0usize, 0usize);
     let mut chars = output.chars().peekable();
     while let Some(character) = chars.next() {
@@ -99,6 +107,7 @@ fn screen_text(output: &str) -> String {
                         .collect();
                     match command {
                         Some('H') | Some('f') if !params.starts_with('?') => {
+                            snapshot(&rows, row, &mut seen);
                             row = numbers.first().copied().unwrap_or(1).max(1) - 1;
                             col = numbers.get(1).copied().unwrap_or(1).max(1) - 1;
                         }
@@ -116,7 +125,10 @@ fn screen_text(output: &str) -> String {
                 _ => {}
             },
             '\r' => col = 0,
-            '\n' => row += 1,
+            '\n' => {
+                snapshot(&rows, row, &mut seen);
+                row += 1;
+            }
             other if !other.is_control() => {
                 if rows.len() <= row {
                     rows.resize(row + 1, Vec::new());
@@ -131,10 +143,11 @@ fn screen_text(output: &str) -> String {
             _ => {}
         }
     }
-    rows.into_iter()
-        .map(|line| line.into_iter().collect::<String>())
-        .collect::<Vec<_>>()
-        .join("\n")
+    seen.extend(
+        rows.into_iter()
+            .map(|line| line.into_iter().collect::<String>()),
+    );
+    seen.join("\n")
 }
 
 fn entered(output: &str) -> bool {
@@ -1130,4 +1143,7 @@ fn screen_text_joins_words_conpty_repaints_in_pieces() {
     let stream = "\x1b[6n\x1b[m\x1b]0;llmup-native.exe\x07\x1b[?25h\x1b[?2004h\x1b[38;5;6m\x1b[1m rigspark / doct\x1b[m\x1b[K\r\n\x1b[K\x1b[?25l\x1b[100C\x1b[1;17Hor\x1b[22m\x1b[75CReport";
     assert!(!visible_text(stream).contains("rigspark / doctor"));
     assert!(screen_text(stream).contains("rigspark / doctor"));
+    // Without an alternate screen, the final output repaints over the title row.
+    let overwritten = "\x1b[K\x1b[H\x1b[1m rigspark / doctor\x1b[22m\x1b[75CReport\r\nhardware  OK\x1b[K\x1b[Hhardware  OK      x64/linux, 24.0 GiB usable memory";
+    assert!(screen_text(overwritten).contains("rigspark / doctor"));
 }
