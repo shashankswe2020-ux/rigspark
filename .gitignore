@@ -22,3 +22,4 @@ test-results/
 
 # Container builds stage verified release-archive binaries here.
 release-bin/
+mutants.out*/
