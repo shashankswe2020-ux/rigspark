@@ -74,6 +74,69 @@ fn visible_text(output: &str) -> String {
     text
 }
 
+/// Replays printable text, CR/LF and cursor moves (CUP `H`, CUF `C`) onto a grid, so a word
+/// ConPTY repaints in pieces ("doct", then `ESC[1;17H` "or") still reads as one word.
+fn screen_text(output: &str) -> String {
+    let mut rows: Vec<Vec<char>> = vec![Vec::new()];
+    let (mut row, mut col) = (0usize, 0usize);
+    let mut chars = output.chars().peekable();
+    while let Some(character) = chars.next() {
+        match character {
+            '\x1b' => match chars.next() {
+                Some('[') => {
+                    let mut params = String::new();
+                    let mut command = None;
+                    for next in chars.by_ref() {
+                        if ('\x40'..='\x7e').contains(&next) {
+                            command = Some(next);
+                            break;
+                        }
+                        params.push(next);
+                    }
+                    let numbers: Vec<usize> = params
+                        .split(';')
+                        .map(|part| part.parse().unwrap_or(0))
+                        .collect();
+                    match command {
+                        Some('H') | Some('f') if !params.starts_with('?') => {
+                            row = numbers.first().copied().unwrap_or(1).max(1) - 1;
+                            col = numbers.get(1).copied().unwrap_or(1).max(1) - 1;
+                        }
+                        Some('C') => col += numbers.first().copied().unwrap_or(1).max(1),
+                        _ => {}
+                    }
+                }
+                Some(']') => {
+                    while let Some(next) = chars.next() {
+                        if next == '\x07' || (next == '\x1b' && chars.next_if_eq(&'\\').is_some()) {
+                            break;
+                        }
+                    }
+                }
+                _ => {}
+            },
+            '\r' => col = 0,
+            '\n' => row += 1,
+            other if !other.is_control() => {
+                if rows.len() <= row {
+                    rows.resize(row + 1, Vec::new());
+                }
+                let line = &mut rows[row];
+                if line.len() <= col {
+                    line.resize(col + 1, ' ');
+                }
+                line[col] = other;
+                col += 1;
+            }
+            _ => {}
+        }
+    }
+    rows.into_iter()
+        .map(|line| line.into_iter().collect::<String>())
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
 fn entered(output: &str) -> bool {
     output.contains(if cfg!(windows) {
         "\x1b[?2004h"
@@ -612,7 +675,10 @@ fn visual_doctor_unhealthy_diagnostics_restore_terminal_and_exit_one() {
     assert_eq!(exit, 1, "{output}");
     assert!(entered(&output), "{output}");
     assert!(restored(&output), "{output}");
-    assert!(visible_text(&output).contains("doctor"), "{output}");
+    assert!(
+        screen_text(&output).contains("rigspark / doctor"),
+        "{output}"
+    );
     let final_text = final_output(&output);
     assert!(final_text.contains("not installed"), "{output}");
     assert_eq!(
@@ -1057,4 +1123,11 @@ fn accessible_model_lists_interrupt_without_final_plain_result() {
         assert!(!entered(&output));
         assert!(!output.contains(final_output), "{name}: {output}");
     }
+}
+
+#[test]
+fn screen_text_joins_words_conpty_repaints_in_pieces() {
+    let stream = "\x1b[6n\x1b[m\x1b]0;llmup-native.exe\x07\x1b[?25h\x1b[?2004h\x1b[38;5;6m\x1b[1m rigspark / doct\x1b[m\x1b[K\r\n\x1b[K\x1b[?25l\x1b[100C\x1b[1;17Hor\x1b[22m\x1b[75CReport";
+    assert!(!visible_text(stream).contains("rigspark / doctor"));
+    assert!(screen_text(stream).contains("rigspark / doctor"));
 }
