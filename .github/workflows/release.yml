@@ -120,13 +120,15 @@ jobs:
     name: Desktop app (${{ matrix.target }})
     needs: verify
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         include:
           - { target: aarch64-apple-darwin, arch: aarch64 }
           - { target: x86_64-apple-darwin, arch: x86_64 }
     runs-on: macos-15
-    timeout-minutes: 60
+    # Apple's notary service routinely takes 15-30 minutes per submission, and the app and
+    # the dmg are notarized separately.
+    timeout-minutes: 150
     permissions:
       contents: write
     defaults:
@@ -231,7 +233,19 @@ jobs:
           fi
           unset APPLE_API_KEY_P8
           identity_config="$(python3 -c 'import json,sys; print(json.dumps({"bundle":{"macOS":{"signingIdentity":sys.argv[1]}}}))' "$SIGNING_IDENTITY")"
-          cargo tauri build --target "${{ matrix.target }}" --bundles app,dmg --config tauri.bundled.conf.json --config "$identity_config" ${extra[@]+"${extra[@]}"}
+          # codesign --timestamp and the notary service are network calls that fail
+          # intermittently on hosted runners; the rebuild is incremental, so retry the bundle.
+          for attempt in 1 2 3; do
+            if cargo tauri build --target "${{ matrix.target }}" --bundles app,dmg --config tauri.bundled.conf.json --config "$identity_config" ${extra[@]+"${extra[@]}"}; then
+              break
+            fi
+            if [ "$attempt" = 3 ]; then
+              echo "::error::cargo tauri build failed three times."
+              exit 1
+            fi
+            echo "::warning::cargo tauri build failed (attempt $attempt); retrying in 60s."
+            sleep 60
+          done
           out="target/${{ matrix.target }}/release/bundle"
           app="$out/macos/RigSpark.app"
           codesign --verify --deep --strict --verbose=2 "$app"
@@ -249,7 +263,33 @@ jobs:
               codesign --sign "$SIGNING_IDENTITY" --timestamp "$dmg"
             fi
             codesign --verify --strict --verbose=2 "$dmg"
-            xcrun notarytool submit "$dmg" "${notary[@]}" --wait --timeout 30m
+            submission=""
+            for attempt in 1 2 3; do
+              if submission="$(xcrun notarytool submit "$dmg" "${notary[@]}" --no-wait --output-format json | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')"; then
+                break
+              fi
+              [ "$attempt" = 3 ] && { echo "::error::Could not submit the dmg for notarization."; exit 1; }
+              sleep 30
+            done
+            echo "dmg notarization submission: $submission"
+            # Poll instead of holding one long connection, so a network blip does not lose the result.
+            status=""
+            for poll in $(seq 1 90); do
+              status="$(xcrun notarytool info "$submission" "${notary[@]}" --output-format json 2>/dev/null | python3 -c 'import json,sys; print(json.load(sys.stdin).get("status",""))' || true)"
+              echo "notarization status ($poll): ${status:-unreachable}"
+              case "$status" in
+                Accepted) break ;;
+                Invalid|Rejected)
+                  xcrun notarytool log "$submission" "${notary[@]}" || true
+                  echo "::error::Apple rejected the dmg notarization ($status)."
+                  exit 1 ;;
+              esac
+              sleep 30
+            done
+            if [ "$status" != "Accepted" ]; then
+              echo "::error::dmg notarization did not finish in time (last status: ${status:-unreachable})."
+              exit 1
+            fi
             xcrun stapler staple "$dmg"
             xcrun stapler validate "$dmg"
             spctl --assess --type open --context context:primary-signature --verbose=2 "$dmg"
