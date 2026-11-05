@@ -246,6 +246,15 @@ jobs:
             echo "::warning::cargo tauri build failed (attempt $attempt); retrying in 60s."
             sleep 60
           done
+          # stapler and spctl look up tickets on Apple's servers; retry network blips.
+          retry() {
+            for attempt in 1 2 3 4 5; do
+              "$@" && return 0
+              echo "::warning::'$1 $2' failed (attempt $attempt); retrying in 20s."
+              sleep 20
+            done
+            return 1
+          }
           out="target/${{ matrix.target }}/release/bundle"
           app="$out/macos/RigSpark.app"
           codesign --verify --deep --strict --verbose=2 "$app"
@@ -256,8 +265,8 @@ jobs:
           if [ "$SIGNING_IDENTITY" != "-" ]; then
             codesign --display --verbose=2 "$app/Contents/MacOS/llama-server" 2>&1 | grep -q "Authority=Developer ID Application"
             codesign --display --verbose=2 "$app" 2>&1 | grep -q "flags=.*runtime"
-            xcrun stapler validate "$app"
-            spctl --assess --type execute --verbose=2 "$app"
+            retry xcrun stapler validate "$app"
+            retry spctl --assess --type execute --verbose=2 "$app"
             # The dmg is the download, so it carries its own signature and notarization ticket.
             if ! codesign --display "$dmg" >/dev/null 2>&1; then
               codesign --sign "$SIGNING_IDENTITY" --timestamp "$dmg"
@@ -290,9 +299,9 @@ jobs:
               echo "::error::dmg notarization did not finish in time (last status: ${status:-unreachable})."
               exit 1
             fi
-            xcrun stapler staple "$dmg"
-            xcrun stapler validate "$dmg"
-            spctl --assess --type open --context context:primary-signature --verbose=2 "$dmg"
+            retry xcrun stapler staple "$dmg"
+            retry xcrun stapler validate "$dmg"
+            retry spctl --assess --type open --context context:primary-signature --verbose=2 "$dmg"
           fi
           mkdir -p ../../../desktop-dist
           cp "$dmg" "../../../desktop-dist/RigSpark_${{ matrix.arch }}.dmg"
