@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.0.7 (2026-11-05)
 
 ### Features
 
