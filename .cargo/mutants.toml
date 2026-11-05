@@ -1,0 +1,5 @@
+# cargo-mutants configuration: https://mutants.rs/
+# CI runs the suite with two test threads; the PTY tests are timing-sensitive.
+additional_cargo_test_args = ["--", "--test-threads=2"]
+# Tests run only in the package that contains each mutant (the default), which keeps
+# a full run within the per-shard time limit in .github/workflows/mutants.yml.

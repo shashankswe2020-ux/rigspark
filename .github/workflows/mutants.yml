@@ -1,0 +1,119 @@
+name: Mutation Testing
+
+# cargo-mutants (https://mutants.rs/) changes the code in small ways ("replace > with >=",
+# "return Default::default()") and checks that some test fails. A mutant that survives
+# ("missed") marks behaviour no test pins down.
+#
+# - Pull requests: only mutants on lines the PR changes, so it stays fast.
+# - Weekly and on demand: every mutant, sharded across runners.
+
+on:
+  pull_request:
+    branches: [main]
+    paths: ["crates/**", "Cargo.toml", "Cargo.lock", ".cargo/mutants.toml", ".github/workflows/mutants.yml"]
+  schedule:
+    - cron: "17 21 * * 6"
+  workflow_dispatch:
+    inputs:
+      package:
+        description: "Limit the full run to one package (blank = whole workspace)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mutants-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_MUTANTS_VERSION: "27.1.0"
+
+jobs:
+  in-diff:
+    name: Mutants in PR diff
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Fetch PR head and base without an action runtime
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          git init .
+          git remote add origin "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git"
+          AUTH=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\r\n')
+          export GIT_CONFIG_COUNT=1
+          export GIT_CONFIG_KEY_0="http.${GITHUB_SERVER_URL}/.extraheader"
+          export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $AUTH"
+          git fetch --no-tags --depth=1 origin "$HEAD_SHA" "$BASE_SHA"
+          unset AUTH GIT_CONFIG_COUNT GIT_CONFIG_KEY_0 GIT_CONFIG_VALUE_0 GH_TOKEN
+          git checkout --detach "$HEAD_SHA"
+          git diff "$BASE_SHA" "$HEAD_SHA" -- 'crates/**/*.rs' > "$RUNNER_TEMP/pr.diff"
+          echo "Changed Rust lines: $(grep -c '^+[^+]' "$RUNNER_TEMP/pr.diff" || true)"
+      - name: Install cargo-mutants
+        run: cargo install cargo-mutants --version "$CARGO_MUTANTS_VERSION" --locked
+      - name: Mutate changed lines
+        run: |
+          set -euo pipefail
+          if [ ! -s "$RUNNER_TEMP/pr.diff" ]; then
+            echo "No Rust source changes." | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          status=0
+          cargo mutants --in-diff "$RUNNER_TEMP/pr.diff" --no-shuffle -vV || status=$?
+          scripts/mutants-summary.sh mutants.out "Mutants in this PR" >> "$GITHUB_STEP_SUMMARY"
+          # 2 = missed mutants, 3 = timeouts: report them as a failed check.
+          exit "$status"
+
+  full:
+    name: Mutants (shard ${{ matrix.shard }}/32)
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Fetch exact revision without an action runtime
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git init .
+          git remote add origin "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git"
+          AUTH=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\r\n')
+          export GIT_CONFIG_COUNT=1
+          export GIT_CONFIG_KEY_0="http.${GITHUB_SERVER_URL}/.extraheader"
+          export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $AUTH"
+          git fetch --no-tags --depth=1 origin "$GITHUB_SHA"
+          unset AUTH GIT_CONFIG_COUNT GIT_CONFIG_KEY_0 GIT_CONFIG_VALUE_0 GH_TOKEN
+          git checkout --detach FETCH_HEAD
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+      - name: Install cargo-mutants
+        run: cargo install cargo-mutants --version "$CARGO_MUTANTS_VERSION" --locked
+      - name: Mutate shard ${{ matrix.shard }}
+        env:
+          PACKAGE: ${{ inputs.package }}
+        run: |
+          set -euo pipefail
+          scope=(--workspace)
+          [ -n "$PACKAGE" ] && scope=(-p "$PACKAGE")
+          status=0
+          cargo mutants "${scope[@]}" --shard "${{ matrix.shard }}/32" --no-shuffle -vV || status=$?
+          scripts/mutants-summary.sh mutants.out "Shard ${{ matrix.shard }}/32" >> "$GITHUB_STEP_SUMMARY"
+          # Missed mutants (2) and timeouts (3) are findings, not a broken run; any other
+          # failure (1 = bad arguments, 4 = baseline tests failed) fails the shard.
+          case "$status" in 0|2|3) exit 0 ;; *) exit "$status" ;; esac
