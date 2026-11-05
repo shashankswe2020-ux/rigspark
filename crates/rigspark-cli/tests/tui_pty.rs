@@ -263,6 +263,11 @@ fn run_session(
         command.env_remove(name);
     }
     let mut child = Cleanup(pair.slave.spawn_command(command).unwrap());
+    // macOS discards unread PTY output once the last slave descriptor closes, so on Unix the
+    // harness holds its own slave open until the exited child's output is fully drained.
+    #[cfg(unix)]
+    let slave = pair.slave;
+    #[cfg(not(unix))]
     drop(pair.slave);
     let mut reader = pair.master.try_clone_reader().unwrap();
     let mut writer = pair.master.take_writer().unwrap();
@@ -371,22 +376,38 @@ fn run_session(
         original_terminal,
         "terminal attributes were not restored"
     );
-    // On Unix the reader reaches EOF once the exited child's side of the PTY is closed, so
-    // drain before releasing the master: closing it first discards output still in the
-    // PTY buffer (seen on macOS as a final report cut off mid-line).
+    // On Unix the exited child can no longer write, and the harness's slave keeps the
+    // buffered output readable: drain until the stream goes quiet, then close the slave so
+    // the reader reaches EOF, and drain again before releasing the master.
     #[cfg(unix)]
     let mut reader_done = false;
     #[cfg(unix)]
     {
         let drain_deadline = Instant::now() + Duration::from_secs(5);
-        loop {
+        let mut quiet_since = Instant::now();
+        while Instant::now() < drain_deadline {
             match receiver.recv_timeout(Duration::from_millis(50)) {
-                Ok(bytes) => output.extend_from_slice(&bytes),
+                Ok(bytes) => {
+                    output.extend_from_slice(&bytes);
+                    quiet_since = Instant::now();
+                }
                 Err(mpsc::RecvTimeoutError::Disconnected) => {
                     reader_done = true;
                     break;
                 }
-                Err(mpsc::RecvTimeoutError::Timeout) if Instant::now() >= drain_deadline => break,
+                Err(mpsc::RecvTimeoutError::Timeout)
+                    if quiet_since.elapsed() >= Duration::from_millis(300) =>
+                {
+                    break;
+                }
+                Err(mpsc::RecvTimeoutError::Timeout) => {}
+            }
+        }
+        drop(slave);
+        while !reader_done && Instant::now() < drain_deadline {
+            match receiver.recv_timeout(Duration::from_millis(50)) {
+                Ok(bytes) => output.extend_from_slice(&bytes),
+                Err(mpsc::RecvTimeoutError::Disconnected) => reader_done = true,
                 Err(mpsc::RecvTimeoutError::Timeout) => {}
             }
         }
