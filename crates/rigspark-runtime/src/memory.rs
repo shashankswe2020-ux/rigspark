@@ -1880,6 +1880,40 @@ mod boundary_tests {
             assert_eq!(store.files().unwrap_err().0, "memory store exceeds limit");
         }
 
+        #[test]
+        fn scan_caps_metadata_at_16_kib() {
+            let root = tempfile::tempdir().unwrap();
+            let store = MemoryStore::open(root.path(), "model", "now").unwrap();
+            let path = store.dir.join("meta.json");
+            let mut raw = fs::read(&path).unwrap();
+            raw.resize(16384, b' ');
+            private_file(&path, &raw);
+            assert!(store.files().is_ok());
+            raw.push(b' ');
+            private_file(&path, &raw);
+            assert!(store.files().is_err());
+        }
+
+        #[test]
+        fn move_recovery_refuses_a_parked_store_for_another_source() {
+            let root = tempfile::tempdir().unwrap();
+            MemoryStore::open(root.path(), "model", "now").unwrap();
+            let parked = MemoryStore::open(root.path(), "src", "now").unwrap();
+            let recovery = format!("memory-moved-{}", uuid::Uuid::new_v4());
+            let journal = transaction(root.path());
+            fs::rename(&parked.dir, root.path().join(".staging").join(&recovery)).unwrap();
+            private_file(&journal.join("phase"), b"prepared\n");
+            private_file(
+                &journal.join("move.json"),
+                serde_json::json!({"source": "other", "recovery": recovery})
+                    .to_string()
+                    .as_bytes(),
+            );
+            let error = MemoryStore::existing(root.path(), "model").unwrap_err();
+            assert_eq!(error.0, "ambiguous source recovery; bytes retained");
+            assert!(!root.path().join("memory/other").exists());
+        }
+
         fn transaction(root: &Path) -> PathBuf {
             let path = root.join(".staging").join("memory-model");
             private_dir(&path);
