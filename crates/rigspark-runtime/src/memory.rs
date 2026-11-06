@@ -1471,3 +1471,562 @@ impl MemoryStore {
         Self::existing(&self.home, target_id)
     }
 }
+
+#[cfg(test)]
+mod boundary_tests {
+    use super::*;
+    use tokio_util::sync::CancellationToken;
+
+    fn meta() -> MemoryMeta {
+        MemoryMeta {
+            schema_version: 1,
+            model_id: "qwen3:8b".into(),
+            created_at: "2026-11-06T00:00:00Z".into(),
+            embedding: Some(EmbeddingMeta {
+                model: "nomic-embed-text".into(),
+                dimension: 4,
+            }),
+            embedding_unsupported: None,
+        }
+    }
+    fn turn(content: &str) -> Turn {
+        Turn {
+            role: "user".into(),
+            content: content.into(),
+            ts: "t".into(),
+        }
+    }
+    fn source(turns: Vec<Turn>, system: Option<&str>) -> SourceMemory {
+        SourceMemory {
+            turns,
+            system_prompt: system.map(Into::into),
+            facts_text: String::new(),
+            facts_present: false,
+            embedding: None,
+        }
+    }
+    fn budget(context: u32) -> MigrationOptions<'static> {
+        MigrationOptions {
+            context,
+            embedder: None,
+            target_dimension: None,
+            summarizer: None,
+            embedding_unsupported: false,
+        }
+    }
+    struct Fixed(&'static str, usize);
+    #[async_trait::async_trait]
+    impl Embedder for Fixed {
+        fn model(&self) -> &str {
+            self.0
+        }
+        async fn embed(
+            &self,
+            texts: &[String],
+            _: &CancellationToken,
+        ) -> Result<EmbeddingOutput, MemoryError> {
+            Ok(EmbeddingOutput {
+                vectors: texts.iter().map(|_| vec![0.5; self.1]).collect(),
+                dimension: self.1,
+            })
+        }
+    }
+
+    #[test]
+    fn metadata_limits_are_inclusive() {
+        assert!(meta().validate().is_ok());
+        let accepted: [fn(&mut MemoryMeta); 4] = [
+            |meta| meta.model_id = "m".repeat(8192),
+            |meta| meta.created_at = "c".repeat(1024),
+            |meta| meta.embedding.as_mut().unwrap().model = "e".repeat(8192),
+            |meta| meta.embedding.as_mut().unwrap().dimension = 100_000,
+        ];
+        for change in accepted {
+            let mut edited = meta();
+            change(&mut edited);
+            assert!(edited.validate().is_ok(), "{edited:?}");
+        }
+        let mut unsupported = meta();
+        unsupported.embedding = None;
+        unsupported.embedding_unsupported = Some(true);
+        assert!(unsupported.validate().is_ok());
+        let rejected: [fn(&mut MemoryMeta); 10] = [
+            |meta| meta.schema_version = 2,
+            |meta| meta.model_id.clear(),
+            |meta| meta.model_id = "m".repeat(8193),
+            |meta| meta.created_at.clear(),
+            |meta| meta.created_at = "c".repeat(1025),
+            |meta| meta.embedding_unsupported = Some(false),
+            |meta| meta.embedding.as_mut().unwrap().model.clear(),
+            |meta| meta.embedding.as_mut().unwrap().model = "e".repeat(8193),
+            |meta| meta.embedding.as_mut().unwrap().dimension = 0,
+            |meta| meta.embedding.as_mut().unwrap().dimension = 100_001,
+        ];
+        for change in rejected {
+            let mut edited = meta();
+            change(&mut edited);
+            assert!(edited.validate().is_err(), "{edited:?}");
+        }
+    }
+
+    #[test]
+    fn slugs_reserve_windows_device_names_and_hash_only_past_128_bytes() {
+        assert_eq!(memory_slug("con", false).unwrap(), "con");
+        for (id, slug) in [
+            ("con", "x-con"),
+            ("COM1", "x-com1"),
+            ("lpt9.gguf", "x-lpt9.gguf"),
+            ("com0", "com0"),
+            ("compute", "compute"),
+            ("lpt10", "lpt10"),
+        ] {
+            assert_eq!(memory_slug(id, true).unwrap(), slug, "{id}");
+        }
+        let exact = "a".repeat(128);
+        assert_eq!(memory_slug(&exact, false).unwrap(), exact);
+        let long = memory_slug(&"a".repeat(129), false).unwrap();
+        assert_eq!(long.len(), 128);
+        assert!(long.starts_with(&"a".repeat(111)));
+        assert!(memory_slug(&"a".repeat(1024 * 1024), false).is_ok());
+        assert!(memory_slug(&"a".repeat(1024 * 1024 + 1), false).is_err());
+    }
+
+    #[test]
+    fn jsonl_allows_exactly_one_hundred_thousand_records() {
+        let lines = "1\n".repeat(100_000);
+        assert_eq!(jsonl::<u8>(&lines).unwrap().len(), 100_000);
+        assert!(jsonl::<u8>(&format!("{lines}1\n")).is_err());
+    }
+
+    #[test]
+    fn embedding_output_must_match_count_dimension_and_size_caps() {
+        let output = |count: usize, dimension: usize| EmbeddingOutput {
+            vectors: vec![vec![0.25; dimension]; count],
+            dimension,
+        };
+        assert!(validate_embeddings(&output(2, 4), 2).is_ok());
+        assert!(validate_embeddings(&output(1, 100_000), 1).is_ok());
+        assert!(validate_embeddings(&output(1000, 2000), 1000).is_ok());
+        assert!(validate_embeddings(&output(1, 0), 1).is_err());
+        assert!(validate_embeddings(&output(1, 100_001), 1).is_err());
+        assert!(validate_embeddings(&output(2, 4), 3).is_err());
+        assert!(validate_embeddings(&output(1001, 2000), 1001).is_err());
+        let mut short = output(2, 4);
+        short.vectors[1].pop();
+        assert!(validate_embeddings(&short, 2).is_err());
+        let mut infinite = output(2, 4);
+        infinite.vectors[0][0] = f64::NAN;
+        assert!(validate_embeddings(&infinite, 2).is_err());
+    }
+
+    #[test]
+    fn facts_need_schema_one_text_and_timestamp_within_count() {
+        let fact = || Fact {
+            text: "name = Ada".into(),
+            ts: "t".into(),
+        };
+        let facts = |schema_version, facts| Facts {
+            schema_version,
+            facts,
+        };
+        assert!(validate_facts(&facts(1, vec![fact(); 100_000])).is_ok());
+        assert!(validate_facts(&facts(1, vec![fact(); 100_001])).is_err());
+        assert!(validate_facts(&facts(2, vec![fact()])).is_err());
+        let mut blank = fact();
+        blank.text.clear();
+        assert!(validate_facts(&facts(1, vec![blank])).is_err());
+        let mut undated = fact();
+        undated.ts.clear();
+        assert!(validate_facts(&facts(1, vec![undated])).is_err());
+    }
+
+    #[test]
+    fn embedding_index_must_pair_unique_ids_with_finite_vectors() {
+        let chunk = |id: &str| format!(r#"{{"id":"{id}","text":"x","ts":"t"}}"#);
+        let vector = |id: &str, values: &str| format!(r#"{{"id":"{id}","vector":[{values}]}}"#);
+        let index = |chunks: &[String], vectors: &[String]| {
+            let mut files = Files::new();
+            files.insert("embeddings/chunks.jsonl".into(), chunks.join("\n"));
+            files.insert("embeddings/vectors.jsonl".into(), vectors.join("\n"));
+            load_files(&files, &meta())
+        };
+        let four = "1,2,3,4";
+        assert!(
+            index(
+                &[chunk("a"), chunk("b")],
+                &[vector("a", four), vector("b", four)]
+            )
+            .is_ok()
+        );
+        for (chunks, vectors) in [
+            (vec![chunk("a"), chunk("a")], vec![vector("a", four)]),
+            (vec![chunk("a")], vec![vector("a", four), vector("a", four)]),
+            (vec![chunk("a")], vec![vector("b", four)]),
+            (vec![chunk("a")], vec![vector("a", "1,2,3")]),
+            (vec![chunk("a")], vec![vector("a", "1,2,3,1e999")]),
+        ] {
+            assert!(index(&chunks, &vectors).is_err(), "{chunks:?} {vectors:?}");
+        }
+    }
+
+    #[tokio::test]
+    async fn migration_budget_bounds_and_exact_truncation() {
+        let cancel = CancellationToken::new();
+        let empty = source(Vec::new(), None);
+        assert!(plan_migration(&empty, budget(0), &cancel).await.is_err());
+        assert!(
+            plan_migration(&empty, budget(10_000_000), &cancel)
+                .await
+                .is_ok()
+        );
+        assert!(
+            plan_migration(&empty, budget(10_000_001), &cancel)
+                .await
+                .is_err()
+        );
+        let crowded = source(vec![turn("x"); 100_001], None);
+        assert!(
+            plan_migration(&crowded, budget(10_000_000), &cancel)
+                .await
+                .is_err()
+        );
+
+        // 30 turns of 10 tokens against 286 tokens: 256 are reserved for the reply,
+        // leaving exactly 30, so the newest 3 turns fit and 27 are folded away.
+        let ten_tokens = "x".repeat(40);
+        let long = source(vec![turn(&ten_tokens); 30], None);
+        let plan = plan_migration(&long, budget(286), &cancel).await.unwrap();
+        assert_eq!(plan.summary.strategy, "truncate");
+        assert_eq!(plan.summary.turns_carried, 3);
+        assert_eq!(plan.summary.turns_summarized, 27);
+        assert_eq!(plan.source.turns.len(), 4);
+        assert_eq!(
+            plan.source.turns[0].content,
+            "[27 earlier turns omitted during migration]"
+        );
+        // Exactly at the budget nothing is dropped.
+        let fits = source(vec![turn(&ten_tokens); 30], None);
+        let plan = plan_migration(&fits, budget(300), &cancel).await.unwrap();
+        assert_eq!(plan.summary.strategy, "none");
+        // The persona counts against the budget even with no facts.
+        let persona = "p".repeat(400);
+        let reserved = source(vec![turn(&ten_tokens); 5], Some(&persona));
+        let plan = plan_migration(&reserved, budget(120), &cancel)
+            .await
+            .unwrap();
+        assert_eq!(plan.summary.strategy, "truncate");
+        // A persona alone over budget leaves no turns to fold.
+        let only_persona = source(Vec::new(), Some(&persona));
+        let plan = plan_migration(&only_persona, budget(10), &cancel)
+            .await
+            .unwrap();
+        assert!(plan.source.turns.is_empty());
+        assert_eq!(plan.summary.strategy, "none");
+    }
+
+    #[tokio::test]
+    async fn reembedding_needs_a_plausible_target_dimension() {
+        let cancel = CancellationToken::new();
+        let mut indexed = source(Vec::new(), None);
+        indexed.embedding = Some(SourceEmbedding {
+            meta: EmbeddingMeta {
+                model: "old".into(),
+                dimension: 2,
+            },
+            chunks: vec![Chunk {
+                id: "a".into(),
+                text: "x".into(),
+                ts: "t".into(),
+            }],
+            vectors: vec![Vector {
+                id: "a".into(),
+                vector: vec![1.0, 2.0],
+            }],
+        });
+        let embedder = Fixed("new", 3);
+        for (dimension, ok) in [
+            (Some(3), true),
+            (Some(0), false),
+            (Some(100_001), false),
+            (None, false),
+        ] {
+            let options = MigrationOptions {
+                embedder: Some(&embedder),
+                target_dimension: dimension,
+                ..budget(1000)
+            };
+            let result = plan_migration(&indexed, options, &cancel).await;
+            match result {
+                Ok(plan) => {
+                    assert!(ok, "{dimension:?}");
+                    assert_eq!(plan.summary.embedding_strategy, "reembed");
+                }
+                Err(error) => {
+                    assert!(!ok, "{dimension:?}");
+                    assert_eq!(error.0, "target embedding dimension required");
+                }
+            }
+        }
+    }
+
+    #[cfg(unix)]
+    mod store {
+        use super::*;
+        use std::os::unix::fs::PermissionsExt;
+
+        fn private_file(path: &Path, bytes: &[u8]) {
+            fs::write(path, bytes).unwrap();
+            fs::set_permissions(path, fs::Permissions::from_mode(0o600)).unwrap();
+        }
+        fn private_dir(path: &Path) {
+            fs::create_dir_all(path).unwrap();
+            fs::set_permissions(path, fs::Permissions::from_mode(0o700)).unwrap();
+        }
+        fn capture_options(timestamp: &str) -> CaptureOptions<'_> {
+            CaptureOptions {
+                timestamp,
+                embedder: None,
+                embedding_unsupported: false,
+            }
+        }
+
+        #[test]
+        fn private_directory_refuses_files() {
+            let root = tempfile::tempdir().unwrap();
+            let file = root.path().join("file");
+            private_file(&file, b"x");
+            assert!(private_directory(&file).is_err());
+            let created = root.path().join("a/b");
+            private_directory(&created).unwrap();
+            assert!(created.is_dir());
+        }
+
+        #[test]
+        fn store_directory_replaced_by_a_file_is_unsafe() {
+            let root = tempfile::tempdir().unwrap();
+            let store = MemoryStore::open(root.path(), "model", "now").unwrap();
+            fs::remove_dir_all(&store.dir).unwrap();
+            private_file(&store.dir, b"{}");
+            let error = MemoryStore::existing(root.path(), "model").unwrap_err();
+            assert_eq!(error.0, "unsafe memory directory");
+        }
+
+        #[test]
+        fn metadata_rewrites_keep_their_owner() {
+            let root = tempfile::tempdir().unwrap();
+            let store = MemoryStore::open(root.path(), "model", "now").unwrap();
+            let guard = store.lock().unwrap();
+            let mut edited = store.meta.clone();
+            edited.embedding_unsupported = Some(true);
+            store.write_meta(&guard, &edited).unwrap();
+            assert_eq!(store.read_meta().unwrap(), edited);
+            edited.model_id = "other".into();
+            assert!(store.write_meta(&guard, &edited).is_err());
+            guard.release().unwrap();
+        }
+
+        #[test]
+        fn scan_allows_forty_levels_and_1024_entries() {
+            let root = tempfile::tempdir().unwrap();
+            let store = MemoryStore::open(root.path(), "model", "now").unwrap();
+            let mut nested = store.dir.clone();
+            for level in 0..40 {
+                nested = nested.join(format!("d{level}"));
+            }
+            private_dir(&nested);
+            assert!(store.files().is_ok());
+            private_dir(&nested.join("deeper"));
+            assert!(store.files().is_err());
+            fs::remove_dir_all(store.dir.join("d0")).unwrap();
+            // meta.json plus 1023 files is exactly the entry limit.
+            for index in 0..1023 {
+                private_file(&store.dir.join(format!("f{index}")), b"");
+            }
+            assert_eq!(store.files().unwrap().len(), 1024);
+            private_file(&store.dir.join("f1023"), b"");
+            assert!(store.files().is_err());
+        }
+
+        #[test]
+        fn scan_applies_per_file_and_total_size_caps() {
+            let root = tempfile::tempdir().unwrap();
+            let store = MemoryStore::open(root.path(), "model", "now").unwrap();
+            let mib = 1024 * 1024;
+            private_file(&store.dir.join("facts.json"), &vec![b' '; mib + 1]);
+            assert!(store.files().is_err());
+            fs::remove_file(store.dir.join("facts.json")).unwrap();
+            private_dir(&store.dir.join("embeddings"));
+            private_file(
+                &store.dir.join("embeddings/vectors.jsonl"),
+                &vec![b' '; 10 * mib],
+            );
+            private_file(&store.dir.join("notes.txt"), &vec![b' '; 8 * mib]);
+            assert!(store.files().is_ok());
+            private_file(&store.dir.join("notes.txt"), &vec![b' '; 8 * mib + 1]);
+            assert!(store.files().is_err());
+            fs::remove_dir_all(store.dir.join("embeddings")).unwrap();
+            fs::remove_file(store.dir.join("notes.txt")).unwrap();
+            // Fill the store to exactly 64 MiB, then one byte past it.
+            let meta = fs::metadata(store.dir.join("meta.json")).unwrap().len() as usize;
+            for index in 0..7 {
+                private_file(
+                    &store.dir.join(format!("part{index}")),
+                    &vec![b' '; 8 * mib],
+                );
+            }
+            private_file(&store.dir.join("part7"), &vec![b' '; 8 * mib - meta]);
+            assert!(store.files().is_ok());
+            private_file(&store.dir.join("extra"), b" ");
+            assert_eq!(store.files().unwrap_err().0, "memory store exceeds limit");
+        }
+
+        fn transaction(root: &Path) -> PathBuf {
+            let path = root.join(".staging").join("memory-model");
+            private_dir(&path);
+            path
+        }
+
+        #[test]
+        fn a_journal_without_a_phase_is_an_abandoned_staging_area() {
+            let root = tempfile::tempdir().unwrap();
+            MemoryStore::open(root.path(), "model", "now").unwrap();
+            let journal = transaction(root.path());
+            MemoryStore::existing(root.path(), "model").unwrap();
+            assert!(!journal.exists());
+        }
+
+        #[test]
+        fn unreadable_journal_files_stop_recovery() {
+            let root = tempfile::tempdir().unwrap();
+            MemoryStore::open(root.path(), "model", "now").unwrap();
+            let journal = transaction(root.path());
+            private_file(&journal.join("phase"), &[b'x'; 100]);
+            assert!(MemoryStore::existing(root.path(), "model").is_err());
+            private_file(&journal.join("phase"), b"committed\n");
+            private_file(&journal.join("move.json"), &vec![b' '; 20_000]);
+            assert!(MemoryStore::existing(root.path(), "model").is_err());
+        }
+
+        #[tokio::test]
+        async fn capture_input_caps_are_inclusive() {
+            let root = tempfile::tempdir().unwrap();
+            let store = MemoryStore::open(root.path(), "model", "now").unwrap();
+            let cancel = CancellationToken::new();
+            let invalid = "memory: invalid capture input";
+            let error = |result: Result<CaptureResult, MemoryError>| {
+                result.err().map(|error| error.to_string())
+            };
+            let limit = 8 * 1024 * 1024;
+            let over = "x".repeat(limit + 1);
+            assert_eq!(
+                error(
+                    store
+                        .capture(&over, "", capture_options("t"), &cancel)
+                        .await
+                )
+                .as_deref(),
+                Some(invalid)
+            );
+            let half = "x".repeat(limit / 2 + 1);
+            assert_eq!(
+                error(
+                    store
+                        .capture(&half, &half, capture_options("t"), &cancel)
+                        .await
+                )
+                .as_deref(),
+                Some(invalid)
+            );
+            let exact = "x".repeat(limit);
+            assert_ne!(
+                error(
+                    store
+                        .capture(&exact, "", capture_options("t"), &cancel)
+                        .await
+                )
+                .as_deref(),
+                Some(invalid)
+            );
+            for timestamp in [String::new(), "t".repeat(1025)] {
+                assert_eq!(
+                    error(
+                        store
+                            .capture("hi", "", capture_options(&timestamp), &cancel)
+                            .await
+                    )
+                    .as_deref(),
+                    Some(invalid)
+                );
+            }
+            let timestamp = "t".repeat(1024);
+            store
+                .capture("hi", "", capture_options(&timestamp), &cancel)
+                .await
+                .unwrap();
+        }
+
+        #[tokio::test]
+        async fn capture_keeps_one_embedding_space_and_leaves_facts_alone() {
+            let root = tempfile::tempdir().unwrap();
+            let store = MemoryStore::open(root.path(), "model", "now").unwrap();
+            let cancel = CancellationToken::new();
+            let embedder = Fixed("embed", 2);
+            let with = |embedder: &'static Fixed| CaptureOptions {
+                timestamp: "t",
+                embedder: Some(embedder),
+                embedding_unsupported: false,
+            };
+            let embedder: &'static Fixed = Box::leak(Box::new(embedder));
+            store
+                .capture("hi", "hello", with(embedder), &cancel)
+                .await
+                .unwrap();
+            let again = store
+                .capture("hi", "hello", with(embedder), &cancel)
+                .await
+                .unwrap();
+            assert_eq!(again.vectors_embedded, 2);
+            let other: &'static Fixed = Box::leak(Box::new(Fixed("embed", 3)));
+            assert!(store.capture("hi", "", with(other), &cancel).await.is_err());
+            let unnamed: &'static Fixed = Box::leak(Box::new(Fixed("", 2)));
+            let fresh = MemoryStore::open(root.path(), "fresh", "now").unwrap();
+            assert_eq!(
+                fresh
+                    .capture("hi", "", with(unnamed), &cancel)
+                    .await
+                    .unwrap_err()
+                    .0,
+                "embedding space mismatch"
+            );
+            // A capture that finds no new facts leaves a hand-written facts file byte for byte.
+            let compact = r#"{"schemaVersion":1,"facts":[{"text":"name = Ada","ts":"t"}]}"#;
+            private_file(&store.dir.join("facts.json"), compact.as_bytes());
+            store
+                .capture("nothing to remember", "", capture_options("t"), &cancel)
+                .await
+                .unwrap();
+            assert_eq!(
+                fs::read_to_string(store.dir.join("facts.json")).unwrap(),
+                compact
+            );
+        }
+
+        #[tokio::test]
+        async fn a_prepared_migration_only_commits_on_its_own_source() {
+            let root = tempfile::tempdir().unwrap();
+            let store = MemoryStore::open(root.path(), "model", "now").unwrap();
+            let cancel = CancellationToken::new();
+            let prepared = store
+                .prepare_migration("target", budget(1000), &cancel)
+                .await
+                .unwrap();
+            let mut renamed = store.clone();
+            renamed.meta.model_id = "imposter".into();
+            let error = renamed
+                .commit_migration(prepared, "now", false, &cancel)
+                .err()
+                .unwrap();
+            assert_eq!(error.0, "prepared migration belongs to another source");
+        }
+    }
+}
