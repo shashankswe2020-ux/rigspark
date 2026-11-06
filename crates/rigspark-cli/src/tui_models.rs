@@ -2067,4 +2067,91 @@ mod boundary_tests {
         // An unkeyed note keeps its own row, blank where the other model has none.
         assert!(wide.iter().any(|line| text(line).contains("note")));
     }
+
+    #[test]
+    fn can_run_model_ids_are_capped_at_1024_bytes() {
+        let evidence = |id: &str| {
+            json!({
+                "modelId": id, "runnable": "slow", "quant": "Q4_K_M",
+                "reason": null, "requiredBytes": 1024, "usableBytes": 4096,
+                "throughput": {"known": false, "lowTokPerSec": 0, "highTokPerSec": 0},
+                "throughputEvidence": {"source": "offline-estimate", "unknownReason": "no-sourced-performance-profile"},
+                "backends": ["ollama"], "throughputBackend": "ollama",
+                "context": 8192, "contextFitKnown": false
+            })
+        };
+        // Identifiers are truncated for display, so exactly 1024 bytes is still accepted.
+        assert!(ModelView::from_can_run(&evidence(&"a".repeat(1024)), false).is_ok());
+        let error = ModelView::from_can_run(&evidence(&"a".repeat(1025)), false)
+            .err()
+            .unwrap();
+        assert_eq!(error.to_string(), "model view text limit exceeded");
+        assert!(ModelView::from_can_run(&evidence("custom:local"), false).is_ok());
+    }
+
+    #[test]
+    fn choosing_another_column_sorts_it_ascending() {
+        let mut view = three();
+        view.cycle_sort(Some(2));
+        assert_eq!(view.sort, Some((2, false)));
+        view.cycle_sort(Some(1));
+        assert_eq!(view.sort, Some((1, false)));
+    }
+
+    #[test]
+    fn copies_use_the_selected_visible_row_and_confirm_with_a_toast() {
+        let mut view = three();
+        assert_eq!(view.toast(), None);
+        // Filtering leaves gamma first in the visible list but third in the rows.
+        view.append_query("gamma");
+        assert_eq!(labels(&view), ["gamma:8b"]);
+        key(&mut view, KeyCode::Char('y'));
+        assert_eq!(view.take_clipboard().as_deref(), Some("gamma:8b"));
+        assert_eq!(view.toast(), Some("Copied model id to clipboard"));
+        key(&mut view, KeyCode::Char('Y'));
+        assert_eq!(
+            view.take_clipboard().as_deref(),
+            Some("rigspark up gamma:8b")
+        );
+        assert_eq!(view.toast(), Some("Copied up command to clipboard"));
+        key(&mut view, KeyCode::Char('e'));
+        assert!(view.take_clipboard().unwrap().contains("/ gamma:8b\n"));
+        // Nothing visible: nothing is copied.
+        view.append_query("zzz");
+        key(&mut view, KeyCode::Char('y'));
+        assert_eq!(view.take_clipboard(), None);
+    }
+
+    #[test]
+    fn card_fields_wrap_at_62_columns() {
+        let view = three();
+        let words = "abcd ".repeat(12);
+        let card = view.card(&row("alpha:8b", &format!("1 | {} | yes", words.trim()), ""));
+        let need = card.lines().find(|line| line.starts_with("NEED")).unwrap();
+        assert_eq!(need, format!("{:<9} {}", "NEED", words.trim()));
+    }
+
+    #[test]
+    fn search_accepts_printable_characters_only() {
+        let mut view = three();
+        key(&mut view, KeyCode::Char('/'));
+        assert!(view.searching);
+        key(&mut view, KeyCode::Char('\u{7}'));
+        key(&mut view, KeyCode::Char('b'));
+        assert_eq!(view.query, "b");
+        key(&mut view, KeyCode::Backspace);
+        assert_eq!(view.query, "");
+    }
+
+    #[test]
+    fn enter_opens_the_selected_model() {
+        let mut view = three();
+        key(&mut view, KeyCode::Enter);
+        assert!(view.focus == Focus::Detail);
+        key(&mut view, KeyCode::Enter);
+        assert!(view.focus == Focus::List);
+        let mut empty = view_with_no_rows();
+        key(&mut empty, KeyCode::Enter);
+        assert!(empty.focus == Focus::List);
+    }
 }
