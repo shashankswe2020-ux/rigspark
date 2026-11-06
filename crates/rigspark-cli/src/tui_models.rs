@@ -2399,4 +2399,47 @@ mod boundary_tests {
         let end = line.find("clipboard").unwrap() + "clipboard".len();
         assert_eq!(line[end..].chars().count(), 2, "{line:?}");
     }
+
+    #[test]
+    fn detail_pane_titles_help_and_narrow_comparisons() {
+        let text = |view: &mut ModelView, width: u16| screen(&draw(view, width, 40));
+        let mut view = three();
+        view.focus(Focus::Overview);
+        assert!(text(&mut view, 80).join("\n").contains("Machine / scope"));
+        // Help lists the verdict filter only when there are columns to filter on.
+        let mut view = three();
+        view.toggle_help();
+        assert!(
+            text(&mut view, 120)
+                .join("\n")
+                .contains("v: cycle verdict filter")
+        );
+        let mut bare =
+            ModelView::new("Catalog", Vec::new(), vec![row("a", "", "")], false).unwrap();
+        bare.toggle_help();
+        assert!(!text(&mut bare, 120).join("\n").contains("verdict filter"));
+        // Too narrow for columns: models are listed one after another, a blank line apart.
+        let mut view = three();
+        view.rows[1].summary.clear();
+        view.marked = vec![0, 1];
+        view.focus(Focus::Compare);
+        let lines = text(&mut view, 30);
+        let at = |needle: &str| {
+            lines
+                .iter()
+                .position(|line| line.contains(needle))
+                .unwrap_or_else(|| panic!("{needle}: {lines:#?}"))
+        };
+        let alpha = at("alpha:8b");
+        let beta = at("beta:8b");
+        assert!(alpha < beta);
+        assert!(
+            lines[beta - 1]
+                .trim_matches(|c: char| c == '│' || c == ' ')
+                .is_empty()
+        );
+        assert!(!lines[alpha - 1].contains("alpha"));
+        assert!(lines[alpha + 1].contains("1 | 5.2 GiB"), "{lines:#?}");
+        assert!(lines[beta + 1].contains("verdict"), "{lines:#?}");
+    }
 }
