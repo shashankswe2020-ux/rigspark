@@ -234,7 +234,11 @@ mod scoring {
         let mut no_proxy = llama.clone();
         no_proxy.id = "llama3.1:8b-no-proxy".into();
         no_proxy.benchmark_proxy = None;
-        catalog.models = vec![llama.clone(), no_proxy];
+        // Above 4.7 bits the quantization slows the speed score; at Q4 it is capped at 1.
+        let mut eight_bit = llama.clone();
+        eight_bit.id = "llama3.1:8b-q8".into();
+        eight_bit.quantizations[0].name = "Q8_0".into();
+        catalog.models = vec![llama.clone(), no_proxy, eight_bit];
         // Exactly one year after release: recency is halfway through its two-year decay.
         catalog.generated_at = "2025-07-23T00:00:00.000Z".into();
         let class = param_class("8B");
@@ -244,35 +248,41 @@ mod scoring {
             (cpu_rig(), 0.2, "ram"),
             (mac(), 0.5, "ram"),
         ] {
-            let result =
-                recommend_detailed(&catalog, &hardware, &perf(), &AdviceOptions::default())
-                    .unwrap();
-            assert_eq!(result["hardware"]["memoryKind"], kind);
-            let ranked = result["ranked"].as_array().unwrap();
-            assert_eq!(ranked.len(), 2, "{bandwidth}");
-            for entry in ranked {
-                let scores = &entry["scores"];
-                let quality = if entry["id"] == "llama3.1:8b" {
-                    0.5 * class + 0.5 * proxy
-                } else {
-                    class
+            // llama3.1:8b lists no vision capability, so asking for vision scores it 0.
+            for (task, capability) in [(None, 1.0), (Some("vision"), 0.0)] {
+                let options = AdviceOptions {
+                    task: task.map(Into::into),
+                    ..Default::default()
                 };
-                close(&scores["quality"], quality);
-                let ratio = entry["requiredBytes"].as_f64().unwrap()
-                    / entry["usableBytes"].as_f64().unwrap();
-                let fit = (1.0 - (ratio - 0.6).abs() / 0.6).clamp(0.0, 1.0);
-                assert!(fit > 0.0 && fit < 1.0, "{bandwidth}: fit {fit}");
-                close(&scores["fit"], fit);
-                let bits = quant_bits(entry["quant"].as_str().unwrap()).unwrap();
-                let speed =
-                    (bandwidth * (4.7 / bits).clamp(0.0, 1.0) * (7e9 / 8e9)).clamp(0.0, 1.0);
-                close(&scores["speed"], speed);
-                close(&scores["recency"], 0.5);
-                close(&scores["capability"], 1.0);
-                close(
-                    &entry["score"],
-                    0.3 * quality + 0.2 * fit + 0.2 * speed + 0.15 * 0.5 + 0.15,
-                );
+                let result = recommend_detailed(&catalog, &hardware, &perf(), &options).unwrap();
+                assert_eq!(result["hardware"]["memoryKind"], kind);
+                let ranked = result["ranked"].as_array().unwrap();
+                assert_eq!(ranked.len(), 3, "{bandwidth}");
+                for entry in ranked {
+                    let scores = &entry["scores"];
+                    let quality = if entry["id"] == "llama3.1:8b-no-proxy" {
+                        class
+                    } else {
+                        0.5 * class + 0.5 * proxy
+                    };
+                    close(&scores["quality"], quality);
+                    let ratio = entry["requiredBytes"].as_f64().unwrap()
+                        / entry["usableBytes"].as_f64().unwrap();
+                    let fit = (1.0 - (ratio - 0.6).abs() / 0.6).clamp(0.0, 1.0);
+                    assert!(fit > 0.0 && fit < 1.0, "{bandwidth}: fit {fit}");
+                    close(&scores["fit"], fit);
+                    let bits = quant_bits(entry["quant"].as_str().unwrap()).unwrap();
+                    let speed =
+                        (bandwidth * (4.7 / bits).clamp(0.0, 1.0) * (7e9 / 8e9)).clamp(0.0, 1.0);
+                    close(&scores["speed"], speed);
+                    close(&scores["recency"], 0.5);
+                    close(&scores["capability"], capability);
+                    close(
+                        &entry["score"],
+                        0.3 * quality + 0.2 * fit + 0.2 * speed + 0.15 * 0.5 + 0.15 * capability,
+                    );
+                }
+                assert!(ranked.iter().any(|entry| entry["quant"] == "Q8_0"));
             }
         }
     }
