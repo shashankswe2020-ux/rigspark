@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "kind": "image",
-  "generatedAt": "2026-10-12T12:05:36Z",
+  "generatedAt": "2026-10-19T09:58:47Z",
   "requiresReview": true,
   "knownCandidates": [
     "flux1-schnell:fp16",
@@ -55,7 +55,25 @@
       "reason": "not auto-added: no reviewed built-in workflow mapping"
     },
     {
-      "repository": "unsloth/FLUX.1-schnell-GGUF",
+      "repository": "OpenVINO/FLUX.1-schnell-int8-ov",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "OpenVINO/FLUX.1-schnell-int4-ov",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "HelloSun/FLUX.1-schnell-OpenVINO-INT4",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "Haijun-AI/FLUX.1-schnell-GGUF",
       "pipelineTag": "text-to-image",
       "license": null,
       "reason": "not auto-added: no reviewed built-in workflow mapping"
@@ -409,18 +427,6 @@
       "reason": "not auto-added: no reviewed built-in workflow mapping"
     },
     {
-      "repository": "OpenVINO/FLUX.1-schnell-int8-ov",
-      "pipelineTag": "text-to-image",
-      "license": null,
-      "reason": "not auto-added: no reviewed built-in workflow mapping"
-    },
-    {
-      "repository": "OpenVINO/FLUX.1-schnell-int4-ov",
-      "pipelineTag": "text-to-image",
-      "license": null,
-      "reason": "not auto-added: no reviewed built-in workflow mapping"
-    },
-    {
       "repository": "dhairyashil/FLUX.1-schnell-mflux-4bit",
       "pipelineTag": "text-to-image",
       "license": null,
@@ -488,6 +494,12 @@
     },
     {
       "repository": "AINovice2005/FLUX.1-schnell-smashed",
+      "pipelineTag": "text-to-image",
+      "license": null,
+      "reason": "not auto-added: no reviewed built-in workflow mapping"
+    },
+    {
+      "repository": "unsloth/FLUX.1-schnell-GGUF",
       "pipelineTag": "text-to-image",
       "license": null,
       "reason": "not auto-added: no reviewed built-in workflow mapping"
@@ -620,18 +632,6 @@
     },
     {
       "repository": "illusion615/FLUX.1-schnell-MLX",
-      "pipelineTag": "text-to-image",
-      "license": null,
-      "reason": "not auto-added: no reviewed built-in workflow mapping"
-    },
-    {
-      "repository": "sameernig/FLUX.1-schnell-gguf",
-      "pipelineTag": "text-to-image",
-      "license": null,
-      "reason": "not auto-added: no reviewed built-in workflow mapping"
-    },
-    {
-      "repository": "Sky999lee/FLUX.1-schnell_io32_amdgpu",
       "pipelineTag": "text-to-image",
       "license": null,
       "reason": "not auto-added: no reviewed built-in workflow mapping"
