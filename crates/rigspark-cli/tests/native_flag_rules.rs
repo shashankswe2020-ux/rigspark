@@ -293,3 +293,31 @@ fn parity_input_is_capped_at_eight_mib_and_1024_requests() {
         );
     }
 }
+
+#[test]
+fn chat_and_migrate_refuse_parity_mode() {
+    for command in ["chat", "migrate"] {
+        rejects(
+            &[command, "--parity"],
+            "advice and lifecycle options cannot be used with chat or migrate",
+        );
+    }
+}
+
+#[test]
+fn refresh_belongs_to_catalog_outside_parity() {
+    let rule = "--refresh is only supported by catalog";
+    rejects(&["catalog", "--refresh", "--parity"], rule);
+    passes_rule(&["catalog", "--refresh"], rule);
+}
+
+#[test]
+fn json_chat_reads_at_most_one_mib_from_stdin() {
+    let rule = "chat input exceeds 1 MiB";
+    let limit = 1024 * 1024;
+    let over = invoke(&["chat", "--json"], Some(&vec![b'x'; limit + 1]));
+    assert_eq!(over.status.code(), Some(1), "{}", stderr(&over));
+    assert!(stderr(&over).contains(rule), "{}", stderr(&over));
+    let exact = invoke(&["chat", "--json"], Some(&vec![b'x'; limit]));
+    assert!(!stderr(&exact).contains(rule), "{}", stderr(&exact));
+}
