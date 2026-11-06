@@ -798,6 +798,8 @@
         "provenance": "auto",
         "default": false,
         "source": "https://huggingface.co/Comfy-Org/Ming-Image",
+        "workflow": "ming-design",
+        "workflowSource": "https://github.com/Comfy-Org/workflow_templates/blob/99e3d43745926b78466d99f937c0cd2bb622423a/templates/image_ming_image_01_design_t2i.json",
         "files": [
           {
             "role": "diffusion",
@@ -813,9 +815,9 @@
             "folder": "text_encoders",
             "repo": "Comfy-Org/Ming-Image",
             "revision": "53654871e47a5d2daed7b3a986cbf1010ef81c78",
-            "file": "text_encoders/ming_image_0.1_ling_mini_2.0_w4a8.safetensors",
-            "sha256": "91de4cd0718bec1452b74ff3b0df0dfde280493dab384f0eb4007c18bf932ccd",
-            "bytes": 12813574339
+            "file": "text_encoders/ming_image_0.1_ling_mini_2.0_int8_convrot.safetensors",
+            "sha256": "9d9f31cfce37c24ae1589287f5c33bd9dda80e14ddf773b5e17a0bb69c8cc4b1",
+            "bytes": 19507670525
           },
           {
             "role": "vae",
