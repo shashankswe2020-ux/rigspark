@@ -656,3 +656,336 @@ pub fn observation(entry: &CatalogModel, checked_at: &str) -> Value {
         "model": entry,
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn cursor(bytes: &[u8]) -> Cursor<'_> {
+        Cursor { bytes, offset: 0 }
+    }
+    fn le(value: u64) -> Vec<u8> {
+        value.to_le_bytes().to_vec()
+    }
+    fn array_header(item: u32, length: u64) -> Vec<u8> {
+        let mut bytes = item.to_le_bytes().to_vec();
+        bytes.extend(le(length));
+        bytes
+    }
+    fn gguf(pairs: &[(&str, GgufValue)], tensors: &[(&str, u64)]) -> Gguf {
+        Gguf {
+            metadata: pairs
+                .iter()
+                .map(|(key, value)| ((*key).to_owned(), value.clone()))
+                .collect(),
+            tensors: tensors
+                .iter()
+                .map(|(name, elements)| Tensor {
+                    name: (*name).to_owned(),
+                    elements: *elements,
+                })
+                .collect(),
+        }
+    }
+    fn llama(extra: &[(&str, GgufValue)]) -> Gguf {
+        let mut pairs = vec![
+            ("general.architecture", GgufValue::Text("llama".into())),
+            ("llama.block_count", GgufValue::Unsigned(32)),
+            ("llama.embedding_length", GgufValue::Unsigned(4096)),
+            ("llama.attention.head_count", GgufValue::Unsigned(32)),
+            ("llama.attention.head_count_kv", GgufValue::Unsigned(8)),
+        ];
+        for (key, value) in extra {
+            pairs.retain(|(existing, _)| existing != key);
+            pairs.push((key, value.clone()));
+        }
+        gguf(&pairs, &[])
+    }
+
+    #[test]
+    fn repository_names_are_short_lowercase_slugs() {
+        for good in ["qwen3", "llama3.1", "gpt-oss", "a_b", &"a".repeat(128)] {
+            assert!(repository_name(good), "{good}");
+        }
+        for bad in [
+            "",
+            "-qwen",
+            ".qwen",
+            "Qwen",
+            "qwen 3",
+            "qwen/3",
+            &"a".repeat(129),
+        ] {
+            assert!(!repository_name(bad), "{bad}");
+        }
+        assert_eq!(capability("embedding"), Some("embedding"));
+        assert_eq!(capability("thinking"), Some("reasoning"));
+        assert_eq!(capability("cloud"), None);
+    }
+
+    #[test]
+    fn library_listing_skips_repeats_and_accepts_pages_up_to_four_mib() {
+        let anchor = |name: &str| {
+            format!(r#"<a href="/library/{name}" class="group w-full space-y-5">{name}</a>"#)
+        };
+        let html = format!("{}{}{}", anchor("qwen3"), anchor("gemma3"), anchor("qwen3"));
+        let names: Vec<_> = parse_library(&html)
+            .unwrap()
+            .into_iter()
+            .map(|entry| entry.repository)
+            .collect();
+        assert_eq!(names, ["qwen3", "gemma3"]);
+        let mut large = anchor("qwen3");
+        // A literal, not MAX_HTML_BYTES, so a wrong constant cannot also move the test.
+        large.push_str(&" ".repeat(4 * 1024 * 1024 - large.len()));
+        assert_eq!(parse_library(&large).unwrap().len(), 1);
+        large.push(' ');
+        assert!(parse_library(&large).is_err());
+    }
+
+    #[test]
+    fn registry_config_fields_are_short_printable_and_present() {
+        let config = |family: &str| {
+            json!({"model_family": family, "model_type": "7B", "file_type": "Q4_0"}).to_string()
+        };
+        assert!(RegistryConfig::parse(&config(&"l".repeat(64))).is_ok());
+        for bad in ["", "llama\u{7}", &"l".repeat(65)] {
+            assert!(RegistryConfig::parse(&config(bad)).is_err(), "{bad:?}");
+        }
+        let padded = json!({"model_family": "llama", "model_type": "7B", "file_type": "Q4_0",
+            "pad": "x".repeat(64 * 1024 - 100)})
+        .to_string();
+        assert!(padded.len() <= 64 * 1024);
+        assert!(RegistryConfig::parse(&padded).is_ok());
+    }
+
+    #[test]
+    fn scalars_decode_every_width_and_sign() {
+        let cases = [
+            (0, vec![200], GgufValue::Unsigned(200)),
+            (1, (-5i8).to_le_bytes().to_vec(), GgufValue::Signed(-5)),
+            (
+                2,
+                60_000u16.to_le_bytes().to_vec(),
+                GgufValue::Unsigned(60_000),
+            ),
+            (3, (-300i16).to_le_bytes().to_vec(), GgufValue::Signed(-300)),
+            (
+                4,
+                4_000_000_000u32.to_le_bytes().to_vec(),
+                GgufValue::Unsigned(4_000_000_000),
+            ),
+            (
+                5,
+                (-70_000i32).to_le_bytes().to_vec(),
+                GgufValue::Signed(-70_000),
+            ),
+            (6, 1.5f32.to_le_bytes().to_vec(), GgufValue::Float(1.5)),
+            (7, vec![1], GgufValue::Bool(true)),
+            (7, vec![0], GgufValue::Bool(false)),
+            (10, le(u64::MAX - 1), GgufValue::Unsigned(u64::MAX - 1)),
+            (
+                11,
+                (i64::MIN + 1).to_le_bytes().to_vec(),
+                GgufValue::Signed(i64::MIN + 1),
+            ),
+            (12, 0.1f64.to_le_bytes().to_vec(), GgufValue::Float(0.1)),
+        ];
+        for (kind, bytes, expected) in cases {
+            let mut reader = cursor(&bytes);
+            assert_eq!(reader.scalar(kind), Ok(expected), "type {kind}");
+            assert_eq!(reader.offset, bytes.len(), "type {kind}");
+        }
+        assert!(matches!(
+            cursor(&[0; 8]).scalar(13),
+            Err(GgufError::Invalid(_))
+        ));
+    }
+
+    #[test]
+    fn signed_metadata_reads_as_unsigned_only_when_non_negative() {
+        let parsed = gguf(
+            &[("a", GgufValue::Signed(5)), ("b", GgufValue::Signed(-1))],
+            &[],
+        );
+        assert_eq!(parsed.u64("a"), Some(5));
+        assert_eq!(parsed.u64("b"), None);
+    }
+
+    #[test]
+    fn reads_may_end_exactly_at_the_header_cap_but_not_past_it() {
+        const CAP: usize = 64 * 1024 * 1024;
+        let header = vec![0u8; CAP];
+        let mut at_cap = Cursor {
+            bytes: &header,
+            offset: CAP - 1,
+        };
+        assert!(at_cap.take(1).is_ok());
+        let mut past_cap = Cursor {
+            bytes: &[],
+            offset: CAP - 1,
+        };
+        assert_eq!(
+            past_cap.take(2).err(),
+            Some(GgufError::Invalid("GGUF header exceeds 64 MiB"))
+        );
+    }
+
+    #[test]
+    fn string_lengths_are_bounded_before_reading() {
+        const LIMIT: u64 = 16 * 1024 * 1024;
+        assert_eq!(
+            cursor(&le(LIMIT)).text(Text::Value),
+            Err(GgufError::Truncated)
+        );
+        assert_eq!(
+            cursor(&le(LIMIT + 1)).text(Text::Value),
+            Err(GgufError::Invalid("GGUF string too long"))
+        );
+        let name = |length: usize| {
+            let mut bytes = le(length as u64);
+            bytes.extend(vec![b'a'; length]);
+            bytes
+        };
+        assert_eq!(
+            cursor(&name(1024)).text(Text::Name),
+            Ok(Some("a".repeat(1024)))
+        );
+        assert_eq!(
+            cursor(&name(1025)).text(Text::Name),
+            Err(GgufError::Invalid("GGUF name too long"))
+        );
+    }
+
+    #[test]
+    fn arrays_nest_one_level_and_bound_their_length() {
+        let mut nested = array_header(9, 1);
+        nested.extend(array_header(0, 0));
+        assert_eq!(cursor(&nested).value(9, 0), Ok(GgufValue::Array(1)));
+        let mut deeper = array_header(9, 1);
+        deeper.extend(array_header(9, 1));
+        deeper.extend(array_header(0, 0));
+        assert_eq!(
+            cursor(&deeper).value(9, 0),
+            Err(GgufError::Invalid("nested GGUF arrays are too deep"))
+        );
+        const LIMIT: u64 = 64 * 1024 * 1024;
+        assert_eq!(
+            cursor(&array_header(0, LIMIT)).value(9, 0),
+            Err(GgufError::Truncated)
+        );
+        assert_eq!(
+            cursor(&array_header(0, LIMIT + 1)).value(9, 0),
+            Err(GgufError::Invalid("GGUF array too long"))
+        );
+    }
+
+    #[test]
+    fn tensor_and_metadata_counts_are_bounded() {
+        let header = |tensors: u64, metadata: u64| {
+            let mut bytes = b"GGUF".to_vec();
+            bytes.extend(3u32.to_le_bytes());
+            bytes.extend(le(tensors));
+            bytes.extend(le(metadata));
+            parse_gguf(&bytes).err()
+        };
+        assert_eq!(header(100_000, 0), Some(GgufError::Truncated));
+        assert_eq!(header(0, 65_536), Some(GgufError::Truncated));
+        let implausible = Some(GgufError::Invalid("implausible GGUF counts"));
+        assert_eq!(header(100_001, 0), implausible);
+        assert_eq!(header(0, 65_537), implausible);
+    }
+
+    #[test]
+    fn kv_geometry_needs_whole_heads_and_a_nonzero_cache() {
+        assert_eq!(
+            kv_bytes_per_token(&llama(&[])),
+            Some(32.0 * 8.0 * 256.0 * 2.0)
+        );
+        // Arrays under other keys (rope sections) do not make attention non-uniform.
+        let rope = llama(&[("llama.rope.dimension_sections", GgufValue::Array(4))]);
+        assert_eq!(kv_bytes_per_token(&rope), Some(32.0 * 8.0 * 256.0 * 2.0));
+        let per_layer = llama(&[("llama.attention.head_count_kv", GgufValue::Array(32))]);
+        assert_eq!(kv_bytes_per_token(&per_layer), None);
+        for heads in [0, 3] {
+            let odd = llama(&[("llama.attention.head_count", GgufValue::Unsigned(heads))]);
+            assert_eq!(kv_bytes_per_token(&odd), None, "{heads} heads");
+        }
+        let empty = llama(&[("llama.block_count", GgufValue::Unsigned(0))]);
+        assert_eq!(kv_bytes_per_token(&empty), None);
+    }
+
+    #[test]
+    fn active_parameters_need_a_plausible_routed_expert_count() {
+        let moe = |used: u64| {
+            gguf(
+                &[
+                    ("general.architecture", GgufValue::Text("qwen3moe".into())),
+                    ("qwen3moe.expert_count", GgufValue::Unsigned(8)),
+                    ("qwen3moe.expert_used_count", GgufValue::Unsigned(used)),
+                ],
+                &[
+                    ("token_embd.weight", 1000),
+                    ("blk.0.ffn_up_exps.weight", 8000),
+                ],
+            )
+        };
+        assert_eq!(active_params(&moe(2)), Some(1000.0 + 2000.0));
+        assert_eq!(active_params(&moe(8)), Some(9000.0));
+        assert_eq!(active_params(&moe(0)), None);
+        assert_eq!(active_params(&moe(9)), None);
+    }
+
+    #[test]
+    fn gguf_license_ids_map_to_catalog_licenses() {
+        for (id, expected) in [
+            ("Apache 2.0", "apache-2.0"),
+            ("MIT", "mit"),
+            ("bsd-3-clause", "bsd-3-clause"),
+            ("cc-by-4.0", "cc-by-4.0"),
+            ("cc-by-sa-4.0", "cc-by-sa-4.0"),
+            ("gemma", "gemma"),
+            ("llama2", "llama-2-community"),
+            ("llama3", "llama-3-community"),
+            ("llama3.1", "llama-3.1-community"),
+            ("llama3.2", "llama-3.2-community"),
+            ("llama3.3", "llama-3.3-community"),
+        ] {
+            assert_eq!(gguf_license(id, None), Some(expected), "{id}");
+        }
+        assert_eq!(gguf_license("other", Some("mit")), Some("mit"));
+        assert_eq!(gguf_license("other", None), None);
+        assert_eq!(gguf_license("proprietary", None), None);
+    }
+
+    #[test]
+    fn license_files_are_recognised_by_their_opening() {
+        assert_eq!(
+            blob_license("Apache License\nVersion 2.0, January 2004"),
+            Some("apache-2.0")
+        );
+        assert_eq!(blob_license("Apache License\nVersion 1.1"), None);
+        let grant = "Permission is hereby granted, free of charge, to any person obtaining a copy";
+        assert_eq!(
+            blob_license(&format!("MIT License\n\n{grant}")),
+            Some("mit")
+        );
+        assert_eq!(
+            blob_license(&format!("Copyright (c) 2025 Example\n\n{grant}")),
+            Some("mit")
+        );
+        assert_eq!(
+            blob_license("MIT License\n\nCopyright (c) 2025 Example"),
+            None
+        );
+        assert_eq!(blob_license(&format!("Some terms\n\n{grant}")), None);
+    }
+
+    #[test]
+    fn parameter_labels_use_the_largest_whole_unit() {
+        assert_eq!(parameter_label(7e9), "7B");
+        assert_eq!(parameter_label(1.5e9), "1.5B");
+        assert_eq!(parameter_label(3e8), "300M");
+        assert_eq!(parameter_label(2.5e12), "2.5T");
+    }
+}
