@@ -2154,4 +2154,249 @@ mod boundary_tests {
         key(&mut empty, KeyCode::Enter);
         assert!(empty.focus == Focus::List);
     }
+
+    fn describe(entry: &Entry) -> String {
+        match entry {
+            Entry::Heading(text) => format!("heading {text}"),
+            Entry::Field { key, value } => format!("field {key}={value}"),
+            Entry::Note(text) => format!("note {text}"),
+            Entry::Plain(text) => format!("plain {text}"),
+            Entry::Blank => "blank".into(),
+        }
+    }
+    fn line_text(line: &Line) -> String {
+        line.spans
+            .iter()
+            .map(|span| span.content.as_ref())
+            .collect()
+    }
+    fn field(key: &str, value: &str) -> Entry {
+        Entry::Field {
+            key: key.into(),
+            value: value.into(),
+        }
+    }
+
+    #[test]
+    fn only_a_leading_label_becomes_the_evidence_heading() {
+        let entries = |label: &str, evidence: &str| {
+            let mut entries = Vec::new();
+            evidence_entries(&row(label, "", evidence), &mut entries);
+            entries.iter().map(describe).collect::<Vec<_>>()
+        };
+        assert_eq!(
+            entries("a:1b", "a:1b; verdict yes; a:1b"),
+            ["heading a:1b", "field verdict=yes", "field =a:1b"]
+        );
+        assert_eq!(
+            entries("a:1b", "b:1b; verdict no"),
+            ["field =b:1b", "field verdict=no"]
+        );
+    }
+
+    #[test]
+    fn detail_keys_align_to_a_third_of_the_width_from_30_columns() {
+        let theme = Theme::new(true);
+        let key_style = theme.muted();
+        let entries = [field("fit", "yes"), field("throughput backend", "ollama")];
+        let lines = layout(&entries, 30, theme, key_style);
+        let texts: Vec<_> = lines.iter().map(line_text).collect();
+        // The longest key (18 cells) is capped at 30 / 3 = 10, so short keys pad to 10.
+        assert_eq!(texts[0], format!("{}fit yes", " ".repeat(7)));
+        assert_eq!(texts[1], "throughput backend ollama");
+        assert_eq!(lines[0].spans[3].style, theme.verdict("yes"));
+        assert_eq!(lines[1].spans[3].style, Style::default());
+        // Below 30 columns keys and values simply run together.
+        let narrow: Vec<_> = layout(&entries, 29, theme, key_style)
+            .iter()
+            .map(line_text)
+            .collect();
+        assert_eq!(narrow, ["fit yes", "throughput backend ollama"]);
+    }
+
+    #[test]
+    fn detail_values_wrap_after_the_key_indent() {
+        let theme = Theme::new(false);
+        let wrapped = |value: &str| {
+            layout(&[field("fit", value)], 30, theme, Style::default())
+                .iter()
+                .map(line_text)
+                .collect::<Vec<_>>()
+        };
+        // "fit" plus one space leaves 26 columns for the value.
+        let fits = "abcde ".repeat(4) + "ab";
+        assert_eq!(wrapped(&fits), [format!("fit {fits}")]);
+        let over = fits.clone() + "c";
+        assert_eq!(wrapped(&over).len(), 2);
+        // An unkeyed value is indented as a single raw span.
+        let lines = layout(
+            &[field("fit", "yes"), field("", "loose")],
+            30,
+            theme,
+            Style::default(),
+        );
+        assert_eq!(line_text(&lines[1]), "    loose");
+        assert_eq!(lines[1].spans.len(), 2);
+    }
+
+    #[test]
+    fn comparison_keeps_every_unkeyed_note() {
+        let mut view = view(vec![
+            row("a:1b", "", "a:1b; first note; second note"),
+            row("b:1b", "", "b:1b; verdict yes"),
+        ]);
+        view.marked = vec![0, 1];
+        let lines = compare_lines(&view, 120, Theme::new(false)).unwrap();
+        let text: Vec<_> = lines.iter().map(line_text).collect();
+        assert!(
+            text.iter().any(|line| line.contains("first note")),
+            "{text:?}"
+        );
+        assert!(
+            text.iter().any(|line| line.contains("second note")),
+            "{text:?}"
+        );
+    }
+
+    fn draw(view: &mut ModelView, width: u16, height: u16) -> ratatui::buffer::Buffer {
+        let backend = ratatui::backend::TestBackend::new(width, height);
+        let mut terminal = ratatui::Terminal::new(backend).unwrap();
+        terminal.draw(|frame| render(frame, view)).unwrap();
+        terminal.backend().buffer().clone()
+    }
+    fn screen(buffer: &ratatui::buffer::Buffer) -> Vec<String> {
+        buffer
+            .content
+            .chunks(usize::from(buffer.area.width))
+            .map(|row| row.iter().map(|cell| cell.symbol()).collect())
+            .collect()
+    }
+    fn wide_labels() -> ModelView {
+        let mut view = three();
+        view.rows[0].label = "alphabet-model:8b".into();
+        view
+    }
+
+    #[test]
+    fn rendering_records_where_rows_and_header_cells_are() {
+        let mut view = three();
+        view.sort = Some((1, true));
+        let text = screen(&draw(&mut view, 120, 30)).join("\n");
+        assert!(text.contains("Rank ▼"), "{text}");
+        assert!(
+            !text.contains("Model ▼") && !text.contains("Need ▼"),
+            "{text}"
+        );
+        let rows = view.areas.rows;
+        let header: Vec<_> = view
+            .areas
+            .header
+            .iter()
+            .map(|(_, column)| *column)
+            .collect();
+        assert_eq!(header, [0, 1, 2, 3]);
+        let first = view.areas.header[0].0;
+        let last = view.areas.header.last().unwrap().0;
+        assert_eq!(
+            (first.x, first.y, first.height),
+            (rows.x + 2, rows.y - 1, 1)
+        );
+        assert!(last.right() <= rows.right(), "{last:?} within {rows:?}");
+        assert_eq!(usize::from(rows.height), view.page);
+        // At 120 columns the detail pane sits to the right of the list.
+        assert!(view.areas.detail.x >= rows.right());
+        draw(&mut view, 109, 30);
+        assert_eq!(view.areas.detail.x, 0);
+        assert!(view.areas.detail.y > view.areas.rows.y);
+    }
+
+    #[test]
+    fn columns_drop_by_priority_when_the_table_is_narrow() {
+        // Model 19 cells; Rank, Need, Verdict 6, 7 and 9, each plus one space.
+        for width in 30..110 {
+            let mut view = wide_labels();
+            draw(&mut view, width, 12);
+            let available = usize::from(view.areas.rows.width) - 2;
+            let shown = view.areas.header.len() - 1;
+            let expected = match available {
+                44.. => 3,
+                34..44 => 2,
+                26..34 => 1,
+                _ => 0,
+            };
+            assert_eq!(shown, expected, "width {width}, available {available}");
+        }
+    }
+
+    #[test]
+    fn empty_results_offer_a_reset_only_when_filtered() {
+        let hint = |view: &mut ModelView| {
+            screen(&draw(view, 80, 20))
+                .join("\n")
+                .contains("Ctrl+U resets the filter")
+        };
+        let mut view = three();
+        view.append_query("zzz");
+        assert!(hint(&mut view));
+        let mut view = three();
+        view.rows.retain(|row| row.label != "alpha:8b");
+        view.filter();
+        view.verdict_filter = Some(Verdict::Yes);
+        view.filter();
+        assert!(hint(&mut view));
+        assert!(!hint(&mut view_with_no_rows()));
+    }
+
+    #[test]
+    fn machine_context_grows_with_the_terminal() {
+        let shown = |lines: Vec<String>, height: u16| {
+            let mut view = ModelView::new("Recommend", lines, Vec::new(), true).unwrap();
+            let buffer = draw(&mut view, 80, height);
+            (screen(&buffer).join("\n"), buffer)
+        };
+        let one = || vec!["Machine: test".to_owned()];
+        let (text, _) = shown(one(), 28);
+        assert!(text.contains("Machine / scope"), "{text}");
+        let (text, _) = shown(one(), 27);
+        assert!(!text.contains("Machine / scope") && text.contains("Machine: test"));
+        let (text, _) = shown(one(), 12);
+        assert!(text.contains("Machine: test"));
+        let (text, _) = shown(one(), 11);
+        assert!(!text.contains("Machine: test"));
+        // Two compact lines do not earn a panel.
+        let two = || vec!["Machine: test".to_owned(), "Scope: all".to_owned()];
+        let (text, _) = shown(two(), 20);
+        assert!(!text.contains("Machine / scope") && text.contains("Scope: all"));
+        // In the panel only the first line is emphasised.
+        let (text, buffer) = shown(two(), 28);
+        let theme = Theme::new(true);
+        let cell = |needle: &str| {
+            let (row, line) = screen(&buffer)
+                .into_iter()
+                .enumerate()
+                .find(|(_, line)| line.contains(needle))
+                .unwrap_or_else(|| panic!("{needle}: {text}"));
+            let start = line.find(needle).unwrap();
+            let column = line[..start].chars().count();
+            buffer[(u16::try_from(column).unwrap(), u16::try_from(row).unwrap())].fg
+        };
+        assert_ne!(Some(cell("Machine: test")), theme.muted().fg);
+        assert_eq!(Some(cell("Scope: all")), theme.muted().fg);
+    }
+
+    #[test]
+    fn toasts_sit_in_the_bottom_right_of_the_body() {
+        let mut view = three();
+        key(&mut view, KeyCode::Char('y'));
+        let lines = screen(&draw(&mut view, 80, 20));
+        let (row, line) = lines
+            .iter()
+            .enumerate()
+            .find(|(_, line)| line.contains("Copied model id"))
+            .unwrap();
+        // The body ends above the status and footer lines; the toast's text is its middle row.
+        assert_eq!(row, 20 - 2 - 2);
+        let end = line.find("clipboard").unwrap() + "clipboard".len();
+        assert_eq!(line[end..].chars().count(), 2, "{line:?}");
+    }
 }
