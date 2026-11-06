@@ -736,7 +736,8 @@ mod tests {
             .collect();
         assert_eq!(names, ["qwen3", "gemma3"]);
         let mut large = anchor("qwen3");
-        large.push_str(&" ".repeat(MAX_HTML_BYTES - large.len()));
+        // A literal, not MAX_HTML_BYTES, so a wrong constant cannot also move the test.
+        large.push_str(&" ".repeat(4 * 1024 * 1024 - large.len()));
         assert_eq!(parse_library(&large).unwrap().len(), 1);
         large.push(' ');
         assert!(parse_library(&large).is_err());
@@ -752,9 +753,9 @@ mod tests {
             assert!(RegistryConfig::parse(&config(bad)).is_err(), "{bad:?}");
         }
         let padded = json!({"model_family": "llama", "model_type": "7B", "file_type": "Q4_0",
-            "pad": "x".repeat(MAX_CONFIG_BYTES - 100)})
+            "pad": "x".repeat(64 * 1024 - 100)})
         .to_string();
-        assert!(padded.len() <= MAX_CONFIG_BYTES);
+        assert!(padded.len() <= 64 * 1024);
         assert!(RegistryConfig::parse(&padded).is_ok());
     }
 
@@ -813,15 +814,16 @@ mod tests {
 
     #[test]
     fn reads_may_end_exactly_at_the_header_cap_but_not_past_it() {
-        let header = vec![0u8; MAX_GGUF_HEADER_BYTES];
+        const CAP: usize = 64 * 1024 * 1024;
+        let header = vec![0u8; CAP];
         let mut at_cap = Cursor {
             bytes: &header,
-            offset: MAX_GGUF_HEADER_BYTES - 1,
+            offset: CAP - 1,
         };
         assert!(at_cap.take(1).is_ok());
         let mut past_cap = Cursor {
             bytes: &[],
-            offset: MAX_GGUF_HEADER_BYTES - 1,
+            offset: CAP - 1,
         };
         assert_eq!(
             past_cap.take(2).err(),
