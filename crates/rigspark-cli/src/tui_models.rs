@@ -2150,6 +2150,8 @@ mod boundary_tests {
         assert!(view.focus == Focus::Detail);
         key(&mut view, KeyCode::Enter);
         assert!(view.focus == Focus::List);
+        key(&mut view, KeyCode::Right);
+        assert!(view.focus == Focus::Detail);
         let mut empty = view_with_no_rows();
         key(&mut empty, KeyCode::Enter);
         assert!(empty.focus == Focus::List);
