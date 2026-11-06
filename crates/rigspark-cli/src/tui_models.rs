@@ -2369,6 +2369,11 @@ mod boundary_tests {
         let two = || vec!["Machine: test".to_owned(), "Scope: all".to_owned()];
         let (text, _) = shown(two(), 20);
         assert!(!text.contains("Machine / scope") && text.contains("Scope: all"));
+        // Compact lines are indented one column, under the header.
+        assert!(
+            text.lines().nth(1).unwrap().starts_with(" Machine: test"),
+            "{text}"
+        );
         // In the panel only the first line is emphasised.
         let (text, buffer) = shown(two(), 28);
         let theme = Theme::new(true);
@@ -2443,5 +2448,119 @@ mod boundary_tests {
         assert!(!lines[alpha - 1].contains("alpha"));
         assert!(lines[alpha + 1].contains("1 | 5.2 GiB"), "{lines:#?}");
         assert!(lines[beta + 1].contains("verdict"), "{lines:#?}");
+    }
+
+    #[test]
+    fn overview_focus_titles_the_body_even_without_a_context_panel() {
+        let mut view = three();
+        view.focus(Focus::Overview);
+        // At 11 rows there is no machine context above the body.
+        let text = screen(&draw(&mut view, 80, 11)).join("\n");
+        assert!(text.contains("Machine / scope"), "{text}");
+        assert!(!text.contains("Evidence"), "{text}");
+    }
+
+    #[test]
+    fn header_cells_follow_the_table_wherever_it_is_placed() {
+        let mut view = three();
+        let backend = ratatui::backend::TestBackend::new(120, 20);
+        let mut terminal = ratatui::Terminal::new(backend).unwrap();
+        terminal
+            .draw(|frame| {
+                render_table(
+                    frame,
+                    &mut view,
+                    Rect::new(10, 0, 100, 20),
+                    Theme::new(true),
+                );
+            })
+            .unwrap();
+        let first = view.areas.header[0].0;
+        assert_eq!(first.x, view.areas.rows.x + 2);
+        assert!(view.areas.rows.x > 10);
+    }
+
+    #[test]
+    fn toasts_need_three_body_rows() {
+        let mut view = three();
+        key(&mut view, KeyCode::Char('y'));
+        for height in 1..6 {
+            let text = screen(&draw(&mut view, 80, height)).join("\n");
+            assert!(!text.contains("Copied"), "{height}: {text}");
+        }
+        // Header, status and footer take a row each: six rows leave a three-row body.
+        let text = screen(&draw(&mut view, 80, 6)).join("\n");
+        assert!(text.contains("Copied"), "{text}");
+    }
+
+    #[test]
+    fn status_bar_reports_filter_position_and_sort() {
+        let status = |view: &mut ModelView| screen(&draw(view, 120, 20))[18].clone();
+        let mut view = three();
+        assert!(status(&mut view).contains("1/3"), "{}", status(&mut view));
+        assert!(!status(&mut view).contains("Filter"));
+        view.append_query("a");
+        view.searching = false;
+        assert!(
+            status(&mut view).contains(" Filter a"),
+            "{}",
+            status(&mut view)
+        );
+        let mut view = three();
+        view.sort = Some((1, false));
+        assert!(
+            status(&mut view).contains("sort rank ▲"),
+            "{}",
+            status(&mut view)
+        );
+        view.sort = Some((2, true));
+        assert!(
+            status(&mut view).contains("sort need ▼"),
+            "{}",
+            status(&mut view)
+        );
+        view.sort = None;
+        view.focus(Focus::Detail);
+        let line = status(&mut view);
+        assert!(line.contains("Line 1/") && !line.contains("1/3"), "{line}");
+    }
+
+    #[test]
+    fn footer_hints_match_the_focus() {
+        let footer = |view: &mut ModelView| screen(&draw(view, 120, 20))[19].clone();
+        let mut view = three();
+        let list = footer(&mut view);
+        assert!(
+            list.contains("v verdict") && list.contains("y copy"),
+            "{list}"
+        );
+        let mut bare =
+            ModelView::new("Catalog", Vec::new(), vec![row("a", "", "")], false).unwrap();
+        assert!(
+            !footer(&mut bare).contains("verdict"),
+            "{}",
+            footer(&mut bare)
+        );
+        view.searching = true;
+        let searching = footer(&mut view);
+        assert!(
+            searching.contains("Enter apply") && !searching.contains("verdict"),
+            "{searching}"
+        );
+        view.searching = false;
+        view.focus(Focus::Detail);
+        let detail = footer(&mut view);
+        assert!(
+            detail.contains("Esc back") && detail.contains("Home/End jump"),
+            "{detail}"
+        );
+        assert!(!detail.contains("verdict"), "{detail}");
+        view.focus(Focus::Help);
+        let help = footer(&mut view);
+        assert!(
+            help.contains("Esc back") && !help.contains("jump"),
+            "{help}"
+        );
+        assert!(!help.contains("verdict"), "{help}");
     }
 }
