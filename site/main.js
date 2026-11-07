@@ -81,15 +81,15 @@ document.querySelectorAll(".copy-btn").forEach((btn) => {
     const arch = await architecture();
     if (platform.includes("win") || ua.includes("windows")) {
       const note = arch === "arm" ? "x64 build, runs on Windows on Arm" : "x64 installer, no admin rights needed";
-      return { os: "win-app", label: "Windows", meta: `Free and open source · ${note}` };
+      return { os: "win-app", label: "Windows", meta: `Community Edition · Free and open source · ${note}` };
     }
     if (platform.includes("mac") || ua.includes("mac os")) {
       const chip = arch || macGpuArch();
       if (chip === "x86") {
-        return { os: "mac-app-intel", label: "macOS", meta: "Free and open source · Intel · macOS 12 or later" };
+        return { os: "mac-app-intel", label: "macOS", meta: "Community Edition · Free and open source · Intel · macOS 12 or later" };
       }
       if (chip === "arm") {
-        return { os: "mac-app-arm", label: "macOS", meta: "Free and open source · Apple Silicon · macOS 12 or later" };
+        return { os: "mac-app-arm", label: "macOS", meta: "Community Edition · Free and open source · Apple Silicon · macOS 12 or later" };
       }
       return { os: "mac-app-arm", label: "macOS", meta: "Apple Silicon build · Intel Mac? See other platforms" };
     }
