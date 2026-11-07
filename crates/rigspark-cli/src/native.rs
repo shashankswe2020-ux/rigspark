@@ -2923,3 +2923,44 @@ async fn run_add(args: &Args) -> Result<u8, Box<dyn std::error::Error>> {
     }
     Ok(0)
 }
+
+#[cfg(test)]
+mod input_limit_tests {
+    use super::*;
+
+    #[test]
+    fn shell_quote_leaves_only_safe_words_bare() {
+        assert_eq!(
+            shell_quote("OPENAI_BASE_URL=http://127.0.0.1:8080/v1"),
+            "OPENAI_BASE_URL=http://127.0.0.1:8080/v1"
+        );
+        assert_eq!(shell_quote("user@host"), "user@host");
+        assert_eq!(shell_quote(""), "''");
+        assert_eq!(shell_quote("two words"), "'two words'");
+        assert_eq!(shell_quote("it's"), "'it'\\''s'");
+        assert_eq!(shell_quote("$HOME"), "'$HOME'");
+    }
+
+    #[test]
+    fn bounded_reads_accept_exactly_the_limit() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("input");
+        std::fs::write(&path, "x".repeat(2048)).unwrap();
+        assert_eq!(read_bounded(&path, 2048).unwrap().len(), 2048);
+        let error = read_bounded(&path, 2047).unwrap_err().to_string();
+        assert!(error.ends_with("exceeds 1 KiB"), "{error}");
+        std::fs::write(&path, vec![b' '; 16 * 1024 * 1024]).unwrap();
+        assert_eq!(read_file(&path).unwrap().len(), 16 * 1024 * 1024);
+    }
+
+    #[test]
+    fn hardware_input_is_capped_at_64_kib() {
+        let hardware = r#"{"arch":"x64","platform":"linux","totalRamBytes":68719476736,"freeRamBytes":60000000000,"freeDiskBytes":500000000000,"gpu":[]}"#;
+        let padded = |length: usize| format!("{hardware}{}", " ".repeat(length - hardware.len()));
+        assert!(parse_hardware_input(&padded(65536)).is_ok());
+        let error = parse_hardware_input(&padded(65537))
+            .unwrap_err()
+            .to_string();
+        assert_eq!(error, "hardware input exceeds 64 KiB");
+    }
+}
