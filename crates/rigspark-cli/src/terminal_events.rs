@@ -247,4 +247,75 @@ mod tests {
         assert_eq!(output[0].as_ref().unwrap(), &Event::Resize(1, 1));
         assert_eq!(output[1].as_ref().unwrap(), &key('?', KeyModifiers::NONE));
     }
+
+    #[tokio::test]
+    async fn introducers_without_alt_or_a_leading_escape_are_ordinary_keys() {
+        // Only Alt (or Esc just before) turns these into string introducers. Plain keys
+        // pass through, and a key that is not Esc never consumes the key after it.
+        for introducer in [']', 'P', 'X', '^', '_'] {
+            let input = [
+                key('a', KeyModifiers::NONE),
+                key(introducer, KeyModifiers::NONE),
+                key('q', KeyModifiers::NONE),
+            ];
+            let output: Vec<_> = filtered_events(stream::iter(input.clone().into_iter().map(Ok)))
+                .collect()
+                .await;
+            assert_eq!(
+                output.into_iter().map(Result::unwrap).collect::<Vec<_>>(),
+                input,
+                "{introducer}"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn an_error_right_after_escape_is_reported() {
+        let input = [
+            Ok(Event::Key(KeyCode::Esc.into())),
+            Err(io::Error::other("input failed")),
+        ];
+        let output: Vec<_> = filtered_events(stream::iter(input)).collect().await;
+        assert_eq!(output.len(), 1, "{output:?}");
+        assert_eq!(output[0].as_ref().unwrap_err().to_string(), "input failed");
+    }
+
+    async fn filter(input: Vec<Event>) -> Vec<Event> {
+        filtered_events(stream::iter(input.into_iter().map(Ok)))
+            .map(Result::unwrap)
+            .collect()
+            .await
+    }
+
+    #[tokio::test]
+    async fn strings_swallow_pastes_and_stray_backslashes() {
+        // Only Esc-backslash ends a string; a bare backslash is payload.
+        let output = filter(vec![
+            key(']', KeyModifiers::ALT),
+            Event::Paste("q".into()),
+            key('\\', KeyModifiers::NONE),
+            key('q', KeyModifiers::NONE),
+            key('g', KeyModifiers::CONTROL),
+            key('?', KeyModifiers::NONE),
+        ])
+        .await;
+        assert_eq!(output, [key('?', KeyModifiers::NONE)]);
+    }
+
+    #[tokio::test]
+    async fn finite_payloads_end_at_a_final_byte_or_after_64_keys() {
+        let payload = |length: usize| {
+            let mut input = vec![key('\u{9b}', KeyModifiers::NONE)];
+            input.extend((0..length).map(|_| key('0', KeyModifiers::NONE)));
+            input.extend([key('q', KeyModifiers::NONE), key('?', KeyModifiers::NONE)]);
+            input
+        };
+        // 63 parameter keys: 'q' is still the payload's final byte.
+        assert_eq!(filter(payload(63)).await, [key('?', KeyModifiers::NONE)]);
+        // The 64th key ends the payload, so 'q' is an ordinary key again.
+        assert_eq!(
+            filter(payload(64)).await,
+            [key('q', KeyModifiers::NONE), key('?', KeyModifiers::NONE)]
+        );
+    }
 }
