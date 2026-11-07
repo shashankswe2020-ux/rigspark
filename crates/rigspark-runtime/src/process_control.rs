@@ -435,6 +435,18 @@ where
         }
     }
 }
+/// Polls after a graceful signal before escalating: model servers can take a few
+/// seconds to unload weights (50 ms each, so 3 s).
+const GRACEFUL_POLLS: usize = 60;
+/// Polls after a forced signal (50 ms each, so 0.5 s).
+const FORCED_POLLS: usize = 10;
+
+/// Stop a runtime RigSpark started, identified by `expected`.
+///
+/// Fails closed: a process is only signalled once its identity matches
+/// `expected`. A stale handle is not an error: if nothing listens on the
+/// endpoint and the recorded process is gone (or its PID now belongs to another
+/// program), the runtime is already stopped.
 pub async fn stop_owned(
     endpoint: &str,
     expected: &ProcessIdentity,
@@ -442,12 +454,38 @@ pub async fn stop_owned(
     control: &dyn ProcessControl,
     cancel: &CancellationToken,
 ) -> Result<(), String> {
-    let observed = listener(probe, endpoint, cancel).await?;
-    if !same_process(&observed.identity, expected) {
-        return Err("listener changed; refusing to stop".into());
+    match listener(probe, endpoint, cancel).await {
+        Ok(observed) => {
+            if !same_process(&observed.identity, expected) {
+                return Err("listener changed; refusing to stop".into());
+            }
+        }
+        Err(error) if cancel.is_cancelled() => return Err(error),
+        Err(error) => {
+            // Nothing (identifiable) listens. Decide from the recorded process alone.
+            if !control.alive(expected.pid).await? {
+                return Ok(());
+            }
+            match probe.process(expected.pid).await {
+                Ok(current) if !same_process(&current, expected) => return Ok(()),
+                Ok(_) => {} // still our process, just not listening: stop it below
+                Err(_) => return Err(error),
+            }
+        }
     }
-    for force in [false, true] {
-        let current = tokio::select! {biased;_=cancel.cancelled()=>return Err("cancelled".into()),result=tokio::time::timeout(Duration::from_secs(5),probe.process(expected.pid))=>result.map_err(|_|"process probe timed out")?.map_err(|_|"process identity unavailable")?};
+    for (force, polls) in [(false, GRACEFUL_POLLS), (true, FORCED_POLLS)] {
+        let probed = tokio::select! {biased;_=cancel.cancelled()=>return Err("cancelled".into()),result=tokio::time::timeout(Duration::from_secs(5),probe.process(expected.pid))=>result.map_err(|_|"process probe timed out")?};
+        let current = match probed {
+            Ok(current) => current,
+            Err(_) if !control.alive(expected.pid).await? => return Ok(()),
+            Err(_) => {
+                return Err(if force {
+                    "process identity unavailable after signal".into()
+                } else {
+                    "process identity unavailable".into()
+                });
+            }
+        };
         if !same_process(&current, expected) {
             if force {
                 return Ok(());
@@ -455,20 +493,16 @@ pub async fn stop_owned(
             return Err("process changed; refusing to stop".into());
         }
         control.signal(expected, force).await?;
-        for _ in 0..10 {
+        for _ in 0..polls {
             if !control.alive(expected.pid).await? {
                 return Ok(());
             }
-            let current = match probe.process(expected.pid).await {
-                Ok(current) => current,
-                Err(_) => {
-                    if !control.alive(expected.pid).await? {
-                        return Ok(());
-                    }
-                    return Err("process identity unavailable after signal".into());
-                }
-            };
-            if !same_process(&current, expected) {
+            // An exiting process can briefly fail identity probes (zombie, or
+            // mid-teardown). That's not a failure: keep waiting. The next pass
+            // re-checks identity before any forced signal.
+            if let Ok(current) = probe.process(expected.pid).await
+                && !same_process(&current, expected)
+            {
                 return Ok(());
             }
             tokio::select! {biased;_=cancel.cancelled()=>return Err("cancelled".into()),_=tokio::time::sleep(Duration::from_millis(50))=>()}
