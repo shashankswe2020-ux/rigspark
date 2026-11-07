@@ -12,9 +12,13 @@ fn invoke(args: &[&str], input: Option<&[u8]>) -> Output {
     let directory = tempfile::tempdir().unwrap();
     let blocker = directory.path().join("not-a-directory");
     std::fs::write(&blocker, "unchanged").unwrap();
+    invoke_in(&blocker.join("home"), args, input)
+}
+
+fn invoke_in(home: &std::path::Path, args: &[&str], input: Option<&[u8]>) -> Output {
     let mut child = Command::new(env!("CARGO_BIN_EXE_llmup-native"))
         .args(args)
-        .env("RIGSPARK_HOME", blocker.join("home"))
+        .env("RIGSPARK_HOME", home)
         .env("PATH", "")
         .env("TERM", "dumb")
         .env_remove("RIGSPARK_TUI")
@@ -256,7 +260,7 @@ fn parity_mode_answers_every_command_from_stdin() {
 
 #[test]
 fn runtime_commands_fail_without_a_usable_home() {
-    for args in [vec!["bench"], vec!["connect", "claude"], vec!["add"]] {
+    for args in [vec!["bench"], vec!["connect", "claude"]] {
         let output = invoke(&args, None);
         assert_eq!(
             output.status.code(),
@@ -266,6 +270,21 @@ fn runtime_commands_fail_without_a_usable_home() {
         );
         assert!(output.stdout.is_empty(), "{args:?}");
     }
+}
+
+#[test]
+fn add_lists_added_models_outside_parity() {
+    // Listing is read-only, so it needs no usable home: Windows reports a path
+    // through a file as missing, which reads as an empty list there. Use a real,
+    // empty home so the result is the same everywhere.
+    let home = tempfile::tempdir().unwrap();
+    let output = invoke_in(home.path(), &["add"], None);
+    assert_eq!(output.status.code(), Some(0), "{}", stderr(&output));
+    assert!(
+        String::from_utf8_lossy(&output.stdout).contains("You have not added any models"),
+        "{}",
+        String::from_utf8_lossy(&output.stdout)
+    );
 }
 
 #[test]
