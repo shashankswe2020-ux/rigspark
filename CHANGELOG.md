@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- **Stopping a model server no longer gives up while it shuts down.** After the
+  stop signal, an identity probe can fail briefly while the server exits (seen
+  on macOS with Ollama). `rigspark up` and `down` used to stop with "process
+  identity unavailable after signal" and keep a stale record, even though the
+  server then exited. Now they keep waiting: up to 3 s for a clean exit (model
+  servers unload weights) before forcing.
+  - Still fails closed: a process is only signalled, and only force-stopped,
+    after its identity matches the one RigSpark started.
+  - If nothing listens any more and the recorded process is gone, or its PID
+    now belongs to another program, the server counts as already stopped.
+
 ## 3.0.7 (2026-11-05)
 
 ### Features

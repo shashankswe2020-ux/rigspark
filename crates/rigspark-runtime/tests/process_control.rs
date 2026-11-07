@@ -228,3 +228,165 @@ async fn exit_between_liveness_and_identity_probe_is_not_a_shutdown_failure() {
         assert_eq!(*control.signals.lock().unwrap(), vec![false]);
     }
 }
+
+/// No listener on the endpoint (the server died or was stopped elsewhere).
+struct NoListener {
+    process: Option<ProcessIdentity>,
+}
+#[async_trait::async_trait]
+impl ProcessProbe for NoListener {
+    async fn listener(&self, _: u16, _: &str) -> Result<Listener, StateError> {
+        Err(StateError {
+            kind: "identity",
+            message: "listener identity unavailable".into(),
+        })
+    }
+    async fn process(&self, _: u32) -> Result<ProcessIdentity, StateError> {
+        self.process.clone().ok_or(StateError {
+            kind: "identity",
+            message: "process identity unavailable".into(),
+        })
+    }
+}
+struct Liveness {
+    alive: Vec<bool>,
+    calls: std::sync::atomic::AtomicUsize,
+    signals: Mutex<Vec<bool>>,
+}
+impl Liveness {
+    fn new(alive: &[bool]) -> Self {
+        Self {
+            alive: alive.to_vec(),
+            calls: Default::default(),
+            signals: Mutex::new(Vec::new()),
+        }
+    }
+}
+#[async_trait::async_trait]
+impl ProcessControl for Liveness {
+    async fn occupied(&self, _: &str) -> Result<bool, String> {
+        Ok(false)
+    }
+    async fn spawn(&self, _: &SpawnSpec) -> Result<Box<dyn ChildProcess>, String> {
+        unreachable!()
+    }
+    async fn signal(&self, _: &ProcessIdentity, force: bool) -> Result<(), String> {
+        self.signals.lock().unwrap().push(force);
+        Ok(())
+    }
+    async fn alive(&self, _: u32) -> Result<bool, String> {
+        // the last value repeats
+        let i = self.calls.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        Ok(*self.alive.get(i).unwrap_or(self.alive.last().unwrap()))
+    }
+}
+async fn stop(probe: &dyn ProcessProbe, control: &Liveness) -> Result<(), String> {
+    stop_owned(
+        "http://127.0.0.1:11435",
+        &identity(),
+        probe,
+        control,
+        &CancellationToken::new(),
+    )
+    .await
+}
+
+#[tokio::test]
+async fn stale_handle_with_no_listener_and_no_process_is_already_stopped() {
+    // `down` after the server died must clear the handle, not fail forever.
+    let control = Liveness::new(&[false]);
+    stop(&NoListener { process: None }, &control).await.unwrap();
+    assert!(control.signals.lock().unwrap().is_empty());
+}
+
+#[tokio::test]
+async fn stale_handle_whose_pid_was_reused_is_stopped_without_signalling() {
+    let mut other = identity();
+    other.executable = "/usr/bin/something-else".into();
+    other.started = "later".into();
+    let control = Liveness::new(&[true]);
+    stop(
+        &NoListener {
+            process: Some(other),
+        },
+        &control,
+    )
+    .await
+    .unwrap();
+    assert!(
+        control.signals.lock().unwrap().is_empty(),
+        "never signal another program"
+    );
+}
+
+#[tokio::test]
+async fn our_process_alive_but_not_listening_is_still_stopped() {
+    let control = Liveness::new(&[true, true, false]);
+    stop(
+        &NoListener {
+            process: Some(identity()),
+        },
+        &control,
+    )
+    .await
+    .unwrap();
+    assert_eq!(*control.signals.lock().unwrap(), vec![false]);
+}
+
+#[tokio::test]
+async fn unidentifiable_live_process_without_listener_fails_closed() {
+    let control = Liveness::new(&[true]);
+    let err = stop(&NoListener { process: None }, &control)
+        .await
+        .unwrap_err();
+    assert!(err.contains("listener identity unavailable"), "{err}");
+    assert!(control.signals.lock().unwrap().is_empty());
+}
+
+/// Identity probes fail for a moment while the server shuts down, then it exits.
+struct BlinkingProbe(std::sync::atomic::AtomicUsize);
+#[async_trait::async_trait]
+impl ProcessProbe for BlinkingProbe {
+    async fn listener(&self, port: u16, host: &str) -> Result<Listener, StateError> {
+        Probe.listener(port, host).await
+    }
+    async fn process(&self, _: u32) -> Result<ProcessIdentity, StateError> {
+        match self.0.fetch_add(1, std::sync::atomic::Ordering::SeqCst) {
+            0 => Ok(identity()),
+            _ => Err(StateError {
+                kind: "identity",
+                message: "zombie".into(),
+            }),
+        }
+    }
+}
+
+#[tokio::test]
+async fn brief_identity_failures_during_graceful_shutdown_are_waited_out() {
+    // Seen on macOS with Ollama: after SIGTERM the identity probe failed while
+    // the process was still exiting, and `up` gave up and left stale state.
+    // alive: before signal loop check ×3 true, then exits.
+    let control = Liveness::new(&[true, true, true, false]);
+    stop(&BlinkingProbe(Default::default()), &control)
+        .await
+        .unwrap();
+    assert_eq!(
+        *control.signals.lock().unwrap(),
+        vec![false],
+        "no forced kill needed"
+    );
+}
+
+#[tokio::test]
+async fn a_process_that_cannot_be_identified_is_never_force_killed() {
+    let control = Liveness::new(&[true]);
+    let err = stop(&BlinkingProbe(Default::default()), &control)
+        .await
+        .unwrap_err();
+    assert_eq!(err, "process identity unavailable after signal");
+    assert_eq!(
+        *control.signals.lock().unwrap(),
+        vec![false],
+        "graceful only"
+    );
+}
