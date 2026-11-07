@@ -1690,6 +1690,20 @@ mod boundary_tests {
                 .await
                 .is_err()
         );
+        let full = source(vec![turn("x"); 100_000], None);
+        assert!(
+            plan_migration(&full, budget(10_000_000), &cancel)
+                .await
+                .is_ok()
+        );
+        // Facts count against the budget alongside the persona.
+        let mut factual = source(vec![turn(&"x".repeat(40)); 5], None);
+        factual.facts_text = "f".repeat(400);
+        factual.facts_present = true;
+        let plan = plan_migration(&factual, budget(120), &cancel)
+            .await
+            .unwrap();
+        assert_eq!(plan.summary.strategy, "truncate");
 
         // 30 turns of 10 tokens against 286 tokens: 256 are reserved for the reply,
         // leaving exactly 30, so the newest 3 turns fit and 27 are folded away.
@@ -2061,6 +2075,68 @@ mod boundary_tests {
                 .err()
                 .unwrap();
             assert_eq!(error.0, "prepared migration belongs to another source");
+        }
+
+        #[tokio::test]
+        async fn capture_writes_facts_when_missing_or_when_one_is_learned() {
+            let root = tempfile::tempdir().unwrap();
+            let store = MemoryStore::open(root.path(), "model", "now").unwrap();
+            let cancel = CancellationToken::new();
+            let facts = store.dir.join("facts.json");
+            assert!(!facts.exists());
+            store
+                .capture("nothing to remember", "", capture_options("t"), &cancel)
+                .await
+                .unwrap();
+            assert!(facts.exists());
+            let compact = r#"{"schemaVersion":1,"facts":[{"text":"name = Ada","ts":"t"}]}"#;
+            private_file(&facts, compact.as_bytes());
+            store
+                .capture("I live in Paris", "", capture_options("t"), &cancel)
+                .await
+                .unwrap();
+            let written = fs::read_to_string(&facts).unwrap();
+            assert!(written.contains("name = Ada"), "{written}");
+            assert!(written.contains("location = Paris"), "{written}");
+        }
+
+        #[tokio::test]
+        async fn a_migration_commits_into_the_target_and_can_retire_the_source() {
+            let root = tempfile::tempdir().unwrap();
+            let cancel = CancellationToken::new();
+            let store = MemoryStore::open(root.path(), "model", "now").unwrap();
+            store
+                .capture("hi", "hello", capture_options("t"), &cancel)
+                .await
+                .unwrap();
+            // An abandoned staging area for an existing target is cleared while preparing.
+            MemoryStore::open(root.path(), "target", "now").unwrap();
+            let stray = root.path().join(".staging").join("memory-target");
+            private_dir(&stray);
+            let prepared = store
+                .prepare_migration("target", budget(1000), &cancel)
+                .await
+                .unwrap();
+            assert!(!stray.exists());
+            let target = store
+                .commit_migration(prepared, "later", false, &cancel)
+                .unwrap();
+            assert_eq!(target.meta.model_id, "target");
+            assert_eq!(target.read_meta().unwrap().model_id, "target");
+            let copied = MemoryStore::snapshot(root.path(), "target").unwrap();
+            assert_eq!(copied.turns.len(), 2);
+            assert!(store.dir.exists());
+            // Retiring the source moves it out of the memory directory.
+            let other = MemoryStore::open(root.path(), "other", "now").unwrap();
+            let prepared = other
+                .prepare_migration("fresh", budget(1000), &cancel)
+                .await
+                .unwrap();
+            let fresh = other
+                .commit_migration(prepared, "later", true, &cancel)
+                .unwrap();
+            assert_eq!(fresh.read_meta().unwrap().model_id, "fresh");
+            assert!(!other.dir.exists());
         }
     }
 }
