@@ -487,3 +487,65 @@ fn rounded_registry_sizes_are_allowed_their_rounding_and_mxfp4_is_sized() {
     assert_eq!(entry.quantizations[0].name, "MXFP4");
     assert_eq!(rigspark_core::sizing::quant_bits("MXFP4"), Some(4.25));
 }
+
+#[test]
+fn size_tolerance_context_and_expert_boundaries_are_exact() {
+    let record = registry()["granite4.2:30b"].clone();
+    let layer = parse_layer(&record["manifest"].to_string())
+        .unwrap()
+        .unwrap();
+    let build = |model_type: &str, gguf: Gguf| {
+        let config = RegistryConfig::parse(
+            &json!({"model_family":"llama","model_type":model_type,"file_type":"Q4_0"}).to_string(),
+        )
+        .unwrap();
+        let parsed = parse_gguf(&gguf.bytes()).unwrap();
+        build_entry(&AdmissionInput {
+            repository: "llama2",
+            tag: "7b",
+            capabilities: &[],
+            layer: &layer,
+            config: &config,
+            gguf: &parsed,
+            license_head: record["licenseHead"].as_str(),
+            today: "2026-10-07",
+        })
+        .map_err(|rejection| rejection.reason())
+    };
+    let disagrees = Err("parameter count disagrees with tensor table");
+    // "2B" may stand for anything that rounds to 2: exactly half a billion either side.
+    assert_eq!(
+        build("2B", dense("llama").total(2.5e9)).unwrap().params,
+        "2B"
+    );
+    assert_eq!(
+        build("2B", dense("llama").total(2.7e9)).map(|entry| entry.params),
+        disagrees
+    );
+    // "1.5B" carries one decimal: ±0.05B, wider than the 2% floor.
+    assert_eq!(
+        build("1.5B", dense("llama").total(1.54e9)).unwrap().params,
+        "1.5B"
+    );
+    assert_eq!(
+        build("1.5B", dense("llama").total(1.56e9)).map(|entry| entry.params),
+        disagrees
+    );
+    let without_context = Gguf {
+        kv: dense("llama")
+            .kv
+            .into_iter()
+            .filter(|(key, _)| key != "llama.context_length")
+            .collect(),
+        ..Gguf::default()
+    }
+    .kv("llama.context_length", json!(0));
+    assert_eq!(
+        build("7B", without_context.total(7e9)).map(|entry| entry.params),
+        Err("context length missing")
+    );
+    let zero_experts = dense("llama").kv("llama.expert_count", json!(0));
+    let entry = build("7B", zero_experts.total(7e9)).unwrap();
+    assert!(matches!(entry.architecture, Architecture::Dense));
+    assert_eq!(entry.active_params, None);
+}
