@@ -1196,3 +1196,50 @@ impl Generator for NativeGenerator {
         Box::pin(async move { run_native(&options, Some(events), &cancel).await })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn prompt_ids_are_short_ascii_alphanumeric_or_dash() {
+        let id = |value: &str| prompt_id(&json!({ "prompt_id": value }));
+        assert_eq!(id("abc-123").unwrap(), "abc-123");
+        assert!(id(&"a".repeat(128)).is_ok());
+        for bad in ["", "abc def", "../x", "abc/def", "é"] {
+            assert!(id(bad).is_err(), "{bad:?}");
+        }
+        assert!(id(&"a".repeat(129)).is_err());
+        assert!(prompt_id(&json!({"prompt_id": 7})).is_err());
+    }
+
+    #[test]
+    fn output_subfolders_stay_relative_and_inside_the_output_tree() {
+        for good in ["", "a", "a/b", "videos/2026-11"] {
+            assert!(safe_subfolder(good), "{good:?}");
+        }
+        assert!(safe_subfolder(&"a".repeat(255)));
+        assert!(!safe_subfolder(&"a".repeat(256)));
+        for bad in [
+            "/etc", "a\\b", "c:x", "a\u{1}b", "a//b", "a/", ".", "..", "./a", "a/..", "../a",
+        ] {
+            assert!(!safe_subfolder(bad), "{bad:?}");
+        }
+    }
+
+    #[test]
+    fn media_is_recognised_by_its_signature() {
+        assert!(has_magic(GenerationKind::Image, b"\x89PNG\r\n\x1a\nrest"));
+        assert!(!has_magic(GenerationKind::Image, b"\x89PNG\r\n"));
+        assert!(has_magic(GenerationKind::Video, b"RIFF\0\0\0\0WEBP"));
+        for bad in [
+            b"RIFF\0\0\0\0WEBX".as_slice(),
+            b"RIFX\0\0\0\0WEBP",
+            b"RIFF\0\0\0\0WEB",
+            b"RIFF",
+            b"",
+        ] {
+            assert!(!has_magic(GenerationKind::Video, bad), "{bad:?}");
+        }
+    }
+}

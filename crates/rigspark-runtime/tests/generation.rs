@@ -1071,3 +1071,420 @@ fn workflow_graph(
 ) -> serde_json::Value {
     workflow(model, names, "a fox on a volcano", 7, devices).unwrap()
 }
+
+const MIB: usize = 1024 * 1024;
+
+/// `value` as JSON padded with trailing whitespace to exactly `size` bytes.
+fn padded(value: Value, size: usize) -> Result<(u16, Vec<u8>), HttpError> {
+    let mut body = value.to_string().into_bytes();
+    assert!(body.len() <= size);
+    body.resize(size, b' ');
+    Ok((200, body))
+}
+
+#[tokio::test]
+async fn prompts_and_seeds_accept_their_full_documented_range() {
+    use rigspark_runtime::generation::{MAX_PROMPT_BYTES, MAX_SEED, random_seed, validate_prompt};
+    assert_eq!(MAX_PROMPT_BYTES, 16384);
+    assert!(validate_prompt(&"a".repeat(16384)).is_ok());
+    assert!(validate_prompt(&"a".repeat(16385)).is_err());
+    let seeds: std::collections::BTreeSet<u64> = (0..32).map(|_| random_seed()).collect();
+    assert!(seeds.iter().all(|seed| *seed <= MAX_SEED), "{seeds:?}");
+    assert!(seeds.len() > 1, "{seeds:?}");
+
+    let (model, hub) = fixture("image");
+    let comfy = healthy(&model, false, completed("9", "a.png"), PNG);
+    let directory = comfy_dir();
+    let out = tempfile::tempdir().unwrap();
+    let mut value = request(&model, directory.path(), out.path(), None);
+    value.seed = MAX_SEED;
+    let outcome = client(&comfy, &hub)
+        .generate(&value, &CancellationToken::new())
+        .await
+        .unwrap();
+    assert_eq!(outcome.seed, MAX_SEED);
+    assert_eq!(comfy.submitted().unwrap()["31"]["inputs"]["seed"], MAX_SEED);
+}
+
+/// ComfyUI answering every read with a large but permitted body; `prompt` sets the size of
+/// the `/prompt` response.
+fn verbose(model: &GenerationModel, prompt: usize) -> Comfy {
+    let listings = listing(model, false);
+    Comfy::new(move |call, polls| match call.path.as_str() {
+        "/system_stats" => padded(json!({"system": {}, "devices": []}), MIB / 2),
+        "/prompt" => padded(json!({"prompt_id": "abc-123", "node_errors": {}}), prompt),
+        "/history/abc-123" if polls == 0 => padded(json!({}), 2 * MIB),
+        "/history/abc-123" => padded(json!({"abc-123": completed("9", "a.png")}), 2 * MIB),
+        "/view" => Ok((200, PNG.to_vec())),
+        path => padded(listings[path].clone(), 2 * MIB),
+    })
+}
+
+#[tokio::test]
+async fn large_comfyui_responses_are_read_up_to_each_limit() {
+    // Stats up to 1 MiB, listings up to 4 MiB, history up to 16 MiB, /prompt up to 4 MiB.
+    let (model, hub) = fixture("image");
+    let directory = comfy_dir();
+    let out = tempfile::tempdir().unwrap();
+    let comfy = verbose(&model, 4 * MIB);
+    let outcome = client(&comfy, &hub)
+        .generate(
+            &request(&model, directory.path(), out.path(), None),
+            &CancellationToken::new(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(outcome.bytes, PNG.len() as u64);
+
+    let comfy = verbose(&model, 4 * MIB + 1);
+    let error = client(&comfy, &hub)
+        .generate(
+            &request(&model, directory.path(), out.path(), None),
+            &CancellationToken::new(),
+        )
+        .await
+        .unwrap_err();
+    assert!(
+        matches!(error, GenerationError::Http(HttpError::Limit)),
+        "{error}"
+    );
+}
+
+#[tokio::test]
+async fn ready_keeps_plain_device_types_and_the_smallest_free_memory() {
+    let (_, hub) = fixture("image");
+    let comfy = Comfy::new(|_, _| {
+        json_body(json!({"system": {"ram_free": 99}, "devices": [
+            {"type": "cuda", "vram_free": 5},
+            {"type": "cuda:0", "vram_free": 3},
+            {"type": "x".repeat(33)},
+            {"type": "x".repeat(32)},
+        ]}))
+    });
+    let status = client(&comfy, &hub)
+        .ready(ENDPOINT, &CancellationToken::new())
+        .await
+        .unwrap();
+    assert_eq!(status.devices, ["cuda".to_owned(), "x".repeat(32)]);
+    assert_eq!(status.free_bytes, Some(3));
+}
+
+#[tokio::test]
+async fn weight_downloads_report_progress_in_five_percent_steps() {
+    let (mut model, mut hub) = fixture("image");
+    // 40 MiB is reported every 8 MiB: 20%, 40%, ... each a new five-percent step.
+    let content = vec![b'w'; 40 * MIB];
+    model.files[0].sha256 = format!("{:x}", Sha256::digest(&content));
+    model.files[0].bytes = content.len() as u64;
+    hub.files.insert(model.files[0].file.clone(), content);
+    let comfy = healthy(&model, false, completed("9", "a.png"), PNG);
+    let directory = comfy_dir();
+    let out = tempfile::tempdir().unwrap();
+    let messages = std::sync::Arc::new(Mutex::new(Vec::new()));
+    let sink = messages.clone();
+    let mut ui = client(&comfy, &hub);
+    ui.events = Some(std::sync::Arc::new(move |line: String| {
+        sink.lock().unwrap().push(line)
+    }));
+    ui.generate(
+        &request(&model, directory.path(), out.path(), None),
+        &CancellationToken::new(),
+    )
+    .await
+    .unwrap();
+    let progress: Vec<String> = messages
+        .lock()
+        .unwrap()
+        .iter()
+        .filter(|line| line.starts_with("Weights "))
+        .cloned()
+        .collect();
+    let percents: Vec<_> = progress
+        .iter()
+        .map(|line| {
+            line.split(": ")
+                .nth(1)
+                .unwrap()
+                .split('%')
+                .next()
+                .unwrap()
+                .to_owned()
+        })
+        .collect();
+    // The start and the end are each reported twice; every step is shown once.
+    assert_eq!(
+        percents,
+        ["0", "20", "40", "60", "80", "100"],
+        "{progress:?}"
+    );
+}
+
+#[tokio::test]
+async fn memory_is_freed_only_below_the_weights_and_refusals_are_reported() {
+    let flux = json!({"30": {"class_type": "CheckpointLoaderSimple",
+        "inputs": {"ckpt_name": "rigspark/comfyui/Comfy-Org/flux1-schnell@x/flux1-schnell-fp8.safetensors"}}});
+    let (video, _) = fixture("video");
+    let need = video.total_bytes();
+    for (free, expect_free) in [(need, false), (need - 1, true)] {
+        let (model, hub) = fixture("video");
+        let comfy = under_pressure(&model, "cuda", free, Some(flux.clone()));
+        let directory = comfy_dir();
+        let out = tempfile::tempdir().unwrap();
+        client(&comfy, &hub)
+            .generate(
+                &request(&model, directory.path(), out.path(), None),
+                &CancellationToken::new(),
+            )
+            .await
+            .unwrap();
+        let freed = comfy.calls().iter().any(|call| call.path == "/free");
+        assert_eq!(freed, expect_free, "free={free} need={need}");
+    }
+    for (status, declined) in [(200, false), (503, true)] {
+        let (model, hub) = fixture("video");
+        let listings = listing(&model, false);
+        let previous = flux.clone();
+        let comfy = Comfy::new(move |call, polls| match call.path.as_str() {
+            "/system_stats" => json_body(json!({"system": {}, "devices": [{"type": "mps"}]})),
+            "/history" => json_body(
+                json!({"old-1": {"prompt": [1, "old-1", previous.clone(), {}, []], "outputs": {}}}),
+            ),
+            "/free" => Ok((status, b"{}".to_vec())),
+            "/prompt" => json_body(json!({"prompt_id": "abc-123", "node_errors": {}})),
+            "/history/abc-123" if polls == 0 => json_body(json!({})),
+            "/history/abc-123" => json_body(json!({"abc-123": completed("28", "v.webp")})),
+            "/view" => Ok((200, WEBP.to_vec())),
+            path => json_body(listings[path].clone()),
+        });
+        let directory = comfy_dir();
+        let out = tempfile::tempdir().unwrap();
+        let messages = std::sync::Arc::new(Mutex::new(Vec::new()));
+        let sink = messages.clone();
+        let mut ui = client(&comfy, &hub);
+        ui.events = Some(std::sync::Arc::new(move |line: String| {
+            sink.lock().unwrap().push(line)
+        }));
+        ui.generate(
+            &request(&model, directory.path(), out.path(), None),
+            &CancellationToken::new(),
+        )
+        .await
+        .unwrap();
+        let reported = messages
+            .lock()
+            .unwrap()
+            .iter()
+            .any(|line| line.contains("declined to free memory (HTTP 503)"));
+        assert_eq!(reported, declined, "HTTP {status}");
+    }
+}
+
+#[tokio::test]
+async fn a_prompt_that_never_finishes_times_out_and_is_removed() {
+    let (model, hub) = fixture("image");
+    let listings = listing(&model, false);
+    let comfy = Comfy::new(move |call, _| match call.path.as_str() {
+        "/system_stats" => json_body(json!({"system": {}})),
+        "/prompt" => json_body(json!({"prompt_id": "abc-123", "node_errors": {}})),
+        "/history/abc-123" | "/queue" | "/interrupt" => json_body(json!({})),
+        path => json_body(listings[path].clone()),
+    });
+    let directory = comfy_dir();
+    let out = tempfile::tempdir().unwrap();
+    let mut ui = client(&comfy, &hub);
+    ui.deadline = Duration::from_millis(20);
+    let error = ui
+        .generate(
+            &request(&model, directory.path(), out.path(), None),
+            &CancellationToken::new(),
+        )
+        .await
+        .unwrap_err();
+    assert!(matches!(error, GenerationError::Timeout), "{error}");
+    assert!(comfy.calls().iter().any(|call| call.path == "/queue"));
+}
+
+#[tokio::test]
+async fn outputs_larger_than_a_mebibyte_are_saved_whole() {
+    let (model, hub) = fixture("image");
+    let mut media = PNG.to_vec();
+    media.resize(2 * MIB, 0);
+    let media: &'static [u8] = Box::leak(media.into_boxed_slice());
+    let comfy = healthy(&model, false, completed("9", "a.png"), media);
+    let directory = comfy_dir();
+    let out = tempfile::tempdir().unwrap();
+    let outcome = client(&comfy, &hub)
+        .generate(
+            &request(&model, directory.path(), out.path(), None),
+            &CancellationToken::new(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(outcome.bytes, media.len() as u64);
+    assert_eq!(std::fs::read(&outcome.path).unwrap(), media);
+}
+
+#[tokio::test]
+async fn a_relative_output_is_written_beside_the_working_directory() {
+    let (model, hub) = fixture("image");
+    let comfy = healthy(&model, false, completed("9", "a.png"), PNG);
+    let directory = comfy_dir();
+    let out = tempfile::tempdir().unwrap();
+    let name = format!("rigspark-relative-output-{}.png", std::process::id());
+    let relative = Path::new(&name);
+    let result = client(&comfy, &hub)
+        .generate(
+            &request(&model, directory.path(), out.path(), Some(relative)),
+            &CancellationToken::new(),
+        )
+        .await;
+    let saved = std::fs::read(relative);
+    let _ = std::fs::remove_file(relative);
+    result.unwrap();
+    assert_eq!(saved.unwrap(), PNG);
+}
+
+#[tokio::test]
+async fn an_output_created_during_generation_is_not_overwritten() {
+    let (model, hub) = fixture("image");
+    let out = tempfile::tempdir().unwrap();
+    let target = out.path().join("race.png");
+    let listings = listing(&model, false);
+    let racing = target.clone();
+    let comfy = Comfy::new(move |call, polls| match call.path.as_str() {
+        "/system_stats" => json_body(json!({"system": {}})),
+        "/prompt" => json_body(json!({"prompt_id": "abc-123", "node_errors": {}})),
+        "/history/abc-123" if polls == 0 => json_body(json!({})),
+        "/history/abc-123" => json_body(json!({"abc-123": completed("9", "a.png")})),
+        "/view" => {
+            std::fs::write(&racing, b"someone else").unwrap();
+            Ok((200, PNG.to_vec()))
+        }
+        path => json_body(listings[path].clone()),
+    });
+    let directory = comfy_dir();
+    let error = client(&comfy, &hub)
+        .generate(
+            &request(&model, directory.path(), out.path(), Some(&target)),
+            &CancellationToken::new(),
+        )
+        .await
+        .unwrap_err();
+    assert!(matches!(error, GenerationError::Exists(_)), "{error}");
+    assert_eq!(std::fs::read(&target).unwrap(), b"someone else");
+}
+
+#[tokio::test]
+async fn a_large_previous_prompt_still_triggers_unloading_on_shared_memory() {
+    // The last prompt's history is read up to 16 MiB to find the weights it loaded.
+    let flux = json!({"30": {"class_type": "CheckpointLoaderSimple",
+        "inputs": {"ckpt_name": "rigspark/comfyui/Comfy-Org/flux1-schnell@x/flux1-schnell-fp8.safetensors"}}});
+    let (model, hub) = fixture("video");
+    let listings = listing(&model, false);
+    let comfy = Comfy::new(move |call, polls| match call.path.as_str() {
+        "/system_stats" => json_body(json!({"system": {}, "devices": [{"type": "mps"}]})),
+        "/history" => padded(
+            json!({"old-1": {"prompt": [1, "old-1", flux.clone(), {}, []], "outputs": {}}}),
+            2 * MIB,
+        ),
+        "/free" => json_body(json!({})),
+        "/prompt" => json_body(json!({"prompt_id": "abc-123", "node_errors": {}})),
+        "/history/abc-123" if polls == 0 => json_body(json!({})),
+        "/history/abc-123" => json_body(json!({"abc-123": completed("28", "v.webp")})),
+        "/view" => Ok((200, WEBP.to_vec())),
+        path => json_body(listings[path].clone()),
+    });
+    let directory = comfy_dir();
+    let out = tempfile::tempdir().unwrap();
+    client(&comfy, &hub)
+        .generate(
+            &request(&model, directory.path(), out.path(), None),
+            &CancellationToken::new(),
+        )
+        .await
+        .unwrap();
+    assert!(comfy.calls().iter().any(|call| call.path == "/free"));
+}
+
+/// Records whether a partial output file sits in `directory` while the body is read.
+struct Watched {
+    inner: std::pin::Pin<Box<dyn tokio::io::AsyncRead + Send>>,
+    directory: std::path::PathBuf,
+    partial: std::sync::Arc<std::sync::atomic::AtomicBool>,
+}
+impl tokio::io::AsyncRead for Watched {
+    fn poll_read(
+        mut self: std::pin::Pin<&mut Self>,
+        context: &mut std::task::Context<'_>,
+        buffer: &mut tokio::io::ReadBuf<'_>,
+    ) -> std::task::Poll<std::io::Result<()>> {
+        let partial = std::fs::read_dir(&self.directory)
+            .unwrap()
+            .filter_map(Result::ok)
+            .any(|entry| {
+                entry
+                    .file_name()
+                    .to_string_lossy()
+                    .starts_with(".rigspark-output.")
+            });
+        if partial {
+            self.partial.store(true, Ordering::SeqCst);
+        }
+        self.inner.as_mut().poll_read(context, buffer)
+    }
+}
+struct Watching<'a> {
+    comfy: &'a Comfy,
+    directory: std::path::PathBuf,
+    partial: std::sync::Arc<std::sync::atomic::AtomicBool>,
+}
+#[async_trait::async_trait]
+impl Transport for Watching<'_> {
+    async fn send(&self, request: Request) -> Result<Response, HttpError> {
+        let view = request.url.path() == "/view";
+        let mut response = self.comfy.send(request).await?;
+        if view {
+            response.body = Box::pin(Watched {
+                inner: response.body,
+                directory: self.directory.clone(),
+                partial: self.partial.clone(),
+            });
+        }
+        Ok(response)
+    }
+}
+
+#[tokio::test]
+async fn outputs_are_staged_beside_their_target() {
+    // The partial file lives in the target's directory, so the final rename stays on
+    // one file system and never leaves a stray file in the working directory.
+    let (model, hub) = fixture("image");
+    let comfy = healthy(&model, false, completed("9", "a.png"), PNG);
+    let directory = comfy_dir();
+    let out = tempfile::tempdir().unwrap();
+    let partial = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let watching = Watching {
+        comfy: &comfy,
+        directory: out.path().to_path_buf(),
+        partial: partial.clone(),
+    };
+    let ui = ComfyUi {
+        http: &watching,
+        download: &hub,
+        poll_interval: Duration::from_millis(1),
+        deadline: Duration::from_secs(30),
+        events: None,
+    };
+    let target = out.path().join("staged.png");
+    ui.generate(
+        &request(&model, directory.path(), out.path(), Some(&target)),
+        &CancellationToken::new(),
+    )
+    .await
+    .unwrap();
+    assert!(
+        partial.load(Ordering::SeqCst),
+        "no partial file beside the target"
+    );
+    assert_eq!(std::fs::read(&target).unwrap(), PNG);
+}
