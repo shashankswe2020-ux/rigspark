@@ -356,6 +356,37 @@ h3 {
 .ctas.get .pill:hover {
   transform: none;
 }
+/* Edition tag inside the primary download button. */
+.get-edition {
+  margin-left: 2px;
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+  background: var(--spark-500);
+  color: var(--ink-900);
+  font: 600 11px var(--font-ui);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.get-label {
+  white-space: nowrap;
+}
+@media (max-width: 560px) {
+  .ctas.get .get-primary {
+    gap: 6px;
+    padding: 0 18px;
+    font-size: 16px;
+  }
+  .get-edition {
+    padding: 3px 7px;
+    font-size: 10px;
+  }
+}
+/* Too narrow for the tag; the note under the button still names the edition. */
+@media (max-width: 379px) {
+  .get-edition {
+    display: none;
+  }
+}
 .get-meta {
   margin-top: 14px;
   font-size: 13px;
