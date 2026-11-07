@@ -1199,12 +1199,7 @@ async fn weight_downloads_report_progress_in_five_percent_steps() {
         .filter(|line| line.starts_with("Weights "))
         .cloned()
         .collect();
-    assert!(progress.len() > 1, "{progress:?}");
-    assert!(
-        progress.last().unwrap().contains(": 100% of"),
-        "{progress:?}"
-    );
-    let mut percents: Vec<_> = progress
+    let percents: Vec<_> = progress
         .iter()
         .map(|line| {
             line.split(": ")
@@ -1216,11 +1211,11 @@ async fn weight_downloads_report_progress_in_five_percent_steps() {
                 .to_owned()
         })
         .collect();
-    percents.dedup();
+    // The start and the end are each reported twice; every step is shown once.
     assert_eq!(
-        percents.len(),
-        progress.len(),
-        "one message per step: {progress:?}"
+        percents,
+        ["0", "20", "40", "60", "80", "100"],
+        "{progress:?}"
     );
 }
 
@@ -1377,4 +1372,119 @@ async fn an_output_created_during_generation_is_not_overwritten() {
         .unwrap_err();
     assert!(matches!(error, GenerationError::Exists(_)), "{error}");
     assert_eq!(std::fs::read(&target).unwrap(), b"someone else");
+}
+
+#[tokio::test]
+async fn a_large_previous_prompt_still_triggers_unloading_on_shared_memory() {
+    // The last prompt's history is read up to 16 MiB to find the weights it loaded.
+    let flux = json!({"30": {"class_type": "CheckpointLoaderSimple",
+        "inputs": {"ckpt_name": "rigspark/comfyui/Comfy-Org/flux1-schnell@x/flux1-schnell-fp8.safetensors"}}});
+    let (model, hub) = fixture("video");
+    let listings = listing(&model, false);
+    let comfy = Comfy::new(move |call, polls| match call.path.as_str() {
+        "/system_stats" => json_body(json!({"system": {}, "devices": [{"type": "mps"}]})),
+        "/history" => padded(
+            json!({"old-1": {"prompt": [1, "old-1", flux.clone(), {}, []], "outputs": {}}}),
+            2 * MIB,
+        ),
+        "/free" => json_body(json!({})),
+        "/prompt" => json_body(json!({"prompt_id": "abc-123", "node_errors": {}})),
+        "/history/abc-123" if polls == 0 => json_body(json!({})),
+        "/history/abc-123" => json_body(json!({"abc-123": completed("28", "v.webp")})),
+        "/view" => Ok((200, WEBP.to_vec())),
+        path => json_body(listings[path].clone()),
+    });
+    let directory = comfy_dir();
+    let out = tempfile::tempdir().unwrap();
+    client(&comfy, &hub)
+        .generate(
+            &request(&model, directory.path(), out.path(), None),
+            &CancellationToken::new(),
+        )
+        .await
+        .unwrap();
+    assert!(comfy.calls().iter().any(|call| call.path == "/free"));
+}
+
+/// Records whether a partial output file sits in `directory` while the body is read.
+struct Watched {
+    inner: std::pin::Pin<Box<dyn tokio::io::AsyncRead + Send>>,
+    directory: std::path::PathBuf,
+    partial: std::sync::Arc<std::sync::atomic::AtomicBool>,
+}
+impl tokio::io::AsyncRead for Watched {
+    fn poll_read(
+        mut self: std::pin::Pin<&mut Self>,
+        context: &mut std::task::Context<'_>,
+        buffer: &mut tokio::io::ReadBuf<'_>,
+    ) -> std::task::Poll<std::io::Result<()>> {
+        let partial = std::fs::read_dir(&self.directory)
+            .unwrap()
+            .filter_map(Result::ok)
+            .any(|entry| {
+                entry
+                    .file_name()
+                    .to_string_lossy()
+                    .starts_with(".rigspark-output.")
+            });
+        if partial {
+            self.partial.store(true, Ordering::SeqCst);
+        }
+        self.inner.as_mut().poll_read(context, buffer)
+    }
+}
+struct Watching<'a> {
+    comfy: &'a Comfy,
+    directory: std::path::PathBuf,
+    partial: std::sync::Arc<std::sync::atomic::AtomicBool>,
+}
+#[async_trait::async_trait]
+impl Transport for Watching<'_> {
+    async fn send(&self, request: Request) -> Result<Response, HttpError> {
+        let view = request.url.path() == "/view";
+        let mut response = self.comfy.send(request).await?;
+        if view {
+            response.body = Box::pin(Watched {
+                inner: response.body,
+                directory: self.directory.clone(),
+                partial: self.partial.clone(),
+            });
+        }
+        Ok(response)
+    }
+}
+
+#[tokio::test]
+async fn outputs_are_staged_beside_their_target() {
+    // The partial file lives in the target's directory, so the final rename stays on
+    // one file system and never leaves a stray file in the working directory.
+    let (model, hub) = fixture("image");
+    let comfy = healthy(&model, false, completed("9", "a.png"), PNG);
+    let directory = comfy_dir();
+    let out = tempfile::tempdir().unwrap();
+    let partial = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let watching = Watching {
+        comfy: &comfy,
+        directory: out.path().to_path_buf(),
+        partial: partial.clone(),
+    };
+    let ui = ComfyUi {
+        http: &watching,
+        download: &hub,
+        poll_interval: Duration::from_millis(1),
+        deadline: Duration::from_secs(30),
+        events: None,
+    };
+    let target = out.path().join("staged.png");
+    ui.generate(
+        &request(&model, directory.path(), out.path(), Some(&target)),
+        &CancellationToken::new(),
+    )
+    .await
+    .unwrap();
+    assert!(
+        partial.load(Ordering::SeqCst),
+        "no partial file beside the target"
+    );
+    assert_eq!(std::fs::read(&target).unwrap(), PNG);
 }
