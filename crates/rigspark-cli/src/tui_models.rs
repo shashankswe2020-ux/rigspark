@@ -1702,3 +1702,865 @@ mod recency_tests {
         assert_eq!(shown(&view).len(), 3, "back to all");
     }
 }
+
+#[cfg(test)]
+mod boundary_tests {
+    use super::*;
+    use serde_json::json;
+
+    fn row(label: &str, summary: &str, evidence: &str) -> ModelRow {
+        let mut row = ModelRow::new(label, label, evidence).unwrap();
+        row.summary = summary.into();
+        row
+    }
+    fn view(rows: Vec<ModelRow>) -> ModelView {
+        ModelView::new("Recommend", vec!["Machine: test".into()], rows, false)
+            .unwrap()
+            .with_columns(&["Rank", "Need", "Verdict"], &[0, 1, 2])
+    }
+    fn three() -> ModelView {
+        view(vec![
+            row(
+                "alpha:8b",
+                "1 | 5.2 GiB | yes",
+                "alpha:8b; verdict yes; note",
+            ),
+            row("beta:8b", "2 | 9.1 GiB | slow", "beta:8b; verdict slow"),
+            row("gamma:8b", "3 | unknown | no", "gamma:8b; verdict no"),
+        ])
+    }
+    fn press(code: KeyCode) -> KeyEvent {
+        KeyEvent::new(code, KeyModifiers::NONE)
+    }
+    fn key(view: &mut ModelView, code: KeyCode) -> Option<ModelOutcome> {
+        handle_key(view, press(code))
+    }
+    fn labels(view: &ModelView) -> Vec<&str> {
+        view.visible
+            .iter()
+            .map(|index| view.rows[*index].label.as_str())
+            .collect()
+    }
+    fn bound(value: &Value) -> bool {
+        bound_can_run(value, 0, &mut MAX_DOCUMENT.clone()).is_ok()
+    }
+    fn nested(depth: usize, wrap: fn(Value) -> Value) -> Value {
+        (0..depth).fold(json!("x"), |inner, _| wrap(inner))
+    }
+
+    #[test]
+    fn can_run_evidence_bounds_depth_text_rows_and_keys() {
+        assert!(bound(&nested(16, |inner| json!([inner]))));
+        assert!(!bound(&nested(17, |inner| json!([inner]))));
+        assert!(bound(&nested(16, |inner| json!({ "k": inner }))));
+        assert!(!bound(&nested(17, |inner| json!({ "k": inner }))));
+        assert!(bound(&json!("x".repeat(MAX_TEXT))));
+        assert!(!bound(&json!("x".repeat(MAX_TEXT + 1))));
+        assert!(bound(&json!(vec![0; MAX_ROWS])));
+        assert!(!bound(&json!(vec![0; MAX_ROWS + 1])));
+        let object = |count: usize| {
+            Value::Object(
+                (0..count)
+                    .map(|index| (index.to_string(), json!(0)))
+                    .collect(),
+            )
+        };
+        assert!(bound(&object(MAX_ROWS)));
+        assert!(!bound(&object(MAX_ROWS + 1)));
+        let keyed =
+            |length: usize| Value::Object([("k".repeat(length), json!(0))].into_iter().collect());
+        assert!(bound(&keyed(MAX_TEXT)));
+        assert!(!bound(&keyed(MAX_TEXT + 1)));
+        // The shared budget is spent by text, so a large document fails even when each part fits.
+        let mut budget = 1000;
+        assert!(bound_can_run(&json!("x".repeat(900)), 0, &mut budget).is_ok());
+        assert_eq!(budget, 1000 - 64 - 900);
+        assert!(bound_can_run(&json!("x".repeat(100)), 0, &mut budget).is_err());
+    }
+
+    #[test]
+    fn documents_may_fill_exactly_four_mib() {
+        let rows = || {
+            (0..64)
+                .map(|_| ModelRow::new("", &"a".repeat(65_536), "").unwrap())
+                .collect::<Vec<_>>()
+        };
+        assert!(ModelView::new("Catalog", Vec::new(), rows(), false).is_ok());
+        assert!(ModelView::new("Catalog", vec!["x".into()], rows(), false).is_err());
+    }
+
+    #[test]
+    fn memory_figures_must_be_finite_and_usable_must_be_positive() {
+        for (usable, kept) in [
+            (8.0, true),
+            (0.0, false),
+            (-1.0, false),
+            (f64::INFINITY, false),
+            (f64::NAN, false),
+        ] {
+            let view = three().with_memory(usable, std::iter::empty());
+            assert_eq!(view.usable_bytes.is_some(), kept, "{usable}");
+        }
+        let needs = [0.0, -1.0, f64::INFINITY];
+        let view = three().with_memory(8.0, needs.into_iter());
+        let kept: Vec<_> = view.rows.iter().map(|row| row.need_bytes).collect();
+        assert_eq!(kept, [Some(0.0), None, None]);
+    }
+
+    #[test]
+    fn search_ranks_closer_matches_first() {
+        let mut view = view(vec![row("q-x-w-e-n:8b", "", ""), row("qwen:8b", "", "")]);
+        view.append_query("qwen");
+        assert_eq!(labels(&view), ["qwen:8b", "q-x-w-e-n:8b"]);
+    }
+
+    #[test]
+    fn sort_cycles_through_every_column_then_off() {
+        let mut view = three();
+        let mut seen = Vec::new();
+        for _ in 0..5 {
+            key(&mut view, KeyCode::Char('s'));
+            seen.push(view.sort);
+        }
+        assert_eq!(
+            seen,
+            [
+                Some((0, false)),
+                Some((1, false)),
+                Some((2, false)),
+                Some((3, false)),
+                None
+            ]
+        );
+        view.cycle_sort(Some(2));
+        view.cycle_sort(Some(2));
+        assert_eq!(view.sort, Some((2, true)));
+        view.cycle_sort(Some(1));
+        assert_eq!(view.sort, Some((1, false)));
+        // Outside the list, sort keys do nothing.
+        view.focus(Focus::Detail);
+        key(&mut view, KeyCode::Char('s'));
+        key(&mut view, KeyCode::Char('S'));
+        assert_eq!(view.sort, Some((1, false)));
+        view.focus(Focus::List);
+        key(&mut view, KeyCode::Char('S'));
+        assert_eq!(view.sort, Some((1, true)));
+    }
+
+    #[test]
+    fn sort_keys_compare_verdicts_numbers_and_unknowns() {
+        let model = row("7b-yes", "~12.5 tok/s | unknown | slow | ", "");
+        assert_eq!(sort_key(&model, 0), (0, 0.0, "7b-yes".into()));
+        assert_eq!(sort_key(&model, 1), (0, 12.5, "~12.5 tok/s".into()));
+        assert_eq!(sort_key(&model, 2), (1, 0.0, String::new()));
+        assert_eq!(
+            sort_key(&model, 3),
+            (0, f64::from(Verdict::Slow as u8), String::new())
+        );
+        assert_eq!(sort_key(&model, 4), (1, 0.0, String::new()));
+        assert_eq!(sort_key(&model, 9), (1, 0.0, String::new()));
+        let named = row("yes", "Unknown size", "");
+        assert_eq!(sort_key(&named, 0), (0, 0.0, "yes".into()));
+        assert_eq!(sort_key(&named, 1), (1, 0.0, "unknown size".into()));
+    }
+
+    #[test]
+    fn commands_are_copied_only_for_plain_model_ids() {
+        for id in ["qwen3:8b", "hf.co/org/model-q4_k_m", "a_b"] {
+            assert!(command_safe(id), "{id}");
+        }
+        for id in ["", "-rf", "../x", "org/../x", "Qwen3", "qwen 3", "qwen;rm"] {
+            assert!(!command_safe(id), "{id}");
+        }
+    }
+
+    #[test]
+    fn modifier_release_and_repeat_keys_are_ignored() {
+        let mut view = three();
+        view.command = Some("rigspark up alpha:8b".into());
+        for modifiers in [KeyModifiers::ALT, KeyModifiers::SUPER] {
+            assert_eq!(
+                handle_key(&mut view, KeyEvent::new(KeyCode::Char('q'), modifiers)),
+                None
+            );
+        }
+        let mut repeat = press(KeyCode::Char('p'));
+        repeat.kind = KeyEventKind::Repeat;
+        assert_eq!(handle_key(&mut view, repeat), None);
+        assert_eq!(
+            key(&mut view, KeyCode::Char('p')),
+            Some(ModelOutcome::PrintCommand {
+                command: "rigspark up alpha:8b".into()
+            })
+        );
+        // Ctrl-U clears filters, except while help is open.
+        view.append_query("beta");
+        view.toggle_help();
+        handle_key(
+            &mut view,
+            KeyEvent::new(KeyCode::Char('u'), KeyModifiers::CONTROL),
+        );
+        assert_eq!(view.query, "beta");
+        view.toggle_help();
+        handle_key(
+            &mut view,
+            KeyEvent::new(KeyCode::Char('u'), KeyModifiers::CONTROL),
+        );
+        assert_eq!(view.query, "");
+    }
+
+    #[test]
+    fn navigation_keys_use_the_focused_pane() {
+        let mut view = three();
+        view.page = 2;
+        view.detail_page = 1;
+        key(&mut view, KeyCode::PageDown);
+        assert_eq!(view.list.selected(), Some(2));
+        key(&mut view, KeyCode::Up);
+        assert_eq!(view.list.selected(), Some(1));
+        key(&mut view, KeyCode::Char('i'));
+        assert!(view.focus == Focus::Overview);
+        key(&mut view, KeyCode::Char('i'));
+        assert!(view.focus == Focus::List);
+        view.focus(Focus::Detail);
+        view.scroll_max = 10;
+        key(&mut view, KeyCode::PageDown);
+        assert_eq!(view.scroll, 1);
+        // Right opens details only when something is selected.
+        let mut empty = view_with_no_rows();
+        key(&mut empty, KeyCode::Right);
+        assert!(empty.focus == Focus::List);
+    }
+
+    fn view_with_no_rows() -> ModelView {
+        view(Vec::new())
+    }
+
+    #[test]
+    fn month_and_verdict_filters_apply_only_in_the_list() {
+        let mut view = three();
+        key(&mut view, KeyCode::Char('m'));
+        assert_eq!(view.month_filter, None, "no recency data");
+        let dates = std::collections::BTreeMap::new();
+        let mut view = three().with_recency(&dates, "2026-10-07").unwrap();
+        view.focus(Focus::Detail);
+        key(&mut view, KeyCode::Char('m'));
+        key(&mut view, KeyCode::Char('v'));
+        assert_eq!((view.month_filter, view.verdict_filter), (None, None));
+        view.focus(Focus::List);
+        key(&mut view, KeyCode::Char('v'));
+        assert_eq!(labels(&view), ["alpha:8b"]);
+        let mut bare =
+            ModelView::new("Catalog", Vec::new(), vec![row("a", "yes", "")], false).unwrap();
+        key(&mut bare, KeyCode::Char('v'));
+        assert_eq!(bare.verdict_filter, None, "no columns to filter on");
+    }
+
+    #[test]
+    fn cards_wrap_within_72_columns() {
+        let view = three();
+        let long = row(
+            "alpha:8b",
+            &format!("1 | {} | yes", "word ".repeat(30)),
+            "alpha:8b",
+        );
+        let card = view.card(&long);
+        assert!(card.lines().count() > 6);
+        assert!(
+            card.lines().all(|line| line.chars().count() <= 72),
+            "{card}"
+        );
+    }
+
+    fn mouse(kind: MouseEventKind, column: u16, row: u16) -> MouseEvent {
+        MouseEvent {
+            kind,
+            column,
+            row,
+            modifiers: KeyModifiers::NONE,
+        }
+    }
+    fn clickable() -> ModelView {
+        let mut view = three();
+        view.areas = HitAreas {
+            rows: Rect::new(0, 5, 40, 10),
+            header: vec![(Rect::new(0, 4, 10, 1), 2)],
+            detail: Rect::new(40, 0, 40, 20),
+        };
+        view
+    }
+
+    #[test]
+    fn wheel_scrolls_the_pane_under_the_pointer() {
+        let mut view = clickable();
+        handle_mouse(&mut view, mouse(MouseEventKind::ScrollDown, 5, 6));
+        assert_eq!(view.list.selected(), Some(1));
+        handle_mouse(&mut view, mouse(MouseEventKind::ScrollUp, 5, 6));
+        assert_eq!(view.list.selected(), Some(0));
+        // Over the detail pane while the list has focus: nothing scrolls.
+        view.scroll_max = 10;
+        handle_mouse(&mut view, mouse(MouseEventKind::ScrollDown, 50, 6));
+        assert_eq!((view.list.selected(), view.scroll), (Some(0), 0));
+        view.focus = Focus::Detail;
+        view.scroll_max = 10;
+        handle_mouse(&mut view, mouse(MouseEventKind::ScrollDown, 50, 6));
+        assert_eq!((view.list.selected(), view.scroll), (Some(0), 3));
+        handle_event(
+            &mut view,
+            Event::Mouse(mouse(MouseEventKind::ScrollUp, 50, 6)),
+        );
+        assert_eq!(view.scroll, 0);
+    }
+
+    #[test]
+    fn clicks_select_open_and_sort_only_in_the_list() {
+        let mut view = clickable();
+        let click = |column, row| mouse(MouseEventKind::Down(MouseButton::Left), column, row);
+        handle_mouse(&mut view, click(3, 7));
+        assert_eq!(view.list.selected(), Some(2));
+        handle_mouse(&mut view, click(3, 8));
+        assert_eq!(view.list.selected(), Some(2), "past the last row");
+        handle_mouse(&mut view, click(3, 7));
+        assert!(
+            view.focus == Focus::Detail,
+            "clicking the selection opens it"
+        );
+        handle_mouse(&mut view, click(3, 5));
+        assert_eq!(view.list.selected(), Some(2), "ignored outside the list");
+        view.focus(Focus::List);
+        handle_mouse(&mut view, click(3, 4));
+        assert_eq!(view.sort, Some((2, false)));
+    }
+
+    #[test]
+    fn comparison_aligns_keys_and_needs_fourteen_column_cells() {
+        let mut view = three();
+        assert!(compare_lines(&view, 120, Theme::new(false)).is_none());
+        view.marked = vec![0, 1];
+        let theme = Theme::new(true);
+        let text = |line: &Line| {
+            line.spans
+                .iter()
+                .map(|span| span.content.as_ref())
+                .collect::<String>()
+        };
+        let wide = compare_lines(&view, 80, theme).unwrap();
+        // The header opens with the key column's padding.
+        let key_width = wide[0].spans[0].content.chars().count();
+        assert_eq!(key_width, "verdict".len());
+        let cell = (80 - key_width - 6) / 2;
+        assert_eq!(text(&wide[0]).chars().count(), key_width + 2 * (3 + cell));
+        // Exactly 14-column cells still fit; one column less does not.
+        let fits = u16::try_from(key_width + 6 + 28).unwrap();
+        let lines = compare_lines(&view, fits, theme).unwrap();
+        assert_eq!(text(&lines[0]).chars().count(), key_width + 2 * (3 + 14));
+        assert!(compare_lines(&view, fits - 1, theme).is_none());
+        let row_for = |key: &str| {
+            wide.iter()
+                .find(|line| text(line).starts_with(key))
+                .unwrap_or_else(|| panic!("{key} row"))
+                .clone()
+        };
+        assert_eq!(row_for("summary").spans[2].style, theme.muted());
+        assert_eq!(row_for("verdict").spans[2].style, theme.verdict("yes"));
+        assert_eq!(row_for("verdict").spans[4].style, theme.verdict("slow"));
+        // An unkeyed note keeps its own row, blank where the other model has none.
+        assert!(wide.iter().any(|line| text(line).contains("note")));
+    }
+
+    #[test]
+    fn can_run_model_ids_are_capped_at_1024_bytes() {
+        let evidence = |id: &str| {
+            json!({
+                "modelId": id, "runnable": "slow", "quant": "Q4_K_M",
+                "reason": null, "requiredBytes": 1024, "usableBytes": 4096,
+                "throughput": {"known": false, "lowTokPerSec": 0, "highTokPerSec": 0},
+                "throughputEvidence": {"source": "offline-estimate", "unknownReason": "no-sourced-performance-profile"},
+                "backends": ["ollama"], "throughputBackend": "ollama",
+                "context": 8192, "contextFitKnown": false
+            })
+        };
+        // Identifiers are truncated for display, so exactly 1024 bytes is still accepted.
+        assert!(ModelView::from_can_run(&evidence(&"a".repeat(1024)), false).is_ok());
+        let error = ModelView::from_can_run(&evidence(&"a".repeat(1025)), false)
+            .err()
+            .unwrap();
+        assert_eq!(error.to_string(), "model view text limit exceeded");
+        assert!(ModelView::from_can_run(&evidence("custom:local"), false).is_ok());
+    }
+
+    #[test]
+    fn choosing_another_column_sorts_it_ascending() {
+        let mut view = three();
+        view.cycle_sort(Some(2));
+        assert_eq!(view.sort, Some((2, false)));
+        view.cycle_sort(Some(1));
+        assert_eq!(view.sort, Some((1, false)));
+    }
+
+    #[test]
+    fn copies_use_the_selected_visible_row_and_confirm_with_a_toast() {
+        let mut view = three();
+        assert_eq!(view.toast(), None);
+        // Filtering leaves gamma first in the visible list but third in the rows.
+        view.append_query("gamma");
+        assert_eq!(labels(&view), ["gamma:8b"]);
+        key(&mut view, KeyCode::Char('y'));
+        assert_eq!(view.take_clipboard().as_deref(), Some("gamma:8b"));
+        assert_eq!(view.toast(), Some("Copied model id to clipboard"));
+        key(&mut view, KeyCode::Char('Y'));
+        assert_eq!(
+            view.take_clipboard().as_deref(),
+            Some("rigspark up gamma:8b")
+        );
+        assert_eq!(view.toast(), Some("Copied up command to clipboard"));
+        key(&mut view, KeyCode::Char('e'));
+        assert!(view.take_clipboard().unwrap().contains("/ gamma:8b\n"));
+        // Nothing visible: nothing is copied.
+        view.append_query("zzz");
+        key(&mut view, KeyCode::Char('y'));
+        assert_eq!(view.take_clipboard(), None);
+    }
+
+    #[test]
+    fn card_fields_wrap_at_62_columns() {
+        let view = three();
+        let words = "abcd ".repeat(12);
+        let card = view.card(&row("alpha:8b", &format!("1 | {} | yes", words.trim()), ""));
+        let need = card.lines().find(|line| line.starts_with("NEED")).unwrap();
+        assert_eq!(need, format!("{:<9} {}", "NEED", words.trim()));
+    }
+
+    #[test]
+    fn search_accepts_printable_characters_only() {
+        let mut view = three();
+        key(&mut view, KeyCode::Char('/'));
+        assert!(view.searching);
+        key(&mut view, KeyCode::Char('\u{7}'));
+        key(&mut view, KeyCode::Char('b'));
+        assert_eq!(view.query, "b");
+        key(&mut view, KeyCode::Backspace);
+        assert_eq!(view.query, "");
+    }
+
+    #[test]
+    fn enter_opens_the_selected_model() {
+        let mut view = three();
+        key(&mut view, KeyCode::Enter);
+        assert!(view.focus == Focus::Detail);
+        key(&mut view, KeyCode::Enter);
+        assert!(view.focus == Focus::List);
+        key(&mut view, KeyCode::Right);
+        assert!(view.focus == Focus::Detail);
+        let mut empty = view_with_no_rows();
+        key(&mut empty, KeyCode::Enter);
+        assert!(empty.focus == Focus::List);
+    }
+
+    fn describe(entry: &Entry) -> String {
+        match entry {
+            Entry::Heading(text) => format!("heading {text}"),
+            Entry::Field { key, value } => format!("field {key}={value}"),
+            Entry::Note(text) => format!("note {text}"),
+            Entry::Plain(text) => format!("plain {text}"),
+            Entry::Blank => "blank".into(),
+        }
+    }
+    fn line_text(line: &Line) -> String {
+        line.spans
+            .iter()
+            .map(|span| span.content.as_ref())
+            .collect()
+    }
+    fn field(key: &str, value: &str) -> Entry {
+        Entry::Field {
+            key: key.into(),
+            value: value.into(),
+        }
+    }
+
+    #[test]
+    fn only_a_leading_label_becomes_the_evidence_heading() {
+        let entries = |label: &str, evidence: &str| {
+            let mut entries = Vec::new();
+            evidence_entries(&row(label, "", evidence), &mut entries);
+            entries.iter().map(describe).collect::<Vec<_>>()
+        };
+        assert_eq!(
+            entries("a:1b", "a:1b; verdict yes; a:1b"),
+            ["heading a:1b", "field verdict=yes", "field =a:1b"]
+        );
+        assert_eq!(
+            entries("a:1b", "b:1b; verdict no"),
+            ["field =b:1b", "field verdict=no"]
+        );
+    }
+
+    #[test]
+    fn detail_keys_align_to_a_third_of_the_width_from_30_columns() {
+        let theme = Theme::new(true);
+        let key_style = theme.muted();
+        let entries = [field("fit", "yes"), field("throughput backend", "ollama")];
+        let lines = layout(&entries, 30, theme, key_style);
+        let texts: Vec<_> = lines.iter().map(line_text).collect();
+        // The longest key (18 cells) is capped at 30 / 3 = 10, so short keys pad to 10.
+        assert_eq!(texts[0], format!("{}fit yes", " ".repeat(7)));
+        assert_eq!(texts[1], "throughput backend ollama");
+        assert_eq!(lines[0].spans[3].style, theme.verdict("yes"));
+        assert_eq!(lines[1].spans[3].style, Style::default());
+        // Below 30 columns keys and values simply run together.
+        let narrow: Vec<_> = layout(&entries, 29, theme, key_style)
+            .iter()
+            .map(line_text)
+            .collect();
+        assert_eq!(narrow, ["fit yes", "throughput backend ollama"]);
+    }
+
+    #[test]
+    fn detail_values_wrap_after_the_key_indent() {
+        let theme = Theme::new(false);
+        let wrapped = |value: &str| {
+            layout(&[field("fit", value)], 30, theme, Style::default())
+                .iter()
+                .map(line_text)
+                .collect::<Vec<_>>()
+        };
+        // "fit" plus one space leaves 26 columns for the value.
+        let fits = "abcde ".repeat(4) + "ab";
+        assert_eq!(wrapped(&fits), [format!("fit {fits}")]);
+        let over = fits.clone() + "c";
+        assert_eq!(wrapped(&over).len(), 2);
+        // An unkeyed value is indented as a single raw span.
+        let lines = layout(
+            &[field("fit", "yes"), field("", "loose")],
+            30,
+            theme,
+            Style::default(),
+        );
+        assert_eq!(line_text(&lines[1]), "    loose");
+        assert_eq!(lines[1].spans.len(), 2);
+    }
+
+    #[test]
+    fn comparison_keeps_every_unkeyed_note() {
+        let mut view = view(vec![
+            row("a:1b", "", "a:1b; first note; second note"),
+            row("b:1b", "", "b:1b; verdict yes"),
+        ]);
+        view.marked = vec![0, 1];
+        let lines = compare_lines(&view, 120, Theme::new(false)).unwrap();
+        let text: Vec<_> = lines.iter().map(line_text).collect();
+        assert!(
+            text.iter().any(|line| line.contains("first note")),
+            "{text:?}"
+        );
+        assert!(
+            text.iter().any(|line| line.contains("second note")),
+            "{text:?}"
+        );
+    }
+
+    fn draw(view: &mut ModelView, width: u16, height: u16) -> ratatui::buffer::Buffer {
+        let backend = ratatui::backend::TestBackend::new(width, height);
+        let mut terminal = ratatui::Terminal::new(backend).unwrap();
+        terminal.draw(|frame| render(frame, view)).unwrap();
+        terminal.backend().buffer().clone()
+    }
+    fn screen(buffer: &ratatui::buffer::Buffer) -> Vec<String> {
+        buffer
+            .content
+            .chunks(usize::from(buffer.area.width))
+            .map(|row| row.iter().map(|cell| cell.symbol()).collect())
+            .collect()
+    }
+    fn wide_labels() -> ModelView {
+        let mut view = three();
+        view.rows[0].label = "alphabet-model:8b".into();
+        view
+    }
+
+    #[test]
+    fn rendering_records_where_rows_and_header_cells_are() {
+        let mut view = three();
+        view.sort = Some((1, true));
+        let text = screen(&draw(&mut view, 120, 30)).join("\n");
+        assert!(text.contains("Rank ▼"), "{text}");
+        assert!(
+            !text.contains("Model ▼") && !text.contains("Need ▼"),
+            "{text}"
+        );
+        let rows = view.areas.rows;
+        let header: Vec<_> = view
+            .areas
+            .header
+            .iter()
+            .map(|(_, column)| *column)
+            .collect();
+        assert_eq!(header, [0, 1, 2, 3]);
+        let first = view.areas.header[0].0;
+        let last = view.areas.header.last().unwrap().0;
+        assert_eq!(
+            (first.x, first.y, first.height),
+            (rows.x + 2, rows.y - 1, 1)
+        );
+        assert!(last.right() <= rows.right(), "{last:?} within {rows:?}");
+        assert_eq!(usize::from(rows.height), view.page);
+        // At 120 columns the detail pane sits to the right of the list.
+        assert!(view.areas.detail.x >= rows.right());
+        draw(&mut view, 109, 30);
+        assert_eq!(view.areas.detail.x, 0);
+        assert!(view.areas.detail.y > view.areas.rows.y);
+    }
+
+    #[test]
+    fn columns_drop_by_priority_when_the_table_is_narrow() {
+        // Model 19 cells; Rank, Need, Verdict 6, 7 and 9, each plus one space.
+        for width in 30..110 {
+            let mut view = wide_labels();
+            draw(&mut view, width, 12);
+            let available = usize::from(view.areas.rows.width) - 2;
+            let shown = view.areas.header.len() - 1;
+            let expected = match available {
+                44.. => 3,
+                34..44 => 2,
+                26..34 => 1,
+                _ => 0,
+            };
+            assert_eq!(shown, expected, "width {width}, available {available}");
+        }
+    }
+
+    #[test]
+    fn empty_results_offer_a_reset_only_when_filtered() {
+        let hint = |view: &mut ModelView| {
+            screen(&draw(view, 80, 20))
+                .join("\n")
+                .contains("Ctrl+U resets the filter")
+        };
+        let mut view = three();
+        view.append_query("zzz");
+        assert!(hint(&mut view));
+        let mut view = three();
+        view.rows.retain(|row| row.label != "alpha:8b");
+        view.filter();
+        view.verdict_filter = Some(Verdict::Yes);
+        view.filter();
+        assert!(hint(&mut view));
+        assert!(!hint(&mut view_with_no_rows()));
+    }
+
+    #[test]
+    fn machine_context_grows_with_the_terminal() {
+        let shown = |lines: Vec<String>, height: u16| {
+            let mut view = ModelView::new("Recommend", lines, Vec::new(), true).unwrap();
+            let buffer = draw(&mut view, 80, height);
+            (screen(&buffer).join("\n"), buffer)
+        };
+        let one = || vec!["Machine: test".to_owned()];
+        let (text, _) = shown(one(), 28);
+        assert!(text.contains("Machine / scope"), "{text}");
+        let (text, _) = shown(one(), 27);
+        assert!(!text.contains("Machine / scope") && text.contains("Machine: test"));
+        let (text, _) = shown(one(), 12);
+        assert!(text.contains("Machine: test"));
+        let (text, _) = shown(one(), 11);
+        assert!(!text.contains("Machine: test"));
+        // Two compact lines do not earn a panel.
+        let two = || vec!["Machine: test".to_owned(), "Scope: all".to_owned()];
+        let (text, _) = shown(two(), 20);
+        assert!(!text.contains("Machine / scope") && text.contains("Scope: all"));
+        // Compact lines are indented one column, under the header.
+        assert!(
+            text.lines().nth(1).unwrap().starts_with(" Machine: test"),
+            "{text}"
+        );
+        // In the panel only the first line is emphasised.
+        let (text, buffer) = shown(two(), 28);
+        let theme = Theme::new(true);
+        let cell = |needle: &str| {
+            let (row, line) = screen(&buffer)
+                .into_iter()
+                .enumerate()
+                .find(|(_, line)| line.contains(needle))
+                .unwrap_or_else(|| panic!("{needle}: {text}"));
+            let start = line.find(needle).unwrap();
+            let column = line[..start].chars().count();
+            buffer[(u16::try_from(column).unwrap(), u16::try_from(row).unwrap())].fg
+        };
+        assert_ne!(Some(cell("Machine: test")), theme.muted().fg);
+        assert_eq!(Some(cell("Scope: all")), theme.muted().fg);
+    }
+
+    #[test]
+    fn toasts_sit_in_the_bottom_right_of_the_body() {
+        let mut view = three();
+        key(&mut view, KeyCode::Char('y'));
+        let lines = screen(&draw(&mut view, 80, 20));
+        let (row, line) = lines
+            .iter()
+            .enumerate()
+            .find(|(_, line)| line.contains("Copied model id"))
+            .unwrap();
+        // The body ends above the status and footer lines; the toast's text is its middle row.
+        assert_eq!(row, 20 - 2 - 2);
+        let end = line.find("clipboard").unwrap() + "clipboard".len();
+        assert_eq!(line[end..].chars().count(), 2, "{line:?}");
+    }
+
+    #[test]
+    fn detail_pane_titles_help_and_narrow_comparisons() {
+        let text = |view: &mut ModelView, width: u16| screen(&draw(view, width, 40));
+        let mut view = three();
+        view.focus(Focus::Overview);
+        assert!(text(&mut view, 80).join("\n").contains("Machine / scope"));
+        // Help lists the verdict filter only when there are columns to filter on.
+        let mut view = three();
+        view.toggle_help();
+        assert!(
+            text(&mut view, 120)
+                .join("\n")
+                .contains("v: cycle verdict filter")
+        );
+        let mut bare =
+            ModelView::new("Catalog", Vec::new(), vec![row("a", "", "")], false).unwrap();
+        bare.toggle_help();
+        assert!(!text(&mut bare, 120).join("\n").contains("verdict filter"));
+        // Too narrow for columns: models are listed one after another, a blank line apart.
+        let mut view = three();
+        view.rows[1].summary.clear();
+        view.marked = vec![0, 1];
+        view.focus(Focus::Compare);
+        let lines = text(&mut view, 30);
+        let at = |needle: &str| {
+            lines
+                .iter()
+                .position(|line| line.contains(needle))
+                .unwrap_or_else(|| panic!("{needle}: {lines:#?}"))
+        };
+        let alpha = at("alpha:8b");
+        let beta = at("beta:8b");
+        assert!(alpha < beta);
+        assert!(
+            lines[beta - 1]
+                .trim_matches(|c: char| c == '│' || c == ' ')
+                .is_empty()
+        );
+        assert!(!lines[alpha - 1].contains("alpha"));
+        assert!(lines[alpha + 1].contains("1 | 5.2 GiB"), "{lines:#?}");
+        assert!(lines[beta + 1].contains("verdict"), "{lines:#?}");
+    }
+
+    #[test]
+    fn overview_focus_titles_the_body_even_without_a_context_panel() {
+        let mut view = three();
+        view.focus(Focus::Overview);
+        // At 11 rows there is no machine context above the body.
+        let text = screen(&draw(&mut view, 80, 11)).join("\n");
+        assert!(text.contains("Machine / scope"), "{text}");
+        assert!(!text.contains("Evidence"), "{text}");
+    }
+
+    #[test]
+    fn header_cells_follow_the_table_wherever_it_is_placed() {
+        let mut view = three();
+        let backend = ratatui::backend::TestBackend::new(120, 20);
+        let mut terminal = ratatui::Terminal::new(backend).unwrap();
+        terminal
+            .draw(|frame| {
+                render_table(
+                    frame,
+                    &mut view,
+                    Rect::new(10, 0, 100, 20),
+                    Theme::new(true),
+                );
+            })
+            .unwrap();
+        let first = view.areas.header[0].0;
+        assert_eq!(first.x, view.areas.rows.x + 2);
+        assert!(view.areas.rows.x > 10);
+    }
+
+    #[test]
+    fn toasts_need_three_body_rows() {
+        let mut view = three();
+        key(&mut view, KeyCode::Char('y'));
+        for height in 1..6 {
+            let text = screen(&draw(&mut view, 80, height)).join("\n");
+            assert!(!text.contains("Copied"), "{height}: {text}");
+        }
+        // Header, status and footer take a row each: six rows leave a three-row body.
+        let text = screen(&draw(&mut view, 80, 6)).join("\n");
+        assert!(text.contains("Copied"), "{text}");
+    }
+
+    #[test]
+    fn status_bar_reports_filter_position_and_sort() {
+        let status = |view: &mut ModelView| screen(&draw(view, 120, 20))[18].clone();
+        let mut view = three();
+        assert!(status(&mut view).contains("1/3"), "{}", status(&mut view));
+        assert!(!status(&mut view).contains("Filter"));
+        view.append_query("a");
+        view.searching = false;
+        assert!(
+            status(&mut view).contains(" Filter a"),
+            "{}",
+            status(&mut view)
+        );
+        let mut view = three();
+        view.sort = Some((1, false));
+        assert!(
+            status(&mut view).contains("sort rank ▲"),
+            "{}",
+            status(&mut view)
+        );
+        view.sort = Some((2, true));
+        assert!(
+            status(&mut view).contains("sort need ▼"),
+            "{}",
+            status(&mut view)
+        );
+        view.sort = None;
+        view.focus(Focus::Detail);
+        let line = status(&mut view);
+        assert!(line.contains("Line 1/") && !line.contains("1/3"), "{line}");
+    }
+
+    #[test]
+    fn footer_hints_match_the_focus() {
+        let footer = |view: &mut ModelView| screen(&draw(view, 120, 20))[19].clone();
+        let mut view = three();
+        let list = footer(&mut view);
+        assert!(
+            list.contains("v verdict") && list.contains("y copy"),
+            "{list}"
+        );
+        let mut bare =
+            ModelView::new("Catalog", Vec::new(), vec![row("a", "", "")], false).unwrap();
+        assert!(
+            !footer(&mut bare).contains("verdict"),
+            "{}",
+            footer(&mut bare)
+        );
+        view.searching = true;
+        let searching = footer(&mut view);
+        assert!(
+            searching.contains("Enter apply") && !searching.contains("verdict"),
+            "{searching}"
+        );
+        view.searching = false;
+        view.focus(Focus::Detail);
+        let detail = footer(&mut view);
+        assert!(
+            detail.contains("Esc back") && detail.contains("Home/End jump"),
+            "{detail}"
+        );
+        assert!(!detail.contains("verdict"), "{detail}");
+        view.focus(Focus::Help);
+        let help = footer(&mut view);
+        assert!(
+            help.contains("Esc back") && !help.contains("jump"),
+            "{help}"
+        );
+        assert!(!help.contains("verdict"), "{help}");
+    }
+}
