@@ -3,7 +3,7 @@ Icons are inlined (CSS mask/url() fails under file://)."""
 import json, re, pathlib
 K = pathlib.Path(__file__).resolve().parents[2]
 src = (K / "design/redesign/landing.src.html").read_text()
-icons = K / "site/brand/icons"
+icons = K / "assets/brand/icons"
 
 def icon(name):
     s = (icons / f"{name}.svg").read_text().strip()
@@ -31,7 +31,7 @@ rep = {
     "{{marquee}}": "".join(f"<span>{icon(i)}{t}</span>" for i, t in RUNTIMES),
     "{{ram}}": "".join(f'<button data-v="{r}" aria-pressed="false">{r} GB</button>' for r in RAM),
     "{{models}}": "".join(f'<button data-v="{m["id"]}" aria-pressed="false">{m["label"]}</button>' for m in MODELS),
-    "{{faces_json}}": json.dumps({k: (K / f"site/brand/illustrations/sparky-{k}.svg").read_text().strip() for k in ("yes", "slow", "no")}),
+    "{{faces_json}}": json.dumps({k: (K / f"assets/brand/illustrations/sparky-{k}.svg").read_text().strip() for k in ("yes", "slow", "no")}),
     "{{model_json}}": json.dumps([{k: m[k] for k in ("id", "mem", "params", "dense")} for m in MODELS]),
     "{{cmp_them}}": "".join(f'<li class="{"" if i == 0 else "dim"}"><span class="m {"y" if i == 0 else "n"}">{"✓" if i == 0 else "–"}</span>{c}</li>' for i, c in enumerate(COMPARE)),
     "{{cmp_us}}": "".join(f'<li><span class="m y">✓</span>{c}</li>' for c in COMPARE),

@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+### Changes
+
+- **The website moved to its own repository.** The www.rigspark.si source
+  (`site/`) and its Pages deploy now live in the private `rigspark-web` repo,
+  with their history. The brand kit the README, GUI and design kit use moved
+  from `site/brand/` to `assets/brand/`.
+  - `cargo catalog-site` now takes `--output` and `--site` explicitly and is
+    run by rigspark-web's daily catalog sync, not by catalog admission here.
+  - The site checks (download links, FAQ structured data, canonical URL,
+    catalog counts) run in rigspark-web's CI.
+
 ### Fixes
 
 - **Stopping a model server no longer gives up while it shuts down.** After the

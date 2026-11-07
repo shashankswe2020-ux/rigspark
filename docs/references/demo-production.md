@@ -41,7 +41,7 @@ benchmark or a new live capture.
 ## Sources and Credits
 
 - Product media: [original CLI recording](../../assets/demo.gif), [model evidence](../../assets/model-performance.png), and [workspace](../../assets/screenshot-workspace.png).
-- Visual identity: the project's [site styles](../../site/styles.css).
+- Visual identity: the project's site styles (`site/styles.css` in the private rigspark-web repository).
 - Music: **Happy Beats / Business Moves, Vol. 12** by [ende.app](https://ende.app/en), from the brag skill's bundled music library. No voiceover.
 - Type: Archivo and IBM Plex Mono, from [Google Fonts](https://github.com/google/fonts), embedded in the render.
 - Hyperframes domain skill revision: `73d26a5187c2b24c7613e9ec58abfc97b4d5c954` in [heygen-com/hyperframes](https://github.com/heygen-com/hyperframes).

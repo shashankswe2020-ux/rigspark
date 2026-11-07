@@ -10,7 +10,7 @@ use std::{error::Error, path::PathBuf, process::ExitCode};
 
 #[derive(Parser)]
 #[command(
-    about = "Write site/data/latest.js (models released or auto-added in the last month) and stamp catalog counts into site/index.html"
+    about = "Write the website's data/latest.js (models released or auto-added in the last month) and stamp catalog counts into its index.html. The site lives in the rigspark-web repository."
 )]
 struct Args {
     #[arg(long, default_value = "crates/rigspark-core/data/models.json")]
@@ -19,9 +19,11 @@ struct Args {
     generation_path: PathBuf,
     #[arg(long, default_value = "crates/rigspark-core/data/perf.json")]
     perf_path: PathBuf,
-    #[arg(long, default_value = "site/data/latest.js")]
+    /// Path to the website's `site/data/latest.js` (in a rigspark-web checkout).
+    #[arg(long)]
     output: PathBuf,
-    #[arg(long, default_value = "site/index.html")]
+    /// Path to the website's `site/index.html` (in a rigspark-web checkout).
+    #[arg(long)]
     site: PathBuf,
     /// Exit non-zero instead of writing when the committed file is stale.
     #[arg(long)]

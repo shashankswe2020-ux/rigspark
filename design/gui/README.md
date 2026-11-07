@@ -36,7 +36,7 @@ The current GUI shows every control on every page: four dropdowns, Refresh, a ha
   - a face on every model row (happy = runs well, sleepy = slow, X-eyes = won't fit)
   - the chat avatar
   - 3D renders in empty states (Chat, Connectors) and on the Hardware Score card
-- **Dark-theme faces:** `site/brand/illustrations/sparky-*-dark.svg` give Sparky a lighter body so he reads on dark surfaces. The prototype swaps them with the theme.
+- **Dark-theme faces:** `assets/brand/illustrations/sparky-*-dark.svg` give Sparky a lighter body so he reads on dark surfaces. The prototype swaps them with the theme.
 
 ## Prototype notes (what's fake)
 
@@ -48,7 +48,7 @@ The current GUI shows every control on every page: four dropdowns, Refresh, a ha
 
 ## Implementation pointers
 
-- **Tokens:** the CSS custom properties at the top of `app.html` (`--bg`, `--side`, `--surface`, `--raised`, `--line`, `--text*`, `--amber*`, verdict colours) map 1:1 onto `site/brand/tokens/tokens.css`, under a `[data-theme=dark]` override.
+- **Tokens:** the CSS custom properties at the top of `app.html` (`--bg`, `--side`, `--surface`, `--raised`, `--line`, `--text*`, `--amber*`, verdict colours) map 1:1 onto `assets/brand/tokens/tokens.css`, under a `[data-theme=dark]` override.
 - **Shortcuts:** ⌘1–⌘5 switch views, ⌘I toggles the inspector, Esc closes popovers and sheets, ↩ sends and ⇧↩ adds a newline.
 - **Popovers:** one positioning helper (`openPop`) for the model chip, the + menu, Fit settings and the agent chip.
 - **Responsive:** below 980px the sidebar collapses to icons and the model list drops the fit and tok/s columns.

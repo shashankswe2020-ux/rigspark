@@ -18,7 +18,7 @@ T = {
  "shadow": {"card":"0 4px 24px rgba(0,0,0,.06)", "float":"0 12px 40px rgba(0,0,0,.12)"},
  "motion": {"ease":"cubic-bezier(.28,.11,.32,1)","spring":"cubic-bezier(.34,1.56,.64,1)","base":"600ms"}
 }
-out = pathlib.Path("/home/claude/kit/site/brand/tokens"); out.mkdir(parents=True, exist_ok=True)
+out = pathlib.Path("/home/claude/kit/assets/brand/tokens"); out.mkdir(parents=True, exist_ok=True)
 (out/"tokens.json").write_text(json.dumps(T, indent=2))
 lines=[":root {"]
 for g,d in T["color"].items():

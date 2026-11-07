@@ -1,7 +1,7 @@
 import asyncio
 from playwright.async_api import async_playwright
 from PIL import Image
-B='/home/claude/kit/site/brand/'
+B='/home/claude/kit/assets/brand/'
 async def m():
     async with async_playwright() as p:
         b=await p.chromium.launch(); pg=await b.new_page(viewport={'width':1300,'height':1800})

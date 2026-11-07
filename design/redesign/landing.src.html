@@ -6,9 +6,9 @@
 <title>RigSpark: meet Sparky. Know if it runs before you download.</title>
 <meta name="description" content="Sparky checks your hardware and gives every local model a yes, slow or no verdict with estimated tok/s before you download. Free, open source, offline.">
 <meta name="theme-color" content="#FFFFFF">
-<link rel="icon" href="../../site/brand/logo/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="../../site/brand/fonts/fonts.css">
-<link rel="stylesheet" href="../../site/brand/tokens/tokens.css">
+<link rel="icon" href="../../assets/brand/logo/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../assets/brand/fonts/fonts.css">
+<link rel="stylesheet" href="../../assets/brand/tokens/tokens.css">
 <style>
 *{box-sizing:border-box;margin:0}
 html{scroll-behavior:smooth}
@@ -237,7 +237,7 @@ footer .crumb img{width:18px}
 
 <header class="lnav">
   <div class="wide">
-    <a class="brand" href="#"><img src="../../site/brand/logo/mark.svg" alt="">RigSpark</a>
+    <a class="brand" href="#"><img src="../../assets/brand/logo/mark.svg" alt="">RigSpark</a>
     <nav>
       <a href="#spin">Overview</a><a href="#ask">Ask Sparky</a><a href="#features">Features</a><a href="#privacy">Privacy</a><a href="#compare">Compare</a><a href="#faq">FAQ</a>
       <a class="pill sm" href="#install">Download</a>
@@ -263,7 +263,7 @@ footer .crumb img{width:18px}
     <div class="cap top on" data-from="0" data-to=".3">Hi, I'm Sparky.<small>RigSpark's hardware-aware sidekick.</small></div>
     <div class="cap top" data-from=".3" data-to=".62">Reads your rig.<small>RAM, VRAM, unified memory, bandwidth and free disk. Locally.</small></div>
     <div class="cap top" data-from=".62" data-to="1.01">Ranks all 69 models.<small>A verdict and a binding reason, before a single byte downloads.</small></div>
-    <div class="stage"><img id="spinimg" src="../../site/brand/3d/turntable/sparky-00.webp" alt="Sparky, a graphite robot with an amber visor" width="799" height="629"></div>
+    <div class="stage"><img id="spinimg" src="../../assets/brand/3d/turntable/sparky-00.webp" alt="Sparky, a graphite robot with an amber visor" width="799" height="629"></div>
   </div>
 </section>
 
@@ -273,7 +273,7 @@ footer .crumb img{width:18px}
     <h2 class="h2" style="margin-top:8px">Yes. Slow. No.</h2>
     <p class="lead" style="max-width:640px;margin:14px auto 0">Every model in the catalog gets a verdict sized to your machine, with the reason it was given.</p>
   </div>
-  <img class="imgs reveal" src="../../site/brand/3d/sparky-lineup.webp" alt="Three Sparky robots: smiling amber visor, sleepy yellow visor, and a red visor with crossed-out eyes" width="1800" height="735">
+  <img class="imgs reveal" src="../../assets/brand/3d/sparky-lineup.webp" alt="Three Sparky robots: smiling amber visor, sleepy yellow visor, and a red visor with crossed-out eyes" width="1800" height="735">
   <div class="moods reveal">
     <div><b><span class="dot" style="background:var(--spark-500)"></span>yes</b><p>Fits and meets bandwidth. You get an estimated tok/s range.</p></div>
     <div><b><span class="dot" style="background:var(--spark-300)"></span>slow</b><p>Fits, but bandwidth-bound. You see the estimate and decide.</p></div>
@@ -291,9 +291,9 @@ footer .crumb img{width:18px}
     <div class="config reveal">
       <div class="viewer" aria-live="polite">
         <span class="verdict-tag"><i id="tag-dot"></i><span id="tag-txt">yes</span></span>
-        <img data-v="yes" class="on" src="../../site/brand/3d/sparky-yes-3d.webp" alt="Sparky smiling: yes" width="1000" height="797">
-        <img data-v="slow" src="../../site/brand/3d/sparky-slow-3d.webp" alt="Sparky sleepy: slow" width="1000" height="797">
-        <img data-v="no" src="../../site/brand/3d/sparky-no-3d.webp" alt="Sparky with crossed-out eyes: no" width="1000" height="797">
+        <img data-v="yes" class="on" src="../../assets/brand/3d/sparky-yes-3d.webp" alt="Sparky smiling: yes" width="1000" height="797">
+        <img data-v="slow" src="../../assets/brand/3d/sparky-slow-3d.webp" alt="Sparky sleepy: slow" width="1000" height="797">
+        <img data-v="no" src="../../assets/brand/3d/sparky-no-3d.webp" alt="Sparky with crossed-out eyes: no" width="1000" height="797">
       </div>
       <div>
         <div class="step"><h3>Memory.</h3><p class="muted">Unified RAM on Apple Silicon, or GPU VRAM.</p><div class="chips" id="ram">{{ram}}</div></div>
@@ -328,26 +328,26 @@ footer .crumb img{width:18px}
     <h3>Terminal UI</h3>
     <p>Every model, ranked for your machine.</p>
     <div class="ctas"><a class="pill sm" style="font-size:14px;padding:8px 16px" href="#install">Download</a><a class="more" href="#faq">Learn more</a></div>
-    <img class="shot" src="../../site/brand/screens/tui-recommend.webp" alt="RigSpark terminal UI ranking models" loading="lazy">
+    <img class="shot" src="../../assets/brand/screens/tui-recommend.webp" alt="RigSpark terminal UI ranking models" loading="lazy">
   </div>
   <div class="tile night reveal">
     <span class="badge-new">New in 2.3</span>
     <h3>Local image &amp; video</h3>
     <p>FLUX.1 schnell and Wan 2.1. Nothing leaves 127.0.0.1.</p>
     <div class="ctas"><a class="more" href="#faq">Learn more</a></div>
-    <img class="shot" src="../../site/brand/screens/chat-image-generation.webp" alt="Generating an image of Mount Fuji in the RigSpark chat" loading="lazy">
+    <img class="shot" src="../../assets/brand/screens/chat-image-generation.webp" alt="Generating an image of Mount Fuji in the RigSpark chat" loading="lazy">
   </div>
   <div class="tile night reveal">
     <h3>Workspace</h3>
     <p>Verify, serve and chat. On loopback only.</p>
     <div class="ctas"><a class="more" href="#install">Get started</a></div>
-    <img class="shot" src="../../site/brand/screens/screenshot-workspace.webp" alt="RigSpark browser workspace" loading="lazy">
+    <img class="shot" src="../../assets/brand/screens/screenshot-workspace.webp" alt="RigSpark browser workspace" loading="lazy">
   </div>
   <div class="tile amber reveal">
     <h3>AI Hardware Score</h3>
     <p>0–100. Names your bottleneck.</p>
     <div class="ctas"><a class="more" href="#ask">Ask Sparky</a></div>
-    <img class="art" src="../../site/brand/3d/sparky-chip.webp" alt="Sparky holding a processor chip" loading="lazy" width="1096" height="843">
+    <img class="art" src="../../assets/brand/3d/sparky-chip.webp" alt="Sparky holding a processor chip" loading="lazy" width="1096" height="843">
   </div>
 </section>
 
@@ -357,7 +357,7 @@ footer .crumb img{width:18px}
     <h2 class="h2" style="margin-top:8px">Your hardware.<br>Your data. Your call.</h2>
     <p class="lead" style="max-width:660px;margin:16px auto 0">Most "can I run it" tools guess. Sparky refuses to. Every figure is sourced, or it says <code>unknown</code>.</p>
   </div>
-  <img class="art reveal" src="../../site/brand/3d/sparky-studio.webp" alt="Sparky standing in a studio spotlight" width="1400" height="1115" loading="lazy">
+  <img class="art reveal" src="../../assets/brand/3d/sparky-studio.webp" alt="Sparky standing in a studio spotlight" width="1400" height="1115" loading="lazy">
   <div class="wide">
     <div class="pillars reveal">
       <div>{{i:offline}}<h3>Offline advice.</h3><p><code>recommend</code>, <code>can-run</code> and <code>doctor</code> make zero network calls. Same catalog, same answer.</p></div>
@@ -394,14 +394,14 @@ footer .crumb img{width:18px}
     <div class="cmp reveal">
       <div class="col them"><div class="ph">{{i:layers}}</div><h3>A runtime alone</h3><p class="muted" style="margin-top:6px">Ollama, llama.cpp, MLX or LM Studio</p>
         <ul>{{cmp_them}}</ul></div>
-      <div class="col us"><img src="../../site/brand/3d/sparky-yes-3d.webp" alt="" width="1000" height="797"><h3>Runtime + RigSpark</h3><p class="muted" style="margin-top:6px">Sparky decides, your runtime runs</p>
+      <div class="col us"><img src="../../assets/brand/3d/sparky-yes-3d.webp" alt="" width="1000" height="797"><h3>Runtime + RigSpark</h3><p class="muted" style="margin-top:6px">Sparky decides, your runtime runs</p>
         <ul>{{cmp_us}}</ul></div>
     </div>
   </div>
 </section>
 
 <section class="story reveal">
-  <img src="../../site/brand/photo/desk-sparky.webp" alt="A Sparky toy on a desk next to a laptop showing a ranked model table" loading="lazy">
+  <img src="../../assets/brand/photo/desk-sparky.webp" alt="A Sparky toy on a desk next to a laptop showing a ranked model table" loading="lazy">
   <div class="txt">
     <h2 class="h2">Made for machines<br>you already own.</h2>
     <p>One command ranks every model for your rig. One more serves it on 127.0.0.1.</p>
@@ -450,13 +450,13 @@ footer .crumb img{width:18px}
     <p class="lead" style="margin-top:14px">Free and open source. MIT licensed. Native Rust.</p>
     <div class="ctas"><a class="pill" href="#install">Download</a><a class="more" href="https://github.com/shashankswe2020-ux/rigspark">Star on GitHub</a></div>
   </div>
-  <img class="art reveal" src="../../site/brand/3d/sparky-cheer.webp" alt="Sparky with arms out, ta-da" width="1093" height="868" loading="lazy">
+  <img class="art reveal" src="../../assets/brand/3d/sparky-cheer.webp" alt="Sparky with arms out, ta-da" width="1093" height="868" loading="lazy">
 </section>
 
 <footer>
   <div class="wide">
     <p class="fine2">Verdicts and tok/s are RigSpark's offline estimates from the curated catalog, not benchmarks. Sparky is RigSpark's mascot. Ollama, LM Studio, llama.cpp and MLX are trademarks of their respective owners.</p>
-    <div class="crumb"><img src="../../site/brand/logo/mark.svg" alt=""> › RigSpark</div>
+    <div class="crumb"><img src="../../assets/brand/logo/mark.svg" alt=""> › RigSpark</div>
     <div class="fcols">
       <div><b>Product</b><a href="#spin">Overview</a><a href="#ask">Ask Sparky</a><a href="#features">Features</a><a href="#install">Install</a></div>
       <div><b>Resources</b><a href="https://github.com/shashankswe2020-ux/rigspark#readme">Docs</a><a href="https://github.com/shashankswe2020-ux/rigspark/blob/main/CHANGELOG.md">Changelog</a><a href="https://github.com/shashankswe2020-ux/rigspark/releases/latest">Releases</a><a href="https://crates.io/crates/rigspark-cli">crates.io</a></div>
@@ -475,7 +475,7 @@ document.querySelectorAll('[data-cmd]').forEach(b=>b.querySelector('button').onc
 const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.15});
 document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
 // scroll-scrubbed turntable (36 frames)
-const N=36, frames=[...Array(N)].map((_,i)=>`../../site/brand/3d/turntable/sparky-${String(i).padStart(2,'0')}.webp`);
+const N=36, frames=[...Array(N)].map((_,i)=>`../../assets/brand/3d/turntable/sparky-${String(i).padStart(2,'0')}.webp`);
 frames.forEach(src=>{const im=new Image();im.src=src});
 const spin=document.getElementById('spin'), img=document.getElementById('spinimg'), caps=[...spin.querySelectorAll('.cap')];
 let last=-1;
