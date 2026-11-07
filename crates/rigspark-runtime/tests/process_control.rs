@@ -390,3 +390,63 @@ async fn a_process_that_cannot_be_identified_is_never_force_killed() {
         "graceful only"
     );
 }
+
+#[tokio::test]
+async fn a_cancelled_stop_without_a_listener_does_not_report_success() {
+    // Cancellation also makes the listener lookup fail; it must not be read as
+    // "nothing listens", which would clear the handle of a process that is gone
+    // only from the cancelled probe's point of view.
+    let control = Liveness::new(&[false]);
+    let cancel = CancellationToken::new();
+    cancel.cancel();
+    let err = stop_owned(
+        "http://127.0.0.1:11435",
+        &identity(),
+        &NoListener { process: None },
+        &control,
+        &cancel,
+    )
+    .await
+    .unwrap_err();
+    assert_eq!(err, "cancelled");
+    assert_eq!(
+        control.calls.load(std::sync::atomic::Ordering::SeqCst),
+        0,
+        "liveness is not consulted after cancellation"
+    );
+    assert!(control.signals.lock().unwrap().is_empty());
+}
+
+/// Listens as our process, but the process can no longer be identified.
+struct VanishedProbe;
+#[async_trait::async_trait]
+impl ProcessProbe for VanishedProbe {
+    async fn listener(&self, port: u16, host: &str) -> Result<Listener, StateError> {
+        Probe.listener(port, host).await
+    }
+    async fn process(&self, _: u32) -> Result<ProcessIdentity, StateError> {
+        Err(StateError {
+            kind: "identity",
+            message: "process identity unavailable".into(),
+        })
+    }
+}
+
+#[tokio::test]
+async fn a_process_that_exits_before_the_first_signal_is_already_stopped() {
+    let control = Liveness::new(&[false]);
+    stop(&VanishedProbe, &control).await.unwrap();
+    assert!(control.signals.lock().unwrap().is_empty());
+}
+
+#[tokio::test]
+async fn a_process_that_ignores_the_graceful_signal_is_forced_after_three_seconds() {
+    // Still alive and still ours for every graceful poll: escalate, then it exits.
+    let mut alive = vec![true; 60];
+    alive.push(false);
+    let control = Liveness::new(&alive);
+    let started = std::time::Instant::now();
+    stop(&Probe, &control).await.unwrap();
+    assert_eq!(*control.signals.lock().unwrap(), vec![false, true]);
+    assert!(started.elapsed() >= std::time::Duration::from_millis(2900));
+}
