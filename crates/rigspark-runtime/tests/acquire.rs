@@ -580,6 +580,10 @@ struct Flaky {
     corrupt_resume: bool,
     resume_failures: std::sync::atomic::AtomicU32,
     offsets: std::sync::Mutex<Vec<u64>>,
+    /// Overrides for resumed responses: status, commit, and length minus the bytes left.
+    resume_status: u16,
+    resume_commit: String,
+    resume_length_delta: i64,
 }
 impl Flaky {
     fn response(&self, offset: u64) -> DownloadResponse {
@@ -596,10 +600,19 @@ impl Flaky {
                 bytes: Cursor::new(slice),
             })
         };
+        let left = (self.bytes.len() - start) as i64;
         DownloadResponse {
-            status: if offset == 0 { 200 } else { 206 },
-            commit: Some("a".repeat(40)),
-            length: Some((self.bytes.len() - start) as u64),
+            status: if offset == 0 { 200 } else { self.resume_status },
+            commit: Some(if offset == 0 {
+                "a".repeat(40)
+            } else {
+                self.resume_commit.clone()
+            }),
+            length: Some(if offset == 0 {
+                left
+            } else {
+                left + self.resume_length_delta
+            } as u64),
             body,
         }
     }
@@ -641,6 +654,9 @@ fn flaky(bytes: &[u8], resumable: bool, corrupt_resume: bool) -> Flaky {
         corrupt_resume,
         resume_failures: Default::default(),
         offsets: Default::default(),
+        resume_status: 206,
+        resume_commit: "a".repeat(40),
+        resume_length_delta: 0,
     }
 }
 
@@ -873,4 +889,197 @@ async fn ceiling_downloads_report_the_real_size_not_the_ceiling() {
         Some(&(8, 8)),
         "cache hits report the file size"
     );
+}
+
+#[tokio::test]
+async fn a_resume_must_be_a_partial_response_for_the_same_commit_and_remaining_bytes() {
+    let bytes: Vec<u8> = (0..100_000u32).map(|value| (value % 233) as u8).collect();
+    let cases: Vec<(Box<dyn Fn(&mut Flaky)>, bool)> = vec![
+        (Box::new(|_| {}), true),
+        // A server may report fewer bytes left than remain; the hash still decides.
+        (Box::new(|f| f.resume_length_delta = -1), true),
+        (Box::new(|f| f.resume_length_delta = 1), false),
+        (Box::new(|f| f.resume_status = 200), false),
+        (Box::new(|f| f.resume_commit = "b".repeat(40)), false),
+    ];
+    for (index, (adjust, resumes)) in cases.into_iter().enumerate() {
+        let mut transport = flaky(&bytes, true, false);
+        adjust(&mut transport);
+        let root = tempfile::tempdir().unwrap();
+        let result = Acquisition::new(root.path())
+            .unwrap()
+            .acquire(&artifact(&bytes), &transport, &Default::default())
+            .await;
+        match resumes {
+            true => assert_eq!(
+                std::fs::read(result.unwrap().path).unwrap(),
+                bytes,
+                "case {index}"
+            ),
+            false => assert!(
+                result.unwrap_err().contains("resume response mismatch"),
+                "case {index}"
+            ),
+        }
+    }
+}
+
+#[tokio::test]
+async fn a_declared_length_above_the_pin_is_refused_before_any_byte_is_kept() {
+    let bytes = b"verified".to_vec();
+    for (length, ok) in [
+        (Some(8), true),
+        (Some(7), true),
+        (None, true),
+        (Some(9), false),
+    ] {
+        let root = tempfile::tempdir().unwrap();
+        let transport = ResponseTransport {
+            bytes: bytes.clone(),
+            commit: Some("a".repeat(40)),
+            length,
+        };
+        let result = Acquisition::new(root.path())
+            .unwrap()
+            .acquire(&artifact(&bytes), &transport, &Default::default())
+            .await;
+        assert_eq!(result.is_ok(), ok, "{length:?}: {result:?}");
+        if !ok {
+            assert!(result.unwrap_err().contains("byte limit"));
+        }
+    }
+}
+
+#[tokio::test]
+async fn verified_stamps_are_read_up_to_four_kib() {
+    let root = tempfile::tempdir().unwrap();
+    let acquire = Acquisition::new(root.path()).unwrap();
+    let transport = FakeTransport {
+        bytes: b"verified".to_vec(),
+    };
+    let cancel = tokio_util::sync::CancellationToken::new();
+    acquire
+        .acquire(&artifact(b"verified"), &transport, &cancel)
+        .await
+        .unwrap();
+    let stamps: Vec<_> = walk(root.path())
+        .into_iter()
+        .filter(|path| path.contains("/.verified/") && !path.ends_with('/'))
+        .collect();
+    let [stamp] = stamps.as_slice() else {
+        panic!("one stamp expected: {stamps:?}");
+    };
+    let stamp = root.path().join(stamp);
+    if !stamp.is_file() {
+        // Whole-second filesystems keep no stamp; every hit is re-hashed there.
+        return;
+    }
+    let original = std::fs::read(&stamp).unwrap();
+    for (size, rehashed) in [(4096, false), (4097, true)] {
+        let mut padded = original.clone();
+        padded.resize(size, b' ');
+        std::fs::write(&stamp, &padded).unwrap();
+        let again = acquire
+            .acquire(&artifact(b"verified"), &transport, &cancel)
+            .await
+            .unwrap();
+        assert!(again.cached);
+        assert_eq!(again.rehashed, rehashed, "stamp of {size} bytes");
+    }
+}
+
+fn repository_files(count: usize) -> Vec<Artifact> {
+    (0..count)
+        .map(|index| {
+            let mut request = artifact(b"verified");
+            request.file = format!("part-{index:03}.gguf");
+            request
+        })
+        .collect()
+}
+
+#[tokio::test]
+async fn repository_manifests_are_bounded_consistent_and_complete() {
+    let transport = FakeTransport {
+        bytes: b"verified".to_vec(),
+    };
+    let cancel = tokio_util::sync::CancellationToken::new();
+    let fetch = |artifacts: Vec<Artifact>| {
+        let transport = &transport;
+        let cancel = &cancel;
+        async move {
+            let root = tempfile::tempdir().unwrap();
+            Acquisition::new(root.path())
+                .unwrap()
+                .repository(&artifacts, transport, cancel)
+                .await
+        }
+    };
+    assert!(fetch(repository_files(256)).await.is_ok());
+    assert!(
+        fetch(repository_files(257))
+            .await
+            .unwrap_err()
+            .contains("count exceeds")
+    );
+    for (field, value) in [
+        ("repo", "owner/other"),
+        ("revision", "b"),
+        ("backend", "comfyui"),
+    ] {
+        let mut files = repository_files(2);
+        match field {
+            "repo" => files[1].repo = value.into(),
+            "revision" => files[1].revision = value.repeat(40),
+            _ => files[1].backend = value.into(),
+        }
+        let error = fetch(files).await.unwrap_err();
+        assert!(error.contains("inconsistent"), "{field}: {error}");
+    }
+    let mut duplicated = repository_files(2);
+    duplicated[1].file = duplicated[0].file.clone();
+    assert!(
+        fetch(duplicated)
+            .await
+            .unwrap_err()
+            .contains("inconsistent")
+    );
+    // An MLX repository needs a config, a tokenizer config and safetensors weights.
+    let mlx = |names: &[&str]| -> Vec<Artifact> {
+        names
+            .iter()
+            .map(|name| {
+                let mut request = artifact(b"verified");
+                request.backend = "mlx".into();
+                request.file = (*name).into();
+                request
+            })
+            .collect()
+    };
+    assert!(
+        fetch(mlx(&[
+            "config.json",
+            "tokenizer_config.json",
+            "model.safetensors"
+        ]))
+        .await
+        .is_ok()
+    );
+    for names in [
+        &["tokenizer_config.json", "model.safetensors", "a.json"][..],
+        &["config.json", "model.safetensors", "a.json"],
+        &["config.json", "tokenizer_config.json", "a.json"],
+        &["config.json", "tokenizer_config.json"],
+    ] {
+        let error = fetch(mlx(names)).await.unwrap_err();
+        assert!(error.contains("incomplete MLX"), "{names:?}: {error}");
+    }
+    // The byte total may reach the largest exact float integer, not pass it.
+    let mut largest = repository_files(2);
+    largest[0].bytes = 9007199254740990;
+    largest[1].bytes = 1;
+    let error = fetch(largest.clone()).await.unwrap_err();
+    assert!(!error.contains("safe integer"), "{error}");
+    largest[1].bytes = 2;
+    assert!(fetch(largest).await.unwrap_err().contains("safe integer"));
 }
