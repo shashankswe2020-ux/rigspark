@@ -951,6 +951,8 @@ async fn a_declared_length_above_the_pin_is_refused_before_any_byte_is_kept() {
     }
 }
 
+// Stamps record a Unix file identity; other platforms re-hash every cache hit.
+#[cfg(unix)]
 #[tokio::test]
 async fn verified_stamps_are_read_up_to_four_kib() {
     let root = tempfile::tempdir().unwrap();
