@@ -893,6 +893,13 @@ mod boundary_tests {
             10
         );
         assert_eq!(
+            read(response(200, reqwest::Body::from(vec![b'x'; 5])), 10)
+                .await
+                .unwrap()
+                .len(),
+            5
+        );
+        assert_eq!(
             read(response(200, reqwest::Body::from(vec![b'x'; 11])), 10)
                 .await
                 .unwrap_err()
