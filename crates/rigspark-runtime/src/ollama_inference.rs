@@ -525,6 +525,20 @@ mod timing_tests {
         let idle = Timings::from_llama_cpp(&idle).unwrap();
         assert_eq!(idle.prompt_tokens_per_second(), None);
         assert_eq!(idle.generated_tokens_per_second(), None);
+        // Every draft accepted is valid; zero time or zero tokens give no rate.
+        let all_accepted = json!({"prompt_n": 3, "prompt_ms": 6.0, "predicted_n": 4,
+            "predicted_ms": 8.0, "draft_n": 2, "draft_n_accepted": 2});
+        assert_eq!(
+            Timings::from_llama_cpp(&all_accepted)
+                .unwrap()
+                .draft_accepted,
+            Some(2)
+        );
+        let instant =
+            json!({"prompt_n": 3, "prompt_ms": 0.0, "predicted_n": 0, "predicted_ms": 5.0});
+        let instant = Timings::from_llama_cpp(&instant).unwrap();
+        assert_eq!(instant.prompt_tokens_per_second(), None);
+        assert_eq!(instant.generated_tokens_per_second(), None);
         for bad in [
             json!(null),
             json!({"prompt_n": 3, "prompt_ms": 6.0, "predicted_n": 4}),

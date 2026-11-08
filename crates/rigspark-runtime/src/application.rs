@@ -1196,11 +1196,7 @@ pub async fn run_native_with_config_observed(
             options.context
         },
         cache: requested,
-        slot_save_path: if backend == "llamacpp" {
-            Some(kv_slot_directory(&config)?)
-        } else {
-            None
-        },
+        slot_save_path: kv_slot_directory_for(&backend, &config)?,
     };
     let active = if options.context.is_some() && backend == "ollama" {
         let activation = ContextActivation {
@@ -1404,6 +1400,18 @@ pub fn kv_slot_directory(config: &Config) -> Result<PathBuf, BackendError> {
         return Err(BackendError("KV slot directory is not a directory".into()));
     }
     Ok(directory)
+}
+
+/// The KV slot directory a server of `backend` starts with: llama.cpp only.
+pub fn kv_slot_directory_for(
+    backend: &str,
+    config: &Config,
+) -> Result<Option<PathBuf>, BackendError> {
+    if backend == "llamacpp" {
+        kv_slot_directory(config).map(Some)
+    } else {
+        Ok(None)
+    }
 }
 
 /// Saves, restores or erases a KV slot on the llama.cpp server this config's state records.
