@@ -328,7 +328,8 @@ mod boundaries {
             "http://[::1]:8080/v1",
             "https://8.8.8.8/v1",
             "https://[2606:4700::1]/v1",
-            &format!("https://api.example.com/{}", "a".repeat(2048 - 25)),
+            // Exactly 2048 bytes.
+            &format!("https://api.example.com/{}", "a".repeat(2048 - 24)),
         ] {
             assert!(external_url(good).is_ok(), "{good}");
         }
@@ -441,6 +442,75 @@ mod boundaries {
         )
         .unwrap();
         assert!(keyed.available().await);
+        // Keyed providers cannot be built without a key, so only a keyed one is ever asked.
+        assert!(
+            RemoteHarness::new(
+                Provider::OpenAi,
+                "https://api.openai.com/v1/chat/completions",
+                None,
+                &body,
+            )
+            .is_err()
+        );
+    }
+
+    #[tokio::test]
+    async fn each_frame_counts_on_top_of_the_text_already_sent() {
+        // One byte, then 200 bytes of markers: 201 is over a 200 limit.
+        let body = transport(&format!("{}{}", frame("x"), frame(&"k".repeat(20))));
+        let chat = |limit: usize| {
+            let body = &body;
+            async move {
+                RemoteHarness::new(
+                    Provider::Compatible,
+                    "http://127.0.0.1:9/v1",
+                    Some(Secret::new("k").unwrap()),
+                    body,
+                )
+                .unwrap()
+                .with_limit(limit)
+                .unwrap()
+                .chat(&input(), &CancellationToken::new(), &mut |_| Ok(()))
+                .await
+            }
+        };
+        assert!(matches!(chat(200).await, Err(HarnessError::Limit)));
+        assert_eq!(
+            chat(201).await.unwrap(),
+            format!("x{}", "[REDACTED]".repeat(20))
+        );
+    }
+
+    #[tokio::test]
+    async fn the_native_transport_resolves_localhost_to_loopback_itself() {
+        use rigspark_runtime::harness::{NativeRemoteTransport, RemoteRequest, RemoteTransport};
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let server = tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.unwrap();
+            let mut buffer = vec![0u8; 4096];
+            let _ = socket.read(&mut buffer).await.unwrap();
+            socket
+                .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\nok")
+                .await
+                .unwrap();
+        });
+        let response = NativeRemoteTransport::new()
+            .unwrap()
+            .send(RemoteRequest {
+                url: format!("http://localhost:{port}/v1").parse().unwrap(),
+                body: serde_json::json!({}),
+                headers: Default::default(),
+            })
+            .await
+            .unwrap();
+        assert_eq!(response.status, 200);
+        let mut text = String::new();
+        let mut reader = response.body;
+        reader.read_to_string(&mut text).await.unwrap();
+        assert_eq!(text, "ok");
+        server.await.unwrap();
     }
 
     async fn frames(body: &str, maximum: usize) -> Result<Vec<String>, HarnessError> {
