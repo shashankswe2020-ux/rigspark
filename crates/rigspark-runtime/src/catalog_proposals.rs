@@ -580,3 +580,380 @@ impl ProposalTransport for NativeProposalTransport {
         Ok(Some(response_claims(raw)?))
     }
 }
+
+#[cfg(test)]
+mod boundary_tests {
+    use super::*;
+
+    fn catalog() -> Catalog {
+        Catalog::parse(rigspark_core::MODELS_JSON).unwrap()
+    }
+    const NOW: &str = "2026-11-09T00:00:00Z";
+
+    #[test]
+    fn limits_are_256_and_64_kib() {
+        assert_eq!(MAX_SOURCE_BYTES, 262144);
+        assert_eq!(MAX_CONFIG_BYTES, 65536);
+    }
+
+    #[test]
+    fn repositories_are_lowercase_names_that_start_alphanumeric() {
+        assert!(valid_repository("a"));
+        assert!(valid_repository("0.a_b-c"));
+        assert!(valid_repository(&"a".repeat(128)));
+        for bad in ["", "Abc", "aBc", "-abc", ".abc", "a/b", &"a".repeat(129)] {
+            assert!(!valid_repository(bad), "{bad:?}");
+        }
+    }
+
+    #[test]
+    fn inventories_hold_up_to_10000_names() {
+        let names = |count: usize| -> Vec<String> { (0..count).map(|n| format!("z{n}")).collect() };
+        assert_eq!(
+            candidate_repositories(&catalog(), &names(10000))
+                .unwrap()
+                .len(),
+            10000
+        );
+        assert_eq!(
+            candidate_repositories(&catalog(), &names(10001))
+                .unwrap_err()
+                .0,
+            "oversized repository inventory"
+        );
+    }
+
+    fn claim(field: &str, pointer: &str, value: &Value) -> Value {
+        json!({"field": field, "pointer": pointer, "valueJson": value.to_string()})
+    }
+
+    #[test]
+    fn extractions_are_bounded_in_size_count_and_value_length() {
+        let config = json!({
+            "model_family": "qwen", "file_type": "Q4_0", "parameter_size": "8B",
+            "context_length": 4096, "license": "x".repeat(2046), "capabilities": ["chat"]
+        });
+        let all = [
+            claim("architecture", "/model_family", &config["model_family"]),
+            claim("quantization", "/file_type", &config["file_type"]),
+            claim("parameters", "/parameter_size", &config["parameter_size"]),
+            claim("context", "/context_length", &config["context_length"]),
+            claim("license", "/license", &config["license"]),
+            claim("capabilities", "/capabilities", &config["capabilities"]),
+        ];
+        // Six claims, one with a 2048-byte value, padded to exactly 16384 bytes.
+        let raw = json!({"claims": all}).to_string();
+        let padded = format!("{raw}{}", " ".repeat(16384 - raw.len()));
+        assert_eq!(validate_claims(&padded, &config).unwrap().len(), 6);
+        assert_eq!(
+            validate_claims(&format!("{padded} "), &config)
+                .unwrap_err()
+                .0,
+            "oversized extraction"
+        );
+        let mut seven = all.to_vec();
+        seven.push(all[0].clone());
+        assert_eq!(
+            validate_claims(&json!({"claims": seven}).to_string(), &config)
+                .unwrap_err()
+                .0,
+            "too many claims"
+        );
+        let long = json!({"license": "x".repeat(2047)});
+        assert_eq!(
+            validate_claims(
+                &json!({"claims": [claim("license", "/license", &long["license"])]}).to_string(),
+                &long
+            )
+            .unwrap_err()
+            .0,
+            "oversized claim value"
+        );
+    }
+
+    fn proposal(status: &'static str, extraction_status: &'static str) -> Proposal {
+        Proposal {
+            repository: "r".into(),
+            status,
+            sources: Vec::new(),
+            artifact_bytes: None,
+            model_sha256: None,
+            projectors: Vec::new(),
+            claims: Vec::new(),
+            source_claims: Vec::new(),
+            extraction_status,
+            extraction_error: None,
+        }
+    }
+    fn report(proposals: Vec<Proposal>) -> ProposalReport {
+        ProposalReport {
+            schema_version: 1,
+            checked_at: NOW.into(),
+            inventory_complete: false,
+            requires_review: true,
+            proposals,
+            next_after: None,
+            remaining_candidates: 0,
+        }
+    }
+
+    #[test]
+    fn only_candidates_with_a_clean_extraction_are_error_free() {
+        assert!(!report(vec![]).has_errors());
+        assert!(!report(vec![proposal("candidate", "disabled")]).has_errors());
+        assert!(!report(vec![proposal("candidate", "source-matched-needs-review")]).has_errors());
+        for (status, extraction) in [
+            ("unavailable", "disabled"),
+            ("candidate", "rejected"),
+            ("candidate", "failed"),
+            ("no-valid-local-model-layer", "not-attempted"),
+        ] {
+            assert!(
+                report(vec![
+                    proposal("candidate", "disabled"),
+                    proposal(status, extraction)
+                ])
+                .has_errors(),
+                "{status} {extraction}"
+            );
+        }
+    }
+
+    fn manifest(digest: &str, size: u64, padding: usize) -> String {
+        json!({"config": {"digest": digest, "size": size},
+            "layers": [{"mediaType": "application/vnd.ollama.image.model", "size": 1234,
+                "digest": format!("sha256:{}", "a".repeat(64))}],
+            "annotations": {"padding": "p".repeat(padding)}})
+        .to_string()
+    }
+    fn recorded(responses: Vec<(String, String)>) -> RecordedProposals {
+        serde_json::from_value(json!({
+            "inventory": ["new-model"],
+            "responses": responses.into_iter().collect::<std::collections::BTreeMap<_, _>>(),
+            "extraction": null
+        }))
+        .unwrap()
+    }
+    const MANIFEST: &str = "https://registry.ollama.ai/v2/library/new-model/manifests/latest";
+    fn blob(sha: &str) -> String {
+        format!("https://registry.ollama.ai/v2/library/new-model/blobs/sha256:{sha}")
+    }
+    async fn status(transport: &RecordedProposals) -> (&'static str, &'static str) {
+        let report = collect(&catalog(), &["new-model".into()], 1, NOW, transport)
+            .await
+            .unwrap();
+        (
+            report.proposals[0].status,
+            report.proposals[0].extraction_status,
+        )
+    }
+
+    #[tokio::test]
+    async fn config_descriptors_need_a_hex_sha256_and_a_size_up_to_64_kib() {
+        // A config of exactly 64 KiB, in a manifest padded past a few KiB.
+        let config = format!(
+            "{{\"model_family\":\"{}\"}}",
+            "q".repeat(MAX_CONFIG_BYTES - 19)
+        );
+        assert_eq!(config.len(), MAX_CONFIG_BYTES);
+        let sha = format!("{:x}", Sha256::digest(config.as_bytes()));
+        let good = recorded(vec![
+            (
+                MANIFEST.into(),
+                manifest(&format!("sha256:{sha}"), MAX_CONFIG_BYTES as u64, 4096),
+            ),
+            (blob(&sha), config.clone()),
+        ]);
+        assert_eq!(status(&good).await, ("candidate", "disabled"));
+        let invalid = |digest: String, size: u64| {
+            recorded(vec![
+                (MANIFEST.into(), manifest(&digest, size, 0)),
+                (blob(&sha), config.clone()),
+                (blob(&sha[..10]), config.clone()),
+                (blob(&"g".repeat(64)), config.clone()),
+            ])
+        };
+        for (digest, size) in [
+            (format!("sha256:{}", &sha[..10]), MAX_CONFIG_BYTES as u64),
+            (
+                format!("sha256:{}", "g".repeat(64)),
+                MAX_CONFIG_BYTES as u64,
+            ),
+            (format!("sha256:{sha}"), 0),
+            (format!("sha256:{sha}"), MAX_CONFIG_BYTES as u64 + 1),
+        ] {
+            assert_eq!(
+                status(&invalid(digest.clone(), size)).await,
+                ("candidate", "invalid-config-descriptor"),
+                "{digest} {size}"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn manifests_up_to_256_kib_are_read() {
+        let sized = |bytes: usize| {
+            let base = manifest(&format!("sha256:{}", "b".repeat(64)), 10, 0);
+            manifest(
+                &format!("sha256:{}", "b".repeat(64)),
+                10,
+                bytes - base.len(),
+            )
+        };
+        let exact = sized(MAX_SOURCE_BYTES);
+        assert_eq!(exact.len(), MAX_SOURCE_BYTES);
+        let transport = recorded(vec![(MANIFEST.into(), exact)]);
+        assert_eq!(
+            status(&transport).await,
+            ("candidate", "config-unavailable-or-invalid")
+        );
+        let transport = recorded(vec![(MANIFEST.into(), sized(MAX_SOURCE_BYTES + 1))]);
+        assert_eq!(status(&transport).await, ("unavailable", "not-attempted"));
+    }
+
+    #[tokio::test]
+    async fn recorded_sources_and_extraction_are_returned_as_recorded() {
+        let transport: RecordedProposals = serde_json::from_value(json!({
+            "inventory": [], "responses": {"u": "body"}, "extraction": "{\"claims\":[]}"
+        }))
+        .unwrap();
+        assert_eq!(transport.fetch("u", 4).await.unwrap(), b"body");
+        assert_eq!(
+            transport.fetch("u", 3).await.unwrap_err().0,
+            "fixture source exceeds limit"
+        );
+        assert!(transport.fetch("missing", 10).await.is_err());
+        assert_eq!(
+            transport.extract(&json!({})).await.unwrap().as_deref(),
+            Some("{\"claims\":[]}")
+        );
+    }
+
+    #[test]
+    fn openai_responses_need_one_text_of_at_most_16_kib() {
+        let response = |texts: Vec<String>| {
+            json!({"status": "completed", "output": [
+                {"type": "reasoning"},
+                {"type": "message", "content": texts.iter().map(|text|
+                    json!({"type": "output_text", "text": text})).collect::<Vec<_>>()}
+            ]})
+            .to_string()
+        };
+        assert_eq!(
+            response_claims(&response(vec!["t".repeat(16384)]))
+                .unwrap()
+                .len(),
+            16384
+        );
+        for texts in [
+            vec![],
+            vec!["a".into(), "b".into()],
+            vec!["t".repeat(16385)],
+        ] {
+            assert_eq!(
+                response_claims(&response(texts)).unwrap_err().0,
+                "ambiguous or oversized output"
+            );
+        }
+        let base = response(vec!["x".into()]);
+        let padded = format!("{base}{}", " ".repeat(MAX_SOURCE_BYTES - base.len()));
+        assert!(response_claims(&padded).is_ok());
+        assert_eq!(
+            response_claims(&format!("{padded} ")).unwrap_err().0,
+            "oversized OpenAI response"
+        );
+    }
+
+    fn response(status: u16, body: reqwest::Body) -> reqwest::Response {
+        reqwest::Response::from(http::Response::builder().status(status).body(body).unwrap())
+    }
+    fn chunked(chunks: Vec<usize>) -> reqwest::Body {
+        reqwest::Body::wrap_stream(futures_util::stream::iter(
+            chunks
+                .into_iter()
+                .map(|size| Ok::<_, std::io::Error>(bytes::Bytes::from(vec![b'x'; size]))),
+        ))
+    }
+
+    #[tokio::test]
+    async fn bodies_are_read_up_to_the_limit_from_successful_responses() {
+        let read = NativeProposalTransport::bounded;
+        assert_eq!(
+            read(response(500, reqwest::Body::from("x")), 10)
+                .await
+                .unwrap_err()
+                .0,
+            "upstream request failed"
+        );
+        assert_eq!(
+            read(response(200, reqwest::Body::from(vec![b'x'; 10])), 10)
+                .await
+                .unwrap()
+                .len(),
+            10
+        );
+        assert_eq!(
+            read(response(200, reqwest::Body::from(vec![b'x'; 11])), 10)
+                .await
+                .unwrap_err()
+                .0,
+            "oversized response"
+        );
+        // Without a declared length, chunks are counted as they arrive.
+        assert_eq!(
+            read(response(200, chunked(vec![6, 4])), 10)
+                .await
+                .unwrap()
+                .len(),
+            10
+        );
+        assert_eq!(
+            read(response(200, chunked(vec![6, 5])), 10)
+                .await
+                .unwrap_err()
+                .0,
+            "oversized response"
+        );
+        assert_eq!(
+            read(response(200, chunked(vec![11])), 10)
+                .await
+                .unwrap_err()
+                .0,
+            "oversized response"
+        );
+    }
+
+    #[tokio::test]
+    async fn only_plain_registry_library_urls_are_fetched() {
+        let transport = NativeProposalTransport::new(None, None).unwrap();
+        let good = "https://registry.ollama.ai/v2/library/m/manifests/latest";
+        for (url, maximum) in [
+            (good, MAX_SOURCE_BYTES + 1),
+            ("http://registry.ollama.ai/v2/library/m", 10),
+            ("https://example.com/v2/library/m", 10),
+            ("https://user@registry.ollama.ai/v2/library/m", 10),
+            ("https://:pass@registry.ollama.ai/v2/library/m", 10),
+            ("https://registry.ollama.ai:8443/v2/library/m", 10),
+            ("https://registry.ollama.ai/v2/library/m?x=1", 10),
+            ("https://registry.ollama.ai/v2/library/m#x", 10),
+            ("https://registry.ollama.ai/v2/other/m", 10),
+        ] {
+            assert_eq!(
+                transport.fetch(url, maximum).await.unwrap_err().0,
+                "source URL is not allowed",
+                "{url} {maximum}"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn configured_extraction_refuses_oversized_input_before_any_request() {
+        let transport =
+            NativeProposalTransport::new(Some("key".into()), Some("model".into())).unwrap();
+        let config = json!({"model_family": "q".repeat(MAX_CONFIG_BYTES)});
+        assert_eq!(
+            transport.extract(&config).await.unwrap_err().0,
+            "oversized extraction input"
+        );
+    }
+}
