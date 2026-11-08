@@ -560,4 +560,261 @@ mod tests {
         assert_eq!(Palette::parse("neon"), None);
         assert_eq!(verdict_kind("ram-bound"), Some(Verdict::No));
     }
+
+    fn styled(fg: Option<Color>, bg: Option<Color>, modifier: Modifier) -> Style {
+        let mut style = Style::default().add_modifier(modifier);
+        style.fg = fg;
+        style.bg = bg;
+        style
+    }
+
+    #[test]
+    fn each_palette_has_its_exact_colors_and_modifiers() {
+        let dark = Theme::with_palette(true, Palette::Default);
+        let light = Theme::with_palette(true, Palette::Light);
+        let contrast = Theme::with_palette(true, Palette::HighContrast);
+        let mono = Theme::with_palette(false, Palette::Default);
+        let none = Modifier::empty();
+        let bold = Modifier::BOLD;
+        assert_eq!(dark.accent(), styled(Some(Color::Cyan), None, none));
+        assert_eq!(light.accent(), styled(Some(Color::Blue), None, none));
+        assert_eq!(contrast.accent(), styled(Some(Color::Yellow), None, none));
+        assert_eq!(dark.strong(), styled(None, None, bold));
+        assert_eq!(dark.warning(), styled(Some(Color::Yellow), None, bold));
+        assert_eq!(dark.error(), styled(Some(Color::Red), None, bold));
+        assert_eq!(dark.success(), styled(Some(Color::Green), None, bold));
+        assert_eq!(mono.error(), styled(None, None, bold));
+        assert_eq!(dark.border(), styled(Some(Color::DarkGray), None, none));
+        assert_eq!(mono.border(), styled(None, None, Modifier::DIM));
+        assert_eq!(contrast.border(), Style::default());
+        assert_eq!(
+            dark.selection(),
+            styled(Some(Color::Black), Some(Color::Cyan), bold)
+        );
+        assert_eq!(
+            light.selection(),
+            styled(Some(Color::White), Some(Color::Blue), bold)
+        );
+        for theme in [contrast, mono] {
+            assert_eq!(
+                theme.selection(),
+                styled(None, None, Modifier::REVERSED | Modifier::BOLD)
+            );
+        }
+        assert_eq!(
+            dark.highlight(),
+            styled(
+                Some(Color::Cyan),
+                None,
+                Modifier::BOLD | Modifier::UNDERLINED
+            )
+        );
+        assert_eq!(dark.verdict("Fit: yes"), dark.success());
+        assert_eq!(dark.verdict("tight"), dark.warning());
+        assert_eq!(dark.verdict("no"), dark.error());
+        assert_eq!(dark.verdict("unknown"), dark.muted());
+        assert_eq!(dark.verdict("maybe"), Style::default());
+    }
+
+    #[test]
+    fn palette_names_are_trimmed_and_case_insensitive() {
+        for (name, palette) in [
+            ("", Palette::Default),
+            (" default ", Palette::Default),
+            ("Dark", Palette::Default),
+            ("light", Palette::Light),
+            ("high-contrast", Palette::HighContrast),
+            ("CONTRAST", Palette::HighContrast),
+        ] {
+            assert_eq!(Palette::parse(name), Some(palette), "{name:?}");
+        }
+    }
+
+    /// Run in a child process by the test below, with `RIGSPARK_THEME` already set.
+    #[test]
+    fn theme_probe() {
+        if let Some(expected) = std::env::var_os("RIGSPARK_TEST_THEME_EXPECT") {
+            assert_eq!(
+                format!("{:?}", Palette::current()),
+                expected.to_string_lossy()
+            );
+        }
+    }
+
+    #[test]
+    fn the_theme_variable_picks_a_palette_up_to_32_bytes() {
+        for (value, expected) in [
+            ("light", "Light"),
+            (&format!("{:<32}", "light")[..], "Light"),
+            (&format!("{:<33}", "light")[..], "Default"),
+            ("neon", "Default"),
+        ] {
+            let output = std::process::Command::new(std::env::current_exe().unwrap())
+                .args([
+                    "--exact",
+                    "tui_theme::tests::theme_probe",
+                    "--test-threads=1",
+                ])
+                .env("RIGSPARK_THEME", value)
+                .env("RIGSPARK_TEST_THEME_EXPECT", expected)
+                .output()
+                .unwrap();
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            assert!(output.status.success(), "{value:?}: {stdout}");
+            assert!(stdout.contains("1 passed"), "{value:?}: {stdout}");
+        }
+    }
+
+    fn draw(width: u16, height: u16, paint: impl FnOnce(&mut Frame<'_>, Rect)) -> Vec<String> {
+        let mut terminal =
+            ratatui::Terminal::new(ratatui::backend::TestBackend::new(width, height)).unwrap();
+        terminal
+            .draw(|frame| {
+                let area = frame.area();
+                paint(frame, area);
+            })
+            .unwrap();
+        let buffer = terminal.backend().buffer().clone();
+        (0..height)
+            .map(|y| {
+                (0..width)
+                    .map(|x| buffer[(x, y)].symbol().to_owned())
+                    .collect()
+            })
+            .collect()
+    }
+
+    #[test]
+    fn panels_need_eight_columns_and_three_rows_and_pad_their_interior() {
+        let theme = Theme::with_palette(false, Palette::Default);
+        let inner = |width: u16, height: u16| {
+            let mut result = Rect::default();
+            draw(width, height, |frame, area| {
+                result = theme.panel(frame, area, "t");
+            });
+            result
+        };
+        assert_eq!(inner(7, 10), Rect::new(0, 0, 7, 10));
+        assert_eq!(inner(20, 2), Rect::new(0, 0, 20, 2));
+        assert_eq!(inner(8, 3), Rect::new(2, 1, 4, 1));
+        assert_eq!(inner(20, 5), Rect::new(2, 1, 16, 3));
+    }
+
+    #[test]
+    fn bars_show_the_right_side_only_with_two_spare_columns() {
+        let theme = Theme::with_palette(false, Palette::Default);
+        let bar = |width: u16| {
+            draw(width, 1, |frame, area| {
+                theme.bar(frame, area, Line::raw("abc"), Line::raw("xyz"));
+            })[0]
+                .clone()
+        };
+        assert_eq!(bar(8), "abc  xyz");
+        assert_eq!(bar(7), "abc    ");
+        assert_eq!(bar(2), "ab");
+    }
+
+    #[test]
+    fn hints_are_kept_while_they_fit() {
+        let theme = Theme::with_palette(false, Palette::Default);
+        let shown = |width: u16| {
+            theme
+                .hints(&[("q", "close"), ("/", "find")], width)
+                .spans
+                .len()
+        };
+        // " " plus "q close  " (9 cells), then "/ find  " (8 cells).
+        assert_eq!(shown(9), 1);
+        assert_eq!(shown(10), 3);
+        assert_eq!(shown(17), 3);
+        assert_eq!(shown(18), 5);
+    }
+
+    #[test]
+    fn wrapping_fills_single_cell_lines_and_counts_placeholders() {
+        assert_eq!(wrap("abc", 1), ["a", "b", "c"]);
+        assert_eq!(wrap("\u{754c}a", 1), ["?", "a"]);
+    }
+
+    #[test]
+    fn a_zero_width_truncation_has_no_ellipsis() {
+        let cut = truncate(vec![Span::raw("abc")], 0);
+        assert_eq!(cut, vec![Span::raw("")]);
+        let cut = truncate(vec![Span::raw("abc")], 1);
+        assert_eq!(cut, vec![Span::raw(""), Span::raw("…")]);
+    }
+
+    #[test]
+    fn gauges_fill_by_ratio_and_color_by_headroom() {
+        let theme = Theme::with_palette(true, Palette::Default);
+        let gib = 1_073_741_824.0;
+        let parts = |used: f64| {
+            let line = gauge(theme, used * gib, 2.0 * gib, 60);
+            (
+                line.spans[0].content.chars().count(),
+                line.spans[1].content.chars().count(),
+                line.spans[0].style,
+                line.spans[2].content.to_string(),
+            )
+        };
+        let (filled, empty, style, label) = parts(1.0);
+        assert_eq!(label, " 1.0 / 2.0 GiB · 50%");
+        assert_eq!((filled, empty), (20, 20));
+        assert_eq!(style, theme.success());
+        assert_eq!(parts(1.6).2, theme.success());
+        assert_eq!(parts(1.8).2, theme.warning());
+        assert_eq!(parts(2.0).2, theme.warning());
+        assert_eq!(parts(2.0).1, 0);
+        assert_eq!(parts(2.2).2, theme.error());
+    }
+
+    #[test]
+    fn fuzzy_rank_is_four_per_gap_plus_the_first_position() {
+        assert_eq!(fuzzy_rank(&[]), 0);
+        assert_eq!(fuzzy_rank(&[2, 3]), 2);
+        assert_eq!(fuzzy_rank(&[2, 3, 7]), 14);
+        assert_eq!(fuzzy_rank(&[0, 5]), 16);
+    }
+
+    #[test]
+    fn highlighted_runs_share_one_span() {
+        let theme = Theme::with_palette(true, Palette::Default);
+        let spans = highlighted("abcd", &[0, 1], Style::default(), theme);
+        assert_eq!(
+            spans,
+            vec![
+                Span::styled("ab", theme.highlight()),
+                Span::styled("cd", Style::default()),
+            ]
+        );
+        assert_eq!(
+            highlighted("ab", &[], Style::default(), theme),
+            vec![Span::raw("ab")]
+        );
+    }
+
+    #[test]
+    fn scrollbars_appear_only_for_overflowing_content_in_three_rows() {
+        let theme = Theme::with_palette(false, Palette::Default);
+        let column = |height: u16, content: usize, viewport: usize| -> String {
+            draw(5, height, |frame, area| {
+                scrollbar(frame, area, content, 0, viewport, theme);
+            })
+            .iter()
+            .map(|row| row.chars().last().unwrap())
+            .collect()
+        };
+        assert_eq!(column(6, 4, 4), "      ");
+        assert_eq!(column(2, 20, 4), "  ");
+        let drawn = column(6, 20, 4);
+        assert_eq!(drawn.chars().next(), Some(' '));
+        assert_eq!(drawn.chars().last(), Some(' '));
+        assert!(
+            drawn[1..drawn.len() - 1].chars().all(|c| c != ' '),
+            "{drawn:?}"
+        );
+        let small = column(3, 20, 2);
+        assert_eq!(small.chars().filter(|c| *c != ' ').count(), 1, "{small:?}");
+        assert_eq!(small.chars().nth(1).map(|c| c != ' '), Some(true));
+    }
 }
