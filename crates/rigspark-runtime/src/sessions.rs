@@ -608,3 +608,330 @@ impl SessionRepository {
         Ok(matches)
     }
 }
+
+#[cfg(test)]
+mod boundary_tests {
+    use super::*;
+
+    const AT: &str = "2026-11-08T00:00:00Z";
+
+    fn doc() -> SessionDoc {
+        SessionDoc {
+            schema_version: 1,
+            id: "0b7f2c38-6f1d-4c55-9a27-35f6c9d2a1e4".into(),
+            title: "Title".into(),
+            created_at: AT.into(),
+            updated_at: AT.into(),
+            revision: 0,
+            archived: false,
+            messages: vec![message("user", "hi")],
+        }
+    }
+    fn message(role: &str, content: &str) -> StoredMessage {
+        StoredMessage {
+            role: role.into(),
+            content: content.into(),
+            at: AT.into(),
+            attachments: None,
+        }
+    }
+    fn attachment() -> Attachment {
+        Attachment {
+            kind: Some("file".into()),
+            label: Some("label".into()),
+            path: Some("src/main.rs".into()),
+            hash: "abc".into(),
+            size: 1,
+            truncated: false,
+            included: true,
+            range: None,
+        }
+    }
+    fn valid(change: impl FnOnce(&mut SessionDoc)) -> bool {
+        let mut value = doc();
+        change(&mut value);
+        value.validate().is_ok()
+    }
+    fn with_attachment(change: impl FnOnce(&mut Attachment)) -> bool {
+        valid(|doc| {
+            let mut value = attachment();
+            change(&mut value);
+            doc.messages[0].attachments = Some(vec![value]);
+        })
+    }
+
+    #[test]
+    fn lengths_are_counted_in_utf16_units() {
+        assert_eq!(chars(""), 0);
+        assert_eq!(chars("ab"), 2);
+        assert_eq!(chars("😀"), 2);
+    }
+
+    #[test]
+    fn session_documents_are_bounded_field_by_field() {
+        assert!(valid(|_| {}));
+        assert!(!valid(|d| d.schema_version = 2));
+        assert!(!valid(|d| d.id = "not-a-uuid".into()));
+        assert!(!valid(|d| d.id = d.id.replace('-', "")));
+        assert!(!valid(|d| d.id = d.id.to_uppercase()));
+        assert!(valid(|d| d.title = "t".repeat(200)));
+        assert!(!valid(|d| d.title = "t".repeat(201)));
+        for bad in ["", &"9".repeat(41)] {
+            assert!(!valid(|d| d.created_at = bad.into()), "{bad:?}");
+            assert!(!valid(|d| d.updated_at = bad.into()), "{bad:?}");
+            assert!(!valid(|d| d.messages[0].at = bad.into()), "{bad:?}");
+        }
+        assert!(valid(|d| d.created_at = "9".repeat(40)));
+        assert!(valid(|d| d.revision = 9007199254740991));
+        assert!(!valid(|d| d.revision = 9007199254740992));
+        assert!(valid(|d| d.messages = vec![message("user", "x"); 2000]));
+        assert!(!valid(|d| d.messages = vec![message("user", "x"); 2001]));
+        for role in ["user", "assistant", "system"] {
+            assert!(valid(|d| d.messages[0].role = role.into()), "{role}");
+        }
+        assert!(!valid(|d| d.messages[0].role = "tool".into()));
+        assert!(valid(|d| d.messages[0].content = "c".repeat(32768)));
+        assert!(!valid(|d| d.messages[0].content = "c".repeat(32769)));
+    }
+
+    #[test]
+    fn attachments_are_bounded_field_by_field() {
+        assert!(with_attachment(|_| {}));
+        for kind in ["file", "terminal", "diagnostics", "git"] {
+            assert!(with_attachment(|a| a.kind = Some(kind.into())), "{kind}");
+        }
+        assert!(with_attachment(|a| a.kind = None));
+        assert!(!with_attachment(|a| a.kind = Some("url".into())));
+        assert!(!with_attachment(|a| a.hash = String::new()));
+        assert!(with_attachment(|a| a.hash = "h".repeat(128)));
+        assert!(!with_attachment(|a| a.hash = "h".repeat(129)));
+        assert!(with_attachment(|a| a.size = 9007199254740991));
+        assert!(!with_attachment(|a| a.size = 9007199254740992));
+        assert!(with_attachment(|a| a.label = Some("l".repeat(200))));
+        assert!(!with_attachment(|a| a.label = Some("l".repeat(201))));
+        assert!(!with_attachment(|a| a.label = Some(String::new())));
+        assert!(with_attachment(|a| a.path = Some("p".repeat(1024))));
+        assert!(!with_attachment(|a| a.path = Some("p".repeat(1025))));
+        assert!(!with_attachment(|a| a.path = Some(String::new())));
+        let range = |start, end| crate::workspace::LineRange {
+            start_line: start,
+            end_line: end,
+        };
+        assert!(with_attachment(|a| a.range = Some(range(1, 1))));
+        assert!(!with_attachment(|a| a.range = Some(range(0, 1))));
+        assert!(!with_attachment(|a| a.range = Some(range(1, 0))));
+        assert!(valid(
+            |d| d.messages[0].attachments = Some(vec![attachment(); 20])
+        ));
+        assert!(!valid(
+            |d| d.messages[0].attachments = Some(vec![attachment(); 21])
+        ));
+    }
+
+    #[test]
+    fn gui_text_drops_every_escape_form_and_keeps_the_text_after() {
+        // Two-character escapes end at their final byte.
+        assert_eq!(gui_text("a\u{1b}Mb"), "ab");
+        assert_eq!(gui_text("a\u{1b}\\b"), "ab");
+        // An escape followed by an ordinary character keeps that character.
+        assert_eq!(gui_text("a\u{1b}1b"), "a1b");
+        // C1 CSI, OSC and string introducers.
+        assert_eq!(gui_text("a\u{9b}31mb"), "ab");
+        assert_eq!(gui_text("a\u{9d}title\u{7}b"), "ab");
+        for introducer in ['\u{90}', '\u{98}', '\u{9e}', '\u{9f}'] {
+            assert_eq!(
+                gui_text(&format!("a{introducer}payload\u{9c}b")),
+                "ab",
+                "{introducer:?}"
+            );
+        }
+        // BEL ends only OSC strings; other strings need ST.
+        assert_eq!(gui_text("a\u{1b}Ppay\u{7}load\u{1b}\\b"), "ab");
+        assert_eq!(gui_text("a\u{1b}]t\u{7}b"), "ab");
+    }
+
+    fn repository() -> (tempfile::TempDir, SessionRepository) {
+        let home = tempfile::tempdir().unwrap();
+        let repository = SessionRepository::new(home.path());
+        (home, repository)
+    }
+
+    #[test]
+    fn the_home_must_be_a_real_directory_or_not_exist_yet() {
+        let parent = tempfile::tempdir().unwrap();
+        let missing = SessionRepository::new(&parent.path().join("missing"));
+        assert!(missing.list(false, 0, 10).unwrap().0.is_empty());
+        let file = parent.path().join("file");
+        std::fs::write(&file, "x").unwrap();
+        assert!(matches!(
+            SessionRepository::new(&file).list(false, 0, 10),
+            Err(SessionError::Storage)
+        ));
+        #[cfg(unix)]
+        {
+            let real = parent.path().join("real");
+            std::fs::create_dir(&real).unwrap();
+            let link = parent.path().join("link");
+            std::os::unix::fs::symlink(&real, &link).unwrap();
+            assert!(matches!(
+                SessionRepository::new(&link).list(false, 0, 10),
+                Err(SessionError::Storage)
+            ));
+        }
+        // A session directory that is a file is refused too.
+        let (home, sessions) = repository();
+        std::fs::write(home.path().join("gui-sessions"), "x").unwrap();
+        assert!(sessions.get(&doc().id).is_err());
+    }
+
+    #[test]
+    fn documents_up_to_eight_mib_round_trip_and_larger_ones_are_refused() {
+        let (_home, sessions) = repository();
+        let created = sessions.create("big", AT).unwrap();
+        // 2000 messages of 1500 characters: about 3 MiB on disk.
+        let mut doc = sessions.get(&created.id).unwrap().unwrap();
+        doc.messages = vec![message("user", &"m".repeat(1500)); 2000];
+        sessions.write(&doc).unwrap();
+        assert_eq!(
+            sessions.get(&created.id).unwrap().unwrap().messages.len(),
+            2000
+        );
+        // 2000 messages of 4500 characters pass validation but exceed 8 MiB serialized.
+        doc.messages = vec![message("user", &"m".repeat(4500)); 2000];
+        assert!(doc.validate().is_ok());
+        assert!(matches!(sessions.write(&doc), Err(SessionError::Invalid)));
+    }
+
+    #[test]
+    fn appends_keep_the_newest_2000_messages() {
+        let (_home, sessions) = repository();
+        let created = sessions.create("", AT).unwrap();
+        let mut doc = sessions.get(&created.id).unwrap().unwrap();
+        doc.messages = (0..1999).map(|n| message("user", &n.to_string())).collect();
+        sessions.write(&doc).unwrap();
+        let doc = sessions
+            .append(&created.id, message("assistant", "1999"), None)
+            .unwrap();
+        assert_eq!(doc.messages.len(), 2000);
+        let doc = sessions
+            .append(&created.id, message("assistant", "2000"), None)
+            .unwrap();
+        assert_eq!(doc.messages.len(), 2000);
+        assert_eq!(doc.messages[0].content, "1");
+        assert_eq!(doc.messages[1999].content, "2000");
+        let doc = sessions
+            .append_exchange(
+                &created.id,
+                message("user", "q"),
+                message("assistant", "a"),
+                doc.revision,
+            )
+            .unwrap();
+        assert_eq!(doc.messages.len(), 2000);
+        assert_eq!(doc.messages[0].content, "3");
+        assert_eq!(doc.messages[1999].content, "a");
+    }
+
+    #[test]
+    fn exchanges_are_a_user_then_an_assistant_message_and_title_a_new_chat() {
+        let (_home, sessions) = repository();
+        let created = sessions.create("", AT).unwrap();
+        for (user, assistant) in [
+            ("assistant", "assistant"),
+            ("user", "user"),
+            ("system", "assistant"),
+        ] {
+            assert!(
+                sessions
+                    .append_exchange(&created.id, message(user, "q"), message(assistant, "a"), 0)
+                    .is_err(),
+                "{user} then {assistant}"
+            );
+        }
+        let titled = sessions
+            .append_exchange(
+                &created.id,
+                message("user", "What is a KV cache?"),
+                message("assistant", "a"),
+                0,
+            )
+            .unwrap();
+        assert_eq!(titled.title, "What is a KV cache?");
+        // A titled chat keeps its title; a blank question leaves "New chat".
+        let kept = sessions
+            .append_exchange(
+                &created.id,
+                message("user", "another"),
+                message("assistant", "a"),
+                titled.revision,
+            )
+            .unwrap();
+        assert_eq!(kept.title, "What is a KV cache?");
+        let blank = sessions.create("", AT).unwrap();
+        let untitled = sessions
+            .append_exchange(
+                &blank.id,
+                message("user", "   "),
+                message("assistant", "a"),
+                0,
+            )
+            .unwrap();
+        assert_eq!(untitled.title, "New chat");
+    }
+
+    #[test]
+    fn removing_reports_storage_errors_other_than_a_missing_file() {
+        let (home, sessions) = repository();
+        let id = doc().id;
+        sessions.remove(&id).unwrap();
+        std::fs::create_dir_all(home.path().join("gui-sessions").join(format!("{id}.json")))
+            .unwrap();
+        assert!(matches!(sessions.remove(&id), Err(SessionError::Storage)));
+    }
+
+    #[test]
+    fn session_listing_stops_past_ten_thousand_entries() {
+        let (home, sessions) = repository();
+        let directory = home.path().join("gui-sessions");
+        std::fs::create_dir(&directory).unwrap();
+        for index in 0..10_001 {
+            std::fs::write(directory.join(format!("{index}.txt")), "").unwrap();
+        }
+        assert!(sessions.list(false, 0, 10).unwrap().0.is_empty());
+        std::fs::write(directory.join("one-more.txt"), "").unwrap();
+        assert!(matches!(
+            sessions.list(false, 0, 10),
+            Err(SessionError::Storage)
+        ));
+    }
+
+    #[test]
+    fn pages_end_exactly_at_the_last_item() {
+        let (_home, sessions) = repository();
+        let first = sessions.create("one", AT).unwrap();
+        sessions.create("two", AT).unwrap();
+        assert_eq!(sessions.list(false, 0, 2).unwrap().1, None);
+        assert_eq!(sessions.list(false, 0, 1).unwrap().1.as_deref(), Some("1"));
+        let doc = sessions
+            .append(&first.id, message("user", "a"), None)
+            .unwrap();
+        sessions
+            .append(&first.id, message("user", "b"), Some(doc.revision))
+            .unwrap();
+        assert_eq!(sessions.messages(&first.id, 0, 2).unwrap().1, None);
+        assert_eq!(
+            sessions.messages(&first.id, 0, 1).unwrap().1.as_deref(),
+            Some("1")
+        );
+    }
+
+    #[test]
+    fn search_skips_archived_chats_unless_asked() {
+        let (_home, sessions) = repository();
+        let created = sessions.create("needle chat", AT).unwrap();
+        assert_eq!(sessions.search("needle", false).unwrap().len(), 1);
+        sessions.archive(&created.id, true, None, AT).unwrap();
+        assert!(sessions.search("needle", false).unwrap().is_empty());
+        assert_eq!(sessions.search("needle", true).unwrap().len(), 1);
+    }
+}
