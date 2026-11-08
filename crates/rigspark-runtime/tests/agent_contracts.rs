@@ -38,6 +38,7 @@ impl AgentChat for Recorder {
                     name: "get_recovery".into(),
                     arguments,
                 }],
+                timings: None,
             });
         }
         for fragment in ["Your ", "recovery ", "is 55%."] {
@@ -46,6 +47,7 @@ impl AgentChat for Recorder {
         Ok(ChatResult {
             content: "Your recovery is 55%.".into(),
             tool_calls: vec![],
+            timings: None,
         })
     }
 }

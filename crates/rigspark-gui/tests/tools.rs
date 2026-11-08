@@ -40,6 +40,7 @@ impl Engine for Model {
             Ok(ChatResult {
                 content: "tool complete".into(),
                 tool_calls: vec![],
+                timings: None,
             })
         } else {
             Ok(ChatResult {
@@ -48,6 +49,7 @@ impl Engine for Model {
                     name: "read_text".into(),
                     arguments: Default::default(),
                 }],
+                timings: None,
             })
         }
     }

@@ -1,6 +1,24 @@
 # Changelog
 
-## Unreleased
+## 3.0.8 (2026-11-08)
+
+### Features
+
+- **llama.cpp replies carry the server's own timings.** `ChatResult.timings`
+  holds what llama-server measured for that reply: prompt and generated tokens,
+  their milliseconds, cached prompt tokens and speculative draft tokens
+  accepted. `prompt_tokens_per_second()` and `generated_tokens_per_second()`
+  give exact speeds, with no client-side estimate. Other backends leave it
+  empty.
+- **KV slots can be saved, restored and erased.** A llama.cpp server rigspark
+  starts gets a private `kv-slots/` directory beside its state file
+  (`--slot-save-path`). `ChatInput.slot` pins a request to a slot (`id_slot`,
+  with prompt caching), and `kv_slot_with_config` saves a slot's KV cache to a
+  named file, restores it into any slot, or erases it. That frees a slot during
+  a long pause such as a tool call and brings the conversation back without
+  re-reading the prompt.
+  - Slot names are 1 to 64 letters, digits, `-` or `_`; slots are 0 to 15.
+  - The server is re-identified before and after each slot action, as for chat.
 
 ### Changes
 

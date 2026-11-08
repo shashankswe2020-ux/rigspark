@@ -30,6 +30,7 @@ fn request(name: &str) -> ServeRequest {
         model_path: None,
         context: None,
         cache: None,
+        slot_save_path: None,
     }
 }
 impl RuntimeController {

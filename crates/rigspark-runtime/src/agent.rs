@@ -188,6 +188,7 @@ pub async fn run_turn(
         messages: options.messages,
         tools,
         temperature: options.temperature,
+        slot: None,
     };
     let mut output = String::new();
     let mut call_count = 0usize;

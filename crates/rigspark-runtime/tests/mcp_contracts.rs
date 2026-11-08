@@ -298,6 +298,7 @@ impl AgentChat for ToolListing {
         Ok(ChatResult {
             content: "done".into(),
             tool_calls: vec![],
+            timings: None,
         })
     }
 }

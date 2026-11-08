@@ -28,6 +28,7 @@ impl AgentChat for Model {
             return Ok(ChatResult {
                 content: "final answer".into(),
                 tool_calls: vec![],
+                timings: None,
             });
         }
         Ok(ChatResult {
@@ -36,6 +37,7 @@ impl AgentChat for Model {
                 name: input.tools[0].name.clone(),
                 arguments: [("text".into(), json!("hello"))].into(),
             }],
+            timings: None,
         })
     }
 }
@@ -214,6 +216,7 @@ impl AgentChat for RepeatingModel {
             ChatResult {
                 content: "budget final".into(),
                 tool_calls: vec![],
+                timings: None,
             }
         } else {
             ChatResult {
@@ -222,6 +225,7 @@ impl AgentChat for RepeatingModel {
                     name: input.tools[0].name.clone(),
                     arguments: Default::default(),
                 }],
+                timings: None,
             }
         })
     }

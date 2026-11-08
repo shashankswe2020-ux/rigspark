@@ -52,6 +52,8 @@ pub struct ServeRequest {
     pub draft_model_path: Option<PathBuf>,
     pub context: Option<u32>,
     pub cache: Option<crate::cache::CacheProfile>,
+    /// Directory llama.cpp saves and restores KV slots in (`--slot-save-path`).
+    pub slot_save_path: Option<PathBuf>,
 }
 #[async_trait::async_trait]
 pub trait BackendAdapter: Send + Sync {
@@ -244,6 +246,20 @@ impl<'runtime> RuntimeAdapter<'runtime> {
         }
         if self.kind == BackendKind::BitNet {
             args.extend(["-ngl".into(), "0".into()]);
+        }
+        if let Some(directory) = &request.slot_save_path {
+            if self.kind != BackendKind::LlamaCpp {
+                return Err(BackendError("KV slot files apply only to llama.cpp".into()));
+            }
+            if !(directory.is_absolute() && directory.is_dir()) {
+                return Err(BackendError(
+                    "KV slot directory must be an existing absolute directory".into(),
+                ));
+            }
+            args.extend([
+                "--slot-save-path".into(),
+                directory.to_string_lossy().into_owned(),
+            ]);
         }
         let drafting = request
             .cache
