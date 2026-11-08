@@ -679,3 +679,344 @@ mod display_tests {
         );
     }
 }
+
+#[cfg(test)]
+mod chat_tests {
+    use super::*;
+    use crate::terminal::ChatReply;
+    use crossterm::event::{MouseEvent, MouseEventKind};
+
+    fn key(code: KeyCode) -> KeyEvent {
+        KeyEvent::new(code, KeyModifiers::NONE)
+    }
+    fn with(code: KeyCode, modifiers: KeyModifiers) -> KeyEvent {
+        KeyEvent::new(code, modifiers)
+    }
+    fn reply(content: &str) -> Result<ChatReply, String> {
+        Ok(ChatReply {
+            content: content.into(),
+            memory_warning: false,
+        })
+    }
+    fn turn(view: &mut ChatView, question: &str, answer: &str) {
+        view.insert(question).unwrap();
+        view.submit().unwrap();
+        view.finish(reply(answer));
+    }
+
+    #[test]
+    fn streamed_output_is_kept_up_to_one_mib_on_character_boundaries() {
+        let mut view = ChatView::new("t");
+        view.stream("ignored");
+        assert_eq!(view.streaming(), "");
+        view.insert("q").unwrap();
+        view.submit().unwrap();
+        view.stream(&"a".repeat(4000));
+        assert_eq!(view.streaming().len(), 4000);
+        view.stream(&"b".repeat(MAX_STREAM_BYTES - 4001));
+        assert_eq!(view.streaming().len(), MAX_STREAM_BYTES - 1);
+        // A two-byte character does not fit in the last byte.
+        view.stream("é");
+        assert_eq!(view.streaming().len(), MAX_STREAM_BYTES - 1);
+        view.stream("cd");
+        assert_eq!(view.streaming().len(), MAX_STREAM_BYTES);
+        assert!(view.streaming().ends_with('c'));
+    }
+
+    #[test]
+    fn replies_up_to_one_mib_are_recorded() {
+        let mut view = ChatView::new("t");
+        view.insert("q").unwrap();
+        view.submit().unwrap();
+        view.finish(reply(&"r".repeat(1024 * 1024)));
+        assert_eq!(view.summary().turns, 1);
+        view.insert("q").unwrap();
+        view.submit().unwrap();
+        view.finish(reply(&"r".repeat(1024 * 1024 + 1)));
+        assert_eq!(view.summary().failed_turns, 1);
+    }
+
+    #[test]
+    fn the_wheel_scrolls_three_lines_and_page_keys_ten() {
+        let mut view = ChatView::new("t");
+        let wheel = |kind| {
+            Event::Mouse(MouseEvent {
+                kind,
+                column: 0,
+                row: 0,
+                modifiers: KeyModifiers::NONE,
+            })
+        };
+        scroll_event(&mut view, &wheel(MouseEventKind::ScrollUp));
+        scroll_event(&mut view, &wheel(MouseEventKind::ScrollUp));
+        assert_eq!(view.scroll, 6);
+        scroll_event(&mut view, &wheel(MouseEventKind::ScrollDown));
+        assert_eq!(view.scroll, 3);
+        handle_key(&mut view, key(KeyCode::PageUp));
+        assert_eq!(view.scroll, 13);
+        handle_key(&mut view, key(KeyCode::PageDown));
+        assert_eq!(view.scroll, 3);
+        handle_key(&mut view, key(KeyCode::End));
+        assert_eq!(view.scroll, 0);
+    }
+
+    #[test]
+    fn only_control_combinations_trigger_shortcuts() {
+        let mut view = ChatView::new("t");
+        for code in [KeyCode::Char('y'), KeyCode::Char('j')] {
+            assert_eq!(handle_key(&mut view, key(code)), InputAction::Continue);
+        }
+        assert_eq!(view.draft(), "yj");
+        assert!(view.take_clipboard().is_none());
+        handle_key(&mut view, with(KeyCode::Char('j'), KeyModifiers::CONTROL));
+        assert_eq!(view.draft(), "yj\n");
+        for modifiers in [KeyModifiers::CONTROL, KeyModifiers::ALT] {
+            handle_key(&mut view, with(KeyCode::Char('x'), modifiers));
+        }
+        assert_eq!(view.draft(), "yj\n");
+        handle_key(&mut view, key(KeyCode::Backspace));
+        assert_eq!(view.draft(), "yj");
+        // Enter submits only a draft with something in it.
+        let mut blank = ChatView::new("t");
+        blank.insert("   ").unwrap();
+        assert_eq!(
+            handle_key(&mut blank, key(KeyCode::Enter)),
+            InputAction::Continue
+        );
+        assert_eq!(
+            handle_key(&mut view, key(KeyCode::Enter)),
+            InputAction::Submit
+        );
+        // Ctrl+Y copies the last reply.
+        turn(&mut view, "q", "answer");
+        handle_key(&mut view, with(KeyCode::Char('y'), KeyModifiers::CONTROL));
+        assert_eq!(view.take_clipboard().as_deref(), Some("answer"));
+    }
+
+    #[test]
+    fn the_transcript_keeps_exactly_192_kib() {
+        let mut view = ChatView::new("t");
+        let line = "x".repeat(1021);
+        // Four turns: "> q" lines take 4 bytes each, 1021-character lines 1024. The oldest
+        // reply starts with a 1005-character line so the total is exactly 192 KiB.
+        for count in [47, 48, 48, 48] {
+            let mut lines = vec![line.clone(); count];
+            if count == 47 {
+                lines.insert(0, "y".repeat(1005));
+            }
+            turn(&mut view, "q", &lines.join("\n"));
+        }
+        let lines = transcript_lines(&view);
+        assert_eq!(
+            lines.iter().map(|line| line.len() + 1).sum::<usize>(),
+            192 * 1024
+        );
+        assert_eq!(lines.len(), 4 + 192);
+        assert_eq!(lines[0], "> q");
+        assert!(lines[1].ends_with('y'));
+        // One more byte pushes out the oldest line, the first question.
+        let mut longer = ChatView::new("t");
+        for count in [47, 48, 48, 48] {
+            let mut lines = vec![line.clone(); count];
+            if count == 47 {
+                lines.insert(0, "y".repeat(1006));
+            }
+            turn(&mut longer, "q", &lines.join("\n"));
+        }
+        let lines = transcript_lines(&longer);
+        assert_eq!(lines.len(), 4 + 192 - 1);
+        assert!(lines[0].ends_with('y'));
+    }
+
+    fn screen(view: &ChatView, height: u16) -> Vec<String> {
+        let mut terminal =
+            ratatui::Terminal::new(ratatui::backend::TestBackend::new(60, height)).unwrap();
+        terminal.draw(|frame| render(frame, view, false)).unwrap();
+        let buffer = terminal.backend().buffer().clone();
+        (0..height)
+            .map(|y| {
+                (0..60)
+                    .map(|x| buffer[(x, y)].symbol().to_owned())
+                    .collect()
+            })
+            .collect()
+    }
+
+    #[test]
+    fn the_layout_grows_input_and_footer_with_height() {
+        let mut view = ChatView::new("t");
+        view.insert("one").unwrap();
+        for word in ["two", "three", "four", "five"] {
+            handle_key(&mut view, with(KeyCode::Char('j'), KeyModifiers::CONTROL));
+            view.insert(word).unwrap();
+        }
+        let joined = |height| screen(&view, height).join("\n");
+        // Over 12 rows: a titled panel with three draft rows and a footer.
+        let tall = joined(13);
+        assert!(tall.contains("Message"), "{tall}");
+        assert!(tall.contains("three") && !tall.contains("two"), "{tall}");
+        assert!(tall.contains("Enter send"));
+        // 9 to 12 rows: three plain draft rows and a footer.
+        for height in [9, 12] {
+            let text = joined(height);
+            assert!(!text.contains("Message"), "{text}");
+            assert!(text.contains("three") && !text.contains("two"), "{text}");
+            assert!(text.contains("Enter send"), "{text}");
+        }
+        // 8 rows or fewer: one draft row and no footer.
+        let short = joined(8);
+        assert!(short.contains("five") && !short.contains("four"), "{short}");
+        assert!(!short.contains("Enter send"), "{short}");
+        // The cursor sits on the last draft line only.
+        let rows = screen(&view, 13);
+        assert_eq!(rows.iter().filter(|row| row.contains('▌')).count(), 1);
+        assert!(rows.iter().any(|row| row.contains("five▌")));
+        assert!(!tall.contains("End follows"));
+    }
+
+    #[test]
+    fn no_cursor_is_drawn_while_waiting() {
+        let mut view = ChatView::new("t");
+        view.insert("question").unwrap();
+        view.submit().unwrap();
+        let text = screen(&view, 13).join("\n");
+        assert!(text.contains("Waiting for response"));
+        assert!(!text.contains('▌'), "{text}");
+    }
+
+    #[test]
+    fn the_draft_tail_fits_the_input_width() {
+        assert_eq!(tail("abcdef", 3), "def");
+        assert_eq!(tail("ab", 3), "ab");
+        assert_eq!(tail("a\u{754c}", 2), "\u{754c}");
+        assert_eq!(tail("abc", 0), "");
+    }
+
+    fn row_text(line: &Line<'_>) -> String {
+        line.spans
+            .iter()
+            .map(|span| span.content.to_string())
+            .collect()
+    }
+
+    #[test]
+    fn fenced_assistant_code_is_shown_literally() {
+        let theme = Theme::with_palette(false, tui_theme::Palette::Default);
+        let mut view = ChatView::new("t");
+        turn(&mut view, "```", "```\na **b** c\n```\nd **e** f");
+        let (rows, _) = transcript_rows(&view, Rect::new(0, 0, 60, 20), theme);
+        let texts: Vec<_> = rows.iter().map(row_text).collect();
+        // The user's backticks are plain text, not a fence.
+        assert!(texts.contains(&"   ```".to_owned()), "{texts:?}");
+        let fenced = rows
+            .iter()
+            .find(|row| row_text(row).contains("a **b** c"))
+            .expect("literal code row");
+        assert!(
+            fenced
+                .spans
+                .iter()
+                .all(|span| !span.style.add_modifier.contains(Modifier::BOLD))
+        );
+        let after = rows
+            .iter()
+            .find(|row| row_text(row).contains("d e f"))
+            .expect("markdown after the fence");
+        assert!(after.spans.iter().any(|span| span.content == "e"
+            && span.style.add_modifier.contains(Modifier::BOLD)));
+    }
+
+    fn marked(text: &str) -> Vec<(String, bool, bool)> {
+        let code = Style::default().add_modifier(Modifier::ITALIC);
+        inline_markdown(text, Style::default(), code)
+            .into_iter()
+            .map(|span| {
+                (
+                    span.content.to_string(),
+                    span.style.add_modifier.contains(Modifier::BOLD),
+                    span.style.add_modifier.contains(Modifier::ITALIC),
+                )
+            })
+            .collect()
+    }
+    fn plain(text: &str) -> (String, bool, bool) {
+        (text.into(), false, false)
+    }
+    fn bold(text: &str) -> (String, bool, bool) {
+        (text.into(), true, false)
+    }
+    fn code(text: &str) -> (String, bool, bool) {
+        (text.into(), false, true)
+    }
+
+    #[test]
+    fn inline_markdown_styles_balanced_markers_and_keeps_the_rest() {
+        assert_eq!(marked("a `x` b"), [plain("a "), code("x"), plain(" b")]);
+        assert_eq!(marked("`a` `b`"), [code("a"), plain(" "), code("b")]);
+        assert_eq!(marked("a `x b"), [plain("a "), plain("`x b")]);
+        assert_eq!(
+            marked("a`b`c`d"),
+            [plain("a"), plain("`b"), plain("`c"), plain("`d")]
+        );
+        assert_eq!(marked("a **b** c"), [plain("a "), bold("b"), plain(" c")]);
+        assert_eq!(marked("**b**"), [bold("b")]);
+        assert_eq!(
+            marked("a **b** c **d** e"),
+            [plain("a "), bold("b"), plain(" c "), bold("d"), plain(" e")]
+        );
+        assert_eq!(marked("a **b c"), [plain("a "), plain("**b c")]);
+    }
+
+    struct Silent;
+    impl crate::terminal::ChatEngine for Silent {
+        async fn reply(
+            &self,
+            _: &[HarnessMessage],
+            _: &CancellationToken,
+        ) -> Result<ChatReply, String> {
+            Err("unused".into())
+        }
+    }
+
+    async fn drive_with(view: &mut ChatView, events: Vec<Event>) -> u8 {
+        let mut terminal =
+            ratatui::Terminal::new(ratatui::backend::TestBackend::new(60, 20)).unwrap();
+        let mut events = futures_util::stream::iter(events.into_iter().map(Ok));
+        drive(
+            &mut terminal,
+            &mut events,
+            &Silent,
+            view,
+            false,
+            &CancellationToken::new(),
+        )
+        .await
+        .unwrap()
+    }
+
+    #[tokio::test]
+    async fn the_driver_pastes_copies_and_exits_with_the_failure_status() {
+        let mut view = ChatView::new("t");
+        turn(&mut view, "q", "answer");
+        let code = drive_with(
+            &mut view,
+            vec![
+                Event::Paste("pasted".into()),
+                Event::Key(with(KeyCode::Char('y'), KeyModifiers::CONTROL)),
+                Event::Key(key(KeyCode::Esc)),
+            ],
+        )
+        .await;
+        assert_eq!(code, 0);
+        assert_eq!(view.draft(), "pasted");
+        // The copy was handed to the terminal.
+        assert!(view.take_clipboard().is_none());
+        view.insert("x").unwrap();
+        view.submit().unwrap();
+        view.finish(Err("failed".into()));
+        assert_eq!(
+            drive_with(&mut view, vec![Event::Key(key(KeyCode::Esc))]).await,
+            1
+        );
+    }
+}
