@@ -43,6 +43,10 @@ pub struct ChatInput {
     /// restored later. Other backends ignore it.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub slot: Option<u32>,
+    /// Most tokens to generate for this reply (llama.cpp `max_tokens`, Ollama `num_predict`).
+    /// `None`: the server's default, which may run to the end of the context.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_tokens: Option<u32>,
 }
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -170,8 +174,15 @@ fn chat_body(input: &ChatInput, stream: bool) -> Result<Value, HttpError> {
                 .collect::<Vec<_>>()
         );
     }
+    let mut options = serde_json::Map::new();
     if let Some(temperature) = input.temperature {
-        body["options"] = json!({"temperature":temperature});
+        options.insert("temperature".into(), json!(temperature));
+    }
+    if let Some(max_tokens) = input.max_tokens {
+        options.insert("num_predict".into(), json!(max_tokens));
+    }
+    if !options.is_empty() {
+        body["options"] = Value::Object(options);
     }
     Ok(body)
 }
@@ -549,5 +560,32 @@ mod timing_tests {
         ] {
             assert_eq!(Timings::from_llama_cpp(&bad), None, "{bad}");
         }
+    }
+}
+
+#[cfg(test)]
+mod max_tokens_tests {
+    use super::*;
+
+    #[test]
+    fn ollama_gets_max_tokens_as_num_predict_beside_temperature() {
+        let input: ChatInput = serde_json::from_value(json!({
+            "model": "qwen3:8b",
+            "messages": [{"role": "user", "content": "hi"}],
+            "temperature": 0.2,
+            "max_tokens": 64
+        }))
+        .unwrap();
+        let body = chat_body(&input, false).unwrap();
+        assert_eq!(
+            body["options"],
+            json!({"temperature": 0.2, "num_predict": 64})
+        );
+        let plain = ChatInput {
+            temperature: None,
+            max_tokens: None,
+            ..input
+        };
+        assert!(chat_body(&plain, false).unwrap().get("options").is_none());
     }
 }

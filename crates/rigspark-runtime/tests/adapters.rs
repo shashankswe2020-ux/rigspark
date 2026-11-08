@@ -525,6 +525,7 @@ async fn bitnet_uses_cpu_server_custom_port_context_openai_chat_and_owned_stop()
         tools: vec![],
         temperature: None,
         slot: None,
+        max_tokens: None,
     };
     assert_eq!(
         adapter
@@ -1304,6 +1305,7 @@ async fn llama_cpp_keeps_kv_slots_pins_requests_and_reports_its_own_timings() {
         tools: Vec::new(),
         temperature: None,
         slot: Some(2),
+        max_tokens: None,
     };
     let result = inference.chat(&handle, &input, &cancel).await.unwrap();
     assert_eq!(result.content, "done");
@@ -1325,6 +1327,28 @@ async fn llama_cpp_keeps_kv_slots_pins_requests_and_reports_its_own_timings() {
     let sent = replies.requests.lock().unwrap()[0].2.clone();
     assert_eq!(sent["id_slot"], 2);
     assert_eq!(sent["cache_prompt"], true);
+    assert!(sent.get("max_tokens").is_none() && sent.get("temperature").is_none());
+    let capped = ChatInput {
+        max_tokens: Some(64),
+        temperature: Some(0.2),
+        ..input.clone()
+    };
+    inference.chat(&handle, &capped, &cancel).await.unwrap();
+    let sent = replies.requests.lock().unwrap().last().unwrap().2.clone();
+    assert_eq!(sent["max_tokens"], 64);
+    assert_eq!(sent["temperature"], 0.2);
+    for bad in [
+        ChatInput {
+            max_tokens: Some(0),
+            ..input.clone()
+        },
+        ChatInput {
+            temperature: Some(f64::NAN),
+            ..input.clone()
+        },
+    ] {
+        assert!(inference.chat(&handle, &bad, &cancel).await.is_err());
+    }
     for slot in [Some(16), None] {
         let unpinned = ChatInput {
             slot,
@@ -1548,6 +1572,7 @@ async fn slot_actions_and_pinned_chats_refuse_a_listener_that_is_not_the_server_
         tools: Vec::new(),
         temperature: None,
         slot: Some(2),
+        max_tokens: None,
     };
     assert!(inference.chat(&handle, &input, &cancel).await.is_err());
     assert!(

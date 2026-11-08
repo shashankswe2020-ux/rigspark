@@ -70,6 +70,7 @@ fn input() -> ChatInput {
         tools: Vec::new(),
         temperature: Some(0.2),
         slot: None,
+        max_tokens: None,
     }
 }
 #[tokio::test]

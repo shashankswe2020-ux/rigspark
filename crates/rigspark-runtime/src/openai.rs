@@ -127,6 +127,7 @@ impl OpenAiInference<'_> {
         handle: &ServerState,
         path: &str,
         body: Value,
+        timeout: Duration,
         cancel: &CancellationToken,
     ) -> Result<Value, BackendError> {
         if serde_json::to_vec(&body)
@@ -144,7 +145,7 @@ impl OpenAiInference<'_> {
         let request = Request::new(&handle.endpoint, path, Some(body), token)
             .map_err(|error| BackendError(error.to_string()))?;
         tokio::time::timeout(
-            Duration::from_secs(30),
+            timeout,
             read_json(self.http, request, cancel, 2 * 1024 * 1024),
         )
         .await
@@ -178,6 +179,18 @@ impl OpenAiInference<'_> {
             .map(|message| json!({"role":message.role,"content":message.content}))
             .collect();
         let mut body = json!({"model":model,"messages":messages,"stream":false});
+        if let Some(temperature) = input.temperature {
+            if !temperature.is_finite() {
+                return Err(BackendError("invalid temperature".into()));
+            }
+            body["temperature"] = json!(temperature);
+        }
+        if let Some(max_tokens) = input.max_tokens {
+            if max_tokens == 0 {
+                return Err(BackendError("max_tokens must be at least 1".into()));
+            }
+            body["max_tokens"] = json!(max_tokens);
+        }
         if let Some(slot) = input.slot {
             if handle.backend != "llamacpp" || slot >= MAX_SLOTS {
                 return Err(BackendError(
@@ -188,7 +201,7 @@ impl OpenAiInference<'_> {
             body["cache_prompt"] = json!(true);
         }
         let result = chat_result(
-            self.json(handle, "/v1/chat/completions", body, cancel)
+            self.json(handle, "/v1/chat/completions", body, CHAT_TIMEOUT, cancel)
                 .await?,
         )?;
         self.checked(handle, cancel).await?;
@@ -216,6 +229,7 @@ impl OpenAiInference<'_> {
                 handle,
                 "/v1/embeddings",
                 json!({"model":model,"input":inputs}),
+                EMBED_TIMEOUT,
                 cancel,
             )
             .await?,
@@ -225,6 +239,12 @@ impl OpenAiInference<'_> {
         Ok(result)
     }
 }
+
+/// A chat reply may need to read a long prompt first, several requests at once sharing the
+/// server, so it gets as long as the local harness allows a whole call (120 s).
+pub const CHAT_TIMEOUT: Duration = Duration::from_secs(120);
+/// Embeddings are short reads.
+pub const EMBED_TIMEOUT: Duration = Duration::from_secs(30);
 
 /// llama.cpp request slots (`--parallel`) never exceed 16.
 pub const MAX_SLOTS: u32 = 16;

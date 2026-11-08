@@ -1,5 +1,21 @@
 # Changelog
 
+## 3.0.9 (2026-11-09)
+
+### Fixes
+
+- **llama.cpp chat no longer gives up after 30 seconds.** A reply that first
+  reads a long prompt (an agent's repo rules, tools and files) while other
+  requests share the server could take longer than 30 s, and every such call
+  failed as a transport error. Chat now gets 120 s, the same as the local
+  harness allows a whole call; embeddings keep 30 s.
+- **llama.cpp chat sends `temperature`.** It was accepted and then dropped.
+
+### Features
+
+- **`ChatInput.max_tokens` caps a reply's length**: `max_tokens` on
+  llama.cpp, `num_predict` on Ollama. Unset keeps each server's default.
+
 ## 3.0.8 (2026-11-08)
 
 ### Features
