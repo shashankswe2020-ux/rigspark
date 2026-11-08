@@ -894,7 +894,8 @@ async fn ceiling_downloads_report_the_real_size_not_the_ceiling() {
 #[tokio::test]
 async fn a_resume_must_be_a_partial_response_for_the_same_commit_and_remaining_bytes() {
     let bytes: Vec<u8> = (0..100_000u32).map(|value| (value % 233) as u8).collect();
-    let cases: Vec<(Box<dyn Fn(&mut Flaky)>, bool)> = vec![
+    type Tweak = Box<dyn Fn(&mut Flaky)>;
+    let cases: Vec<(Tweak, bool)> = vec![
         (Box::new(|_| {}), true),
         // A server may report fewer bytes left than remain; the hash still decides.
         (Box::new(|f| f.resume_length_delta = -1), true),

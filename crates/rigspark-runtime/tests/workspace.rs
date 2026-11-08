@@ -308,7 +308,14 @@ mod boundaries {
         let (workspace, id) = open(root.path());
         assert!(workspace.read(&id, "dir/a.txt", None).is_ok());
         assert!(workspace.read(&id, "link/a.txt", None).is_err());
-        assert!(workspace.read(&id, "file.txt/a.txt", None).is_err());
+        // The walk itself refuses a file ancestor, before any filesystem error.
+        assert!(
+            workspace
+                .read(&id, "file.txt/a.txt", None)
+                .unwrap_err()
+                .0
+                .contains("symlink or non-directory ancestor")
+        );
         let create = |path: &str| {
             review(
                 &workspace,
@@ -526,7 +533,10 @@ mod boundaries {
         assert!(review(&workspace, &id, creates(20)).is_ok());
         assert!(review(&workspace, &id, creates(21)).is_err());
         assert!(review(&workspace, &id, json!([])).is_err());
-        assert!(review(&workspace, &id, json!([create(".env.local", "x")])).is_err());
+        assert_eq!(
+            review(&workspace, &id, json!([create(".env.local", "x")])).unwrap_err(),
+            "unsafe or duplicate edit path"
+        );
         assert!(review(&workspace, &id, json!([create("blob.png", "x")])).is_err());
         assert!(
             review(
@@ -728,7 +738,8 @@ mod boundaries {
             "o".repeat(4000)
         );
 
-        let broken: Vec<(&str, Box<dyn Fn(&mut Value)>)> = vec![
+        type Corrupt = Box<dyn Fn(&mut Value)>;
+        let broken: Vec<(&str, Corrupt)> = vec![
             ("schema", Box::new(|r| r["schemaVersion"] = json!(2))),
             (
                 "id",
@@ -775,12 +786,13 @@ mod boundaries {
         let records = tempfile::tempdir().unwrap();
         let (path, mut record) = crashed(root.path(), records.path(), "o");
         let first = record["files"][0].clone();
-        let mut files = vec![first.clone(); 19];
+        let mut files = vec![first.clone(); 17];
         let big = "o".repeat(512 * 1024);
         let mut sized = first;
         sized["beforeHash"] = json!(sha(&big));
         sized["original"] = json!(big);
-        files.push(sized);
+        // Three of them make a journal well over a MiB.
+        files.extend([sized.clone(), sized.clone(), sized]);
         record["files"] = json!(files);
         std::fs::write(&path, serde_json::to_vec(&record).unwrap()).unwrap();
         assert!(recover(root.path(), records.path()).is_ok());
@@ -875,5 +887,191 @@ mod boundaries {
                 .reverted,
             ["a.txt"]
         );
+    }
+
+    #[test]
+    fn a_hundred_separate_hunks_fit_and_a_hundred_and_one_do_not() {
+        let root = tempfile::tempdir().unwrap();
+        let base = (1..=300)
+            .map(|n| format!("line{n}"))
+            .collect::<Vec<_>>()
+            .join("\n");
+        std::fs::write(root.path().join("file.txt"), &base).unwrap();
+        let (workspace, id) = open(root.path());
+        let hunks = |count: usize| {
+            json!(
+                (0..count)
+                    .map(|n| json!({"start": 3 * n + 1, "end": 3 * n + 1, "lines": ["x"]}))
+                    .collect::<Vec<_>>()
+            )
+        };
+        assert!(
+            review(
+                &workspace,
+                &id,
+                json!([update("file.txt", &base, hunks(100))])
+            )
+            .is_ok()
+        );
+        assert_eq!(
+            review(
+                &workspace,
+                &id,
+                json!([update("file.txt", &base, hunks(101))])
+            )
+            .unwrap_err(),
+            "invalid hunk count"
+        );
+    }
+
+    /// Starts applying `operations`, then crashes before the file at index 1 is written.
+    fn crash_during(workspace: &WorkspaceService, reviewed: EditReview, records: &Path) {
+        let crash = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            workspace.apply_with(reviewed, records, "now", |index| {
+                if index == 1 {
+                    panic!("simulated crash");
+                }
+                Ok(())
+            })
+        }));
+        assert!(crash.is_err());
+    }
+
+    #[test]
+    fn recovery_removes_a_created_file_and_restores_a_large_rewrite() {
+        let root = tempfile::tempdir().unwrap();
+        let records = tempfile::tempdir().unwrap();
+        std::fs::write(root.path().join("a.txt"), "a").unwrap();
+        std::fs::write(root.path().join("b.txt"), "b").unwrap();
+        let (workspace, id) = open(root.path());
+        let reviewed = review(
+            &workspace,
+            &id,
+            json!([
+                {"op": "create", "path": "new.txt", "text": "made"},
+                update("b.txt", "b", json!([{"start": 1, "end": 1, "lines": ["changed"]}])),
+            ]),
+        )
+        .unwrap();
+        crash_during(&workspace, reviewed, records.path());
+        assert!(root.path().join("new.txt").exists());
+        let recovered = recover(root.path(), records.path()).unwrap();
+        assert_eq!(recovered[0].reverted, ["new.txt"]);
+        assert!(!root.path().join("new.txt").exists());
+
+        // The crashed write left a 4 KB file; recovery still reads and restores it.
+        let large = "y".repeat(4000);
+        let reviewed = review(
+            &workspace,
+            &id,
+            json!([
+                update(
+                    "a.txt",
+                    "a",
+                    json!([{"start": 1, "end": 1, "lines": [large]}])
+                ),
+                update(
+                    "b.txt",
+                    "b",
+                    json!([{"start": 1, "end": 1, "lines": ["changed"]}])
+                ),
+            ]),
+        )
+        .unwrap();
+        crash_during(&workspace, reviewed, records.path());
+        assert_eq!(
+            std::fs::read_to_string(root.path().join("a.txt")).unwrap(),
+            large
+        );
+        let recovered = recover(root.path(), records.path()).unwrap();
+        assert_eq!(recovered[0].reverted, ["a.txt"]);
+        assert_eq!(
+            std::fs::read_to_string(root.path().join("a.txt")).unwrap(),
+            "a"
+        );
+    }
+
+    #[test]
+    fn a_failed_apply_rolls_back_a_large_rewrite() {
+        let root = tempfile::tempdir().unwrap();
+        let records = tempfile::tempdir().unwrap();
+        std::fs::write(root.path().join("a.txt"), "a").unwrap();
+        std::fs::write(root.path().join("b.txt"), "b").unwrap();
+        let (workspace, id) = open(root.path());
+        let reviewed = review(
+            &workspace,
+            &id,
+            json!([
+                update(
+                    "a.txt",
+                    "a",
+                    json!([{"start": 1, "end": 1, "lines": ["y".repeat(4000)]}])
+                ),
+                update(
+                    "b.txt",
+                    "b",
+                    json!([{"start": 1, "end": 1, "lines": ["changed"]}])
+                ),
+            ]),
+        )
+        .unwrap();
+        let result = workspace.apply_with(reviewed, records.path(), "now", |index| {
+            if index == 1 {
+                return Err(rigspark_runtime::workspace::WorkspaceError("stop".into()));
+            }
+            Ok(())
+        });
+        assert_eq!(result.unwrap_err().0, "stop");
+        assert_eq!(
+            std::fs::read_to_string(root.path().join("a.txt")).unwrap(),
+            "a"
+        );
+    }
+
+    #[test]
+    fn revert_records_over_a_mib_still_revert() {
+        let root = tempfile::tempdir().unwrap();
+        let records = tempfile::tempdir().unwrap();
+        let names = ["a.txt", "b.txt", "c.txt", "d.txt", "e.txt"];
+        let original = "o".repeat(250 * 1024);
+        for name in names {
+            std::fs::write(root.path().join(name), &original).unwrap();
+        }
+        let (workspace, id) = open(root.path());
+        let operations: Vec<_> = names
+            .iter()
+            .map(|name| {
+                update(
+                    name,
+                    &original,
+                    json!([{"start": 1, "end": 1, "lines": ["n"]}]),
+                )
+            })
+            .collect();
+        let applied = workspace
+            .apply(
+                review(&workspace, &id, json!(operations)).unwrap(),
+                records.path(),
+                "now",
+            )
+            .unwrap();
+        let record = records
+            .path()
+            .join(format!("{}.json", applied.application_id));
+        assert!(std::fs::metadata(&record).unwrap().len() > 1024 * 1024 + 16);
+        let reverted = workspace
+            .revert(&applied.application_id, records.path())
+            .unwrap();
+        // Reverted newest write first.
+        assert_eq!(
+            reverted.reverted,
+            ["e.txt", "d.txt", "c.txt", "b.txt", "a.txt"]
+        );
+        for name in names {
+            assert_eq!(
+                std::fs::read_to_string(root.path().join(name)).unwrap(),
+                original
+            );
+        }
     }
 }

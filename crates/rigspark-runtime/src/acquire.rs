@@ -1163,7 +1163,8 @@ mod boundary_tests {
             ok.backend = backend.into();
             assert!(ok.validate().is_ok(), "{backend}");
         }
-        let cases: Vec<Box<dyn Fn(&mut Artifact)>> = vec![
+        type Edit = Box<dyn Fn(&mut Artifact)>;
+        let cases: Vec<Edit> = vec![
             Box::new(|a| a.backend = "ollama".into()),
             Box::new(|a| a.repo = "owner".into()),
             Box::new(|a| a.repo = "owner/repo/extra".into()),
