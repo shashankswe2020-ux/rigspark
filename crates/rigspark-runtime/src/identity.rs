@@ -499,3 +499,318 @@ impl ProcessProbe for NativeProcessProbe {
         }
     }
 }
+
+#[cfg(test)]
+mod boundary_tests {
+    use super::*;
+
+    fn identity() -> ProcessIdentity {
+        ProcessIdentity {
+            pid: 42,
+            process: "llama-server".into(),
+            executable: "/opt/llama-server".into(),
+            started: "2026-11-08 10:00:00".into(),
+        }
+    }
+    fn listener(port: u16, address: &str) -> Listener {
+        Listener {
+            identity: identity(),
+            address: address.into(),
+            port,
+        }
+    }
+    fn active() -> ServerState {
+        ServerState {
+            backend: "llamacpp".into(),
+            model_id: "qwen3:8b".into(),
+            endpoint: "http://127.0.0.1:8080".into(),
+            port: 8080,
+            owned_by_us: true,
+            pid: Some(42),
+            runtime_model_id: None,
+            context: None,
+            integrity: None,
+            local_manifest_digest: None,
+            model_path: None,
+            process_executable: Some("/opt/llama-server".into()),
+            process_started_at: Some("2026-11-08 10:00:00".into()),
+            auth_token: None,
+            cache: None,
+        }
+    }
+
+    #[test]
+    fn a_listener_must_match_both_port_and_address() {
+        let listeners = [listener(8080, "10.0.0.5"), listener(9090, "127.0.0.1")];
+        assert!(choose_listener(&listeners, 8080, "127.0.0.1").is_err());
+        assert!(choose_listener(&listeners, 9090, "localhost").is_ok());
+        // Another address on the same port, or the same address on another port, is ignored.
+        let listeners = [listener(8080, "10.0.0.5"), listener(8080, "127.0.0.1")];
+        assert!(choose_listener(&listeners, 8080, "127.0.0.1").is_ok());
+        let listeners = [listener(9090, "127.0.0.1")];
+        assert!(choose_listener(&listeners, 8080, "127.0.0.1").is_err());
+    }
+
+    #[test]
+    fn identities_hash_up_to_one_mib() {
+        assert!(hash(&"x".repeat(1048574)).is_ok());
+        assert!(hash(&"x".repeat(1048575)).is_err());
+    }
+
+    #[test]
+    fn a_capture_needs_every_identity_field() {
+        let observed = listener(8080, "127.0.0.1");
+        assert!(capture(&active(), &observed, true).is_ok());
+        for change in [
+            |i: &mut ProcessIdentity| i.executable.clear(),
+            |i: &mut ProcessIdentity| i.started.clear(),
+            |i: &mut ProcessIdentity| i.process.clear(),
+            |i: &mut ProcessIdentity| i.pid = 0,
+        ] {
+            let mut missing = observed.clone();
+            change(&mut missing.identity);
+            assert!(capture(&active(), &missing, true).is_err(), "{missing:?}");
+            // Even when the record has nothing to compare against.
+            let mut unrecorded = active();
+            unrecorded.owned_by_us = false;
+            unrecorded.pid = None;
+            unrecorded.process_executable = None;
+            unrecorded.process_started_at = None;
+            assert!(capture(&unrecorded, &observed, true).is_ok());
+            assert!(capture(&unrecorded, &missing, true).is_err(), "{missing:?}");
+        }
+    }
+
+    fn state(owned: bool) -> RuntimeState {
+        let mut entry = active();
+        entry.owned_by_us = owned;
+        RuntimeState {
+            schema_version: 2,
+            active: Some(entry),
+        }
+    }
+
+    #[test]
+    fn confirmations_name_a_target_only_when_replacing() {
+        let observed = listener(8080, "127.0.0.1");
+        let live = capture(&active(), &observed, true).unwrap();
+        let owned = state(true);
+        assert!(
+            Confirmation::prepare(Operation::ReplaceServer, &owned, None, Some(&live)).is_err()
+        );
+        assert!(
+            Confirmation::prepare(
+                Operation::ReplaceServer,
+                &owned,
+                Some("llama3:8b"),
+                Some(&live)
+            )
+            .is_ok()
+        );
+        assert!(Confirmation::prepare(Operation::Down, &owned, Some("x"), Some(&live)).is_err());
+        assert!(Confirmation::prepare(Operation::Down, &owned, None, Some(&live)).is_ok());
+        let attached = state(false);
+        let live = capture(attached.active.as_ref().unwrap(), &observed, true).unwrap();
+        assert!(
+            Confirmation::prepare(Operation::Detach, &attached, Some("x"), Some(&live)).is_err()
+        );
+        assert!(Confirmation::prepare(Operation::Detach, &attached, None, Some(&live)).is_ok());
+    }
+
+    #[test]
+    fn confirmation_targets_are_safe_model_ids() {
+        let observed = listener(8080, "127.0.0.1");
+        let live = capture(&active(), &observed, true).unwrap();
+        let owned = state(true);
+        let replace = |target: &str| {
+            Confirmation::prepare(Operation::ReplaceServer, &owned, Some(target), Some(&live))
+        };
+        assert!(replace("hf.co/owner/model:Q4_K_M").is_ok());
+        assert!(replace(&"m".repeat(8192)).is_ok());
+        for bad in ["", "-model", "a/../b", "a b", "a?b", &"m".repeat(8193)] {
+            assert!(replace(bad).is_err(), "{bad:?}");
+        }
+    }
+
+    #[test]
+    fn lsof_and_windows_listener_output_is_capped_at_64_kib() {
+        let line = "p42\nn127.0.0.1:8080\n";
+        let padded = |size: usize| format!("{line}{}", "f\n".repeat((size - line.len()) / 2));
+        assert_eq!(
+            parse_lsof_listener(&padded(65536), 8080, "127.0.0.1").unwrap(),
+            42
+        );
+        assert!(parse_lsof_listener(&padded(65538), 8080, "127.0.0.1").is_err());
+        let row = serde_json::json!([{"pid": 42, "process": "llama-server.exe",
+            "executable": "C:\\\\llama-server.exe", "started": "2026-11-08 10:00:00",
+            "address": "127.0.0.1", "port": 8080}])
+        .to_string();
+        let windows = |size: usize| format!("{row}{}", " ".repeat(size - row.len()));
+        assert!(parse_windows_listener(&windows(65536), 8080, "127.0.0.1").is_ok());
+        assert!(parse_windows_listener(&windows(65537), 8080, "127.0.0.1").is_err());
+    }
+
+    #[test]
+    fn start_times_are_one_well_formed_ps_line() {
+        assert_eq!(
+            parse_start_time("Sun Nov  8 14:28:37 2026\n").unwrap(),
+            "2026-11-08 14:28:37"
+        );
+        let padded = format!("Sun Nov  8 14:28:37 2026{}", " ".repeat(4096 - 24));
+        assert!(parse_start_time(&padded).is_ok());
+        assert!(parse_start_time(&format!("{padded} ")).is_err());
+        assert!(parse_start_time("Sun Nov 31 23:59:59 2026").is_ok());
+        for bad in [
+            "Sun Nov 8 14:28:37",
+            "Xyz Nov 8 14:28:37 2026",
+            "Sun Nov 0 14:28:37 2026",
+            "Sun Nov 32 14:28:37 2026",
+            "Sun Nov 8 14:28:37 26",
+            "Sun Nov 8 14:28:37 2O26",
+            "Sun Nov 8 14:28 2026",
+            "Sun Nov 8 14:28:37:00 2026",
+            "Sun Nov 8 1:28:37 2026",
+            "Sun Nov 8 24:28:37 2026",
+            "Sun Nov 8 14:60:37 2026",
+            "Sun Nov 8 14:28:60 2026",
+            "Sun Nov 8 aa:28:37 2026",
+        ] {
+            assert!(parse_start_time(bad).is_err(), "{bad:?}");
+        }
+    }
+
+    #[test]
+    fn process_identities_are_complete_and_in_range() {
+        assert!(validate_process(&identity()).is_ok());
+        let mut maximum = identity();
+        maximum.pid = i32::MAX as u32;
+        assert!(validate_process(&maximum).is_ok());
+        for change in [
+            |i: &mut ProcessIdentity| i.pid = 0,
+            |i: &mut ProcessIdentity| i.pid = i32::MAX as u32 + 1,
+            |i: &mut ProcessIdentity| i.process.clear(),
+            |i: &mut ProcessIdentity| i.executable.clear(),
+            |i: &mut ProcessIdentity| i.started.clear(),
+        ] {
+            let mut value = identity();
+            change(&mut value);
+            assert!(validate_process(&value).is_err(), "{value:?}");
+        }
+    }
+
+    struct Minimal;
+    #[async_trait::async_trait]
+    impl ProcessProbe for Minimal {
+        async fn listener(&self, _: u16, _: &str) -> Result<Listener, StateError> {
+            Err(invalid("none"))
+        }
+        async fn process(&self, _: u32) -> Result<ProcessIdentity, StateError> {
+            Err(invalid("none"))
+        }
+    }
+
+    #[tokio::test]
+    async fn probes_without_introspection_fail_closed() {
+        assert!(Minimal.command_line(1).await.is_err());
+        assert!(Minimal.alive(1).await.is_err());
+    }
+
+    #[tokio::test]
+    async fn the_native_probe_sees_this_process_and_refuses_impossible_pids() {
+        let me = std::process::id();
+        assert!(NativeProcessProbe.alive(me).await.unwrap());
+        let mut child = std::process::Command::new("true").spawn().unwrap();
+        let gone = child.id();
+        child.wait().unwrap();
+        assert!(!NativeProcessProbe.alive(gone).await.unwrap());
+        for pid in [0, i32::MAX as u32 + 1] {
+            assert!(NativeProcessProbe.alive(pid).await.is_err(), "{pid}");
+            assert!(NativeProcessProbe.process(pid).await.is_err(), "{pid}");
+        }
+        // The largest PID is still looked up; out-of-range PIDs never reach `ps`.
+        assert!(!NativeProcessProbe.alive(i32::MAX as u32).await.unwrap());
+        for pid in [0, i32::MAX as u32 + 1] {
+            assert_eq!(
+                NativeProcessProbe.process(pid).await.unwrap_err().message,
+                "invalid process PID"
+            );
+        }
+        assert_ne!(
+            NativeProcessProbe
+                .process(i32::MAX as u32)
+                .await
+                .unwrap_err()
+                .message,
+            "invalid process PID"
+        );
+        let args = NativeProcessProbe.command_line(me).await.unwrap();
+        let exe = std::env::current_exe().unwrap();
+        assert!(
+            args[0].ends_with(exe.file_name().unwrap().to_str().unwrap()),
+            "{args:?}"
+        );
+        assert!(NativeProcessProbe.command_line(gone).await.is_err());
+        #[cfg(target_os = "linux")]
+        {
+            let identity = NativeProcessProbe.process(me).await.unwrap();
+            assert_eq!(identity.pid, me);
+            assert_eq!(
+                identity.executable,
+                exe.canonicalize().unwrap().to_string_lossy()
+            );
+            assert_eq!(identity.process, exe.file_name().unwrap().to_string_lossy());
+            assert_eq!(identity.started.len(), "2026-11-08 14:28:37".len());
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    #[tokio::test]
+    async fn command_lines_are_capped_at_1024_arguments_and_64_kib() {
+        // `sh -c 'sleep 30' <name> <args…>` keeps the arguments on a live process.
+        async fn probe(args: &[String]) -> Result<Vec<String>, StateError> {
+            let mut child = std::process::Command::new("/bin/sh")
+                .args(["-c", "sleep 30", "s"])
+                .args(args)
+                .spawn()
+                .unwrap();
+            tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+            let result = NativeProcessProbe.command_line(child.id()).await;
+            child.kill().unwrap();
+            child.wait().unwrap();
+            result
+        }
+        // "/bin/sh" "-c" "sleep 30" "s" are four arguments and 18 bytes.
+        assert_eq!(probe(&vec!["a".into(); 1020]).await.unwrap().len(), 1024);
+        assert!(probe(&vec!["a".into(); 1021]).await.is_err());
+        assert!(probe(&["b".repeat(65536 - 18)]).await.is_ok());
+        assert!(probe(&["b".repeat(65537 - 18)]).await.is_err());
+    }
+
+    #[cfg(target_os = "linux")]
+    #[tokio::test]
+    async fn the_native_probe_finds_the_process_listening_on_a_port() {
+        if std::process::Command::new("lsof")
+            .arg("-v")
+            .output()
+            .is_err()
+        {
+            eprintln!("lsof is not installed; skipping");
+            return;
+        }
+        let socket = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = socket.local_addr().unwrap().port();
+        let found = NativeProcessProbe
+            .listener(port, "127.0.0.1")
+            .await
+            .unwrap();
+        assert_eq!(found.identity.pid, std::process::id());
+        assert_eq!(found.port, port);
+        drop(socket);
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn the_native_probe_reads_command_output() {
+        assert_eq!(output("echo", &["hello"]).await.unwrap().trim(), "hello");
+    }
+}
