@@ -13,6 +13,11 @@
 
 ### Features
 
+- **Agents can use tools on llama.cpp.** Chat sends the tool list and the
+  history's tool calls and results in OpenAI's shape (with `tool_call_id`s),
+  and returns the model's tool calls (arguments as a JSON string or object).
+  Before, llama.cpp chat sent only each message's text, so an agent with tools
+  never got a tool call back.
 - **`ChatInput.max_tokens` caps a reply's length**: `max_tokens` on
   llama.cpp, `num_predict` on Ollama. Unset keeps each server's default.
 
