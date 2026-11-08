@@ -544,6 +544,7 @@ impl ChatHarness for LocalHarness<'_> {
                 .collect(),
             tools: Vec::new(),
             temperature: input.temperature,
+            slot: None,
         };
         Ok(
             crate::agent::AgentChat::chat(self, &request, cancel, on_delta)

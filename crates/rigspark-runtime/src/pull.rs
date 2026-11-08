@@ -31,6 +31,7 @@ pub async fn with_ollama_daemon<T>(
         model_path: None,
         context: None,
         cache: None,
+        slot_save_path: None,
     };
     let handle = adapter.serve(&request, cancel).await?;
     let result = tokio::select! { biased; _ = cancel.cancelled() => Err(BackendError("pull cancelled".into())), result = operation => result };

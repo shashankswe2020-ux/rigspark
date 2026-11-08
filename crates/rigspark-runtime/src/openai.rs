@@ -25,6 +25,9 @@ pub fn chat_result(value: Value) -> Result<ChatResult, BackendError> {
     struct Reply {
         choices: Vec<Choice>,
     }
+    let timings = value
+        .get("timings")
+        .and_then(crate::ollama_inference::Timings::from_llama_cpp);
     let reply: Reply =
         serde_json::from_value(value).map_err(|_| BackendError("invalid chat response".into()))?;
     if reply.choices.is_empty() || reply.choices.len() > 8 {
@@ -43,6 +46,7 @@ pub fn chat_result(value: Value) -> Result<ChatResult, BackendError> {
     Ok(ChatResult {
         content,
         tool_calls: Vec::new(),
+        timings,
     })
 }
 pub fn embedding_result(value: Value, count: usize) -> Result<EmbedResult, BackendError> {
@@ -109,6 +113,7 @@ impl OpenAiInference<'_> {
                         model_path: handle.model_path.as_ref().map(PathBuf::from),
                         context: None,
                         cache: None,
+                        slot_save_path: None,
                     },
                     handle,
                     cancel,
@@ -172,14 +177,19 @@ impl OpenAiInference<'_> {
             .iter()
             .map(|message| json!({"role":message.role,"content":message.content}))
             .collect();
+        let mut body = json!({"model":model,"messages":messages,"stream":false});
+        if let Some(slot) = input.slot {
+            if handle.backend != "llamacpp" || slot >= MAX_SLOTS {
+                return Err(BackendError(
+                    "a request slot applies only to llama.cpp, 0 to 15".into(),
+                ));
+            }
+            body["id_slot"] = json!(slot);
+            body["cache_prompt"] = json!(true);
+        }
         let result = chat_result(
-            self.json(
-                handle,
-                "/v1/chat/completions",
-                json!({"model":model,"messages":messages,"stream":false}),
-                cancel,
-            )
-            .await?,
+            self.json(handle, "/v1/chat/completions", body, cancel)
+                .await?,
         )?;
         self.checked(handle, cancel).await?;
         Ok(result)
@@ -213,5 +223,125 @@ impl OpenAiInference<'_> {
         )?;
         self.checked(handle, cancel).await?;
         Ok(result)
+    }
+}
+
+/// llama.cpp request slots (`--parallel`) never exceed 16.
+pub const MAX_SLOTS: u32 = 16;
+
+/// What to do with one llama.cpp request slot's KV cache.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum KvSlotAction {
+    /// Write the slot's KV cache to `<name>.bin` in the server's slot directory.
+    Save { name: String },
+    /// Load `<name>.bin` into the slot.
+    Restore { name: String },
+    /// Drop the slot's KV cache, freeing it for other requests.
+    Erase,
+}
+
+/// What llama.cpp reported for a slot action.
+#[derive(Debug, Clone, PartialEq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct KvSlotReport {
+    pub slot: u32,
+    /// Tokens saved, restored or erased.
+    pub tokens: u64,
+    /// Bytes written or read (save and restore only).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bytes: Option<u64>,
+    /// How long the server took (save and restore only).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ms: Option<f64>,
+}
+
+/// A slot file name: 1 to 64 ASCII letters, digits, `-` or `_`; `.bin` is added.
+pub fn kv_slot_file(name: &str) -> Result<String, BackendError> {
+    if name.is_empty()
+        || name.len() > 64
+        || !name
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || byte == b'-' || byte == b'_')
+    {
+        return Err(BackendError(
+            "KV slot names are 1 to 64 letters, digits, - or _".into(),
+        ));
+    }
+    Ok(format!("{name}.bin"))
+}
+
+pub fn kv_slot_report(
+    slot: u32,
+    action: &KvSlotAction,
+    value: &Value,
+) -> Result<KvSlotReport, BackendError> {
+    let invalid = || BackendError("invalid KV slot response".into());
+    let count = |key: &str| value.get(key).and_then(Value::as_u64);
+    let (tokens, bytes, ms) = match action {
+        KvSlotAction::Save { .. } => (
+            count("n_saved").ok_or_else(invalid)?,
+            count("n_written"),
+            value.pointer("/timings/save_ms").and_then(Value::as_f64),
+        ),
+        KvSlotAction::Restore { .. } => (
+            count("n_restored").ok_or_else(invalid)?,
+            count("n_read"),
+            value.pointer("/timings/restore_ms").and_then(Value::as_f64),
+        ),
+        KvSlotAction::Erase => (count("n_erased").ok_or_else(invalid)?, None, None),
+    };
+    if value.get("id_slot").and_then(Value::as_u64) != Some(u64::from(slot))
+        || ms.is_some_and(|ms| !ms.is_finite() || ms < 0.0)
+    {
+        return Err(invalid());
+    }
+    Ok(KvSlotReport {
+        slot,
+        tokens,
+        bytes,
+        ms,
+    })
+}
+
+impl OpenAiInference<'_> {
+    /// Saves, restores or erases one request slot's KV cache on a llama.cpp server that
+    /// rigspark started with a slot directory. The listener is re-identified before and
+    /// after, as for chat.
+    pub async fn kv_slot(
+        &self,
+        handle: &ServerState,
+        slot: u32,
+        action: &KvSlotAction,
+        cancel: &CancellationToken,
+    ) -> Result<KvSlotReport, BackendError> {
+        if handle.backend != "llamacpp" || slot >= MAX_SLOTS {
+            return Err(BackendError(
+                "KV slots apply only to llama.cpp, slots 0 to 15".into(),
+            ));
+        }
+        let (query, body) = match action {
+            KvSlotAction::Save { name } => ("save", json!({"filename": kv_slot_file(name)?})),
+            KvSlotAction::Restore { name } => ("restore", json!({"filename": kv_slot_file(name)?})),
+            KvSlotAction::Erase => ("erase", json!({})),
+        };
+        self.checked(handle, cancel).await?;
+        let request = Request::new(
+            &handle.endpoint,
+            &format!("/slots/{slot}"),
+            Some(body),
+            None,
+        )
+        .and_then(|request| request.with_query(&[("action", query)]))
+        .map_err(|error| BackendError(error.to_string()))?;
+        let value = tokio::time::timeout(
+            Duration::from_secs(120),
+            read_json(self.http, request, cancel, 64 * 1024),
+        )
+        .await
+        .map_err(|_| BackendError("KV slot request timed out".into()))?
+        .map_err(|error| BackendError(error.to_string()))?;
+        let report = kv_slot_report(slot, action, &value)?;
+        self.checked(handle, cancel).await?;
+        Ok(report)
     }
 }

@@ -23,6 +23,7 @@ impl AgentChat for Model {
         Ok(ChatResult {
             content: "summary".into(),
             tool_calls: vec![],
+            timings: None,
         })
     }
 }

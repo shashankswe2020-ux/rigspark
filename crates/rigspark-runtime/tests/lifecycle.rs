@@ -220,6 +220,7 @@ async fn health_checks_identity_and_readiness_without_mutating_state() {
         model_path: None,
         context: None,
         cache: None,
+        slot_save_path: None,
     };
     lifecycle
         .health(&active, &request, &CancellationToken::new())
@@ -475,6 +476,7 @@ async fn replacement_failure_preserves_foreign_state_and_drift_prevents_startup(
         model_path: None,
         context: None,
         cache: None,
+        slot_save_path: None,
     };
     assert!(
         lifecycle
@@ -524,6 +526,7 @@ async fn owned_replacement_failure_clears_stale_pid_and_detach_does_not_stop_for
         model_path: None,
         context: None,
         cache: None,
+        slot_save_path: None,
     };
     assert!(
         lifecycle
@@ -558,6 +561,7 @@ async fn successful_replacement_and_detach_preserve_foreign_process() {
         model_path: None,
         context: None,
         cache: None,
+        slot_save_path: None,
     };
     let active = lifecycle
         .replace("ollama", &request, &review, &cancel)
@@ -607,6 +611,7 @@ async fn state_changed_during_activation_is_not_overwritten() {
         model_path: None,
         context: None,
         cache: None,
+        slot_save_path: None,
     };
     assert!(
         lifecycle
@@ -762,6 +767,7 @@ async fn installed_attachment_retains_ownership_of_same_recorded_daemon() {
         model_path: None,
         context: Some(8192),
         cache: None,
+        slot_save_path: None,
     };
     let active = lifecycle
         .attach_installed(&request, &review, &cancel, &Finalize)
@@ -796,6 +802,7 @@ async fn cancelled_replacement_never_rewrites_state() {
         model_path: None,
         context: None,
         cache: None,
+        slot_save_path: None,
     };
     assert!(
         lifecycle
@@ -1249,6 +1256,7 @@ async fn owned_runtime_is_stopped_when_persisting_state_fails() {
         model_path: None,
         context: None,
         cache: None,
+        slot_save_path: None,
     };
     let drift = DriftingActivation(store.config.state.clone());
     assert!(
@@ -1295,6 +1303,7 @@ async fn an_unappliable_cache_profile_is_refused_before_the_running_server_is_to
             kv_v: rigspark_core::sizing::KvCacheType::Q4_0,
             ..Default::default()
         }),
+        slot_save_path: None,
     };
     let error = lifecycle
         .replace("ollama", &request, &reviewed, &cancel)

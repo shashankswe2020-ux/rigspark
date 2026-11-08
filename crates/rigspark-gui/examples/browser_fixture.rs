@@ -183,6 +183,7 @@ impl Engine for Fixture {
         Ok(ChatResult {
             content,
             tool_calls,
+            timings: None,
         })
     }
     async fn chat(

@@ -804,6 +804,7 @@ pub async fn run_native_with_config_observed(
             model_path: path,
             context: None,
             cache: None,
+            slot_save_path: None,
         };
         lifecycle.health(&active, &request, cancel).await?;
         return Ok((
@@ -932,6 +933,7 @@ pub async fn run_native_with_config_observed(
             model_path: None,
             context: options.context,
             cache: options.cache.over(None),
+            slot_save_path: None,
         };
         let active = lifecycle
             .attach_installed(&request, &reviewed, cancel, &activation)
@@ -1194,6 +1196,11 @@ pub async fn run_native_with_config_observed(
             options.context
         },
         cache: requested,
+        slot_save_path: if backend == "llamacpp" {
+            Some(kv_slot_directory(&config)?)
+        } else {
+            None
+        },
     };
     let active = if options.context.is_some() && backend == "ollama" {
         let activation = ContextActivation {
@@ -1373,6 +1380,61 @@ pub async fn installed_inventory(
         ),
         exit,
     ))
+}
+
+/// Where llama.cpp servers rigspark starts keep saved KV slots: `kv-slots/` beside the
+/// runtime state file, created private to this user.
+pub fn kv_slot_directory(config: &Config) -> Result<PathBuf, BackendError> {
+    let parent = config
+        .state
+        .parent()
+        .filter(|parent| parent.is_absolute())
+        .ok_or_else(|| BackendError("runtime state must live in an absolute directory".into()))?;
+    let directory = parent.join("kv-slots");
+    std::fs::create_dir_all(&directory).map_err(|error| BackendError(error.to_string()))?;
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(&directory, std::fs::Permissions::from_mode(0o700))
+            .map_err(|error| BackendError(error.to_string()))?;
+    }
+    let metadata =
+        std::fs::symlink_metadata(&directory).map_err(|error| BackendError(error.to_string()))?;
+    if !metadata.is_dir() {
+        return Err(BackendError("KV slot directory is not a directory".into()));
+    }
+    Ok(directory)
+}
+
+/// Saves, restores or erases a KV slot on the llama.cpp server this config's state records.
+/// Lets a caller free a slot during a long pause (a tool call) and bring it back after.
+pub async fn kv_slot_with_config(
+    config: Config,
+    slot: u32,
+    action: &crate::openai::KvSlotAction,
+    cancel: &CancellationToken,
+) -> Result<crate::openai::KvSlotReport, BackendError> {
+    let active = StateStore::new(config)
+        .read()
+        .map_err(|error| BackendError(error.to_string()))?
+        .active
+        .ok_or_else(|| BackendError("no active runtime".into()))?;
+    if active.backend != "llamacpp" {
+        return Err(BackendError("KV slots apply only to llama.cpp".into()));
+    }
+    let binary = resolve_binary("llama-server")?;
+    let http = NativeTransport::new().map_err(|error| BackendError(error.to_string()))?;
+    let probe = NativeProcessProbe;
+    let control = NativeProcessControl;
+    let llama = RuntimeAdapter::new(BackendKind::LlamaCpp, binary, &http, &probe, &control);
+    crate::openai::OpenAiInference {
+        http: &http,
+        probe: &probe,
+        adapter: &llama,
+        token: None,
+    }
+    .kv_slot(&active, slot, action, cancel)
+    .await
 }
 
 #[cfg(test)]

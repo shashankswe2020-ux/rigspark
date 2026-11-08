@@ -235,6 +235,7 @@ impl BackendAdapter for Local {
         Ok(ChatResult {
             content: "whole reply".into(),
             tool_calls: vec![],
+            timings: None,
         })
     }
     fn can_stream(&self) -> bool {

@@ -364,6 +364,7 @@ impl Lifecycle<'_> {
                     model_path: None,
                     context: None,
                     cache: None,
+                    slot_save_path: None,
                 },
                 &active,
                 cancel,

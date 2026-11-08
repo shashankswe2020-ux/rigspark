@@ -61,6 +61,7 @@ impl BackendAdapter for Fixture {
         Ok(ChatResult {
             content: "first second".into(),
             tool_calls: vec![],
+            timings: None,
         })
     }
     async fn chat_stream(
@@ -78,6 +79,7 @@ impl BackendAdapter for Fixture {
         Ok(ChatResult {
             content: "first second".into(),
             tool_calls: vec![],
+            timings: None,
         })
     }
 }

@@ -45,6 +45,7 @@ impl Engine for Model {
             return Ok(ChatResult {
                 content: "all done".into(),
                 tool_calls: vec![],
+                timings: None,
             });
         }
         let arguments = [("path".to_owned(), json!("a.txt"))].into_iter().collect();
@@ -54,6 +55,7 @@ impl Engine for Model {
                 name: "do_write".into(),
                 arguments,
             }],
+            timings: None,
         })
     }
 }

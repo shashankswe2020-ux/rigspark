@@ -39,6 +39,10 @@ pub struct ChatInput {
     #[serde(default)]
     pub tools: Vec<Tool>,
     pub temperature: Option<f64>,
+    /// llama.cpp request slot to run in (`id_slot`), so its KV cache can be saved and
+    /// restored later. Other backends ignore it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub slot: Option<u32>,
 }
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -46,6 +50,69 @@ pub struct ChatResult {
     pub content: String,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub tool_calls: Vec<ToolCall>,
+    /// The server's own measurements for this reply (llama.cpp), when it reports them.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub timings: Option<Timings>,
+}
+/// Prompt processing and generation as measured by the model server for one reply.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Timings {
+    /// Prompt tokens evaluated for this reply (cached prefix tokens excluded).
+    pub prompt_tokens: u64,
+    pub prompt_ms: f64,
+    /// Tokens generated.
+    pub generated_tokens: u64,
+    pub generated_ms: f64,
+    /// Prompt tokens reused from the KV cache.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cached_tokens: Option<u64>,
+    /// Speculative tokens drafted and accepted.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub draft_tokens: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub draft_accepted: Option<u64>,
+}
+impl Timings {
+    /// Parses llama.cpp's `timings` object; `None` when it is absent or malformed, so a
+    /// reply never fails over its measurements.
+    pub fn from_llama_cpp(value: &Value) -> Option<Self> {
+        let timings = value.as_object()?;
+        let count = |key: &str| timings.get(key).and_then(Value::as_u64);
+        let millis = |key: &str| {
+            timings
+                .get(key)
+                .and_then(Value::as_f64)
+                .filter(|ms| ms.is_finite() && *ms >= 0.0)
+        };
+        let draft_tokens = count("draft_n");
+        let draft_accepted = count("draft_n_accepted");
+        if let (Some(drafted), Some(accepted)) = (draft_tokens, draft_accepted)
+            && accepted > drafted
+        {
+            return None;
+        }
+        Some(Self {
+            prompt_tokens: count("prompt_n")?,
+            prompt_ms: millis("prompt_ms")?,
+            generated_tokens: count("predicted_n")?,
+            generated_ms: millis("predicted_ms")?,
+            cached_tokens: count("cache_n"),
+            draft_tokens,
+            draft_accepted,
+        })
+    }
+    /// Prompt tokens per second, when any prompt was processed.
+    pub fn prompt_tokens_per_second(&self) -> Option<f64> {
+        rate(self.prompt_tokens, self.prompt_ms)
+    }
+    /// Generated tokens per second, when anything was generated.
+    pub fn generated_tokens_per_second(&self) -> Option<f64> {
+        rate(self.generated_tokens, self.generated_ms)
+    }
+}
+fn rate(tokens: u64, ms: f64) -> Option<f64> {
+    (tokens > 0 && ms > 0.0).then(|| tokens as f64 * 1000.0 / ms)
 }
 #[derive(Debug, Serialize)]
 pub struct EmbedResult {
@@ -163,6 +230,7 @@ fn decode_result(value: Value) -> Result<ChatResult, HttpError> {
             .into_iter()
             .map(ToolCall::from)
             .collect(),
+        timings: None,
     })
 }
 pub struct OllamaInference<'runtime> {
@@ -282,6 +350,7 @@ impl<'runtime> OllamaInference<'runtime> {
             let mut result = ChatResult {
                 content: String::new(),
                 tool_calls: Vec::new(),
+                timings: None,
             };
             let mut total = 0usize;
             loop {
@@ -439,4 +508,32 @@ pub async fn preload(
         Err(reason)
     };
     tokio::select! {biased;_=cancel.cancelled()=>Err("cancelled".into()),result=tokio::time::timeout(Duration::from_secs(600),operation)=>result.map_err(|_|"loading the model timed out".to_owned())?}
+}
+
+#[cfg(test)]
+mod timing_tests {
+    use super::*;
+
+    #[test]
+    fn llama_cpp_timings_parse_only_when_complete_and_sane() {
+        let full = json!({"prompt_n": 3, "prompt_ms": 6.0, "predicted_n": 4, "predicted_ms": 8.0});
+        let parsed = Timings::from_llama_cpp(&full).unwrap();
+        assert_eq!(parsed.prompt_tokens_per_second(), Some(500.0));
+        assert_eq!(parsed.generated_tokens_per_second(), Some(500.0));
+        assert_eq!(parsed.cached_tokens, None);
+        let idle = json!({"prompt_n": 0, "prompt_ms": 0.0, "predicted_n": 0, "predicted_ms": 0.0});
+        let idle = Timings::from_llama_cpp(&idle).unwrap();
+        assert_eq!(idle.prompt_tokens_per_second(), None);
+        assert_eq!(idle.generated_tokens_per_second(), None);
+        for bad in [
+            json!(null),
+            json!({"prompt_n": 3, "prompt_ms": 6.0, "predicted_n": 4}),
+            json!({"prompt_n": -1, "prompt_ms": 6.0, "predicted_n": 4, "predicted_ms": 8.0}),
+            json!({"prompt_n": 3, "prompt_ms": -6.0, "predicted_n": 4, "predicted_ms": 8.0}),
+            json!({"prompt_n": 3, "prompt_ms": 6.0, "predicted_n": 4, "predicted_ms": 8.0,
+                "draft_n": 2, "draft_n_accepted": 3}),
+        ] {
+            assert_eq!(Timings::from_llama_cpp(&bad), None, "{bad}");
+        }
+    }
 }

@@ -46,6 +46,7 @@ impl Summarizer for HarnessSummarizer<'_> {
             messages,
             tools: Vec::new(),
             temperature: None,
+            slot: None,
         };
         let result = self
             .chat

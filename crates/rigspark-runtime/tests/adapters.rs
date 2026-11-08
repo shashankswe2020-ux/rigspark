@@ -140,6 +140,7 @@ async fn llama_startup_uses_exact_artifact_and_alias() {
         model_path: Some(path.clone()),
         context: None,
         cache: None,
+        slot_save_path: None,
     };
     assert!(
         adapter
@@ -215,6 +216,7 @@ async fn mlx_owned_startup_is_isolated_authenticated_and_bound_to_exact_model() 
         model_path: Some(root.path().to_owned()),
         context: None,
         cache: None,
+        slot_save_path: None,
     };
     let active = adapter
         .serve(&input, &CancellationToken::new())
@@ -257,6 +259,7 @@ async fn attach_only_never_spawns_when_daemon_disappears() {
         model_path: None,
         context: None,
         cache: None,
+        slot_save_path: None,
     };
     assert!(
         adapter
@@ -350,6 +353,7 @@ async fn legacy_bitnet_verifies_owned_launch_when_props_omit_model_path() {
         model_path: Some(path),
         context: Some(2048),
         cache: None,
+        slot_save_path: None,
     };
     let cancel = CancellationToken::new();
     let handle = adapter.serve(&request, &cancel).await.unwrap();
@@ -374,6 +378,7 @@ async fn legacy_bitnet_rejects_wrong_launch_metadata_and_modern_identity_mismatc
         model_path: Some(path.clone()),
         context: Some(2048),
         cache: None,
+        slot_save_path: None,
     };
     let mut tasks = tokio::task::JoinSet::new();
     for case in 0..10 {
@@ -467,6 +472,7 @@ async fn bitnet_uses_cpu_server_custom_port_context_openai_chat_and_owned_stop()
         model_path: Some(path.clone()),
         context: Some(2048),
         cache: None,
+        slot_save_path: None,
     };
     let store = StateStore::new(Config::from_home(root.path().join("state")).unwrap());
     let registry = Registry::new(vec![&adapter]);
@@ -518,6 +524,7 @@ async fn bitnet_uses_cpu_server_custom_port_context_openai_chat_and_owned_stop()
         }],
         tools: vec![],
         temperature: None,
+        slot: None,
     };
     assert_eq!(
         adapter
@@ -616,6 +623,7 @@ async fn ollama_startup_binds_custom_loopback_port_and_cleans_untrusted_readines
             model_path: None,
             context: None,
             cache: None,
+            slot_save_path: None,
         };
         let result = adapter.serve(&request, &CancellationToken::new()).await;
         assert_eq!(result.is_ok(), executable == RUNTIME);
@@ -698,6 +706,7 @@ async fn attach_preserves_foreign_ownership_and_stop_never_signals_it() {
             model_path: Some(PathBuf::from("/verified/weights.gguf")),
             context: None,
             cache: None,
+            slot_save_path: None,
         };
         let handle = adapter
             .serve(&request, &CancellationToken::new())
@@ -734,6 +743,7 @@ async fn untrusted_listener_is_rejected_before_attachment() {
         model_path: None,
         context: None,
         cache: None,
+        slot_save_path: None,
     };
     assert!(
         adapter
@@ -797,6 +807,7 @@ async fn studio_requires_exact_delegated_path_and_never_owns_listener() {
         model_path: Some(PathBuf::from("owner/model/weights.gguf")),
         context: None,
         cache: None,
+        slot_save_path: None,
     };
     let state = adapter
         .serve(&request, &CancellationToken::new())
@@ -839,6 +850,7 @@ async fn mlx_never_attaches_to_an_existing_listener() {
         model_path: Some(PathBuf::from("/verified/model")),
         context: None,
         cache: None,
+        slot_save_path: None,
     };
     assert!(
         adapter
@@ -977,6 +989,7 @@ async fn owned_launches_apply_the_cache_profile_and_record_it() {
         model_path: Some(path.clone()),
         context: Some(8192),
         cache: Some(q8_cache()),
+        slot_save_path: None,
     };
     let handle = llama
         .serve(&request, &CancellationToken::new())
@@ -1013,6 +1026,7 @@ async fn owned_launches_apply_the_cache_profile_and_record_it() {
         model_path: None,
         context: None,
         cache: Some(q8_cache()),
+        slot_save_path: None,
     };
     let handle = ollama
         .serve(&request, &CancellationToken::new())
@@ -1042,6 +1056,7 @@ async fn cache_settings_are_refused_for_a_runtime_rigspark_did_not_start() {
             model_path: None,
             context: None,
             cache: Some(q8_cache()),
+            slot_save_path: None,
         };
         let error = adapter
             .serve(&request, &CancellationToken::new())
@@ -1091,6 +1106,7 @@ async fn llama_cpp_launches_a_verified_drafter_and_refuses_unverified_ones() {
         draft_model_path: Some(draft.clone()),
         context: None,
         cache: Some(drafting),
+        slot_save_path: None,
     };
     let handle = llama
         .serve(&request, &CancellationToken::new())
@@ -1152,4 +1168,287 @@ async fn llama_cpp_launches_a_verified_drafter_and_refuses_unverified_ones() {
             .is_err(),
         "only llama.cpp takes a drafter"
     );
+}
+
+/// llama.cpp answering chat with its own timings and slot actions, recording each request.
+struct SlotHttp {
+    requests: Mutex<Vec<(String, Option<String>, serde_json::Value)>>,
+}
+#[async_trait::async_trait]
+impl Transport for SlotHttp {
+    async fn send(&self, request: Request) -> Result<Response, HttpError> {
+        let path = request.url.path().to_owned();
+        let query = request.url.query().map(str::to_owned);
+        let sent = request.body().cloned().unwrap_or_default();
+        self.requests
+            .lock()
+            .unwrap()
+            .push((path.clone(), query.clone(), sent));
+        let body = match (path.as_str(), query.as_deref()) {
+            ("/v1/chat/completions", _) => json!({
+                "choices": [{"message": {"content": "done"}}],
+                "timings": {"cache_n": 40, "prompt_n": 12, "prompt_ms": 30.0,
+                    "predicted_n": 50, "predicted_ms": 1000.0,
+                    "draft_n": 20, "draft_n_accepted": 15}
+            }),
+            ("/slots/2", Some("action=save")) => json!({"id_slot": 2, "filename": "spark-a.bin",
+                "n_saved": 1745, "n_written": 14309796, "timings": {"save_ms": 49.865}}),
+            ("/slots/3", Some("action=restore")) => json!({"id_slot": 3, "filename": "spark-a.bin",
+                "n_restored": 1745, "n_read": 14309796, "timings": {"restore_ms": 42.937}}),
+            ("/slots/2", Some("action=erase")) => json!({"id_slot": 2, "n_erased": 1745}),
+            ("/slots/4", Some("action=erase")) => json!({"id_slot": 5, "n_erased": 1}),
+            other => panic!("unexpected request {other:?}"),
+        };
+        Ok(Response {
+            status: 200,
+            body: Box::pin(std::io::Cursor::new(body.to_string().into_bytes())),
+        })
+    }
+}
+
+#[tokio::test]
+async fn llama_cpp_keeps_kv_slots_pins_requests_and_reports_its_own_timings() {
+    use rigspark_runtime::{
+        ollama_inference::{ChatInput, ChatMessage, Timings},
+        openai::{KvSlotAction, KvSlotReport, OpenAiInference},
+    };
+    let root = tempfile::tempdir().unwrap();
+    let path = root.path().join("weights.gguf");
+    std::fs::write(&path, b"verified").unwrap();
+    let slots = root.path().join("kv-slots");
+    std::fs::create_dir(&slots).unwrap();
+    let http = ModelHttp {
+        path: path.to_string_lossy().into_owned(),
+        mlx: false,
+    };
+    let probe = Probe {
+        binary: RUNTIME.into(),
+    };
+    let control = SpawnControl {
+        args: Mutex::new(Vec::new()),
+        env: Mutex::new(Default::default()),
+        cleaned: std::sync::Arc::new(Mutex::new(false)),
+    };
+    let llama = RuntimeAdapter::new(
+        BackendKind::LlamaCpp,
+        PathBuf::from(RUNTIME),
+        &http,
+        &probe,
+        &control,
+    );
+    let request = ServeRequest {
+        model_id: "test:latest".into(),
+        endpoint: "http://127.0.0.1:11435".into(),
+        model_path: Some(path.clone()),
+        draft_model_path: None,
+        context: None,
+        cache: None,
+        slot_save_path: Some(slots.clone()),
+    };
+    let handle = llama
+        .serve(&request, &CancellationToken::new())
+        .await
+        .unwrap();
+    let args = control.args.lock().unwrap().clone();
+    let at = args
+        .iter()
+        .position(|arg| arg == "--slot-save-path")
+        .unwrap();
+    assert_eq!(args[at + 1], slots.to_string_lossy());
+
+    // A relative or missing directory, or one for another backend, is refused before launch.
+    for (kind, directory) in [
+        (BackendKind::LlamaCpp, PathBuf::from("kv-slots")),
+        (BackendKind::LlamaCpp, root.path().join("missing")),
+        (BackendKind::BitNet, slots.clone()),
+    ] {
+        let adapter = RuntimeAdapter::new(kind, PathBuf::from(RUNTIME), &http, &probe, &control);
+        let error = adapter
+            .serve(
+                &ServeRequest {
+                    slot_save_path: Some(directory.clone()),
+                    ..request.clone()
+                },
+                &CancellationToken::new(),
+            )
+            .await
+            .unwrap_err();
+        assert!(error.0.contains("KV slot"), "{directory:?}: {}", error.0);
+    }
+
+    let replies = SlotHttp {
+        requests: Mutex::new(Vec::new()),
+    };
+    let inference = OpenAiInference {
+        http: &replies,
+        probe: &probe,
+        adapter: &llama,
+        token: None,
+    };
+    let cancel = CancellationToken::new();
+    let input = ChatInput {
+        model: "test:latest".into(),
+        messages: vec![ChatMessage {
+            role: "user".into(),
+            content: "hi".into(),
+            tool_calls: Vec::new(),
+            tool_name: None,
+        }],
+        tools: Vec::new(),
+        temperature: None,
+        slot: Some(2),
+    };
+    let result = inference.chat(&handle, &input, &cancel).await.unwrap();
+    assert_eq!(result.content, "done");
+    let timings = result.timings.unwrap();
+    assert_eq!(
+        timings,
+        Timings {
+            prompt_tokens: 12,
+            prompt_ms: 30.0,
+            generated_tokens: 50,
+            generated_ms: 1000.0,
+            cached_tokens: Some(40),
+            draft_tokens: Some(20),
+            draft_accepted: Some(15),
+        }
+    );
+    assert_eq!(timings.generated_tokens_per_second(), Some(50.0));
+    assert_eq!(timings.prompt_tokens_per_second(), Some(400.0));
+    let sent = replies.requests.lock().unwrap()[0].2.clone();
+    assert_eq!(sent["id_slot"], 2);
+    assert_eq!(sent["cache_prompt"], true);
+    for slot in [Some(16), None] {
+        let unpinned = ChatInput {
+            slot,
+            ..input.clone()
+        };
+        let outcome = inference.chat(&handle, &unpinned, &cancel).await;
+        match slot {
+            Some(_) => assert!(outcome.is_err()),
+            None => assert!(
+                replies
+                    .requests
+                    .lock()
+                    .unwrap()
+                    .last()
+                    .unwrap()
+                    .2
+                    .get("id_slot")
+                    .is_none()
+            ),
+        }
+    }
+
+    let save = KvSlotAction::Save {
+        name: "spark-a".into(),
+    };
+    assert_eq!(
+        inference.kv_slot(&handle, 2, &save, &cancel).await.unwrap(),
+        KvSlotReport {
+            slot: 2,
+            tokens: 1745,
+            bytes: Some(14309796),
+            ms: Some(49.865)
+        }
+    );
+    let restore = KvSlotAction::Restore {
+        name: "spark-a".into(),
+    };
+    let restored = inference
+        .kv_slot(&handle, 3, &restore, &cancel)
+        .await
+        .unwrap();
+    assert_eq!((restored.slot, restored.tokens), (3, 1745));
+    let erased = inference
+        .kv_slot(&handle, 2, &KvSlotAction::Erase, &cancel)
+        .await
+        .unwrap();
+    assert_eq!((erased.tokens, erased.bytes, erased.ms), (1745, None, None));
+    let recorded = replies.requests.lock().unwrap().clone();
+    let slot_calls: Vec<_> = recorded
+        .iter()
+        .filter(|(path, _, _)| path.starts_with("/slots/"))
+        .map(|(path, query, body)| (path.as_str(), query.as_deref(), body.clone()))
+        .collect();
+    assert_eq!(
+        slot_calls,
+        [
+            (
+                "/slots/2",
+                Some("action=save"),
+                json!({"filename": "spark-a.bin"})
+            ),
+            (
+                "/slots/3",
+                Some("action=restore"),
+                json!({"filename": "spark-a.bin"})
+            ),
+            ("/slots/2", Some("action=erase"), json!({})),
+        ]
+    );
+    // A reply for another slot, an unsafe name or an out-of-range slot is refused.
+    assert!(
+        inference
+            .kv_slot(&handle, 4, &KvSlotAction::Erase, &cancel)
+            .await
+            .is_err()
+    );
+    for name in ["", "../x", "a.bin", &"a".repeat(65)] {
+        let action = KvSlotAction::Save { name: name.into() };
+        assert!(
+            inference
+                .kv_slot(&handle, 2, &action, &cancel)
+                .await
+                .is_err(),
+            "{name:?}"
+        );
+    }
+    assert!(
+        inference
+            .kv_slot(&handle, 16, &KvSlotAction::Erase, &cancel)
+            .await
+            .is_err()
+    );
+    assert_eq!(
+        replies
+            .requests
+            .lock()
+            .unwrap()
+            .iter()
+            .filter(|(path, _, _)| path.starts_with("/slots/"))
+            .count(),
+        4,
+        "refused names and slots never reach the server"
+    );
+}
+
+#[test]
+fn kv_slot_files_live_privately_beside_the_runtime_state() {
+    let root = tempfile::tempdir().unwrap();
+    let config = rigspark_runtime::state::Config {
+        home: root.path().to_path_buf(),
+        state: root.path().join("slot").join("state.json"),
+        lock: root.path().join("slot").join("lock"),
+        staging: root.path().join("slot").join(".staging"),
+    };
+    let directory = rigspark_runtime::application::kv_slot_directory(&config).unwrap();
+    assert_eq!(directory, root.path().join("slot").join("kv-slots"));
+    assert!(directory.is_dir());
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mode = std::fs::metadata(&directory).unwrap().permissions().mode();
+        assert_eq!(mode & 0o777, 0o700);
+    }
+    // Idempotent, and a relative state path is refused.
+    assert_eq!(
+        rigspark_runtime::application::kv_slot_directory(&config).unwrap(),
+        directory
+    );
+    let relative = rigspark_runtime::state::Config {
+        state: "state.json".into(),
+        ..config
+    };
+    assert!(rigspark_runtime::application::kv_slot_directory(&relative).is_err());
 }

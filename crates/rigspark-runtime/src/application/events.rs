@@ -412,6 +412,7 @@ mod tests {
             model_path: None,
             context: Some(4096),
             cache: None,
+            slot_save_path: None,
         }
     }
 
