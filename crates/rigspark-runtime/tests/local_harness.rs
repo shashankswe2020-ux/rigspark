@@ -259,6 +259,7 @@ fn chat_input(messages: usize, tools: usize, temperature: Option<f64>) -> ChatIn
             .collect(),
         temperature,
         slot: None,
+        max_tokens: None,
     }
 }
 

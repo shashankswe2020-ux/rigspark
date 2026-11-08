@@ -189,6 +189,7 @@ pub async fn run_turn(
         tools,
         temperature: options.temperature,
         slot: None,
+        max_tokens: None,
     };
     let mut output = String::new();
     let mut call_count = 0usize;
