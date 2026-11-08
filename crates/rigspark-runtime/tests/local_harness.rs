@@ -168,3 +168,243 @@ async fn local_harness_streams_and_propagates_sink_failure() {
     );
     assert_eq!(target.meta.embedding_unsupported, Some(true));
 }
+
+/// A backend that streams `streamed` bytes in one chunk, then `extra` more, and replies
+/// with `content` bytes.
+struct Sized {
+    streamed: usize,
+    extra: usize,
+    content: usize,
+}
+#[async_trait::async_trait]
+impl BackendAdapter for Sized {
+    fn name(&self) -> &'static str {
+        "ollama"
+    }
+    fn can_embed(&self) -> bool {
+        false
+    }
+    fn trusts(&self, _: &ProcessIdentity) -> bool {
+        true
+    }
+    async fn serve(
+        &self,
+        _: &ServeRequest,
+        _: &CancellationToken,
+    ) -> Result<ServerState, BackendError> {
+        unreachable!()
+    }
+    async fn ready(&self, _: &ServeRequest, _: &CancellationToken) -> Result<(), BackendError> {
+        unreachable!()
+    }
+    async fn stop(&self, _: &ServerState, _: &CancellationToken) -> Result<(), BackendError> {
+        unreachable!()
+    }
+    async fn chat(
+        &self,
+        _: &ServerState,
+        _: &ChatInput,
+        _: &CancellationToken,
+    ) -> Result<ChatResult, BackendError> {
+        unreachable!()
+    }
+    async fn chat_stream(
+        &self,
+        _: &ServerState,
+        _: &ChatInput,
+        _: &CancellationToken,
+        sink: &mut (dyn for<'chunk> FnMut(&'chunk str) + Send),
+    ) -> Result<ChatResult, BackendError> {
+        if self.streamed > 0 {
+            sink(&"s".repeat(self.streamed));
+        }
+        if self.extra > 0 {
+            sink(&"e".repeat(self.extra));
+        }
+        Ok(ChatResult {
+            content: "c".repeat(self.content),
+            tool_calls: vec![],
+            timings: None,
+        })
+    }
+}
+
+fn store(home: &std::path::Path) -> StateStore {
+    let state = StateStore::new(Config::from_home(home).unwrap());
+    let value: RuntimeState = serde_json::from_value(serde_json::json!({"schemaVersion":2,"active":{"modelId":"test:latest","backend":"ollama","endpoint":"http://127.0.0.1:11434","port":11434,"ownedByUs":false,"pid":123,"processExecutable":"/fixture/ollama","processStartedAt":"instance"}})).unwrap();
+    let guard = state.lock(Duration::from_secs(1)).unwrap();
+    state.write(&guard, &value).unwrap();
+    guard.release().unwrap();
+    state
+}
+
+fn chat_input(messages: usize, tools: usize, temperature: Option<f64>) -> ChatInput {
+    use rigspark_runtime::ollama_inference::{ChatMessage, Tool};
+    ChatInput {
+        model: String::new(),
+        messages: (0..messages)
+            .map(|_| ChatMessage {
+                role: "user".into(),
+                content: String::new(),
+                tool_calls: vec![],
+                tool_name: None,
+            })
+            .collect(),
+        tools: (0..tools)
+            .map(|_| Tool {
+                name: "t".into(),
+                description: String::new(),
+                parameters: Default::default(),
+            })
+            .collect(),
+        temperature,
+        slot: None,
+    }
+}
+
+async fn local_chat(
+    backend: &Sized,
+    input: &ChatInput,
+) -> Result<(ChatResult, usize), HarnessError> {
+    use rigspark_runtime::agent::AgentChat;
+    let home = tempfile::tempdir().unwrap();
+    let state = store(home.path());
+    let registry = Registry::new(vec![backend]);
+    let harness = LocalHarness {
+        state: &state,
+        registry: &registry,
+        probe: &Fixture,
+    };
+    let mut seen = 0;
+    let result = AgentChat::chat(&harness, input, &CancellationToken::new(), &mut |text| {
+        seen += text.len();
+        Ok(())
+    })
+    .await?;
+    Ok((result, seen))
+}
+
+#[tokio::test]
+async fn local_requests_are_bounded_before_reaching_the_backend() {
+    let quiet = Sized {
+        streamed: 0,
+        extra: 0,
+        content: 1,
+    };
+    let invalid = |result: Result<(ChatResult, usize), HarnessError>| {
+        matches!(result, Err(HarnessError::Invalid))
+    };
+    assert!(
+        local_chat(&quiet, &chat_input(10000, 0, None))
+            .await
+            .is_ok()
+    );
+    assert!(invalid(
+        local_chat(&quiet, &chat_input(10001, 0, None)).await
+    ));
+    assert!(local_chat(&quiet, &chat_input(1, 1024, None)).await.is_ok());
+    assert!(invalid(
+        local_chat(&quiet, &chat_input(1, 1025, None)).await
+    ));
+    assert!(
+        local_chat(&quiet, &chat_input(1, 0, Some(0.5)))
+            .await
+            .is_ok()
+    );
+    assert!(invalid(
+        local_chat(&quiet, &chat_input(1, 0, Some(f64::NAN))).await
+    ));
+    assert!(invalid(
+        local_chat(&quiet, &chat_input(1, 0, Some(f64::INFINITY))).await
+    ));
+    // Exactly 4 MiB serialized is accepted; one byte more is not.
+    let mut input = chat_input(1, 0, None);
+    let room = 4 * 1024 * 1024 - serde_json::to_vec(&input).unwrap().len();
+    input.messages[0].content = "m".repeat(room);
+    assert_eq!(serde_json::to_vec(&input).unwrap().len(), 4 * 1024 * 1024);
+    assert!(local_chat(&quiet, &input).await.is_ok());
+    input.messages[0].content.push('m');
+    assert!(invalid(local_chat(&quiet, &input).await));
+}
+
+#[tokio::test]
+async fn local_output_is_capped_at_16_mib_streamed_and_returned() {
+    let mib = 1024 * 1024;
+    let input = chat_input(1, 0, None);
+    let limited = |result: &Result<(ChatResult, usize), HarnessError>| {
+        matches!(result, Err(HarnessError::Limit))
+    };
+    // Streamed text: 16 MiB in total reaches the sink, a byte more stops the reply.
+    let (_, seen) = local_chat(
+        &Sized {
+            streamed: 16 * mib - 1,
+            extra: 1,
+            content: 1,
+        },
+        &input,
+    )
+    .await
+    .unwrap();
+    assert_eq!(seen, 16 * mib);
+    assert!(limited(
+        &local_chat(
+            &Sized {
+                streamed: 16 * mib,
+                extra: 1,
+                content: 1,
+            },
+            &input,
+        )
+        .await
+    ));
+    // The final reply.
+    let (reply, _) = local_chat(
+        &Sized {
+            streamed: 0,
+            extra: 0,
+            content: 16 * mib,
+        },
+        &input,
+    )
+    .await
+    .unwrap();
+    assert_eq!(reply.content.len(), 16 * mib);
+    assert!(limited(
+        &local_chat(
+            &Sized {
+                streamed: 0,
+                extra: 0,
+                content: 16 * mib + 1,
+            },
+            &input,
+        )
+        .await
+    ));
+}
+
+#[tokio::test]
+async fn nothing_reaches_the_sink_once_the_caller_cancels() {
+    use rigspark_runtime::agent::AgentChat;
+    let home = tempfile::tempdir().unwrap();
+    let state = store(home.path());
+    let backend = Sized {
+        streamed: 3,
+        extra: 4,
+        content: 1,
+    };
+    let registry = Registry::new(vec![&backend]);
+    let harness = LocalHarness {
+        state: &state,
+        registry: &registry,
+        probe: &Fixture,
+    };
+    let cancel = CancellationToken::new();
+    let mut seen = String::new();
+    let _ = AgentChat::chat(&harness, &chat_input(1, 0, None), &cancel, &mut |text| {
+        seen.push_str(text);
+        cancel.cancel();
+        Ok(())
+    })
+    .await;
+    assert_eq!(seen, "sss");
+}

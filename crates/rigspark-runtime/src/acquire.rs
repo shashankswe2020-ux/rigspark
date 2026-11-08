@@ -980,3 +980,309 @@ impl Acquisition {
         Ok(root)
     }
 }
+
+#[cfg(test)]
+mod boundary_tests {
+    use super::*;
+
+    struct Plain;
+    #[async_trait]
+    impl DownloadTransport for Plain {
+        async fn get(&self, _url: &str) -> Result<DownloadResponse, String> {
+            Ok(DownloadResponse {
+                status: 200,
+                commit: None,
+                length: Some(0),
+                body: Box::pin(std::io::Cursor::new(Vec::new())),
+            })
+        }
+    }
+
+    #[tokio::test]
+    async fn transports_without_ranges_only_start_from_zero() {
+        assert_eq!(
+            Plain.get_from("https://hf.co/x", 0).await.unwrap().status,
+            200
+        );
+        assert!(Plain.get_from("https://hf.co/x", 5).await.is_err());
+    }
+
+    #[test]
+    fn commit_evidence_is_exactly_forty_hex_digits() {
+        assert!(retain_commit(&mut None, Some(&"a".repeat(39))).is_err());
+        assert!(retain_commit(&mut None, Some(&"g".repeat(40))).is_err());
+        assert!(retain_commit(&mut None, Some(&"A".repeat(40))).is_ok());
+    }
+
+    #[test]
+    fn downloads_come_only_from_hugging_face_over_plain_https() {
+        for good in [
+            "https://huggingface.co/a/b",
+            "https://hf.co/a/b",
+            "https://cdn-lfs.huggingface.co/x",
+            "https://cas-bridge.xethub.hf.co/x",
+        ] {
+            assert!(safe_url(good).is_ok(), "{good}");
+        }
+        for bad in [
+            "http://huggingface.co/a/b",
+            "https://user@huggingface.co/a/b",
+            "https://user:pass@huggingface.co/a/b",
+            "https://:pass@huggingface.co/a/b",
+            "https://huggingface.co:8443/a/b",
+            "https://evilhuggingface.co/a/b",
+            "https://huggingface.co.evil.com/a/b",
+            "https://example.com/a/b",
+        ] {
+            assert!(safe_url(bad).is_err(), "{bad}");
+        }
+    }
+
+    fn addresses(ips: &[&str]) -> Vec<std::net::SocketAddr> {
+        ips.iter()
+            .map(|ip| std::net::SocketAddr::new(ip.parse().unwrap(), 443))
+            .collect()
+    }
+
+    #[test]
+    fn download_dns_must_resolve_only_to_public_addresses() {
+        for good in [
+            "8.8.8.8",
+            "100.63.255.255",
+            "100.128.0.1",
+            "198.17.255.255",
+            "198.20.0.1",
+            "192.0.1.1",
+            "223.255.255.255",
+            "2606:4700::1",
+            "2001:200::1",
+            "::ffff:8.8.8.8",
+        ] {
+            assert!(public_addresses(addresses(&[good])).is_ok(), "{good}");
+        }
+        for bad in [
+            "10.0.0.1",
+            "127.0.0.1",
+            "169.254.1.1",
+            "0.1.2.3",
+            "224.0.0.1",
+            "240.0.0.1",
+            "255.255.255.255",
+            "192.0.2.1",
+            "100.64.0.1",
+            "100.127.255.255",
+            "198.18.0.1",
+            "198.19.255.255",
+            "192.0.0.8",
+            "::1",
+            "fe80::1",
+            "fc00::1",
+            "2002::1",
+            "2001:1ff::1",
+            "2001:db8::1",
+            "::ffff:10.0.0.1",
+        ] {
+            assert!(public_addresses(addresses(&[bad])).is_err(), "{bad}");
+        }
+        assert!(public_addresses(Vec::new()).is_err());
+        assert!(public_addresses(addresses(&["8.8.8.8", "10.0.0.1"])).is_err());
+        assert!(public_addresses(addresses(&["8.8.8.8"; 64])).is_ok());
+        assert!(public_addresses(addresses(&["8.8.8.8"; 65])).is_err());
+    }
+
+    #[test]
+    fn size_policies_never_accept_an_empty_file() {
+        assert!(SizePolicy::Exact.accepts(5, 5));
+        assert!(!SizePolicy::Exact.accepts(4, 5));
+        assert!(SizePolicy::Ceiling.accepts(1, 5));
+        assert!(SizePolicy::Ceiling.accepts(5, 5));
+        assert!(!SizePolicy::Ceiling.accepts(6, 5));
+        assert!(!SizePolicy::Exact.accepts(0, 0));
+        assert!(!SizePolicy::Ceiling.accepts(0, 5));
+    }
+
+    #[test]
+    fn only_dead_processes_partial_downloads_are_removed() {
+        let root = tempfile::tempdir().unwrap();
+        let keep = [
+            ".llmup-download.123.abc.part.extra",
+            ".llmup-download.123..part",
+            ".llmup-download.123.a.b.part",
+            ".llmup-download.12x.abc.part",
+            ".llmup-download.0123.abc.part",
+            ".llmup-download.0.abc.part",
+            ".llmup-download.2147483648.abc.part",
+            ".llmup-download.123abc.part",
+            "weights.gguf",
+        ];
+        for name in keep {
+            std::fs::write(root.path().join(name), b"x").unwrap();
+        }
+        std::fs::write(root.path().join(".llmup-download.123.abc.part"), b"x").unwrap();
+        std::fs::write(
+            root.path().join(".llmup-download.2147483647.xyz.part"),
+            b"x",
+        )
+        .unwrap();
+        std::fs::write(root.path().join(".llmup-download.7.live.part"), b"x").unwrap();
+        std::fs::create_dir(root.path().join(".llmup-download.124.dir.part")).unwrap();
+        cleanup_partials(root.path(), |pid| pid == 7).unwrap();
+        let mut left: Vec<String> = std::fs::read_dir(root.path())
+            .unwrap()
+            .map(|entry| entry.unwrap().file_name().into_string().unwrap())
+            .collect();
+        left.sort();
+        let mut expected: Vec<String> = keep.iter().map(|name| (*name).to_owned()).collect();
+        expected.extend([
+            ".llmup-download.7.live.part".to_owned(),
+            ".llmup-download.124.dir.part".to_owned(),
+        ]);
+        expected.sort();
+        assert_eq!(left, expected);
+    }
+
+    fn artifact() -> Artifact {
+        Artifact {
+            backend: "llamacpp".into(),
+            repo: "owner/repo".into(),
+            revision: "a".repeat(40),
+            file: "models/weights.gguf".into(),
+            sha256: "b".repeat(64),
+            bytes: 1,
+        }
+    }
+
+    #[test]
+    fn pinned_artifacts_name_one_safe_repository_file_and_digest() {
+        assert!(artifact().validate().is_ok());
+        let mut max = artifact();
+        max.bytes = 9007199254740991;
+        assert!(max.validate().is_ok());
+        for backend in ["mlx", "comfyui", "bitnet"] {
+            let mut ok = artifact();
+            ok.backend = backend.into();
+            assert!(ok.validate().is_ok(), "{backend}");
+        }
+        type Edit = Box<dyn Fn(&mut Artifact)>;
+        let cases: Vec<Edit> = vec![
+            Box::new(|a| a.backend = "ollama".into()),
+            Box::new(|a| a.repo = "owner".into()),
+            Box::new(|a| a.repo = "owner/repo/extra".into()),
+            Box::new(|a| a.repo = "owner/.repo".into()),
+            Box::new(|a| a.repo = "-owner/repo".into()),
+            Box::new(|a| a.repo = "owner/re po".into()),
+            Box::new(|a| a.repo = "owner/con".into()),
+            Box::new(|a| a.repo = "/repo".into()),
+            Box::new(|a| a.revision = "a".repeat(39)),
+            Box::new(|a| a.revision = "g".repeat(40)),
+            Box::new(|a| a.sha256 = "b".repeat(63)),
+            Box::new(|a| a.sha256 = "z".repeat(64)),
+            Box::new(|a| a.file = "../weights.gguf".into()),
+            Box::new(|a| a.file = "a\\b.gguf".into()),
+            Box::new(|a| a.file = "weights*.gguf".into()),
+            Box::new(|a| a.file = "w\u{7}.gguf".into()),
+            Box::new(|a| a.file = String::new()),
+            Box::new(|a| a.file = "a".repeat(513)),
+            Box::new(|a| a.bytes = 0),
+            Box::new(|a| a.bytes = 9007199254740992),
+        ];
+        for (index, mutate) in cases.iter().enumerate() {
+            let mut value = artifact();
+            mutate(&mut value);
+            assert!(value.validate().is_err(), "case {index}: {value:?}");
+        }
+        assert!(safe_file(&"a".repeat(512)));
+        assert!(!safe_file("a/b:c"));
+    }
+
+    #[test]
+    fn digests_are_exact_length_hex() {
+        assert!(digest("abc", 3));
+        assert!(!digest("abc", 4));
+        assert!(!digest("abz", 3));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn cache_directories_are_created_private_and_never_followed() {
+        use std::os::unix::fs::PermissionsExt;
+        let root = tempfile::tempdir().unwrap();
+        let nested = root.path().join("a/b/c");
+        private_directory(&nested).unwrap();
+        assert_eq!(
+            std::fs::metadata(&nested).unwrap().permissions().mode() & 0o777,
+            0o700
+        );
+        // Existing directories are accepted again; files and symlinks are refused.
+        private_directory(&nested).unwrap();
+        let file = root.path().join("file");
+        std::fs::write(&file, b"x").unwrap();
+        assert!(private_directory(&file).is_err());
+        assert!(private_directory(&file.join("below")).is_err());
+        let link = root.path().join("link");
+        std::os::unix::fs::symlink(&nested, &link).unwrap();
+        assert!(private_directory(&link).is_err());
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn hashing_refuses_symlinks_and_non_files() {
+        let root = tempfile::tempdir().unwrap();
+        let file = root.path().join("weights");
+        std::fs::write(&file, b"weights").unwrap();
+        let (sha, bytes) = hash_file(&file, &CancellationToken::new()).await.unwrap();
+        assert_eq!(bytes, 7);
+        assert_eq!(sha, format!("{:x}", Sha256::digest(b"weights")));
+        let link = root.path().join("link");
+        std::os::unix::fs::symlink(&file, &link).unwrap();
+        assert!(hash_file(&link, &CancellationToken::new()).await.is_err());
+        assert!(
+            hash_file(root.path(), &CancellationToken::new())
+                .await
+                .is_err()
+        );
+        // A FIFO must not block the open: it is refused as a non-file.
+        let fifo = root.path().join("fifo");
+        rustix::fs::mknodat(
+            rustix::fs::CWD,
+            &fifo,
+            rustix::fs::FileType::Fifo,
+            rustix::fs::Mode::from_raw_mode(0o600),
+            0,
+        )
+        .unwrap();
+        let hashed = tokio::time::timeout(
+            Duration::from_secs(5),
+            hash_file(&fifo, &CancellationToken::new()),
+        )
+        .await
+        .expect("opening a FIFO must not block");
+        assert!(hashed.is_err());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn file_identity_tracks_device_inode_and_change_times() {
+        let root = tempfile::tempdir().unwrap();
+        let file = root.path().join("weights");
+        std::fs::write(&file, b"a").unwrap();
+        let first = file_identity(&std::fs::metadata(&file).unwrap());
+        if let Some(first) = first {
+            use std::os::unix::fs::MetadataExt;
+            let metadata = std::fs::metadata(&file).unwrap();
+            assert_eq!(
+                (first.device, first.inode, first.modified, first.changed),
+                (
+                    metadata.dev(),
+                    metadata.ino(),
+                    metadata.mtime(),
+                    metadata.ctime()
+                )
+            );
+            std::thread::sleep(Duration::from_millis(20));
+            std::fs::write(&file, b"b").unwrap();
+            let second = file_identity(&std::fs::metadata(&file).unwrap()).unwrap();
+            assert_ne!(first, second);
+        }
+    }
+}
