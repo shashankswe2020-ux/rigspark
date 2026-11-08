@@ -577,3 +577,360 @@ mod resource_tests {
         }
     }
 }
+
+#[cfg(test)]
+mod view_tests {
+    use super::*;
+    use crossterm::event::KeyEventState;
+
+    fn view(lines: usize) -> ReportView {
+        let text: Vec<_> = (0..lines).map(|n| format!("line{n}")).collect();
+        ReportView::new("title", &text.join("\n"), false).unwrap()
+    }
+    fn key(code: KeyCode) -> KeyEvent {
+        KeyEvent::new(code, KeyModifiers::NONE)
+    }
+    fn with(code: KeyCode, modifiers: KeyModifiers) -> KeyEvent {
+        KeyEvent::new(code, modifiers)
+    }
+    fn press(view: &mut ReportView, codes: &[KeyCode]) {
+        for code in codes {
+            assert!(!handle_key(view, key(*code)), "{code:?}");
+        }
+    }
+    fn typed(view: &mut ReportView, text: &str) {
+        for character in text.chars() {
+            handle_key(view, key(KeyCode::Char(character)));
+        }
+    }
+
+    #[test]
+    fn keys_move_by_line_page_and_end_and_stop_at_the_last_line() {
+        let mut view = view(30);
+        press(&mut view, &[KeyCode::Down, KeyCode::Char('j')]);
+        assert_eq!(view.selected(), 2);
+        press(&mut view, &[KeyCode::Up]);
+        assert_eq!(view.selected(), 1);
+        press(&mut view, &[KeyCode::Char('k'), KeyCode::Up]);
+        assert_eq!(view.selected(), 0);
+        press(&mut view, &[KeyCode::PageDown]);
+        assert_eq!(view.selected(), 10);
+        press(&mut view, &[KeyCode::PageUp]);
+        assert_eq!(view.selected(), 0);
+        press(&mut view, &[KeyCode::End]);
+        assert_eq!(view.selected(), 29);
+        press(&mut view, &[KeyCode::Home]);
+        assert_eq!(view.selected(), 0);
+        // Moving past the end stays on the last line.
+        press(&mut view, &[KeyCode::PageDown; 4]);
+        assert_eq!(view.selected(), 29);
+        press(&mut view, &[KeyCode::Down]);
+        assert_eq!(view.selected(), 29);
+    }
+
+    #[test]
+    fn panning_moves_eight_columns_up_to_32768() {
+        let mut view = view(1);
+        press(&mut view, &[KeyCode::Right, KeyCode::Right]);
+        assert_eq!(view.horizontal, 16);
+        press(&mut view, &[KeyCode::Left]);
+        assert_eq!(view.horizontal, 8);
+        press(&mut view, &[KeyCode::Left, KeyCode::Left]);
+        assert_eq!(view.horizontal, 0);
+        for _ in 0..5000 {
+            handle_key(&mut view, key(KeyCode::Right));
+        }
+        assert_eq!(view.horizontal, 32768);
+    }
+
+    #[test]
+    fn only_quit_keys_and_control_c_close_the_view() {
+        let mut view = view(3);
+        for code in [KeyCode::Char('q'), KeyCode::Esc, KeyCode::Enter] {
+            assert!(handle_key(&mut view, key(code)), "{code:?}");
+        }
+        assert!(handle_key(
+            &mut view,
+            with(KeyCode::Char('c'), KeyModifiers::CONTROL)
+        ));
+        assert!(!handle_key(&mut view, key(KeyCode::Char('c'))));
+        assert!(!handle_key(
+            &mut view,
+            with(KeyCode::Char('x'), KeyModifiers::CONTROL)
+        ));
+        let mut release = key(KeyCode::Char('q'));
+        release.kind = KeyEventKind::Release;
+        release.state = KeyEventState::NONE;
+        assert!(!handle_key(&mut view, release));
+    }
+
+    #[test]
+    fn search_finds_edits_and_repeats_matches() {
+        let lines = ["alpha", "beta", "Match one", "gamma", "match two", "delta"].join("\n");
+        let mut view = ReportView::new("t", &lines, false).unwrap();
+        press(&mut view, &[KeyCode::Char('/')]);
+        assert!(view.searching);
+        typed(&mut view, "matcx");
+        assert_eq!(view.query, "matcx");
+        // Backspace edits the query and searches again from the top.
+        press(&mut view, &[KeyCode::Backspace]);
+        assert_eq!(view.query, "matc");
+        assert_eq!(view.selected(), 2);
+        // Enter ends the search but keeps the query for `n`.
+        press(&mut view, &[KeyCode::Enter]);
+        assert!(!view.searching);
+        assert_eq!(view.query, "matc");
+        press(&mut view, &[KeyCode::Char('n')]);
+        assert_eq!(view.selected(), 4);
+        press(&mut view, &[KeyCode::Char('n')]);
+        assert_eq!(view.selected(), 2);
+        // Esc cancels a search and clears it.
+        press(&mut view, &[KeyCode::Char('/')]);
+        typed(&mut view, "x");
+        press(&mut view, &[KeyCode::Esc]);
+        assert!(!view.searching);
+        assert!(view.query.is_empty());
+    }
+
+    #[test]
+    fn queries_take_printable_characters_up_to_256_bytes() {
+        let mut view = view(3);
+        press(&mut view, &[KeyCode::Char('/')]);
+        typed(&mut view, "a\u{7}b");
+        assert_eq!(view.query, "ab");
+        typed(&mut view, &"a".repeat(198));
+        // A two-byte character fits at 200 bytes.
+        typed(&mut view, "é");
+        assert_eq!(view.query.len(), 202);
+        typed(&mut view, &"a".repeat(53));
+        assert_eq!(view.query.len(), 255);
+        typed(&mut view, "é");
+        assert_eq!(view.query.len(), 255);
+        typed(&mut view, "aa");
+        assert_eq!(view.query.len(), 256);
+    }
+
+    fn click(view: &mut ReportView, kind: MouseEventKind, row: u16) -> bool {
+        handle_mouse(
+            view,
+            MouseEvent {
+                kind,
+                column: 5,
+                row,
+                modifiers: KeyModifiers::NONE,
+            },
+        )
+    }
+
+    #[test]
+    fn the_wheel_scrolls_three_lines_and_clicks_select_rows() {
+        let mut view = view(20);
+        view.list_area = Rect::new(0, 2, 40, 10);
+        assert!(!click(&mut view, MouseEventKind::ScrollDown, 0));
+        assert_eq!(view.selected(), 3);
+        click(&mut view, MouseEventKind::ScrollDown, 0);
+        click(&mut view, MouseEventKind::ScrollUp, 0);
+        assert_eq!(view.selected(), 3);
+        let left = MouseEventKind::Down(MouseButton::Left);
+        // Rows are counted from the top of the list, plus the scroll offset.
+        *view.state.offset_mut() = 5;
+        assert!(!click(&mut view, left, 4));
+        assert_eq!(view.selected(), 7);
+        assert!(click(&mut view, left, 4));
+        // Outside the list nothing changes.
+        assert!(!click(&mut view, left, 1));
+        assert_eq!(view.selected(), 7);
+        // The last line is selectable; the row after it is not.
+        *view.state.offset_mut() = 10;
+        assert!(!click(&mut view, left, 11));
+        assert_eq!(view.selected(), 19);
+        let mut short = self::view(3);
+        short.list_area = Rect::new(0, 2, 40, 10);
+        assert!(!click(&mut short, left, 5));
+        assert_eq!(short.selected(), 0);
+        assert!(!click(&mut short, MouseEventKind::Moved, 3));
+    }
+
+    fn texts(spans: &[Span<'_>]) -> Vec<String> {
+        spans.iter().map(|span| span.content.to_string()).collect()
+    }
+
+    #[test]
+    fn matches_are_highlighted_case_insensitively_without_overlap() {
+        let theme = Theme::new(false);
+        assert_eq!(texts(&matched("Hello", "", theme)), ["Hello"]);
+        let spans = matched("say Hello, hello", "hello", theme);
+        assert_eq!(texts(&spans), ["say ", "Hello", ", ", "hello", ""]);
+        assert_eq!(spans[1].style, theme.highlight());
+        assert_eq!(spans[0].style, Span::raw("").style);
+        // Overlapping occurrences highlight only the first.
+        assert_eq!(texts(&matched("aaa", "aa", theme)), ["", "aa", "a"]);
+        assert_eq!(
+            texts(&matched("xaaaay", "aa", theme)),
+            ["x", "aa", "", "aa", "y"]
+        );
+        // A case fold that changes length leaves the line plain.
+        assert_eq!(texts(&matched("İa", "a", theme)), ["İa"]);
+    }
+
+    #[test]
+    fn the_footer_appears_from_four_rows_and_the_page_follows_the_panel() {
+        let draw = |height: u16| {
+            let mut view = view(30);
+            let mut terminal =
+                Terminal::new(ratatui::backend::TestBackend::new(40, height)).unwrap();
+            terminal.draw(|frame| render(frame, &mut view)).unwrap();
+            let buffer = terminal.backend().buffer().clone();
+            let last: String = (0..40)
+                .map(|x| buffer[(x, height - 1)].symbol().to_owned())
+                .collect();
+            (last, view.page, view.list_area)
+        };
+        let (last, _, _) = draw(4);
+        assert!(last.contains("1/30"), "{last:?}");
+        let (last, _, _) = draw(3);
+        assert!(!last.contains("1/30"), "{last:?}");
+        let (_, page, area) = draw(12);
+        assert_eq!(page, usize::from(area.height));
+        assert!(page > 1);
+    }
+
+    /// Run in a child process by the test below, with the variable already set.
+    #[test]
+    fn mouse_probe() {
+        if let Some(expected) = std::env::var_os("RIGSPARK_TEST_MOUSE_EXPECT") {
+            assert_eq!(mouse_enabled().to_string(), expected.to_string_lossy());
+        }
+    }
+
+    #[test]
+    fn mouse_capture_can_be_turned_off_with_a_non_empty_variable() {
+        for (value, expected) in [(None, "true"), (Some(""), "true"), (Some("1"), "false")] {
+            let mut child = std::process::Command::new(std::env::current_exe().unwrap());
+            child
+                .args([
+                    "--exact",
+                    "tui_view::view_tests::mouse_probe",
+                    "--test-threads=1",
+                ])
+                .env("RIGSPARK_TEST_MOUSE_EXPECT", expected)
+                .env_remove("RIGSPARK_NO_MOUSE");
+            if let Some(value) = value {
+                child.env("RIGSPARK_NO_MOUSE", value);
+            }
+            let output = child.output().unwrap();
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            assert!(output.status.success(), "{value:?}: {stdout}");
+            assert!(stdout.contains("1 passed"), "{value:?}: {stdout}");
+        }
+    }
+
+    fn keys(events: Vec<KeyEvent>) -> Vec<io::Result<Event>> {
+        events.into_iter().map(|key| Ok(Event::Key(key))).collect()
+    }
+    /// Events that arrive 10 ms apart, then a stream that stays open.
+    async fn navigate(events: Vec<io::Result<Event>>) -> Event {
+        let stream = futures_util::stream::iter(events)
+            .then(|event| async {
+                tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+                event
+            })
+            .chain(futures_util::stream::pending());
+        let mut stream = Box::pin(stream);
+        next_navigation_event(&mut stream).await.unwrap()
+    }
+    fn code(event: Event) -> KeyCode {
+        match event {
+            Event::Key(key) => key.code,
+            other => panic!("{other:?}"),
+        }
+    }
+
+    #[tokio::test]
+    async fn escape_bracket_h_and_f_become_home_and_end() {
+        let esc = key(KeyCode::Esc);
+        let bracket = key(KeyCode::Char('['));
+        assert_eq!(
+            code(navigate(keys(vec![esc, bracket, key(KeyCode::Char('H'))])).await),
+            KeyCode::Home
+        );
+        assert_eq!(
+            code(navigate(keys(vec![esc, bracket, key(KeyCode::Char('F'))])).await),
+            KeyCode::End
+        );
+        // Releases in between are skipped.
+        let mut release = key(KeyCode::Char('x'));
+        release.kind = KeyEventKind::Release;
+        assert_eq!(
+            code(navigate(keys(vec![esc, release, bracket, key(KeyCode::Char('H'))])).await),
+            KeyCode::Home
+        );
+        // Anything else leaves the escape as it was.
+        for tail in [
+            vec![key(KeyCode::Char('x'))],
+            vec![bracket, key(KeyCode::Char('x'))],
+            vec![key(KeyCode::Char('H'))],
+            vec![bracket, bracket],
+            vec![
+                with(KeyCode::Char('['), KeyModifiers::ALT),
+                key(KeyCode::Char('H')),
+            ],
+            vec![
+                with(KeyCode::Char('['), KeyModifiers::SUPER),
+                key(KeyCode::Char('H')),
+            ],
+            vec![bracket, with(KeyCode::Char('H'), KeyModifiers::CONTROL)],
+            vec![],
+        ] {
+            let mut events = vec![esc];
+            events.extend(tail.iter().copied());
+            assert_eq!(code(navigate(keys(events)).await), KeyCode::Esc, "{tail:?}");
+        }
+        // Control-C after an escape is delivered.
+        let interrupt = with(KeyCode::Char('c'), KeyModifiers::CONTROL);
+        assert_eq!(
+            navigate(keys(vec![esc, interrupt])).await,
+            Event::Key(interrupt)
+        );
+    }
+
+    #[tokio::test]
+    async fn only_a_pressed_escape_waits_for_a_sequence() {
+        // Other keys and events come straight back.
+        assert_eq!(
+            code(navigate(keys(vec![key(KeyCode::Char('['))])).await),
+            KeyCode::Char('[')
+        );
+        assert_eq!(
+            navigate(vec![Ok(Event::FocusGained)]).await,
+            Event::FocusGained
+        );
+        let mut released = key(KeyCode::Esc);
+        released.kind = KeyEventKind::Release;
+        assert_eq!(
+            navigate(keys(vec![
+                released,
+                key(KeyCode::Char('[')),
+                key(KeyCode::Char('H'))
+            ]))
+            .await,
+            Event::Key(released)
+        );
+        // Non-key events inside the window are skipped.
+        assert_eq!(
+            code(
+                navigate(vec![
+                    Ok(Event::Key(key(KeyCode::Esc))),
+                    Ok(Event::FocusLost),
+                    Ok(Event::Key(key(KeyCode::Char('[')))),
+                    Ok(Event::Key(key(KeyCode::Char('H')))),
+                ])
+                .await
+            ),
+            KeyCode::Home
+        );
+        // An input stream that ends is an error.
+        let mut ended = futures_util::stream::iter(Vec::<io::Result<Event>>::new());
+        assert!(next_navigation_event(&mut ended).await.is_err());
+    }
+}
