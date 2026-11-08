@@ -1243,14 +1243,14 @@ mod boundary_tests {
         );
         // A FIFO must not block the open: it is refused as a non-file.
         let fifo = root.path().join("fifo");
-        rustix::fs::mknodat(
-            rustix::fs::CWD,
-            &fifo,
-            rustix::fs::FileType::Fifo,
-            rustix::fs::Mode::from_raw_mode(0o600),
-            0,
-        )
-        .unwrap();
+        // `mkfifo` is POSIX; rustix's `mknodat` is not available on macOS.
+        assert!(
+            std::process::Command::new("mkfifo")
+                .arg(&fifo)
+                .status()
+                .unwrap()
+                .success()
+        );
         let hashed = tokio::time::timeout(
             Duration::from_secs(5),
             hash_file(&fifo, &CancellationToken::new()),
