@@ -544,6 +544,11 @@ mod boundary_tests {
         let listeners = [listener(8080, "10.0.0.5"), listener(9090, "127.0.0.1")];
         assert!(choose_listener(&listeners, 8080, "127.0.0.1").is_err());
         assert!(choose_listener(&listeners, 9090, "localhost").is_ok());
+        // Another address on the same port, or the same address on another port, is ignored.
+        let listeners = [listener(8080, "10.0.0.5"), listener(8080, "127.0.0.1")];
+        assert!(choose_listener(&listeners, 8080, "127.0.0.1").is_ok());
+        let listeners = [listener(9090, "127.0.0.1")];
+        assert!(choose_listener(&listeners, 8080, "127.0.0.1").is_err());
     }
 
     #[test]
@@ -565,6 +570,14 @@ mod boundary_tests {
             let mut missing = observed.clone();
             change(&mut missing.identity);
             assert!(capture(&active(), &missing, true).is_err(), "{missing:?}");
+            // Even when the record has nothing to compare against.
+            let mut unrecorded = active();
+            unrecorded.owned_by_us = false;
+            unrecorded.pid = None;
+            unrecorded.process_executable = None;
+            unrecorded.process_started_at = None;
+            assert!(capture(&unrecorded, &observed, true).is_ok());
+            assert!(capture(&unrecorded, &missing, true).is_err(), "{missing:?}");
         }
     }
 
@@ -714,6 +727,22 @@ mod boundary_tests {
             assert!(NativeProcessProbe.alive(pid).await.is_err(), "{pid}");
             assert!(NativeProcessProbe.process(pid).await.is_err(), "{pid}");
         }
+        // The largest PID is still looked up; out-of-range PIDs never reach `ps`.
+        assert!(!NativeProcessProbe.alive(i32::MAX as u32).await.unwrap());
+        for pid in [0, i32::MAX as u32 + 1] {
+            assert_eq!(
+                NativeProcessProbe.process(pid).await.unwrap_err().message,
+                "invalid process PID"
+            );
+        }
+        assert_ne!(
+            NativeProcessProbe
+                .process(i32::MAX as u32)
+                .await
+                .unwrap_err()
+                .message,
+            "invalid process PID"
+        );
         let args = NativeProcessProbe.command_line(me).await.unwrap();
         let exe = std::env::current_exe().unwrap();
         assert!(
@@ -732,6 +761,51 @@ mod boundary_tests {
             assert_eq!(identity.process, exe.file_name().unwrap().to_string_lossy());
             assert_eq!(identity.started.len(), "2026-11-08 14:28:37".len());
         }
+    }
+
+    #[cfg(target_os = "linux")]
+    #[tokio::test]
+    async fn command_lines_are_capped_at_1024_arguments_and_64_kib() {
+        // `sh -c 'sleep 30' <name> <args…>` keeps the arguments on a live process.
+        async fn probe(args: &[String]) -> Result<Vec<String>, StateError> {
+            let mut child = std::process::Command::new("/bin/sh")
+                .args(["-c", "sleep 30", "s"])
+                .args(args)
+                .spawn()
+                .unwrap();
+            tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+            let result = NativeProcessProbe.command_line(child.id()).await;
+            child.kill().unwrap();
+            child.wait().unwrap();
+            result
+        }
+        // "/bin/sh" "-c" "sleep 30" "s" are four arguments and 18 bytes.
+        assert_eq!(probe(&vec!["a".into(); 1020]).await.unwrap().len(), 1024);
+        assert!(probe(&vec!["a".into(); 1021]).await.is_err());
+        assert!(probe(&["b".repeat(65536 - 18)]).await.is_ok());
+        assert!(probe(&["b".repeat(65537 - 18)]).await.is_err());
+    }
+
+    #[cfg(target_os = "linux")]
+    #[tokio::test]
+    async fn the_native_probe_finds_the_process_listening_on_a_port() {
+        if std::process::Command::new("lsof")
+            .arg("-v")
+            .output()
+            .is_err()
+        {
+            eprintln!("lsof is not installed; skipping");
+            return;
+        }
+        let socket = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = socket.local_addr().unwrap().port();
+        let found = NativeProcessProbe
+            .listener(port, "127.0.0.1")
+            .await
+            .unwrap();
+        assert_eq!(found.identity.pid, std::process::id());
+        assert_eq!(found.port, port);
+        drop(socket);
     }
 
     #[cfg(unix)]
