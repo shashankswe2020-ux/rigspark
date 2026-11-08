@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RigSpark Workspace: minimal redesign prototype</title>
-<link rel="icon" href="../../site/brand/logo/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="../../site/brand/fonts/fonts.css">
+<link rel="icon" href="../../assets/brand/logo/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../assets/brand/fonts/fonts.css">
 <style>
 /* ── tokens: Apple-style neutrals, Sparky amber as the only accent ── */
 :root{
@@ -241,7 +241,7 @@ textarea.json{width:100%;min-height:140px;margin-top:10px;background:var(--raise
 <div class="app">
   <!-- SIDEBAR: navigation + recents + Sparky status companion -->
   <aside class="side">
-    <div class="brand"><img src="../../site/brand/logo/mark.svg" alt=""><span>RigSpark</span></div>
+    <div class="brand"><img src="../../assets/brand/logo/mark.svg" alt=""><span>RigSpark</span></div>
     <nav class="nav" id="nav">
       <a data-v="chat" class="on"><svg class="ic" viewBox="0 0 24 24"><path d="M20.5 12a8 8 0 0 1-11.7 7.1L3.5 20.5l1.4-5A8 8 0 1 1 20.5 12Z"/></svg><span class="lbl">Chat</span><span class="badge lbl">⌘1</span></a>
       <a data-v="models"><svg class="ic" viewBox="0 0 24 24"><path d="m12 3 9 4.8-9 4.8-9-4.8L12 3Z"/><path d="m3 12.2 9 4.8 9-4.8M3 16.4l9 4.8 9-4.8"/></svg><span class="lbl">Models</span><span class="badge lbl">⌘2</span></a>
@@ -252,7 +252,7 @@ textarea.json{width:100%;min-height:140px;margin-top:10px;background:var(--raise
     <div class="sec-label"><span>Recents</span><span style="display:flex;gap:2px"><button title="Search chats (⌘K)" id="searchBtn"><svg class="ic" viewBox="0 0 24 24" style="width:14px;height:14px"><circle cx="10.5" cy="10.5" r="6.75"/><path d="m15.5 15.5 5 5"/></svg></button><button title="New chat (⌘N)" id="newChat"><svg class="ic" viewBox="0 0 24 24" style="width:14px;height:14px"><path d="M12 5v14M5 12h14"/></svg></button></span></div>
     <div class="recents" id="recents"><div class="empty">No saved chats yet.</div></div>
     <div class="buddy" id="buddy" title="Open inspector">
-      <img id="buddyFace" data-face="sparky-yes" src="../../site/brand/illustrations/sparky-yes.svg" alt="Sparky">
+      <img id="buddyFace" data-face="sparky-yes" src="../../assets/brand/illustrations/sparky-yes.svg" alt="Sparky">
       <div><b id="buddyMood">All good</b><small>Loopback · 127.0.0.1</small></div>
       <svg class="ring" viewBox="0 0 36 36"><circle cx="18" cy="18" r="15" fill="none" stroke="var(--line2)" stroke-width="4"/><circle id="ramRing" cx="18" cy="18" r="15" fill="none" stroke="var(--amber)" stroke-width="4" stroke-linecap="round" stroke-dasharray="94.2" stroke-dashoffset="79" transform="rotate(-90 18 18)"/></svg>
     </div>
@@ -272,7 +272,7 @@ textarea.json{width:100%;min-height:140px;margin-top:10px;background:var(--raise
     <section class="view on" id="chat">
       <div class="thread" id="thread">
         <div class="hello" id="hello">
-          <img src="../../site/brand/3d/sparky-studio.webp" alt="Sparky">
+          <img src="../../assets/brand/3d/sparky-studio.webp" alt="Sparky">
           <h2>Ready when you are.</h2>
           <p>Chat with a model running entirely on this Mac. Nothing leaves the device.</p>
           <div class="sugg">
@@ -305,7 +305,7 @@ textarea.json{width:100%;min-height:140px;margin-top:10px;background:var(--raise
         <div class="seg" id="mkind"><button class="on">Text</button><button>Image</button><button>Video</button></div>
       </div>
       <div class="running" id="runningBar">
-        <img data-face="sparky-yes" src="../../site/brand/illustrations/sparky-yes.svg" alt="">
+        <img data-face="sparky-yes" src="../../assets/brand/illustrations/sparky-yes.svg" alt="">
         <div><b class="mono">qwen3:30b-a3b</b> is running <span class="muted">on ollama · 127.0.0.1:11434 · context 131,072</span></div>
         <span class="sp"></span>
         <button class="btn sm" id="stopBtn">Stop</button>
@@ -327,7 +327,7 @@ textarea.json{width:100%;min-height:140px;margin-top:10px;background:var(--raise
       </div>
       <div id="connList"></div>
       <div class="empty" id="connEmpty">
-        <img src="../../site/brand/3d/sparky-chip.webp" alt="">
+        <img src="../../assets/brand/3d/sparky-chip.webp" alt="">
         <h3>No connectors yet</h3>
         <p>Start from a template. Every connector runs on this machine, and tools ask before they act.</p>
       </div>
@@ -352,7 +352,7 @@ textarea.json{width:100%;min-height:140px;margin-top:10px;background:var(--raise
         <div><div class="h2">Library</div><div class="sub">Agents set a persona and system prompt. Skills add reusable instructions. Both are stored locally as markdown.</div></div>
         <div style="display:flex;gap:10px;align-items:center"><div class="seg" id="libSeg"><button class="on">Agents</button><button>Skills</button></div><button class="btn pri" id="newLib">New agent</button></div>
       </div>
-      <div class="empty"><img data-face="sparky-wink" src="../../site/brand/illustrations/sparky-wink.svg" alt="" style="width:72px"><h3 id="libEmptyT">No agents yet</h3><p id="libEmptyP">Pick a starter or write your own. You can choose one per message from the composer.</p></div>
+      <div class="empty"><img data-face="sparky-wink" src="../../assets/brand/illustrations/sparky-wink.svg" alt="" style="width:72px"><h3 id="libEmptyT">No agents yet</h3><p id="libEmptyP">Pick a starter or write your own. You can choose one per message from the composer.</p></div>
       <div class="gallery" id="libTpl"></div>
     </div></section>
 
@@ -360,7 +360,7 @@ textarea.json{width:100%;min-height:140px;margin-top:10px;background:var(--raise
     <section class="view" id="runtime"><div class="pad">
       <div class="h2">Runtime</div><div class="sub">Everything runs locally, bound to loopback, with integrity-verified weights.</div>
       <div class="score">
-        <img src="../../site/brand/3d/sparky-yes-3d.webp" alt="">
+        <img src="../../assets/brand/3d/sparky-yes-3d.webp" alt="">
         <div><span class="muted" style="font-size:12px;font-weight:500">AI Hardware Score <span class="faint">(from rigspark doctor · illustrative)</span></span><div><b>78</b><span class="muted"> / 100</span></div><div class="bar2"><i></i></div><div class="muted" style="margin-top:8px;font-size:12px">Bottleneck: memory bandwidth. 30B-class MoE models run well; dense 32B runs slowly.</div></div>
       </div>
       <div class="group-t">This Mac</div>
@@ -379,7 +379,7 @@ textarea.json{width:100%;min-height:140px;margin-top:10px;background:var(--raise
   <!-- INSPECTOR (hidden until needed) -->
   <aside class="insp" id="insp"><div class="insp-in">
     <h4>Active model</h4>
-    <div class="card am"><img data-face="sparky-yes" src="../../site/brand/illustrations/sparky-yes.svg" alt=""><div><b>qwen3:30b-a3b</b><div class="muted" style="font-size:12px">attached · ollama · runs well</div></div></div>
+    <div class="card am"><img data-face="sparky-yes" src="../../assets/brand/illustrations/sparky-yes.svg" alt=""><div><b>qwen3:30b-a3b</b><div class="muted" style="font-size:12px">attached · ollama · runs well</div></div></div>
     <h4>Live <span class="live">Live</span></h4>
     <div class="card" id="metrics"></div>
     <h4>Latest model call</h4>
@@ -428,7 +428,7 @@ textarea.json{width:100%;min-height:140px;margin-top:10px;background:var(--raise
 
 <script>
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
-const B='../../site/brand/';
+const B='../../assets/brand/';
 const F=n=>B+'illustrations/'+n+(document.documentElement.dataset.theme==='dark'?'-dark':'')+'.svg';
 function refreshFaces(){$$('[data-face]').forEach(i=>i.src=F(i.dataset.face));$('.brand img').src=B+'logo/'+(document.documentElement.dataset.theme==='dark'?'mark-dark':'mark')+'.svg'}
 // ── navigation ──

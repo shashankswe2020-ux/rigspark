@@ -6,7 +6,7 @@ from fontTools.ttLib import TTFont
 from fontTools.pens.svgPathPen import SVGPathPen
 from fontTools.pens.transformPen import TransformPen
 
-ROOT = pathlib.Path("/home/claude/kit/site/brand")
+ROOT = pathlib.Path("/home/claude/kit/assets/brand")
 FS = pathlib.Path("/home/claude/fonts/node_modules/@fontsource")
 C = dict(paper="#F5F5F7", paper50="#FFFFFF", ink="#1D1D1F", ink7="#424245", ink5="#6E6E73", peach="#F9B08B",
          spark="#FFAD00", spark6="#F08C00", yes="#2E9A4C", slow="#C98400", no="#E0503A", gold="#FFCB4A", teal="#1A959B", coral="#FF6B55")

@@ -311,9 +311,6 @@ jobs:
           set -euo pipefail
           cargo generation-admit > "$RUNNER_TEMP/generation-admit.json"
 
-      - name: Regenerate last-month site data
-        run: cargo catalog-site
-
       - name: Gate on the full suite and publication quality
         id: gate
         run: |
@@ -334,7 +331,7 @@ jobs:
           FALLBACK_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          ALLOWED='^(crates/rigspark-core/data/models\.json|crates/rigspark-core/data/generation\.json|docs/references/catalog-quality-evidence\.json|docs/references/catalog-quality-latest-report\.json|docs/references/catalog-admission-state\.json|docs/references/generation-admission-state\.json|docs/references/catalog-corrections\.json|site/data/latest\.js)$'
+          ALLOWED='^(crates/rigspark-core/data/models\.json|crates/rigspark-core/data/generation\.json|docs/references/catalog-quality-evidence\.json|docs/references/catalog-quality-latest-report\.json|docs/references/catalog-admission-state\.json|docs/references/generation-admission-state\.json|docs/references/catalog-corrections\.json)$'
           CHANGED=$(git status --porcelain --untracked-files=all | cut -c4-)
           if [ -z "$CHANGED" ]; then
             echo "Nothing new upstream." >> "$GITHUB_STEP_SUMMARY"

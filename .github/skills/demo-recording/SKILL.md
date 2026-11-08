@@ -21,7 +21,7 @@ terminal recorder). Produces reproducible GIFs and PNGs from `.tape` files.
   from the tagged commit, then prefix `PATH` with `target/release`)
 - Tape files live in `assets/*.tape`
 - Output images go to `assets/` (GIF for demos, PNG for screenshots); copy the
-  refreshed files that `site/index.html` uses into `site/assets/`
+  refreshed files that the website (`site/index.html` in the rigspark-web repository) uses into its `site/assets/`
 
 ---
 

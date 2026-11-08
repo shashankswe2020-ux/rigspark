@@ -132,17 +132,6 @@ fn catalog_count_stamping_fails_closed_on_missing_or_malformed_markers() {
     }
 }
 
-#[test]
-fn the_published_site_states_the_shipped_catalog_size() {
-    let text = Catalog::parse(rigspark_core::MODELS_JSON).unwrap();
-    let site = include_str!("../../../site/index.html");
-    assert_eq!(
-        stamp_catalog_counts(site, &text).unwrap(),
-        site,
-        "site/index.html model counts are stale; run `cargo catalog-site`"
-    );
-}
-
 fn text_fact<'a>(items: &'a [Value], id: &str) -> &'a Value {
     items.iter().find(|item| item["id"] == id).unwrap()
 }
@@ -261,12 +250,4 @@ fn hardware_classes_mirror_the_sourced_perf_dataset_for_the_default_backend() {
         assert_eq!(item["efficiency"].as_f64().unwrap(), ollama);
         assert!(item.get("sources").is_none(), "keep the page payload small");
     }
-}
-
-#[test]
-fn the_published_site_popular_models_exist_in_the_catalog() {
-    let text = Catalog::parse(rigspark_core::MODELS_JSON).unwrap();
-    let ids = popular_ids(include_str!("../../../site/index.html")).unwrap();
-    assert!(ids.len() >= 4, "{ids:?}");
-    popular_items(&text, &ids).unwrap();
 }

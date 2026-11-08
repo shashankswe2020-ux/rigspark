@@ -32,7 +32,7 @@ fn embedded_fonts_carry_their_own_ofl_copyright_notices() {
     // Copyright strings from the name table of the shipped Inter 4.001 and JetBrains Mono 2.211.
     for license in [
         include_str!("../static/fonts/LICENSE-OFL.txt"),
-        include_str!("../../../site/brand/fonts/LICENSE-OFL.txt"),
+        include_str!("../../../assets/brand/fonts/LICENSE-OFL.txt"),
     ] {
         assert!(
             license.contains(

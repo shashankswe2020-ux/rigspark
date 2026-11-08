@@ -72,7 +72,6 @@ fn ci_runs_every_native_gate_read_only() {
     for step in [
         "test \"$(git rev-parse HEAD)\" = \"$GITHUB_SHA\"",
         "cargo native-retirement",
-        "cargo catalog-site --check",
         "cargo fmt --all -- --check",
         "cargo clippy --workspace --all-targets --locked -- -D warnings",
         "cargo test --workspace --locked",
@@ -93,12 +92,11 @@ fn write_capable_workflows_never_push_to_main() {
     assert!(proposals.contains("git add docs/references/catalog-proposals.json"));
     assert!(catalog.contains("gh pr create --base main"));
     assert!(catalog.contains("cargo test --locked -p rigspark-core --test catalog"));
-    let pages = read(".github/workflows/pages.yml");
-    assert!(pages.contains("git push origin gh-pages"));
-    for (name, text) in [("catalog-refresh.yml", &catalog), ("pages.yml", &pages)] {
-        for forbidden in ["push origin main", "HEAD:main", "push --force", "push -f"] {
-            assert!(!text.contains(forbidden), "{name}: {forbidden}");
-        }
+    for forbidden in ["push origin main", "HEAD:main", "push --force", "push -f"] {
+        assert!(
+            !catalog.contains(forbidden),
+            "catalog-refresh.yml: {forbidden}"
+        );
     }
     let backlog = read(".github/workflows/project-backlog.yml");
     let script = backlog.split("run: |").nth(1).unwrap();
@@ -175,7 +173,6 @@ fn automatic_admission_merges_only_verified_data_only_changes() {
         "needs.pending-review.outputs.admit == 'true'",
         "cargo catalog-admit --correct-curated",
         "cargo generation-admit",
-        "cargo catalog-site",
         "cargo test --workspace --locked",
         "cargo catalog-quality",
         "Admission touched files outside the data allow-list; refusing.",
@@ -363,78 +360,6 @@ fn readme_documents_native_install_and_primary_workflows() {
         assert!(!readme.contains(forbidden), "{forbidden}");
         assert!(!reference.contains(forbidden), "{forbidden}");
     }
-    assert!(read("site/index.html").contains("docker pull ghcr.io/shashankswe2020-ux/rigspark"));
-}
-
-#[test]
-fn site_downloads_every_release_archive_through_stable_latest_links() {
-    let site = read("site/index.html");
-    for target in [
-        "aarch64-apple-darwin",
-        "x86_64-apple-darwin",
-        "x86_64-unknown-linux-gnu",
-        "aarch64-unknown-linux-gnu",
-        "x86_64-pc-windows-msvc",
-    ] {
-        let url = format!(
-            "https://github.com/shashankswe2020-ux/rigspark/releases/latest/download/{}.tar.gz",
-            rigspark_cli::distribution::release_archive_stem(target).unwrap()
-        );
-        assert!(site.contains(&url), "{url}");
-    }
-    assert!(site.contains("releases/latest/download/SHA256SUMS"));
-    for app in [
-        "RigSpark_aarch64.dmg",
-        "RigSpark_x86_64.dmg",
-        "RigSpark_x64-setup.exe",
-    ] {
-        let url = format!(
-            "https://github.com/shashankswe2020-ux/rigspark/releases/latest/download/{app}"
-        );
-        assert!(site.contains(&url), "{url}");
-    }
-    for stale in ["releases/download/v0.", ".AppImage", "Electron"] {
-        assert!(!site.contains(stale), "{stale}");
-    }
-}
-
-#[test]
-fn site_is_indexable_and_offers_only_native_installs() {
-    let site = read("site/index.html");
-    let canonical = "https://www.rigspark.si/";
-    assert!(site.contains(&format!("<link rel=\"canonical\" href=\"{canonical}\" />")));
-    assert!(site.contains(&format!(
-        "<meta property=\"og:image\" content=\"{canonical}assets/"
-    )));
-    assert!(read("site/sitemap.xml").contains(&format!("<loc>{canonical}</loc>")));
-    let blocks: Vec<serde_json::Value> = site
-        .split("<script type=\"application/ld+json\">")
-        .skip(1)
-        .map(|block| serde_json::from_str(block.split("</script>").next().unwrap()).unwrap())
-        .collect();
-    let questions: Vec<&str> = blocks
-        .iter()
-        .find(|block| block["@type"] == "FAQPage")
-        .unwrap()["mainEntity"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .map(|question| question["name"].as_str().unwrap())
-        .collect();
-    let visible: Vec<&str> = site
-        .split("<summary>")
-        .skip(1)
-        .map(|item| item.split("</summary>").next().unwrap())
-        .collect();
-    assert_eq!(questions, visible, "structured FAQ must match visible FAQ");
-    assert!(
-        blocks
-            .iter()
-            .any(|block| block["@type"] == "SoftwareApplication")
-    );
-    for retired in ["npm install -g", "npx rigspark", "Ink 5"] {
-        assert!(!site.contains(retired), "{retired}");
-    }
 }
 
 #[test]
@@ -470,6 +395,5 @@ fn releases_publish_the_documented_container_image_from_verified_archives() {
     assert!(dockerfile.contains("FROM base AS release"));
     assert!(dockerfile.contains("COPY release-bin/llmup"));
     let documented = "docker pull ghcr.io/shashankswe2020-ux/rigspark";
-    assert!(read("site/index.html").contains(documented));
     assert!(read("docs/references/guide.md").contains(documented));
 }

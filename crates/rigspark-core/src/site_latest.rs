@@ -170,7 +170,7 @@ pub fn hardware_classes(perf: &PerfDataset) -> Vec<Value> {
         .collect()
 }
 
-/// `site/data/latest.js`: inert, deterministic data loaded under `script-src 'self'`.
+/// rigspark-web's `site/data/latest.js`: inert, deterministic data loaded under `script-src 'self'`.
 pub fn latest_script(
     text: &Catalog,
     generation: &GenerationCatalog,

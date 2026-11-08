@@ -42,8 +42,6 @@ fn allows_browser_assets_but_rejects_node_imports_in_them() {
         "crates/rigspark-gui/static/chat.js",
         "crates/rigspark-gui/vendor/katex/contrib/auto-render.min.js",
         "crates/rigspark-gui/vendor/katex/katex.min.js",
-        "site/main.js",
-        "site/data/latest.js",
         "apps/desktop/src-tauri/src/dialog-smoke.js",
     ] {
         assert!(check_file(path, "document.querySelector('main');").is_empty());

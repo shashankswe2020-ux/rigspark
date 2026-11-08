@@ -17,7 +17,7 @@ without a human in the loop. Spec: `docs/specs/catalog-auto-admission.md`.
 3. `cargo generation-admit` admits Comfy-Org text-to-image and text-to-video
    releases with open licenses as fit-only entries. Entries whose files match an
    official ComfyUI example (Wan 2.2 TI2V-5B, Qwen-Image) are runnable.
-4. `cargo catalog-site` regenerates `site/data/latest.js` for Ask Sparky.
+4. The rigspark-web repository runs `cargo catalog-site` against this repo's catalogs to regenerate its `site/data/latest.js` for Ask Sparky.
 5. The full test suite and `cargo catalog-quality` run. A PR is opened only if every
    changed path is on the data allow-list. With `CATALOG_MERGE_TOKEN` configured,
    it is admin-merged after the required checks pass, and `catalog-publish.yml` is

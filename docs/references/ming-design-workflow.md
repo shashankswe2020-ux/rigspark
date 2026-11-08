@@ -156,6 +156,6 @@ A separate local GUI build used the exact candidate pairing. Selecting Ming unde
 Models → Image → Use in Chat and submitting the plant-care mockup prompt produced
 a 1024×1024 RGBA PNG inline with a working Download link. ComfyUI executed in
 249.44 seconds. The model's text rendering was visibly garbled. The
-[screenshot](../../site/brand/screens/ming-design-gui.png) is from this actual run,
+[screenshot](../../assets/brand/screens/ming-design-gui.png) is from this actual run,
 not an inserted image or a mocked job. The temporary build and owned ComfyUI were
 stopped after capture. This is smoke evidence, not a portable throughput estimate.

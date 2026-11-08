@@ -3,7 +3,7 @@
 </h1>
 
 <p align="center">
-  <img src="site/brand/3d/sparky-hero.webp" alt="Sparky, the RigSpark robot" width="420">
+  <img src="assets/brand/3d/sparky-hero.webp" alt="Sparky, the RigSpark robot" width="420">
 </p>
 
 <h2 align="center">Know what your computer can run before you download it.</h2>
@@ -52,7 +52,7 @@ from a download you have already waited for.
 ### 1. Install RigSpark
 
 <p align="center">
-  <img src="site/brand/3d/sparky-wave.webp" alt="Sparky waving hello" width="250">
+  <img src="assets/brand/3d/sparky-wave.webp" alt="Sparky waving hello" width="250">
 </p>
 
 Homebrew on macOS or Linux:
@@ -95,7 +95,7 @@ have their own requirements.
 ### 2. Sparky sizes up your hardware
 
 <p align="center">
-  <img src="site/brand/3d/sparky-chip.webp" alt="Sparky presenting a processor chip" width="300">
+  <img src="assets/brand/3d/sparky-chip.webp" alt="Sparky presenting a processor chip" width="300">
 </p>
 
 Start with advice. It is deterministic, works offline, and does not require an
@@ -117,7 +117,7 @@ output. `llmup` remains a compatibility alias.
 ### 3. Read the face: yes, slow, or no
 
 <p align="center">
-  <img src="site/brand/3d/sparky-lineup.webp" alt="Three Sparky robots showing the yes, slow, and no verdicts" width="760">
+  <img src="assets/brand/3d/sparky-lineup.webp" alt="Three Sparky robots showing the yes, slow, and no verdicts" width="760">
 </p>
 
 | Verdict | What Sparky means |
@@ -227,7 +227,7 @@ and MCP tools from the loopback-only browser workspace.
 - **Light and dark themes**, with ⌘1–⌘5 to switch views.
 
 <p align="center">
-  <img src="site/brand/screens/screenshot-gui.webp" alt="The RigSpark workspace Models view ranking local models with yes and slow verdicts, memory fit bars, and estimated tokens per second" width="820">
+  <img src="assets/brand/screens/screenshot-gui.webp" alt="The RigSpark workspace Models view ranking local models with yes and slow verdicts, memory fit bars, and estimated tokens per second" width="820">
 </p>
 
 Local chat stays on your machine. Cloud harnesses and external tools can send
@@ -238,7 +238,7 @@ data to their own providers, so RigSpark keeps those boundaries visible.
 ### 6. Let Sparky create images and short videos
 
 <p align="center">
-  <img src="site/brand/3d/sparky-studio.webp" alt="Sparky in a studio spotlight" width="320">
+  <img src="assets/brand/3d/sparky-studio.webp" alt="Sparky in a studio spotlight" width="320">
 </p>
 
 RigSpark can orchestrate open-weight image and video models through your own
@@ -272,7 +272,7 @@ rigspark generate ming-image:ming_image_0.1_design_int8_convrot \
 ```
 
 <p align="center">
-  <img src="site/brand/screens/ming-design-gui.png" alt="A real Ming Design plant-care app mockup generated inline in RigSpark chat using local ComfyUI" width="720">
+  <img src="assets/brand/screens/ming-design-gui.png" alt="A real Ming Design plant-care app mockup generated inline in RigSpark chat using local ComfyUI" width="720">
 </p>
 
 [Image and video generation specification →](docs/specs/image-video-generation.md)
@@ -282,7 +282,7 @@ rigspark generate ming-image:ming_image_0.1_design_int8_convrot \
 ## Why the answers are trustworthy
 
 <p align="center">
-  <img src="site/brand/3d/sparky-peek.webp" alt="Sparky keeping watch" width="250">
+  <img src="assets/brand/3d/sparky-peek.webp" alt="Sparky keeping watch" width="250">
 </p>
 
 - **Offline advice.** Recommendation commands use a bundled, curated catalog and
@@ -428,7 +428,7 @@ No Node.js or TypeScript tooling is part of the project.
 - [Changelog](CHANGELOG.md)
 
 <p align="center">
-  <img src="site/brand/3d/sparky-cheer.webp" alt="Sparky celebrating" width="320">
+  <img src="assets/brand/3d/sparky-cheer.webp" alt="Sparky celebrating" width="320">
 </p>
 
 <p align="center">
