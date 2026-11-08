@@ -381,3 +381,30 @@ async fn local_output_is_capped_at_16_mib_streamed_and_returned() {
         .await
     ));
 }
+
+#[tokio::test]
+async fn nothing_reaches_the_sink_once_the_caller_cancels() {
+    use rigspark_runtime::agent::AgentChat;
+    let home = tempfile::tempdir().unwrap();
+    let state = store(home.path());
+    let backend = Sized {
+        streamed: 3,
+        extra: 4,
+        content: 1,
+    };
+    let registry = Registry::new(vec![&backend]);
+    let harness = LocalHarness {
+        state: &state,
+        registry: &registry,
+        probe: &Fixture,
+    };
+    let cancel = CancellationToken::new();
+    let mut seen = String::new();
+    let _ = AgentChat::chat(&harness, &chat_input(1, 0, None), &cancel, &mut |text| {
+        seen.push_str(text);
+        cancel.cancel();
+        Ok(())
+    })
+    .await;
+    assert_eq!(seen, "sss");
+}

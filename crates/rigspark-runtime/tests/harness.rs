@@ -458,8 +458,10 @@ mod boundaries {
     async fn each_frame_counts_on_top_of_the_text_already_sent() {
         // One byte, then 200 bytes of markers: 201 is over a 200 limit.
         let body = transport(&format!("{}{}", frame("x"), frame(&"k".repeat(20))));
+        let seen = Mutex::new(String::new());
         let chat = |limit: usize| {
             let body = &body;
+            let seen = &seen;
             async move {
                 RemoteHarness::new(
                     Provider::Compatible,
@@ -470,11 +472,16 @@ mod boundaries {
                 .unwrap()
                 .with_limit(limit)
                 .unwrap()
-                .chat(&input(), &CancellationToken::new(), &mut |_| Ok(()))
+                .chat(&input(), &CancellationToken::new(), &mut |text| {
+                    seen.lock().unwrap().push_str(text);
+                    Ok(())
+                })
                 .await
             }
         };
         assert!(matches!(chat(200).await, Err(HarnessError::Limit)));
+        // The over-limit frame never reaches the sink.
+        assert_eq!(std::mem::take(&mut *seen.lock().unwrap()), "x");
         assert_eq!(
             chat(201).await.unwrap(),
             format!("x{}", "[REDACTED]".repeat(20))
