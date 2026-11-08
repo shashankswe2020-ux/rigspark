@@ -771,6 +771,10 @@ mod view_tests {
         );
         // A case fold that changes length leaves the line plain.
         assert_eq!(texts(&matched("İa", "a", theme)), ["İa"]);
+        // Same total length, shifted boundaries: the Kelvin sign shrinks by two bytes and each
+        // `Ⱥ` grows by one, so matches in the lowered text fall inside characters of the line.
+        assert_eq!("\u{212A}ȺȺ".len(), "\u{212A}ȺȺ".to_lowercase().len());
+        assert_eq!(texts(&matched("\u{212A}ȺȺ", "ⱥ", theme)), ["\u{212A}ȺȺ"]);
     }
 
     #[test]
