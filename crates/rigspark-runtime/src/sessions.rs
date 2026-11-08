@@ -748,12 +748,32 @@ mod boundary_tests {
         // BEL ends only OSC strings; other strings need ST.
         assert_eq!(gui_text("a\u{1b}Ppay\u{7}load\u{1b}\\b"), "ab");
         assert_eq!(gui_text("a\u{1b}]t\u{7}b"), "ab");
+        // A backslash ends a string only right after ESC.
+        assert_eq!(gui_text("a\u{1b}Ppa\\yload\u{1b}\\b"), "ab");
     }
 
     fn repository() -> (tempfile::TempDir, SessionRepository) {
         let home = tempfile::tempdir().unwrap();
         let repository = SessionRepository::new(home.path());
         (home, repository)
+    }
+
+    #[test]
+    fn session_ids_must_be_lowercase_hyphenated_uuids() {
+        let (_home, sessions) = repository();
+        let id = doc().id;
+        assert!(sessions.get(&id).unwrap().is_none());
+        for other in [
+            id.replace('-', ""),
+            format!("{{{id}}}"),
+            format!("urn:uuid:{id}"),
+            id.to_uppercase(),
+        ] {
+            assert!(
+                matches!(sessions.get(&other), Err(SessionError::Invalid)),
+                "{other}"
+            );
+        }
     }
 
     #[test]
@@ -800,6 +820,16 @@ mod boundary_tests {
         doc.messages = vec![message("user", &"m".repeat(4500)); 2000];
         assert!(doc.validate().is_ok());
         assert!(matches!(sessions.write(&doc), Err(SessionError::Invalid)));
+        // Exactly 8 MiB on disk, newline included, is still written.
+        let size = |doc: &SessionDoc| serde_json::to_string_pretty(doc).unwrap().len() + 1;
+        doc.messages = vec![message("user", ""); 2000];
+        let overhead = size(&doc);
+        let room = 8 * 1024 * 1024 - overhead;
+        for (index, item) in doc.messages.iter_mut().enumerate() {
+            item.content = "m".repeat(room / 2000 + usize::from(index < room % 2000));
+        }
+        assert_eq!(size(&doc), 8 * 1024 * 1024);
+        sessions.write(&doc).unwrap();
     }
 
     #[test]
