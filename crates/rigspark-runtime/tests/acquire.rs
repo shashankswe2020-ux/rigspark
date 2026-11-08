@@ -1083,3 +1083,92 @@ async fn repository_manifests_are_bounded_consistent_and_complete() {
     largest[1].bytes = 2;
     assert!(fetch(largest).await.unwrap_err().contains("safe integer"));
 }
+
+#[tokio::test]
+async fn ceiling_downloads_announce_a_start_only_when_the_size_is_known() {
+    use rigspark_runtime::acquire::SizePolicy;
+    for (length, start) in [(Some(8), Some((0, 8))), (None, None)] {
+        let root = tempfile::tempdir().unwrap();
+        let events = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+        let recorded = events.clone();
+        let acquire =
+            Acquisition::new(root.path())
+                .unwrap()
+                .with_progress(move |completed, total, _| {
+                    recorded.lock().unwrap().push((completed, total))
+                });
+        let mut request = artifact(b"verified");
+        request.bytes = 100;
+        let transport = ResponseTransport {
+            bytes: b"verified".to_vec(),
+            commit: Some("a".repeat(40)),
+            length,
+        };
+        acquire
+            .acquire_sized(
+                &request,
+                SizePolicy::Ceiling,
+                &transport,
+                &tokio_util::sync::CancellationToken::new(),
+            )
+            .await
+            .unwrap();
+        let seen = events.lock().unwrap().clone();
+        assert_eq!(
+            seen.first().copied().filter(|event| event.0 == 0),
+            start,
+            "{length:?}: {seen:?}"
+        );
+        assert_eq!(seen.last(), Some(&(8, 8)), "{seen:?}");
+    }
+}
+
+#[cfg(unix)]
+#[tokio::test]
+async fn a_whole_second_modification_time_alone_still_allows_a_verified_stamp() {
+    // Only a filesystem with whole-second times for both modification and change disables
+    // stamps; setting just the modification time to a whole second must not.
+    let root = tempfile::tempdir().unwrap();
+    let acquire = Acquisition::new(root.path()).unwrap();
+    let transport = FakeTransport {
+        bytes: b"verified".to_vec(),
+    };
+    let cancel = tokio_util::sync::CancellationToken::new();
+    let acquired = acquire
+        .acquire(&artifact(b"verified"), &transport, &cancel)
+        .await
+        .unwrap();
+    let whole = rustix::fs::Timestamps {
+        last_access: rustix::fs::Timespec {
+            tv_sec: 1_700_000_000,
+            tv_nsec: 0,
+        },
+        last_modification: rustix::fs::Timespec {
+            tv_sec: 1_700_000_000,
+            tv_nsec: 0,
+        },
+    };
+    rustix::fs::utimensat(
+        rustix::fs::CWD,
+        &acquired.path,
+        &whole,
+        rustix::fs::AtFlags::empty(),
+    )
+    .unwrap();
+    use std::os::unix::fs::MetadataExt;
+    if std::fs::metadata(&acquired.path).unwrap().ctime_nsec() == 0 {
+        return; // This filesystem has whole-second change times too.
+    }
+    // The changed times force one re-hash, which records a fresh stamp...
+    let first = acquire
+        .acquire(&artifact(b"verified"), &transport, &cancel)
+        .await
+        .unwrap();
+    assert!(first.rehashed);
+    // ...that the next hit trusts.
+    let second = acquire
+        .acquire(&artifact(b"verified"), &transport, &cancel)
+        .await
+        .unwrap();
+    assert!(!second.rehashed);
+}
