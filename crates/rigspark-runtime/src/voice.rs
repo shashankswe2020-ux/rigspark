@@ -386,6 +386,16 @@ impl VoiceService {
                 probe.label, probe.install
             ));
         };
+        self.begin(model, binary, parent)
+    }
+
+    /// Claims `model`'s slot and launches `binary` for it in the background.
+    fn begin(
+        self: &Arc<Self>,
+        model: &VoiceModel,
+        binary: PathBuf,
+        parent: &CancellationToken,
+    ) -> Result<(), VoiceError> {
         let kind = kind_key(model.kind);
         let generation = self.next_generation();
         let cancel = parent.child_token();
@@ -1048,5 +1058,255 @@ mod tests {
         );
         assert_eq!(binary_from(Some("whisper-server".into()), "unused"), None);
         assert_eq!(binary_from(Some(directory.path().into()), "unused"), None);
+    }
+
+    fn slot(kind: VoiceKind, engine: &'static str, endpoint: &str, generation: u64) -> Slot {
+        Slot {
+            model: kind.name().into(),
+            engine,
+            state: SlotState::Running,
+            detail: "Ready".into(),
+            progress: None,
+            endpoint: Some(endpoint.into()),
+            request_model: "mlx-community/Kokoro-82M-bf16".into(),
+            protocol: Protocol::OpenAi,
+            owned: false,
+            child: None,
+            cancel: CancellationToken::new(),
+            generation,
+        }
+    }
+
+    #[test]
+    fn limits_errors_ports_and_generations_are_exact() {
+        assert_eq!(MAX_AUDIO_BYTES, 50_331_648);
+        assert_eq!(MAX_TRANSCRIPT_BYTES, 262_144);
+        assert_eq!(VoiceError("boom".into()).to_string(), "boom");
+        let port = free_port().unwrap();
+        assert!(port > 1);
+        std::net::TcpListener::bind((std::net::Ipv4Addr::LOCALHOST, port)).unwrap();
+        let home = tempfile::tempdir().unwrap();
+        let service = VoiceService::new(home.path()).unwrap();
+        assert_eq!(service.next_generation(), 1);
+        assert_eq!(service.next_generation(), 2);
+        assert_eq!(service.next_generation(), 3);
+    }
+
+    #[test]
+    fn updates_reach_only_the_current_generation() {
+        let home = tempfile::tempdir().unwrap();
+        let service = VoiceService::new(home.path()).unwrap();
+        service
+            .claim(
+                VoiceKind::Listen,
+                slot(VoiceKind::Listen, "attached", "http://127.0.0.1:9", 7),
+            )
+            .unwrap();
+        service.update("listen", 6, |slot| slot.detail = "stale".into());
+        assert_eq!(service.status()[0].detail, "Ready");
+        service.update("listen", 7, |slot| slot.detail = "fresh".into());
+        let status = service.status();
+        assert_eq!(status[0].detail, "fresh");
+        assert_eq!(status[0].kind, "listen");
+        service
+            .claim(
+                VoiceKind::Speak,
+                slot(VoiceKind::Speak, "attached", "http://127.0.0.1:9", 8),
+            )
+            .unwrap();
+        assert_eq!(
+            service
+                .status()
+                .iter()
+                .map(|view| view.kind)
+                .collect::<Vec<_>>(),
+            ["listen", "speak"]
+        );
+        service.shutdown();
+        assert!(service.status().is_empty());
+    }
+
+    fn response(chunks: Vec<&'static [u8]>, length: bool) -> reqwest::Response {
+        let total: usize = chunks.iter().map(|chunk| chunk.len()).sum();
+        let body = reqwest::Body::wrap_stream(futures_util::stream::iter(
+            chunks
+                .into_iter()
+                .map(|chunk| Ok::<_, std::io::Error>(bytes::Bytes::from_static(chunk))),
+        ));
+        let mut builder = http::Response::builder().status(200);
+        if length {
+            builder = builder.header("content-length", total.to_string());
+        }
+        reqwest::Response::from(builder.body(body).unwrap())
+    }
+
+    #[tokio::test]
+    async fn replies_are_bounded_by_length_and_by_streamed_bytes() {
+        assert_eq!(
+            bounded(response(vec![b"abcd"], true), 4).await.unwrap(),
+            b"abcd"
+        );
+        assert!(bounded(response(vec![b"abcde"], true), 4).await.is_err());
+        assert_eq!(
+            bounded(response(vec![b"ab", b"cd"], false), 4)
+                .await
+                .unwrap(),
+            b"abcd"
+        );
+        assert!(
+            bounded(response(vec![b"ab", b"cde"], false), 4)
+                .await
+                .is_err()
+        );
+        assert!(
+            bounded(response(vec![b"abc", b"de"], false), 4)
+                .await
+                .is_err()
+        );
+    }
+
+    #[tokio::test]
+    async fn attach_refuses_fragments_queries_long_endpoints_and_long_models() {
+        let home = tempfile::tempdir().unwrap();
+        let service = VoiceService::new(home.path()).unwrap();
+        let (base, _) = server(b"{\"data\":[]}".to_vec(), "application/json").await;
+        for endpoint in [format!("{base}/?x=1"), format!("{base}/#top")] {
+            assert_eq!(
+                service
+                    .attach(VoiceKind::Speak, &endpoint, "kokoro")
+                    .await
+                    .unwrap_err()
+                    .0,
+                "endpoint must be a plain loopback base URL",
+                "{endpoint}"
+            );
+        }
+        let longest = format!("{base}{}", "/".repeat(256 - base.len()));
+        service
+            .attach(VoiceKind::Speak, &longest, "kokoro")
+            .await
+            .unwrap();
+        assert!(
+            service
+                .attach(VoiceKind::Speak, &format!("{longest}/"), "kokoro")
+                .await
+                .is_err()
+        );
+        let widest = format!("{}/{}", "a".repeat(100), "b".repeat(99));
+        service
+            .attach(VoiceKind::Speak, &base, &widest)
+            .await
+            .unwrap();
+        assert!(
+            service
+                .attach(VoiceKind::Speak, &base, &format!("{widest}b"))
+                .await
+                .is_err()
+        );
+    }
+
+    #[tokio::test]
+    async fn mlx_audio_requests_carry_the_voice_language() {
+        let home = tempfile::tempdir().unwrap();
+        let service = VoiceService::new(home.path()).unwrap();
+        let (base, seen) = server(wav(8), "audio/wav").await;
+        service
+            .claim(
+                VoiceKind::Speak,
+                slot(VoiceKind::Speak, "mlx-audio", &base, 1),
+            )
+            .unwrap();
+        service
+            .speak(&request("Hello"), &catalog(), &CancellationToken::new())
+            .await
+            .unwrap();
+        let sent =
+            String::from_utf8_lossy(&seen.lock().unwrap().last().unwrap().clone()).into_owned();
+        assert!(sent.contains("\"lang_code\":\"a\""), "{sent}");
+    }
+
+    /// A fake `mlx_audio.server`: waits `delay` seconds, then answers GET with 200
+    /// and POST with `post_status`; or exits at once when `delay` is negative.
+    #[cfg(unix)]
+    fn fake_engine(directory: &Path, delay: i32, post_status: u16) -> PathBuf {
+        use std::os::unix::fs::PermissionsExt;
+        let script = directory.join(format!("engine-{delay}-{post_status}"));
+        let body = if delay < 0 {
+            "#!/bin/sh\nexit 0\n".to_owned()
+        } else {
+            format!(
+                r#"#!/bin/sh
+exec python3 -c '
+import sys, time, http.server
+port = int(sys.argv[sys.argv.index("--port") + 1])
+time.sleep({delay})
+class H(http.server.BaseHTTPRequestHandler):
+    def reply(self, code):
+        self.send_response(code); self.send_header("Content-Length", "2"); self.end_headers(); self.wfile.write(b"{{}}")
+    def do_GET(self): self.reply(200)
+    def do_POST(self): self.reply({post_status})
+    def log_message(self, *a): pass
+http.server.HTTPServer(("127.0.0.1", port), H).serve_forever()
+' x "$@"
+"#
+            )
+        };
+        std::fs::write(&script, body).unwrap();
+        std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o755)).unwrap();
+        script
+    }
+
+    #[cfg(unix)]
+    async fn settle(service: &VoiceService) -> SlotView {
+        for _ in 0..150 {
+            let view = service.status().remove(0);
+            if view.state != SlotState::Starting {
+                return view;
+            }
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        }
+        panic!("the engine never settled");
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn launched_engines_become_ready_load_the_model_or_fail_clearly() {
+        let home = tempfile::tempdir().unwrap();
+        let kokoro = catalog().resolve("speak").unwrap().clone();
+        let cancel = CancellationToken::new();
+        for (delay, post, state, detail) in [
+            (1, 200, SlotState::Running, "Ready"),
+            (
+                0,
+                500,
+                SlotState::Failed,
+                "mlx-audio could not load the model",
+            ),
+            (
+                -1,
+                200,
+                SlotState::Failed,
+                "voice server exited while starting",
+            ),
+        ] {
+            let service = Arc::new(VoiceService::new(home.path()).unwrap());
+            let binary = fake_engine(home.path(), delay, post);
+            service.begin(&kokoro, binary, &cancel).unwrap();
+            let view = settle(&service).await;
+            assert_eq!(
+                (view.state, view.detail.as_str()),
+                (state, detail),
+                "{delay}"
+            );
+            assert!(view.owned);
+            assert_eq!(view.engine, "mlx-audio");
+            assert_eq!(view.endpoint.is_some(), state == SlotState::Running);
+            if state == SlotState::Running {
+                let endpoint = view.endpoint.unwrap();
+                let port: u16 = endpoint.rsplit(':').next().unwrap().parse().unwrap();
+                assert!(port > 1);
+            }
+            service.shutdown();
+        }
     }
 }

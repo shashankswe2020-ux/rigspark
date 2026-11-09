@@ -192,6 +192,23 @@ async fn mutations_need_the_capability_token_and_known_models() {
     )
     .await;
     assert_eq!(status, StatusCode::BAD_REQUEST);
+    // The named model is the one started, not merely any catalog entry.
+    let (status, value) = call(
+        &host,
+        "POST",
+        "/api/voice/start",
+        Some(json!({"model": "whisper-base.en"})),
+    )
+    .await;
+    if status == StatusCode::ACCEPTED {
+        host.voice.shutdown();
+        assert_eq!(value["status"][0]["model"], "whisper-base.en", "{value}");
+    } else {
+        assert!(
+            value["error"].as_str().unwrap().contains("whisper.cpp"),
+            "{value}"
+        );
+    }
     let (status, _) = call(
         &host,
         "POST",

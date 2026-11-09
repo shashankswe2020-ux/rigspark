@@ -231,10 +231,7 @@ impl VoiceModel {
                     "whisper.cpp weights must be a top-level ggml .bin file",
                 )?;
                 digest(&file.sha256)?;
-                require(
-                    file.bytes > 0 && file.bytes <= MAX_SAFE_INTEGER,
-                    "invalid weight file size",
-                )?;
+                // `file.bytes` must equal `weights_bytes`, which is range-checked above.
                 require(
                     self.weights_bytes == file.bytes
                         && self.size_basis
@@ -546,6 +543,41 @@ mod tests {
             let mut value = base.clone();
             change(&mut value);
             assert!(parse(&value).is_err(), "{label}");
+        }
+    }
+
+    #[test]
+    fn names_hardware_support_and_budgets_are_exact() {
+        assert_eq!(VoiceKind::Speak.name(), "speak");
+        assert_eq!(VoiceKind::Listen.name(), "listen");
+        assert_eq!(VoiceEngine::WhisperCpp.name(), "whisper-cpp");
+        assert_eq!(VoiceEngine::MlxAudio.name(), "mlx-audio");
+        for (platform, arch, supported) in [
+            (Platform::Darwin, CpuArch::Arm64, true),
+            (Platform::Darwin, CpuArch::X64, false),
+            (Platform::Linux, CpuArch::Arm64, false),
+            (Platform::Linux, CpuArch::X64, false),
+        ] {
+            assert_eq!(
+                VoiceEngine::MlxAudio.supports(&hardware(platform, arch, 16.0)),
+                supported,
+                "{supported}"
+            );
+        }
+        let catalog = VoiceCatalog::bundled().unwrap();
+        let linux = hardware(Platform::Linux, CpuArch::X64, 16.0);
+        let (_, usable) = memory_capacity(&linux);
+        let verdict = fit(catalog.resolve("listen").unwrap(), &linux);
+        assert_eq!(verdict.budget_bytes, usable * 0.85);
+        assert_eq!(verdict.memory_kind, "ram");
+        assert_eq!(verdict.weights_bytes, 874188075);
+    }
+
+    #[test]
+    fn source_links_must_be_whole_https_urls() {
+        assert!(https("https://a").is_ok());
+        for bad in ["https://", "https://a b", "https://a\u{7}", "http://a"] {
+            assert!(https(bad).is_err(), "{bad:?}");
         }
     }
 
