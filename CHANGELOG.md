@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.1.1 (2026-11-10)
 
 ### Features
 
