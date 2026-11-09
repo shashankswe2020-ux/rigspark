@@ -6,6 +6,7 @@ const BROWSER_SCRIPTS: &[&str] = &[
     "crates/rigspark-gui/static/generate.js",
     "crates/rigspark-gui/static/hf-add.js",
     "crates/rigspark-gui/static/image-studio.js",
+    "crates/rigspark-gui/static/legal.js",
     "crates/rigspark-gui/static/markdown.js",
     "crates/rigspark-gui/static/run-reducer.js",
     "crates/rigspark-gui/static/sse.js",

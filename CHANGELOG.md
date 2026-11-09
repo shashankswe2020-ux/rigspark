@@ -4,6 +4,12 @@
 
 ### Features
 
+- **First-run notice.** The GUI and desktop app open with a short notice that
+  states, in bold, the MIT licence terms, the "as is" warranty disclaimer,
+  that each model's licence and every generated output are the user's
+  responsibility, that the licence covers the code and not the RigSpark name
+  or logo, and that data stays on the device. It is shown until confirmed and
+  can be reopened from Runtime › Terms and licences.
 - **Image chat makes the shape you need, in several versions.** The
   composer's Image mode picks thumbnail (16:9), wallpaper (9:16) or square and
   1, 2 or 4 versions, each on its own seed; keep a seed to steer one picture.
