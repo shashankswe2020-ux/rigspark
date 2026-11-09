@@ -1,0 +1,120 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-11-09T00:00:00Z",
+  "models": [
+    {
+      "id": "kokoro-82m",
+      "family": "kokoro",
+      "kind": "speak",
+      "engine": "mlx-audio",
+      "params": "82M",
+      "license": "apache-2.0",
+      "default": true,
+      "source": "https://huggingface.co/mlx-community/Kokoro-82M-bf16",
+      "engineModel": "mlx-community/Kokoro-82M-bf16",
+      "weightsBytes": 355000000,
+      "sizeBasis": "model-card",
+      "languages": ["en", "ja", "zh", "es", "fr", "it", "pt", "hi"],
+      "voices": [
+        { "id": "af_heart", "label": "Heart · US English", "lang": "a" },
+        { "id": "af_bella", "label": "Bella · US English", "lang": "a" },
+        { "id": "af_nova", "label": "Nova · US English", "lang": "a" },
+        { "id": "af_sky", "label": "Sky · US English", "lang": "a" },
+        { "id": "am_adam", "label": "Adam · US English", "lang": "a" },
+        { "id": "am_echo", "label": "Echo · US English", "lang": "a" },
+        { "id": "bf_alice", "label": "Alice · UK English", "lang": "b" },
+        { "id": "bf_emma", "label": "Emma · UK English", "lang": "b" },
+        { "id": "bm_daniel", "label": "Daniel · UK English", "lang": "b" },
+        { "id": "bm_george", "label": "George · UK English", "lang": "b" },
+        { "id": "jf_alpha", "label": "Alpha · Japanese", "lang": "j" },
+        { "id": "jm_kumo", "label": "Kumo · Japanese", "lang": "j" },
+        { "id": "zf_xiaobei", "label": "Xiaobei · Mandarin", "lang": "z" },
+        { "id": "zm_yunxi", "label": "Yunxi · Mandarin", "lang": "z" }
+      ]
+    },
+    {
+      "id": "chatterbox",
+      "family": "chatterbox",
+      "kind": "speak",
+      "engine": "mlx-audio",
+      "params": "0.5B",
+      "license": "mit",
+      "default": false,
+      "source": "https://huggingface.co/mlx-community/Chatterbox-TTS-fp16",
+      "engineModel": "mlx-community/Chatterbox-TTS-fp16",
+      "weightsBytes": 2700000000,
+      "sizeBasis": "model-card",
+      "languages": ["en"],
+      "voices": []
+    },
+    {
+      "id": "whisper-large-v3-turbo:q8_0",
+      "family": "whisper",
+      "kind": "listen",
+      "engine": "whisper-cpp",
+      "params": "809M",
+      "license": "mit",
+      "releaseDate": "2024-10-01",
+      "default": true,
+      "source": "https://huggingface.co/ggerganov/whisper.cpp",
+      "file": {
+        "repo": "ggerganov/whisper.cpp",
+        "revision": "0b364b566045a405be7225ee1e415a073e04da77",
+        "file": "ggml-large-v3-turbo-q8_0.bin",
+        "sha256": "317eb69c11673c9de1e1f0d459b253999804ec71ac4c23c17ecf5fbe24e259a1",
+        "bytes": 874188075,
+        "exactSize": true
+      },
+      "weightsBytes": 874188075,
+      "sizeBasis": "pinned",
+      "languages": ["multilingual"],
+      "voices": []
+    },
+    {
+      "id": "whisper-small:q8_0",
+      "family": "whisper",
+      "kind": "listen",
+      "engine": "whisper-cpp",
+      "params": "244M",
+      "license": "mit",
+      "releaseDate": "2022-09-21",
+      "default": false,
+      "source": "https://huggingface.co/ggerganov/whisper.cpp",
+      "file": {
+        "repo": "ggerganov/whisper.cpp",
+        "revision": "0b364b566045a405be7225ee1e415a073e04da77",
+        "file": "ggml-small-q8_0.bin",
+        "sha256": "49c8fb02b65e6049d5fa6c04f81f53b867b5ec9540406812c643f177317f779f",
+        "bytes": 280000000,
+        "exactSize": false
+      },
+      "weightsBytes": 280000000,
+      "sizeBasis": "ceiling",
+      "languages": ["multilingual"],
+      "voices": []
+    },
+    {
+      "id": "whisper-base.en",
+      "family": "whisper",
+      "kind": "listen",
+      "engine": "whisper-cpp",
+      "params": "74M",
+      "license": "mit",
+      "releaseDate": "2022-09-21",
+      "default": false,
+      "source": "https://huggingface.co/ggerganov/whisper.cpp",
+      "file": {
+        "repo": "ggerganov/whisper.cpp",
+        "revision": "80da2d8bfee42b0e836fc3a9890373e5defc00a6",
+        "file": "ggml-base.en.bin",
+        "sha256": "a03779c86df3323075f5e796cb2ce5029f00ec8869eee3fdfb897afe36c6d002",
+        "bytes": 160000000,
+        "exactSize": false
+      },
+      "weightsBytes": 160000000,
+      "sizeBasis": "ceiling",
+      "languages": ["en"],
+      "voices": []
+    }
+  ]
+}
