@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- **Deleting and renaming chats works in the desktop app.** The Mac app's
+  WebKit view has no handler for the browser's `confirm()` and `prompt()`, so
+  they returned "no" without showing anything: Delete and Rename did nothing,
+  and so did Install update and starting a model with custom context, KV cache
+  or parallel slots. These now use the workspace's own dialog in the app and
+  the browser alike. A delete that fails says so, and the chat list refreshes
+  either way.
+
 ## 3.1.0 (2026-11-09)
 
 ### Features
