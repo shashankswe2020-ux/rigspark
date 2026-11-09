@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.1.0 (2026-11-09)
 
 ### Features
 
@@ -31,6 +31,19 @@
   next to everything else, voice engines show their state, endpoint and stop
   control, and voice settings cover spoken replies, microphone, audio output
   and attaching a server.
+
+### Changes
+
+- **A quieter composer.** Reply mode (Text, Image, Video, Voice), image shape
+  and versions, voice options and Speak replies now sit behind the **+**
+  button. A non-text mode shows as one chip ("Image · Thumbnail 16:9 · 4
+  versions") that reopens the menu, with × back to text.
+- **Menu bar icon** is a one-hood macOS template image that follows light and
+  dark menu bars, so RigSpark and RigSpark Crew are easy to tell apart. The
+  Dock icon is unchanged.
+- **Contributor guide.** `CONTRIBUTING.md` and a pull request template cover
+  the MIT licence of contributions, DCO sign-off, setup, the checks CI runs and
+  the house rules.
 
 ## 3.0.9 (2026-11-09)
 
