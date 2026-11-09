@@ -255,7 +255,7 @@
                 <div>
                   <h2>Models</h2>
                   <p class="section-sub">
-                    Scored against this machine for the selected runtime. Select a model for complete fit and performance evidence.
+                    How well each model runs on this machine. Select one for the details.
                   </p>
                 </div>
                 <div class="page-head-actions">
@@ -365,7 +365,7 @@
                 <div>
                   <h2>Connectors</h2>
                   <p class="section-sub">
-                    Model Context Protocol servers give your model tools. Local commands (stdio) or loopback HTTP/SSE only.
+                    Give your model tools. Every connector runs on this machine.
                   </p>
                 </div>
                 <div class="page-actions">
@@ -571,26 +571,25 @@
                   </div>
                   <div id="memory-bar" class="memory-bar" role="img" aria-label="Memory use"></div>
                   <ul id="memory-legend" class="memory-legend"></ul>
-                  <p class="memory-note">Voice models count toward the same fit check as text models. Advice is computed offline and never leaves this device; run <code>rigspark doctor</code> for a full readiness report.</p>
                 </div>
-                <ul id="hardware-card" class="stat-list">
-                  <li class="stat-row"><span class="stat-label">Detecting hardware…</span></li>
-                </ul>
+                <details class="group-details">
+                  <summary>Machine details</summary>
+                  <ul id="hardware-card" class="stat-list">
+                    <li class="stat-row"><span class="stat-label">Detecting hardware…</span></li>
+                  </ul>
+                  <p class="memory-note">Voice models count toward the same fit check as text models. Advice is computed offline and never leaves this device; run <code>rigspark doctor</code> for a full readiness report.</p>
+                </details>
               </section>
 
               <h3 class="group-title">Inference runtimes</h3>
               <div id="runtime-toggles" class="runtime-list group" aria-live="polite">
                 <div class="empty">Loading runtimes…</div>
               </div>
-              <p class="group-foot">
-                Daemon runtimes start a local server when switched on. Per-model runtimes launch when you start a model from Models.
-              </p>
 
               <h3 class="group-title">Voice engines</h3>
               <div id="voice-engines" class="runtime-list group" aria-live="polite">
                 <div class="empty">Loading voice engines…</div>
               </div>
-              <p class="group-foot">Voice servers bind to 127.0.0.1 and stop when RigSpark quits. Start a voice model from Models › Voice.</p>
 
               <h3 class="group-title">Voice settings</h3>
               <div class="group voice-settings">
@@ -621,9 +620,6 @@
                 <pre id="connect-output" class="connect-output" aria-live="polite">Start a model, then choose an agent.</pre>
                 <button id="connect-copy" class="chip-btn" type="button" hidden>Copy</button>
               </div>
-              <p class="group-foot">
-                Agents reach the running model on 127.0.0.1 for that launch only; their own config files are never changed.
-              </p>
 
               <div id="desktop-settings" hidden>
                 <h3 class="group-title">App</h3>
@@ -636,13 +632,18 @@
                 <p class="group-foot">Closing the window keeps RigSpark in the menu bar. Choose Quit RigSpark there to stop it.</p>
               </div>
 
-              <h3 class="group-title">Guarantees</h3>
-              <ul class="group feature-list">
-                <li>Loopback-only bind (127.0.0.1)</li>
-                <li>Integrity-verified model pulls</li>
-                <li>Conversation memory and session history stored locally</li>
-                <li>Safe local file access</li>
-              </ul>
+              <details class="group group-details guarantees">
+                <summary>How RigSpark keeps everything local</summary>
+                <ul class="feature-list">
+                  <li>Loopback-only bind (127.0.0.1): runtimes, voice servers and agents never listen on the network</li>
+                  <li>Integrity-verified model pulls</li>
+                  <li>Conversation memory and session history stored locally</li>
+                  <li>Safe local file access</li>
+                  <li>Daemon runtimes start a local server when switched on; per-model runtimes launch when you start a model from Models</li>
+                  <li>Voice servers stop when RigSpark quits; start a voice model from Models › Voice</li>
+                  <li>Coding agents reach the running model for that launch only; their own config files are never changed</li>
+                </ul>
+              </details>
               <button id="legal-open" class="chip-btn" type="button">Terms and licences</button>
             </div>
           </section>

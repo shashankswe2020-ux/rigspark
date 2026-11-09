@@ -4,6 +4,14 @@
 
 ### Features
 
+- **Calmer screens: details on demand.** Runtime now shows the memory bar
+  and the runtimes you have; the hardware table, the fine print and runtimes
+  that aren't installed sit behind "Machine details", "N more not installed"
+  and "How RigSpark keeps everything local". Voice engines this machine can't
+  run are left out. Model rows show size only (quant, context and source are
+  in the model's detail panel), page intros are one short line, and the chat
+  footer drops the harness and an empty context count.
+
 - **RigSpark sets up ComfyUI and mlx-audio itself.** Pictures, video and voice
   no longer ask you to install Python tools or set `RIGSPARK_COMFYUI_DIR`. The
   first time you generate a picture or video (or choose Set up on an mlx-audio

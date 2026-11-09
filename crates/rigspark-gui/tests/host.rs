@@ -373,3 +373,23 @@ fn comfyui_and_mlx_audio_are_set_up_from_the_app_not_the_shell() {
     assert!(!studio.contains("comfyuiDir:"));
     assert!(voice.contains("rigsparkEngines.ensure"));
 }
+
+#[test]
+fn secondary_detail_waits_behind_disclosures() {
+    let index = include_str!("../static/index.html");
+    let chat = include_str!("../static/chat.js");
+    let voice = include_str!("../static/voice.js");
+    let workspace = include_str!("../static/workspace.js");
+    // Runtime: hardware table and the fine print sit in disclosures, not on the page.
+    let details = index.find("<summary>Machine details</summary>").unwrap();
+    assert!(index.find(r#"id="hardware-card""#).unwrap() > details);
+    assert!(index.contains("<summary>How RigSpark keeps everything local</summary>"));
+    assert!(!index.contains("Daemon runtimes start a local server when switched on. Per-model"));
+    // Runtimes and voice engines that aren't installed fold into "N more not installed".
+    assert!(chat.contains("more not installed"));
+    assert!(voice.contains("more not installed"));
+    // Model rows show size; quant, context and source live in the detail panel.
+    assert!(chat.contains("meta.textContent = `${model.params} · ${formatSize(model.diskBytes)}"));
+    // The composer footer leaves out the harness and an empty context.
+    assert!(!workspace.contains("· harness ${"));
+}

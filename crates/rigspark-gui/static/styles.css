@@ -5761,3 +5761,82 @@ input.switch.switch-sm:checked::after {
 .terms-body ul { padding-left: 1.2rem; margin: 0 0 8px; }
 .terms-body a { color: var(--amber-ink); }
 .legal-foot .link-btn { font: inherit; padding: 0; border: 0; background: none; color: var(--amber-ink); text-decoration: underline; cursor: pointer; }
+
+/* Need to know: secondary detail waits behind a disclosure. */
+.group-details > summary,
+.runtime-more > summary {
+  padding: 10px 14px;
+  color: var(--text2);
+  font-size: 13px;
+  cursor: pointer;
+  list-style: none;
+}
+.group-details > summary::-webkit-details-marker,
+.runtime-more > summary::-webkit-details-marker {
+  display: none;
+}
+.group-details > summary::before,
+.runtime-more > summary::before {
+  content: "›";
+  display: inline-block;
+  width: 14px;
+  color: var(--text3);
+  transition: transform 0.15s ease;
+}
+.group-details[open] > summary::before,
+.runtime-more[open] > summary::before {
+  transform: rotate(90deg);
+}
+.group-details > summary:hover,
+.runtime-more > summary:hover {
+  color: var(--text);
+}
+.memory-card > .group-details {
+  border-top: 1px solid var(--line);
+}
+.memory-card .group-details > .stat-list {
+  border-top: 1px solid var(--line);
+}
+.memory-card .group-details > .memory-note {
+  padding: 10px 14px 12px;
+  border-top: 1px solid var(--line);
+}
+.runtime-more > .runtime-row {
+  border-top: 1px solid var(--line);
+}
+.guarantees {
+  margin-bottom: 12px;
+}
+.guarantees .feature-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--line);
+}
+.guarantees .feature-list li {
+  padding: 8px 14px;
+  color: var(--text2);
+}
+@media (prefers-reduced-motion: reduce) {
+  .group-details > summary::before,
+  .runtime-more > summary::before {
+    transition: none;
+  }
+}
+.voice-attach > summary {
+  list-style: none;
+  color: var(--text2);
+}
+.voice-attach > summary::-webkit-details-marker {
+  display: none;
+}
+.voice-attach > summary::before {
+  content: "›";
+  display: inline-block;
+  width: 14px;
+  color: var(--text3);
+  transition: transform 0.15s ease;
+}
+.voice-attach[open] > summary::before {
+  transform: rotate(90deg);
+}
