@@ -1,5 +1,26 @@
 # Changelog
 
+## 3.0.9 (2026-11-09)
+
+### Fixes
+
+- **llama.cpp chat no longer gives up after 30 seconds.** A reply that first
+  reads a long prompt (an agent's repo rules, tools and files) while other
+  requests share the server could take longer than 30 s, and every such call
+  failed as a transport error. Chat now gets 120 s, the same as the local
+  harness allows a whole call; embeddings keep 30 s.
+- **llama.cpp chat sends `temperature`.** It was accepted and then dropped.
+
+### Features
+
+- **Agents can use tools on llama.cpp.** Chat sends the tool list and the
+  history's tool calls and results in OpenAI's shape (with `tool_call_id`s),
+  and returns the model's tool calls (arguments as a JSON string or object).
+  Before, llama.cpp chat sent only each message's text, so an agent with tools
+  never got a tool call back.
+- **`ChatInput.max_tokens` caps a reply's length**: `max_tokens` on
+  llama.cpp, `num_predict` on Ollama. Unset keeps each server's default.
+
 ## 3.0.8 (2026-11-08)
 
 ### Features

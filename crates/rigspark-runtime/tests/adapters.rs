@@ -525,6 +525,7 @@ async fn bitnet_uses_cpu_server_custom_port_context_openai_chat_and_owned_stop()
         tools: vec![],
         temperature: None,
         slot: None,
+        max_tokens: None,
     };
     assert_eq!(
         adapter
@@ -1197,6 +1198,13 @@ impl Transport for SlotHttp {
                 "n_restored": 1745, "n_read": 14309796, "timings": {"restore_ms": 42.937}}),
             ("/slots/2", Some("action=erase")) => json!({"id_slot": 2, "n_erased": 1745}),
             ("/slots/4", Some("action=erase")) => json!({"id_slot": 5, "n_erased": 1}),
+            ("/slots/5", Some("action=save")) => json!({"id_slot": 5, "n_saved": 1,
+                "n_written": 1, "timings": {"save_ms": -1.0}}),
+            ("/slots/6", Some("action=save")) => json!({"id_slot": 6, "n_saved": 1,
+                "n_written": 1, "timings": {"save_ms": 0.0}}),
+            // Larger than 1 KiB, well inside the 64 KiB reply limit.
+            ("/slots/7", Some("action=save")) => json!({"id_slot": 7, "n_saved": 1,
+                "filename": "x".repeat(4000), "timings": {"save_ms": 1.0}}),
             other => panic!("unexpected request {other:?}"),
         };
         Ok(Response {
@@ -1297,6 +1305,7 @@ async fn llama_cpp_keeps_kv_slots_pins_requests_and_reports_its_own_timings() {
         tools: Vec::new(),
         temperature: None,
         slot: Some(2),
+        max_tokens: None,
     };
     let result = inference.chat(&handle, &input, &cancel).await.unwrap();
     assert_eq!(result.content, "done");
@@ -1318,6 +1327,28 @@ async fn llama_cpp_keeps_kv_slots_pins_requests_and_reports_its_own_timings() {
     let sent = replies.requests.lock().unwrap()[0].2.clone();
     assert_eq!(sent["id_slot"], 2);
     assert_eq!(sent["cache_prompt"], true);
+    assert!(sent.get("max_tokens").is_none() && sent.get("temperature").is_none());
+    let capped = ChatInput {
+        max_tokens: Some(64),
+        temperature: Some(0.2),
+        ..input.clone()
+    };
+    inference.chat(&handle, &capped, &cancel).await.unwrap();
+    let sent = replies.requests.lock().unwrap().last().unwrap().2.clone();
+    assert_eq!(sent["max_tokens"], 64);
+    assert_eq!(sent["temperature"], 0.2);
+    for bad in [
+        ChatInput {
+            max_tokens: Some(0),
+            ..input.clone()
+        },
+        ChatInput {
+            temperature: Some(f64::NAN),
+            ..input.clone()
+        },
+    ] {
+        assert!(inference.chat(&handle, &bad, &cancel).await.is_err());
+    }
     for slot in [Some(16), None] {
         let unpinned = ChatInput {
             slot,
@@ -1394,6 +1425,30 @@ async fn llama_cpp_keeps_kv_slots_pins_requests_and_reports_its_own_timings() {
             .await
             .is_err()
     );
+    // A negative duration is refused; zero is fine; a reply over 1 KiB still reads.
+    let one = |name: &str| KvSlotAction::Save { name: name.into() };
+    assert!(
+        inference
+            .kv_slot(&handle, 5, &one("a"), &cancel)
+            .await
+            .is_err()
+    );
+    assert_eq!(
+        inference
+            .kv_slot(&handle, 6, &one("a"), &cancel)
+            .await
+            .unwrap()
+            .ms,
+        Some(0.0)
+    );
+    assert_eq!(
+        inference
+            .kv_slot(&handle, 7, &one(&"a".repeat(64)), &cancel)
+            .await
+            .unwrap()
+            .tokens,
+        1
+    );
     for name in ["", "../x", "a.bin", &"a".repeat(65)] {
         let action = KvSlotAction::Save { name: name.into() };
         assert!(
@@ -1418,7 +1473,7 @@ async fn llama_cpp_keeps_kv_slots_pins_requests_and_reports_its_own_timings() {
             .iter()
             .filter(|(path, _, _)| path.starts_with("/slots/"))
             .count(),
-        4,
+        7,
         "refused names and slots never reach the server"
     );
 }
@@ -1451,4 +1506,136 @@ fn kv_slot_files_live_privately_beside_the_runtime_state() {
         ..config
     };
     assert!(rigspark_runtime::application::kv_slot_directory(&relative).is_err());
+}
+
+#[tokio::test]
+async fn slot_actions_and_pinned_chats_refuse_a_listener_that_is_not_the_server_started() {
+    use rigspark_runtime::{
+        ollama_inference::{ChatInput, ChatMessage},
+        openai::{KvSlotAction, OpenAiInference},
+        state::ServerState,
+    };
+    let probe = Probe {
+        binary: "/usr/bin/impostor".into(),
+    };
+    let control = Control {
+        signals: Mutex::new(Vec::new()),
+    };
+    let http = SlotHttp {
+        requests: Mutex::new(Vec::new()),
+    };
+    let llama = RuntimeAdapter::new(
+        BackendKind::LlamaCpp,
+        PathBuf::from(RUNTIME),
+        &http,
+        &probe,
+        &control,
+    );
+    let handle = ServerState {
+        backend: "llamacpp".into(),
+        model_id: "test:latest".into(),
+        endpoint: "http://127.0.0.1:11435".into(),
+        port: 11435,
+        owned_by_us: true,
+        pid: Some(123),
+        runtime_model_id: None,
+        context: None,
+        integrity: None,
+        local_manifest_digest: None,
+        model_path: None,
+        process_executable: Some(RUNTIME.into()),
+        process_started_at: Some("instance".into()),
+        auth_token: None,
+        cache: None,
+    };
+    let inference = OpenAiInference {
+        http: &http,
+        probe: &probe,
+        adapter: &llama,
+        token: None,
+    };
+    let cancel = CancellationToken::new();
+    assert!(
+        inference
+            .kv_slot(&handle, 2, &KvSlotAction::Erase, &cancel)
+            .await
+            .is_err()
+    );
+    let input = ChatInput {
+        model: "test:latest".into(),
+        messages: vec![ChatMessage {
+            role: "user".into(),
+            content: "hi".into(),
+            tool_calls: Vec::new(),
+            tool_name: None,
+        }],
+        tools: Vec::new(),
+        temperature: None,
+        slot: Some(2),
+        max_tokens: None,
+    };
+    assert!(inference.chat(&handle, &input, &cancel).await.is_err());
+    assert!(
+        http.requests.lock().unwrap().is_empty(),
+        "nothing reached the impostor"
+    );
+}
+
+#[tokio::test]
+async fn only_llama_cpp_servers_get_kv_slots() {
+    use rigspark_runtime::{
+        application::{kv_slot_directory_for, kv_slot_with_config},
+        openai::KvSlotAction,
+        state::{Config, RuntimeState, ServerState},
+    };
+    let root = tempfile::tempdir().unwrap();
+    let config = Config {
+        home: root.path().to_path_buf(),
+        state: root.path().join("state.json"),
+        lock: root.path().join("lock"),
+        staging: root.path().join(".staging"),
+    };
+    assert_eq!(
+        kv_slot_directory_for("llamacpp", &config).unwrap(),
+        Some(root.path().join("kv-slots"))
+    );
+    for backend in ["ollama", "mlx", "lmstudio", "bitnet"] {
+        assert_eq!(
+            kv_slot_directory_for(backend, &config).unwrap(),
+            None,
+            "{backend}"
+        );
+    }
+    // An Ollama server on record is refused before any llama.cpp binary is looked up.
+    let state = RuntimeState {
+        schema_version: 2,
+        active: Some(ServerState {
+            backend: "ollama".into(),
+            model_id: "qwen3:8b".into(),
+            endpoint: "http://127.0.0.1:11434".into(),
+            port: 11434,
+            owned_by_us: false,
+            pid: None,
+            runtime_model_id: None,
+            context: None,
+            integrity: None,
+            local_manifest_digest: None,
+            model_path: None,
+            process_executable: None,
+            process_started_at: None,
+            auth_token: None,
+            cache: None,
+        }),
+    };
+    std::fs::write(&config.state, serde_json::to_vec(&state).unwrap()).unwrap();
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(&config.state, std::fs::Permissions::from_mode(0o600)).unwrap();
+        std::fs::set_permissions(root.path(), std::fs::Permissions::from_mode(0o700)).unwrap();
+    }
+    let error = kv_slot_with_config(config, 0, &KvSlotAction::Erase, &CancellationToken::new())
+        .await
+        .unwrap_err();
+    assert_eq!(error.0, "KV slots apply only to llama.cpp");
 }
