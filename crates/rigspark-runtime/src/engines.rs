@@ -1002,14 +1002,18 @@ mod tests {
 
     #[test]
     fn packages_resolve_as_of_a_fixed_date_inside_rigsparks_folder() {
-        let args = pip_args(Path::new("/r/engines/mlx-audio/.venv"));
+        let venv = Path::new("/r/engines/mlx-audio/.venv");
+        let args = pip_args(venv);
         assert_eq!(args[..2], ["pip".to_owned(), "install".to_owned()]);
         let at = args
             .iter()
             .position(|arg| arg == "--exclude-newer")
             .unwrap();
         assert_eq!(args[at + 1], PACKAGES_AS_OF);
-        assert!(args.contains(&"/r/engines/mlx-audio/.venv/bin/python".to_owned()));
+        // Built with Path::join, so Windows uses its own separator.
+        let python = venv.join("bin").join("python").display().to_string();
+        let at = args.iter().position(|arg| arg == "--python").unwrap();
+        assert_eq!(args[at + 1], python);
         assert!(venv_args(Path::new("/v")).contains(&PYTHON_VERSION.to_owned()));
     }
 }
