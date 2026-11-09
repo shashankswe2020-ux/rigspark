@@ -245,6 +245,18 @@ fn seeds_are_bounded_by_the_largest_exact_float_integer() {
 }
 
 #[test]
+fn only_generate_takes_an_aspect() {
+    passes_rule(
+        &["generate", "--aspect", "landscape"],
+        "--aspect is not supported by this command",
+    );
+    rejects(
+        &["recommend", "--aspect", "landscape"],
+        "--aspect is not supported by this command",
+    );
+}
+
+#[test]
 fn parity_mode_answers_every_command_from_stdin() {
     for command in ["bench", "connect", "add"] {
         let output = invoke(&[command, "--parity"], Some(b"[]"));
