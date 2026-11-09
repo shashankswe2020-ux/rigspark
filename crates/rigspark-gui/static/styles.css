@@ -5752,3 +5752,12 @@ input.switch.switch-sm:checked::after {
 .confirm-dialog-field { display: grid; gap: 6px; margin-top: 12px; font-size: 0.85rem; color: var(--text2); }
 .confirm-dialog-field[hidden] { display: none; }
 .confirm-dialog-field input { height: 36px; padding: 0 10px; border: 1px solid var(--line2); border-radius: 8px; background: var(--bg); color: var(--text); font: inherit; font-size: 0.95rem; }
+
+/* Full Terms of Use, opened from the first-run notice. */
+.terms-of-use { width: min(760px, calc(100vw - 32px)); }
+.terms-body { font-size: 0.88rem; line-height: 1.55; color: var(--text); }
+.terms-body h2 { font-size: 0.95rem; margin: 18px 0 6px; }
+.terms-body p, .terms-body li { margin: 0 0 8px; }
+.terms-body ul { padding-left: 1.2rem; margin: 0 0 8px; }
+.terms-body a { color: var(--amber-ink); }
+.legal-foot .link-btn { font: inherit; padding: 0; border: 0; background: none; color: var(--amber-ink); text-decoration: underline; cursor: pointer; }
