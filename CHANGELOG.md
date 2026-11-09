@@ -4,6 +4,14 @@
 
 ### Features
 
+- **Image chat makes the shape you need, in several versions.** The
+  composer's Image mode picks thumbnail (16:9), wallpaper (9:16) or square and
+  1, 2 or 4 versions, each on its own seed; keep a seed to steer one picture.
+  Results download, copy to the clipboard, or go to a connected app (Canva,
+  Figma, a file store) through the chat and its approvals; RigSpark does not
+  re-implement editors. Generation jobs and `rigspark generate --aspect` take
+  `square`, `landscape` or `portrait` and report their seed; time per picture
+  is measured, never estimated.
 - **Voice in the workspace (Community Edition).** Models gains a **Voice**
   tab: a curated catalog of speak models (kokoro-82m, chatterbox via
   mlx-audio on Apple Silicon) and listen models (Whisper large-v3-turbo q8_0,

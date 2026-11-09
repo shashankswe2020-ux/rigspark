@@ -416,3 +416,66 @@ async fn earlier_outputs_stay_viewable_after_later_jobs_finish() {
         assert!(bytes.ends_with(index.to_string().as_bytes()));
     }
 }
+
+/// Records the aspect each job was started with.
+struct Shapes(std::sync::Mutex<Vec<rigspark_runtime::generation::Aspect>>);
+impl Generator for Shapes {
+    fn generate(
+        &self,
+        options: NativeOptions,
+        events: Events,
+        cancel: CancellationToken,
+    ) -> GenerationFuture<'_> {
+        self.0.lock().unwrap().push(options.aspect);
+        Paints.generate(options, events, cancel)
+    }
+}
+
+#[tokio::test]
+async fn image_jobs_take_an_aspect_and_report_their_seed() {
+    use rigspark_runtime::generation::Aspect;
+    let home = tempfile::tempdir().unwrap();
+    let comfy = comfy();
+    let shapes = Arc::new(Shapes(std::sync::Mutex::new(Vec::new())));
+    let host = host(home.path(), shapes.clone());
+    let request = json!({"model":"image","prompt":"a fox","seed":418,"aspect":"landscape","comfyuiDir":comfy.path()});
+    let (status, value) = json_call(&host, "POST", "/api/generation/jobs", Some(request)).await;
+    assert_eq!(status, StatusCode::ACCEPTED, "{value}");
+    assert_eq!(value["job"]["seed"], 418);
+    assert_eq!(value["job"]["aspect"], "landscape");
+    let job = wait_for(&host, "succeeded").await;
+    assert_eq!(job["seed"], 418);
+    assert_eq!(*shapes.0.lock().unwrap(), [Aspect::Landscape]);
+    for (model, aspect) in [("image", "wide"), ("video", "portrait")] {
+        let request =
+            json!({"model":model,"prompt":"a fox","aspect":aspect,"comfyuiDir":comfy.path()});
+        let (status, value) = json_call(&host, "POST", "/api/generation/jobs", Some(request)).await;
+        assert_eq!(status, StatusCode::BAD_REQUEST, "{model} {aspect} {value}");
+    }
+}
+
+#[test]
+fn the_page_offers_image_presets_variations_and_hand_off() {
+    let index = include_str!("../static/index.html");
+    let studio = include_str!("../static/image-studio.js");
+    let generate = include_str!("../static/generate.js");
+    for marker in [
+        "id=\"image-compose\"",
+        "data-preset=\"thumbnail\"",
+        "data-preset=\"wallpaper\"",
+        "data-count=\"4\"",
+        "/static/image-studio.js",
+    ] {
+        assert!(index.contains(marker), "{marker}");
+    }
+    for marker in [
+        "aspect",
+        "/api/generation/jobs",
+        "measured",
+        "/api/connectors",
+        "ClipboardItem",
+    ] {
+        assert!(studio.contains(marker), "{marker}");
+    }
+    assert!(generate.contains("globalThis.RigSparkGeneration"));
+}
