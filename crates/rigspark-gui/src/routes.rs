@@ -144,7 +144,9 @@ pub async fn dispatch(host: Arc<Host>, request: Request) -> ApiResult {
         ));
     }
     if path == "/api/update" && method == "GET" {
-        return Ok(json_response(crate::update::fetch().await));
+        return Ok(json_response(
+            crate::update::fetch(crate::update::LATEST_RELEASE).await,
+        ));
     }
     if path == "/api/status" || path == "/api/history" {
         if method != "GET" {
