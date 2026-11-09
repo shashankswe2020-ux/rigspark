@@ -25,6 +25,89 @@ pub const DEFAULT_PORT: u16 = 8188;
 pub const MAX_PROMPT_BYTES: usize = 16 * 1024;
 mod preflight;
 pub const MAX_SEED: u64 = 9_007_199_254_740_991;
+
+/// Picture shape. `Square` keeps each workflow's published size; the others keep its pixel
+/// count and change the ratio, in multiples of 16 as the latent space needs.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Aspect {
+    #[default]
+    Square,
+    /// 16:9, for thumbnails.
+    Landscape,
+    /// 9:16, for phone wallpapers.
+    Portrait,
+}
+impl Aspect {
+    pub fn parse(value: &str) -> Option<Self> {
+        match value {
+            "square" => Some(Self::Square),
+            "landscape" => Some(Self::Landscape),
+            "portrait" => Some(Self::Portrait),
+            _ => None,
+        }
+    }
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::Square => "square",
+            Self::Landscape => "landscape",
+            Self::Portrait => "portrait",
+        }
+    }
+    /// Width and height with the same pixel count as `width`×`height` at this ratio.
+    pub fn dimensions(self, width: u64, height: u64) -> (u64, u64) {
+        let (across, down) = match self {
+            Self::Square => return (width, height),
+            Self::Landscape => (16.0, 9.0),
+            Self::Portrait => (9.0, 16.0),
+        };
+        let area = (width * height) as f64;
+        let round = |value: f64| ((value / 16.0).round() as u64).max(1) * 16;
+        (
+            round((area * across / down).sqrt()),
+            round((area * down / across).sqrt()),
+        )
+    }
+}
+
+/// Reshapes every latent and sampling node of an image graph to `aspect`.
+pub fn shaped(
+    mut graph: Value,
+    kind: GenerationKind,
+    aspect: Aspect,
+) -> Result<Value, GenerationError> {
+    if aspect == Aspect::Square {
+        return Ok(graph);
+    }
+    if kind != GenerationKind::Image {
+        return Err(GenerationError::Invalid("only images take an aspect ratio"));
+    }
+    let mut changed = false;
+    for node in graph
+        .as_object_mut()
+        .into_iter()
+        .flat_map(|nodes| nodes.values_mut())
+    {
+        let Some(inputs) = node.get_mut("inputs").and_then(Value::as_object_mut) else {
+            continue;
+        };
+        if let (Some(width), Some(height)) = (
+            inputs.get("width").and_then(Value::as_u64),
+            inputs.get("height").and_then(Value::as_u64),
+        ) {
+            let (width, height) = aspect.dimensions(width, height);
+            inputs.insert("width".into(), width.into());
+            inputs.insert("height".into(), height.into());
+            changed = true;
+        }
+    }
+    if !changed {
+        return Err(GenerationError::Invalid(
+            "this workflow has no image size to change",
+        ));
+    }
+    Ok(graph)
+}
 const MAX_OUTPUT_BYTES: u64 = 1024 * 1024 * 1024;
 const WEIGHT_TIMEOUT: Duration = Duration::from_secs(6 * 60 * 60);
 /// Core ComfyUI nodes used by the built-in workflows; anything else is refused.
@@ -313,6 +396,7 @@ pub struct GenerationRequest<'request> {
     pub model: &'request GenerationModel,
     pub prompt: &'request str,
     pub seed: u64,
+    pub aspect: Aspect,
     pub endpoint: &'request str,
     pub comfyui_dir: &'request Path,
     /// Exact output file; when absent a name is derived inside `output_dir`.
@@ -952,7 +1036,11 @@ impl ComfyUi<'_> {
                 .iter()
                 .map(|file| (file.role, file.file.clone()))
                 .collect();
-            let graph = workflow(model, &names, request.prompt, request.seed, devices)?;
+            let graph = shaped(
+                workflow(model, &names, request.prompt, request.seed, devices)?,
+                model.kind,
+                request.aspect,
+            )?;
             self.emit("Checking native Ming Design capabilities before downloading weights".into());
             preflight::ming(self, request.endpoint, &graph, cancel).await?;
         }
@@ -964,7 +1052,11 @@ impl ComfyUi<'_> {
             .iter()
             .map(|weight| (weight.role, weight.name.clone()))
             .collect();
-        let graph = workflow(model, &names, request.prompt, request.seed, devices)?;
+        let graph = shaped(
+            workflow(model, &names, request.prompt, request.seed, devices)?,
+            model.kind,
+            request.aspect,
+        )?;
         ensure_local_only(&graph)?;
         self.make_room(
             request.endpoint,
@@ -1041,6 +1133,7 @@ pub struct NativeOptions {
     pub model: String,
     pub prompt: String,
     pub seed: Option<u64>,
+    pub aspect: Aspect,
     pub comfyui_dir: PathBuf,
     pub port: u16,
     pub bypass: bool,
@@ -1094,6 +1187,9 @@ pub fn prepare(
     model
         .runnable()
         .map_err(|error| GenerationError::Catalog(error.to_string()))?;
+    if options.aspect != Aspect::Square && model.kind != GenerationKind::Image {
+        return Err(GenerationError::Invalid("only images take an aspect ratio"));
+    }
     if options.comfyui_dir.as_os_str().is_empty() {
         return Err(GenerationError::Invalid(
             "a ComfyUI directory is required (--comfyui-dir or RIGSPARK_COMFYUI_DIR)",
@@ -1157,6 +1253,7 @@ pub async fn run_native(
                 model: &model,
                 prompt: &options.prompt,
                 seed,
+                aspect: options.aspect,
                 endpoint: &endpoint,
                 comfyui_dir: &comfyui_dir,
                 output: options.output.as_deref(),

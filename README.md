@@ -275,6 +275,17 @@ rigspark generate ming-image:ming_image_0.1_design_int8_convrot \
   <img src="assets/brand/screens/ming-design-gui.png" alt="A real Ming Design plant-care app mockup generated inline in RigSpark chat using local ComfyUI" width="720">
 </p>
 
+In the GUI, switch the composer to **Image** and pick a shape (**Thumbnail**
+16:9, **Wallpaper** 9:16 or **Square**) and how many versions (1, 2 or 4),
+each on its own seed. Keep a seed to steer one picture with new words. Then
+download it, copy it into any app, or **Send to app…**: with Canva, Figma or
+another connector added under **Connectors**, the chat hands the file to that
+app's tools (each call asks for your approval) for text, layouts and resizing.
+RigSpark serves the model; editing stays in the tools you already use.
+Pictures are made one at a time, and the time per picture is measured on your
+machine after the first one. From the CLI, pass `--aspect landscape` or
+`--aspect portrait` to `rigspark generate image`.
+
 [Image and video generation specification →](docs/specs/image-video-generation.md)
 
 ### 7. Talk to it: spoken replies and dictation

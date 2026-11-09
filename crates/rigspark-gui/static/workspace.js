@@ -109,6 +109,16 @@
       pop.style.maxHeight = `${innerHeight - 2 * margin}px`;
     }
 
+    // A pop whose content changes while open (the + menu gains image or voice options)
+    // is placed again so it stays on screen.
+    let openPlacement = "";
+    const popResize = typeof ResizeObserver === "function"
+      ? new ResizeObserver(() => {
+        if (openPop && openAnchor) place(openPop, openAnchor, openPlacement);
+      })
+      : null;
+    for (const pop of document.querySelectorAll(".pop")) popResize?.observe(pop);
+
     function closePops(restoreFocus = false) {
       if (!openPop) return;
       openPop.hidden = true;
@@ -127,6 +137,7 @@
       closePops();
       pop.hidden = false;
       place(pop, anchor, placement);
+      openPlacement = placement;
       anchor.setAttribute("aria-expanded", "true");
       openPop = pop;
       openAnchor = anchor;
@@ -147,6 +158,7 @@
     bindPop("#model-chip", "#model-pop", "bottom-end", "#model-select");
     bindPop("#agent-chip", "#model-pop", "top-end", "#agent-select");
     bindPop("#composer-plus", "#composer-menu", "top-start");
+    bindPop("#mode-chip", "#composer-menu", "top-start");
     bindPop("#fit-settings", "#fit-pop", "bottom-end");
 
     document.addEventListener("pointerdown", (event) => {

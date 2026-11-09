@@ -63,6 +63,8 @@ fn generate_help_documents_the_local_contract() {
         "--prompt",
         "--output",
         "--seed",
+        "--aspect",
+        "landscape (16:9)",
         "--comfyui-dir",
         "Loopback ComfyUI port (default: 8188)",
         "image, video, or a model id",
@@ -106,6 +108,19 @@ fn invalid_generation_invocations_fail_before_network_or_state() {
                 "9007199254740992",
             ],
             "invalid --seed",
+        ),
+        (
+            vec![
+                "generate",
+                "image",
+                "--prompt",
+                "fox",
+                "--aspect",
+                "wide",
+                "--comfyui-dir",
+                missing,
+            ],
+            "invalid --aspect wide",
         ),
         (
             vec![

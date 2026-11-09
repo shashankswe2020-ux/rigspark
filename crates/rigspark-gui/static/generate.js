@@ -24,7 +24,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
   const placeholders = {
     text: "Message the local model…",
-    image: "Describe an image to generate…",
+    image: "Describe the picture to generate…",
     video: "Describe a video to generate…",
     voice: "Describe what to say, or paste the exact text to read…",
   };
@@ -349,9 +349,65 @@ document.addEventListener("DOMContentLoaded", () => {
     await pollJob(context);
   }
 
+  // The composer shows one small chip for the reply mode and its choices; the controls
+  // themselves live behind the + button.
+  const modeChipWrap = document.querySelector("#mode-chip-wrap");
+  const modeChip = document.querySelector("#mode-chip");
+  const optionsMenu = document.querySelector("#composer-menu");
+  function checkedText(selector) {
+    const option = document.querySelector(`${selector} [aria-checked="true"]`);
+    return option ? option.textContent.replace(/\s+/g, " ").trim() : "";
+  }
+  function updateModeChip() {
+    if (!modeChipWrap || !modeChip) return;
+    modeChipWrap.hidden = chatMode === "text";
+    if (chatMode === "text") return;
+    let detail = "";
+    if (chatMode === "image") {
+      const seedKept = document.querySelector("#image-seed")?.hidden === false;
+      const versions = seedKept ? 1 : Number(checkedText("#image-count")) || 1;
+      detail = `${checkedText("#image-preset")}${versions > 1 ? ` · ${versions} versions` : ""}`;
+    } else if (chatMode === "voice") {
+      const voice = document.querySelector("#voice-select");
+      const name = voice?.selectedOptions?.[0]?.textContent?.trim();
+      detail = [checkedText("#voice-source"), name].filter(Boolean).join(" · ");
+    }
+    const label = chatMode[0].toUpperCase() + chatMode.slice(1);
+    modeChip.textContent = detail ? `${label} · ${detail}` : label;
+    modeChip.title = `${modeNote?.textContent || label}. Change it from the + menu.`;
+    modeChip.setAttribute("aria-label", `Reply as ${modeChip.textContent}. Change`);
+  }
+  if (optionsMenu) {
+    new MutationObserver(() => updateModeChip()).observe(optionsMenu, {
+      subtree: true,
+      childList: true,
+      attributes: true,
+      attributeFilter: ["aria-checked"],
+    });
+    const seedChip = document.querySelector("#image-seed");
+    if (seedChip) new MutationObserver(() => updateModeChip()).observe(seedChip, { attributes: true, attributeFilter: ["hidden"] });
+    optionsMenu.addEventListener("change", updateModeChip);
+  }
+  document.querySelector("#mode-clear")?.addEventListener("click", () => {
+    setChatMode("text");
+    chatPrompt.focus();
+  });
+  globalThis.addEventListener("rigspark:chat-mode", updateModeChip);
+
+  // image-studio.js runs image chats with presets, versions and hand-off.
+  globalThis.RigSparkGeneration = {
+    selectedModel,
+    comfyui: () => ({ dir: comfyuiDir, port: comfyuiPort }),
+    chatRow,
+    setBusy,
+    showError,
+    announce,
+    token,
+  };
+
   chatForm.addEventListener("submit", async (event) => {
-    // Text goes to chat.js and voice to voice.js.
-    if (chatMode === "text" || chatMode === "voice") return;
+    // Text goes to chat.js, voice to voice.js and images to image-studio.js.
+    if (chatMode === "text" || chatMode === "voice" || chatMode === "image") return;
     event.preventDefault();
     event.stopImmediatePropagation();
     showError("");

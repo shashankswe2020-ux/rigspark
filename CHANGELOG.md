@@ -4,6 +4,20 @@
 
 ### Features
 
+- **First-run notice.** The GUI and desktop app open with a short notice that
+  states, in bold, the MIT licence terms, the "as is" warranty disclaimer,
+  that each model's licence and every generated output are the user's
+  responsibility, that the licence covers the code and not the RigSpark name
+  or logo, and that data stays on the device. It is shown until confirmed and
+  can be reopened from Runtime › Terms and licences.
+- **Image chat makes the shape you need, in several versions.** The
+  composer's Image mode picks thumbnail (16:9), wallpaper (9:16) or square and
+  1, 2 or 4 versions, each on its own seed; keep a seed to steer one picture.
+  Results download, copy to the clipboard, or go to a connected app (Canva,
+  Figma, a file store) through the chat and its approvals; RigSpark does not
+  re-implement editors. Generation jobs and `rigspark generate --aspect` take
+  `square`, `landscape` or `portrait` and report their seed; time per picture
+  is measured, never estimated.
 - **Voice in the workspace (Community Edition).** Models gains a **Voice**
   tab: a curated catalog of speak models (kokoro-82m, chatterbox via
   mlx-audio on Apple Silicon) and listen models (Whisper large-v3-turbo q8_0,
