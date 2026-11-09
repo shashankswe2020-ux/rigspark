@@ -192,6 +192,9 @@ struct Args {
     output: Option<PathBuf>,
     #[arg(long)]
     seed: Option<u64>,
+    /// Image shape: square (default), landscape (16:9) or portrait (9:16).
+    #[arg(long)]
+    aspect: Option<String>,
     #[arg(long)]
     comfyui_dir: Option<PathBuf>,
 }
@@ -295,7 +298,7 @@ impl Args {
 async fn run_generation(args: &Args) -> Result<u8, Box<dyn std::error::Error>> {
     use rigspark_core::generation::{GenerationCatalog, catalog_text};
     use rigspark_runtime::generation::{
-        MAX_SEED, NativeOptions, default_comfyui_dir, prepare, random_seed, run_native,
+        Aspect, MAX_SEED, NativeOptions, default_comfyui_dir, prepare, random_seed, run_native,
         validate_prompt,
     };
     let catalog = GenerationCatalog::bundled()?;
@@ -384,6 +387,12 @@ async fn run_generation(args: &Args) -> Result<u8, Box<dyn std::error::Error>> {
         model: query.into(),
         prompt: prompt.into(),
         seed: Some(args.seed.unwrap_or_else(random_seed)),
+        aspect: match args.aspect.as_deref() {
+            None => Aspect::Square,
+            Some(value) => Aspect::parse(value).ok_or_else(|| {
+                format!("invalid --aspect {value} (expected square, landscape or portrait)")
+            })?,
+        },
         comfyui_dir: comfyui_dir.ok_or(
             "--comfyui-dir (or RIGSPARK_COMFYUI_DIR) must point at your ComfyUI installation",
         )?,

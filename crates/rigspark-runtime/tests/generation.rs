@@ -1,7 +1,9 @@
 use rigspark_core::generation::{FileRole, GenerationCatalog, GenerationKind, GenerationModel};
 use rigspark_runtime::{
     acquire::{DownloadResponse, DownloadTransport},
-    generation::{ComfyUi, GenerationError, GenerationRequest, ensure_local_only, workflow},
+    generation::{
+        Aspect, ComfyUi, GenerationError, GenerationRequest, ensure_local_only, shaped, workflow,
+    },
     http::{HttpError, Request, Response, Transport},
 };
 use serde_json::{Value, json};
@@ -262,6 +264,7 @@ fn request<'a>(
         model,
         prompt: "a red fox in snow",
         seed: 42,
+        aspect: Aspect::Square,
         endpoint: ENDPOINT,
         comfyui_dir: comfy,
         output,
@@ -1487,4 +1490,78 @@ async fn outputs_are_staged_beside_their_target() {
         "no partial file beside the target"
     );
     assert_eq!(std::fs::read(&target).unwrap(), PNG);
+}
+
+#[test]
+fn aspects_keep_the_pixel_count_in_multiples_of_sixteen() {
+    assert_eq!(Aspect::Square.dimensions(1024, 1024), (1024, 1024));
+    assert_eq!(Aspect::Landscape.dimensions(1024, 1024), (1360, 768));
+    assert_eq!(Aspect::Portrait.dimensions(1024, 1024), (768, 1360));
+    assert_eq!(Aspect::Landscape.dimensions(1328, 1328), (1776, 992));
+    for (name, aspect) in [
+        ("square", Aspect::Square),
+        ("landscape", Aspect::Landscape),
+        ("portrait", Aspect::Portrait),
+    ] {
+        assert_eq!(Aspect::parse(name), Some(aspect));
+        assert_eq!(aspect.name(), name);
+    }
+    assert_eq!(Aspect::parse("wide"), None);
+    assert_eq!(Aspect::default(), Aspect::Square);
+}
+
+#[test]
+fn shaping_resizes_every_latent_and_sampler_node_of_an_image_graph() {
+    let catalog = GenerationCatalog::bundled().unwrap();
+    for model in catalog
+        .models
+        .iter()
+        .filter(|model| model.workflow.is_some())
+    {
+        let names = model
+            .files
+            .iter()
+            .map(|file| (file.role, file.file.clone()))
+            .collect();
+        let graph = workflow(model, &names, "fox", 1, &[]).unwrap();
+        assert_eq!(
+            shaped(graph.clone(), model.kind, Aspect::Square).unwrap(),
+            graph
+        );
+        let wide = shaped(graph.clone(), model.kind, Aspect::Landscape);
+        if model.kind != GenerationKind::Image {
+            assert!(wide.is_err(), "{}", model.id);
+            continue;
+        }
+        let wide = wide.unwrap();
+        let mut sized = 0;
+        for (key, node) in wide.as_object().unwrap() {
+            let inputs = &node["inputs"];
+            if let Some(width) = inputs["width"].as_u64() {
+                let before = &graph[key]["inputs"];
+                let (w, h) = (
+                    before["width"].as_u64().unwrap(),
+                    before["height"].as_u64().unwrap(),
+                );
+                assert_eq!(
+                    (width, inputs["height"].as_u64().unwrap()),
+                    Aspect::Landscape.dimensions(w, h),
+                    "{} {key}",
+                    model.id
+                );
+                assert!(width > inputs["height"].as_u64().unwrap());
+                sized += 1;
+            }
+        }
+        assert!(sized >= 1, "{}", model.id);
+        ensure_local_only(&wide).unwrap();
+    }
+    assert!(
+        shaped(
+            json!({"1": {"class_type": "SaveImage", "inputs": {}}}),
+            GenerationKind::Image,
+            Aspect::Portrait
+        )
+        .is_err()
+    );
 }

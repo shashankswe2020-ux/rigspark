@@ -10,7 +10,7 @@ use axum::{
 };
 use rigspark_core::generation::{GenerationCatalog, fit};
 use rigspark_runtime::generation::{
-    DEFAULT_PORT, Events, NativeOptions, default_comfyui_dir, output_extension, prepare,
+    Aspect, DEFAULT_PORT, Events, NativeOptions, default_comfyui_dir, output_extension, prepare,
 };
 use serde::Deserialize;
 use serde_json::{Value, json};
@@ -32,6 +32,8 @@ struct Job {
     id: String,
     model: String,
     kind: &'static str,
+    seed: u64,
+    aspect: &'static str,
     status: &'static str,
     events: VecDeque<String>,
     result: Option<Value>,
@@ -45,6 +47,8 @@ impl Job {
             "id": self.id,
             "model": self.model,
             "kind": self.kind,
+            "seed": self.seed,
+            "aspect": self.aspect,
             "status": self.status,
             "events": self.events,
             "result": self.result,
@@ -60,6 +64,8 @@ struct JobRequest {
     model: String,
     prompt: String,
     seed: Option<u64>,
+    /// `square` (default), `landscape` or `portrait`; images only.
+    aspect: Option<String>,
     comfyui_dir: String,
     port: Option<u16>,
     #[serde(default)]
@@ -138,10 +144,15 @@ async fn models() -> ApiResult {
 async fn start(host: Arc<Host>, request: Request) -> ApiResult {
     authorized(&host, &request)?;
     let input: JobRequest = body(request, crate::MAX_REQUEST_BYTES).await?;
+    let aspect = match input.aspect.as_deref() {
+        None => Aspect::Square,
+        Some(value) => Aspect::parse(value).ok_or_else(bad)?,
+    };
     let options = NativeOptions {
         model: input.model,
         prompt: input.prompt,
         seed: input.seed,
+        aspect,
         comfyui_dir: PathBuf::from(input.comfyui_dir.trim()),
         port: input.port.unwrap_or(DEFAULT_PORT),
         bypass: input.bypass,
@@ -170,6 +181,8 @@ async fn start(host: Arc<Host>, request: Request) -> ApiResult {
             id: id.clone(),
             model: model.id.clone(),
             kind: model.kind.name(),
+            seed,
+            aspect: aspect.name(),
             status: "running",
             events: VecDeque::from([format!("Starting {} with seed {seed}", model.id)]),
             result: None,

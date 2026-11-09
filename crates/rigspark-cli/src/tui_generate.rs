@@ -222,6 +222,7 @@ impl GenerateView {
             model: row.id.clone(),
             prompt: self.prompt.clone(),
             seed,
+            aspect: Default::default(),
             comfyui_dir: PathBuf::from(self.directory.trim()),
             port: self.port,
             bypass: self.bypass,

@@ -275,6 +275,21 @@ rigspark generate ming-image:ming_image_0.1_design_int8_convrot \
   <img src="assets/brand/screens/ming-design-gui.png" alt="A real Ming Design plant-care app mockup generated inline in RigSpark chat using local ComfyUI" width="720">
 </p>
 
+In the GUI, switch the composer to **Image** and pick what you are making:
+
+- **Thumbnail** (16:9) or **Wallpaper** (9:16): up to four variations on new
+  seeds, then **Add text** to put the words on in a real font (Inter Black or
+  Anton) with an outline, safe zones and a feed check at the sizes YouTube
+  shows. Export a PNG at 1280×720 (or 1179×2556), or three at once for
+  YouTube's Test & Compare. Add a transparent PNG of yourself as a layer.
+- **Vision board**: one line per goal, one shared look, then a grid, collage,
+  phone wallpaper or A4 print layout, exported as a PNG. Any tile can use your
+  own photo instead.
+
+Pictures are made one at a time; the time per picture is measured on your
+machine after the first one. From the CLI, pass `--aspect landscape` or
+`--aspect portrait` to `rigspark generate image`.
+
 [Image and video generation specification →](docs/specs/image-video-generation.md)
 
 ### 7. Talk to it: spoken replies and dictation

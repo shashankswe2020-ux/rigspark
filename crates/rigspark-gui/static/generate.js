@@ -24,7 +24,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
   const placeholders = {
     text: "Message the local model…",
-    image: "Describe an image to generate…",
+    image: "Describe the picture. Add words later as a text layer…",
     video: "Describe a video to generate…",
     voice: "Describe what to say, or paste the exact text to read…",
   };
@@ -349,9 +349,20 @@ document.addEventListener("DOMContentLoaded", () => {
     await pollJob(context);
   }
 
+  // image-studio.js runs image chats with presets, variations and layers.
+  globalThis.RigSparkGeneration = {
+    selectedModel,
+    comfyui: () => ({ dir: comfyuiDir, port: comfyuiPort }),
+    chatRow,
+    setBusy,
+    showError,
+    announce,
+    token,
+  };
+
   chatForm.addEventListener("submit", async (event) => {
-    // Text goes to chat.js and voice to voice.js.
-    if (chatMode === "text" || chatMode === "voice") return;
+    // Text goes to chat.js, voice to voice.js and images to image-studio.js.
+    if (chatMode === "text" || chatMode === "voice" || chatMode === "image") return;
     event.preventDefault();
     event.stopImmediatePropagation();
     showError("");

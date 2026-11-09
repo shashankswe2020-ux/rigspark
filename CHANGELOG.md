@@ -4,6 +4,17 @@
 
 ### Features
 
+- **Image chat for thumbnails, wallpapers and vision boards.** The composer's
+  Image mode picks what you are making (thumbnail 16:9, wallpaper 9:16,
+  square or vision board) and how many variations, each on its own seed. A
+  text editor draws words in a real font over the picture with an outline,
+  contrast reading, safe zones and a YouTube feed check, and exports
+  1280×720 PNGs, three at a time for Test & Compare. The vision board makes
+  one tile per goal in a shared look and lays them out as a grid, collage,
+  phone wallpaper or A4 print. Generation jobs and `rigspark generate` take
+  an aspect (`square`, `landscape`, `portrait`) and report their seed; time
+  per picture is measured, never estimated. Inter Black and Anton (OFL) are
+  bundled for text layers.
 - **Voice in the workspace (Community Edition).** Models gains a **Voice**
   tab: a curated catalog of speak models (kokoro-82m, chatterbox via
   mlx-audio on Apple Silicon) and listen models (Whisper large-v3-turbo q8_0,
