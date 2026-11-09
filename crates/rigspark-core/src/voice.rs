@@ -421,7 +421,8 @@ mod tests {
     #[test]
     fn invalid_entries_are_refused() {
         let base = catalog();
-        let broken: Vec<(&str, Box<dyn Fn(&mut serde_json::Value)>)> = vec![
+        type Change = Box<dyn Fn(&mut serde_json::Value)>;
+        let broken: Vec<(&str, Change)> = vec![
             (
                 "license",
                 Box::new(|c| c["models"][0]["license"] = "proprietary".into()),

@@ -540,7 +540,7 @@ document.addEventListener("DOMContentLoaded", () => {
       meta.textContent = `${runtimeStateLabel(runtime)}${endpoint}`;
       info.appendChild(title);
       info.appendChild(meta);
-      if (runtime.detail) {
+      if (runtime.detail && runtime.detail.replace(/\.$/, "") !== runtimeStateLabel(runtime)) {
         const detail = document.createElement("div");
         detail.className = "runtime-detail";
         detail.textContent = runtime.detail;
@@ -1089,10 +1089,15 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       const wasStopping = run.stopping;
       activeRun = null;
+      globalThis.dispatchEvent(new CustomEvent("rigspark:run-ended", { detail: { terminal } }));
       if (terminal === "done") {
         renderRunMetrics();
         renderComposer("completed");
         announce("Response ready.");
+        // Lets voice.js speak the finished reply.
+        globalThis.dispatchEvent(new CustomEvent("rigspark:assistant-final", {
+          detail: { body: assistantBody, text: reply },
+        }));
         return;
       }
       if (terminal === "disclosure") {

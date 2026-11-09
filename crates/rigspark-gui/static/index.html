@@ -232,9 +232,36 @@
                   <button type="button" class="chat-mode-option" role="radio" aria-checked="true" data-mode="text">Text</button>
                   <button type="button" class="chat-mode-option" role="radio" aria-checked="false" tabindex="-1" data-mode="image">Image</button>
                   <button type="button" class="chat-mode-option" role="radio" aria-checked="false" tabindex="-1" data-mode="video">Video</button>
+                  <button type="button" class="chat-mode-option" role="radio" aria-checked="false" tabindex="-1" data-mode="voice">Voice</button>
+                </div>
+                <div id="voice-compose" class="voice-compose" hidden>
+                  <div id="voice-source" class="seg seg-sm" role="radiogroup" aria-label="What to speak">
+                    <button type="button" role="radio" aria-checked="true" data-voice-source="script">Write a script</button>
+                    <button type="button" role="radio" aria-checked="false" tabindex="-1" data-voice-source="exact">Read exactly</button>
+                  </div>
+                  <label class="voice-picker">
+                    <span class="sr-only">Voice</span>
+                    <select id="voice-select" aria-label="Voice"></select>
+                  </label>
+                  <label class="voice-speed">
+                    <span class="sr-only">Speed</span>
+                    <select id="voice-speed" aria-label="Speech speed">
+                      <option value="0.8">0.8×</option>
+                      <option value="1" selected>1.0×</option>
+                      <option value="1.2">1.2×</option>
+                      <option value="1.5">1.5×</option>
+                    </select>
+                  </label>
                 </div>
                 <span id="chat-mode-note" class="chat-mode-note" hidden></span>
                 <span class="composer-spacer"></span>
+                <label id="speak-replies-label" class="speak-replies" hidden>
+                  <input id="speak-replies" class="switch switch-sm" type="checkbox" role="switch" />
+                  <span>Speak replies</span>
+                </label>
+                <button id="dictate" class="icon-btn dictate-btn" type="button" aria-pressed="false" aria-label="Dictate a message" title="Dictate (needs a listen model)" hidden>
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" /></svg>
+                </button>
                 <button id="agent-chip" class="agent-chip" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="model-pop" title="Choose an agent">
                   <svg class="icon icon-sm" viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="7.5" width="15" height="12" rx="3" /><path d="M12 7.5V4M9.5 13v1M14.5 13v1" /></svg>
                   <span id="agent-chip-name">No agent</span>
@@ -259,6 +286,7 @@
                     <button type="button" role="tab" aria-selected="true" data-model-kind="text">Text</button>
                     <button type="button" role="tab" aria-selected="false" tabindex="-1" data-model-kind="image">Image</button>
                     <button type="button" role="tab" aria-selected="false" tabindex="-1" data-model-kind="video">Video</button>
+                    <button type="button" role="tab" aria-selected="false" tabindex="-1" data-model-kind="voice">Voice</button>
                   </div>
                   <button id="hf-add-open" class="accent-btn hf-add-open" type="button" aria-haspopup="dialog" aria-controls="hf-sheet" title="Search Hugging Face and add a GGUF model to your catalog">
                     <svg class="icon icon-sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
@@ -321,6 +349,30 @@
                 <div id="generation-models" class="card-grid" role="radiogroup" aria-labelledby="generation-model-heading">
                   <div class="empty">Loading generation models…</div>
                 </div>
+              </div>
+
+              <div id="voice-model-panel" class="model-catalog-panel" hidden>
+                <div id="voice-running-banner" class="banner running-banner voice-banner" hidden></div>
+                <div class="model-toolbar">
+                  <label class="search-field">
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.75" /><path d="m15.5 15.5 5 5" /></svg>
+                    <input id="voice-search" type="search" placeholder="Search voice models" aria-label="Search voice models" autocomplete="off" spellcheck="false" />
+                  </label>
+                  <div id="voice-kind-filter" class="seg" role="group" aria-label="Filter by voice kind">
+                    <button type="button" aria-pressed="true" data-voice-filter="all">All</button>
+                    <button type="button" aria-pressed="false" data-voice-filter="speak">Speak (TTS)</button>
+                    <button type="button" aria-pressed="false" data-voice-filter="listen">Listen (STT)</button>
+                  </div>
+                  <button id="refresh-voice" class="icon-btn" type="button" aria-label="Refresh voice models" title="Refresh voice models">
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.35-5.65" /><path d="M20 3.5V7h-3.5" /></svg>
+                  </button>
+                </div>
+                <div id="voice-error" class="banner banner-error" role="alert" hidden></div>
+                <div id="voice-models" class="model-list voice-list" aria-live="polite">
+                  <div class="empty">Loading voice models…</div>
+                </div>
+                <p id="voice-filter-empty" class="model-filter-empty" hidden>No voice models match.</p>
+                <p class="section-note">Fit covers weight memory only; voice speed is unknown until measured. whisper.cpp weights are SHA-256 pinned and verified; mlx-audio downloads its own weights.</p>
               </div>
 
               <article id="model-detail" class="model-detail" aria-labelledby="model-detail-title" hidden>
@@ -533,19 +585,21 @@
 
               <div id="runtime-error" class="banner banner-error" hidden></div>
 
-              <article class="hero-card">
-                <img src="/static/brand/3d/sparky-yes-3d.webp" alt="" />
-                <div>
-                  <span class="hero-eyebrow">Your machine, scored offline</span>
-                  <p class="hero-title">Advice is deterministic and never leaves this device.</p>
-                  <p class="hero-sub">Models are ranked against the hardware below. Run <code>rigspark doctor</code> for a full readiness report.</p>
+              <h3 class="group-title" id="memory-title">Memory on this machine</h3>
+              <section class="group memory-card" aria-labelledby="memory-title">
+                <div class="memory-body">
+                  <div class="memory-head">
+                    <span id="memory-total" class="memory-total">Measuring memory…</span>
+                    <span id="memory-pressure" class="memory-pressure"></span>
+                  </div>
+                  <div id="memory-bar" class="memory-bar" role="img" aria-label="Memory use"></div>
+                  <ul id="memory-legend" class="memory-legend"></ul>
+                  <p class="memory-note">Voice models count toward the same fit check as text models. Advice is computed offline and never leaves this device; run <code>rigspark doctor</code> for a full readiness report.</p>
                 </div>
-              </article>
-
-              <h3 class="group-title">This machine</h3>
-              <ul id="hardware-card" class="stat-list group">
-                <li class="stat-row"><span class="stat-label">Detecting hardware…</span></li>
-              </ul>
+                <ul id="hardware-card" class="stat-list">
+                  <li class="stat-row"><span class="stat-label">Detecting hardware…</span></li>
+                </ul>
+              </section>
 
               <h3 class="group-title">Inference runtimes</h3>
               <div id="runtime-toggles" class="runtime-list group" aria-live="polite">
@@ -554,6 +608,32 @@
               <p class="group-foot">
                 Daemon runtimes start a local server when switched on. Per-model runtimes launch when you start a model from Models.
               </p>
+
+              <h3 class="group-title">Voice engines</h3>
+              <div id="voice-engines" class="runtime-list group" aria-live="polite">
+                <div class="empty">Loading voice engines…</div>
+              </div>
+              <p class="group-foot">Voice servers bind to 127.0.0.1 and stop when RigSpark quits. Start a voice model from Models › Voice.</p>
+
+              <h3 class="group-title">Voice settings</h3>
+              <div class="group voice-settings">
+                <label class="model-toggle"><span>Speak replies by default</span><input id="voice-default-speak" class="switch" type="checkbox" role="switch" /></label>
+                <label class="model-toggle"><span>Microphone</span><select id="voice-microphone" class="voice-device"><option value="">System default</option></select></label>
+                <label id="voice-output-row" class="model-toggle" hidden><span>Audio output</span><select id="voice-output" class="voice-device"><option value="">System default</option></select></label>
+                <details class="voice-attach">
+                  <summary>Attach a speech server you already run</summary>
+                  <form id="voice-attach-form" class="voice-attach-form">
+                    <p class="group-foot">Any loopback server with OpenAI's <code>/v1/audio/speech</code> or <code>/v1/audio/transcriptions</code>, such as Kokoro-FastAPI, LocalAI or mlx-audio.</p>
+                    <label class="field"><span>Use for</span>
+                      <select id="voice-attach-kind"><option value="speak">Speak (text to speech)</option><option value="listen">Listen (speech to text)</option></select>
+                    </label>
+                    <label class="field"><span>Endpoint</span><input id="voice-attach-endpoint" type="url" placeholder="http://127.0.0.1:8880" autocomplete="off" spellcheck="false" required /></label>
+                    <label class="field"><span>Model</span><input id="voice-attach-model" type="text" placeholder="kokoro" autocomplete="off" spellcheck="false" required /></label>
+                    <button class="chip-btn" type="submit">Attach</button>
+                    <p id="voice-attach-status" class="group-foot" role="status"></p>
+                  </form>
+                </details>
+              </div>
 
               <h3 class="group-title">Coding agents</h3>
               <div class="group connect-group">
@@ -887,6 +967,7 @@
     <script src="/static/chat.js"></script>
     <script src="/static/telemetry.js"></script>
     <script src="/static/generate.js"></script>
+    <script src="/static/voice.js"></script>
     <script src="/static/desktop.js"></script>
     <script src="/static/hf-add.js"></script>
   </body>

@@ -16,6 +16,7 @@ mod routes;
 mod runtime;
 mod telemetry;
 mod update;
+mod voice;
 use rigspark_runtime::{
     context::DisclosureStore,
     library::Library,
@@ -62,6 +63,8 @@ pub struct Host {
     pub runtimes: Mutex<runtime::RuntimeController>,
     pub generation: generation::Jobs,
     pub generator: Arc<dyn rigspark_runtime::generation::Generator>,
+    /// Local speak and listen servers (text to speech, speech to text).
+    pub voice: Arc<rigspark_runtime::voice::VoiceService>,
     /// Hugging Face access for Add from Hugging Face; native unless a test injects one.
     hugging_face:
         std::sync::Mutex<Option<Arc<dyn rigspark_runtime::admission::AdmissionTransport>>>,
@@ -142,6 +145,7 @@ impl Host {
             runtimes: Mutex::new(Default::default()),
             generation: Default::default(),
             generator,
+            voice: Arc::new(rigspark_runtime::voice::VoiceService::new(&config.home)?),
             hugging_face: std::sync::Mutex::new(None),
             approvals: approval::Approvals::default(),
             grants: Mutex::new(Default::default()),
@@ -266,9 +270,9 @@ async fn index(State(host): State<Arc<Host>>) -> Response {
         ),
     );
     let mut response = ([(header::CONTENT_TYPE, "text/html; charset=utf-8")], html).into_response();
-    response.headers_mut().insert("content-security-policy", "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-src 'self'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'".parse().unwrap());
+    response.headers_mut().insert("content-security-policy", "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' blob:; connect-src 'self'; frame-src 'self'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'".parse().unwrap());
     if host.desktop.load(std::sync::atomic::Ordering::Relaxed) {
-        response.headers_mut().insert("content-security-policy", "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost; frame-src 'self'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'".parse().unwrap());
+        response.headers_mut().insert("content-security-policy", "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' blob:; connect-src 'self' ipc: http://ipc.localhost; frame-src 'self'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'".parse().unwrap());
     }
     response
         .headers_mut()
@@ -353,6 +357,7 @@ pub async fn serve(listener: tokio::net::TcpListener, host: Arc<Host>) -> std::i
     host.cancel_chat();
     let _ = host.connectors.lock().await.shutdown().await;
     host.approvals.clear();
+    host.voice.shutdown();
     host.tasks.close();
     host.tasks.wait().await;
     if let Ok(config) = rigspark_runtime::state::Config::from_home(&host.home) {

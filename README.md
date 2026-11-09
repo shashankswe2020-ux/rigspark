@@ -277,6 +277,26 @@ rigspark generate ming-image:ming_image_0.1_design_int8_convrot \
 
 [Image and video generation specification →](docs/specs/image-video-generation.md)
 
+### 7. Talk to it: spoken replies and dictation
+
+In `rigspark gui`, open **Models → Voice** and start a voice model:
+
+- **Speak** (text to speech): `kokoro-82m` or `chatterbox` through
+  [mlx-audio](https://github.com/Blaizzy/mlx-audio) on Apple Silicon
+  (`pip install -U mlx-audio`).
+- **Listen** (speech to text): Whisper large-v3-turbo, small or base.en through
+  whisper.cpp's `whisper-server` (`brew install whisper-cpp`, or set
+  `RIGSPARK_WHISPER_SERVER`). RigSpark downloads the pinned ggml file and
+  verifies its SHA-256 before loading it.
+
+Then turn on **Speak replies** in the composer, press the microphone to
+dictate, or switch the composer to **Voice** to have a script written and
+read aloud, or to read your exact text. Audio plays inline and downloads as
+WAV. On Linux or Windows, attach any loopback server with OpenAI's
+`/v1/audio/speech` or `/v1/audio/transcriptions` (Kokoro-FastAPI, LocalAI)
+under **Runtime → Voice settings**. Voice servers bind to `127.0.0.1`, fit
+covers weight memory only, and voice speed stays `unknown` until measured.
+
 ---
 
 ## Why the answers are trustworthy
