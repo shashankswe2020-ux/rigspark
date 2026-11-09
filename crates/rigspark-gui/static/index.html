@@ -643,6 +643,7 @@
                 <li>Conversation memory and session history stored locally</li>
                 <li>Safe local file access</li>
               </ul>
+              <button id="legal-open" class="chip-btn" type="button">Terms and licences</button>
             </div>
           </section>
         </div>
@@ -981,6 +982,23 @@
     </div>
 
     <link rel="stylesheet" href="/vendor/katex/katex.min.css">
+    <dialog id="legal-notice" class="legal-notice" aria-labelledby="legal-notice-title" aria-describedby="legal-notice-lead">
+      <h2 id="legal-notice-title">Before you start</h2>
+      <p id="legal-notice-lead" class="legal-lead">Please read these terms. They apply every time you use RigSpark.</p>
+      <ol class="legal-terms">
+        <li><strong>RigSpark is open-source software under the MIT licence.</strong> You may use, copy, modify, merge, publish, distribute, sublicense and sell copies, provided the copyright notice and the licence text are kept with them. <a href="https://github.com/shashankswe2020-ux/rigspark/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">Read the full licence</a>.</li>
+        <li><strong>It is provided “as is”, without warranty of any kind</strong>, express or implied, including merchantability, fitness for a particular purpose and non-infringement. <strong>The authors and copyright holders are not liable for any claim, damages or other liability</strong> arising from the software or its use.</li>
+        <li><strong>Every model carries its own licence, and you are responsible for complying with it.</strong> Models shows each licence before you download. Some licences limit commercial use, the number of users, or how outputs may be used.</li>
+        <li><strong>You are responsible for what you generate and how you use it</strong>, including text, images, video and speech. That covers other people’s likeness and voice, copyrighted or trademarked material, and the laws where you live and publish. Model output can be wrong; check it before you rely on it.</li>
+        <li><strong>The MIT licence covers the code, not the RigSpark name or logo.</strong> If you share a modified build, give it a different name and do not present it as an official RigSpark release.</li>
+        <li><strong>Your chats, files and generated media stay on this device.</strong> RigSpark listens only on 127.0.0.1 and sends no usage data. It goes online only to download models and catalog updates, to check for app updates, and to reach the connectors you add. Data you send to a connector is governed by that service’s terms.</li>
+      </ol>
+      <p class="legal-foot">This notice summarises the licence and is not legal advice. If anything here differs from the licence text, the licence text prevails. Reopen it any time from Runtime › Terms and licences.</p>
+      <div class="legal-actions">
+        <button type="button" id="legal-accept" class="accent-btn">I understand</button>
+      </div>
+    </dialog>
+
     <script src="/vendor/katex/katex.min.js"></script>
     <script src="/vendor/katex/contrib/auto-render.min.js"></script>
     <script src="/vendor/marked.min.js"></script>
@@ -994,6 +1012,7 @@
     <script src="/static/generate.js"></script>
     <script src="/static/voice.js"></script>
     <script src="/static/image-studio.js"></script>
+    <script src="/static/legal.js"></script>
     <script src="/static/desktop.js"></script>
     <script src="/static/hf-add.js"></script>
   </body>

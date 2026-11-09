@@ -479,3 +479,24 @@ fn the_page_offers_image_presets_variations_and_hand_off() {
     }
     assert!(generate.contains("globalThis.RigSparkGeneration"));
 }
+
+#[test]
+fn the_first_run_notice_states_the_licence_and_responsibilities() {
+    let index = include_str!("../static/index.html");
+    let legal = include_str!("../static/legal.js");
+    for marker in [
+        "id=\"legal-notice\"",
+        "under the MIT licence.</strong>",
+        "without warranty of any kind</strong>",
+        "you are responsible for complying with it.</strong>",
+        "You are responsible for what you generate",
+        "not the RigSpark name or logo.</strong>",
+        "stay on this device.</strong>",
+        "id=\"legal-open\"",
+        "/static/legal.js",
+    ] {
+        assert!(index.contains(marker), "{marker}");
+    }
+    assert!(legal.contains("showModal"));
+    assert!(legal.contains("localStorage"));
+}
