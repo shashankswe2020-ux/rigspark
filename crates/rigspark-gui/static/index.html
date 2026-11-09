@@ -221,58 +221,21 @@
                 ></textarea>
               </div>
               <div class="composer-actions">
-                <button id="composer-plus" class="icon-btn" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="composer-menu" aria-label="Add context, a skill or a system prompt" title="Add context, a skill or a system prompt">
+                <button id="composer-plus" class="icon-btn" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="composer-menu" aria-label="Reply as, context, skills and system prompt" title="Reply as, context, skills and system prompt">
                   <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
                 </button>
                 <button type="button" id="context-add" class="context-add icon-btn" aria-expanded="false" aria-controls="context-picker" title="Add context" hidden>
                   <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5 12.5 20a5 5 0 0 1-7-7L14 4.5a3.3 3.3 0 0 1 4.7 4.7L10.2 17.7a1.7 1.7 0 0 1-2.4-2.4L15.5 7.6" /></svg>
                   <span class="sr-only">Add context</span>
                 </button>
-                <div id="chat-mode" class="chat-mode seg" role="radiogroup" aria-label="Reply as">
-                  <button type="button" class="chat-mode-option" role="radio" aria-checked="true" data-mode="text">Text</button>
-                  <button type="button" class="chat-mode-option" role="radio" aria-checked="false" tabindex="-1" data-mode="image">Image</button>
-                  <button type="button" class="chat-mode-option" role="radio" aria-checked="false" tabindex="-1" data-mode="video">Video</button>
-                  <button type="button" class="chat-mode-option" role="radio" aria-checked="false" tabindex="-1" data-mode="voice">Voice</button>
-                </div>
-                <div id="voice-compose" class="voice-compose" hidden>
-                  <div id="voice-source" class="seg seg-sm" role="radiogroup" aria-label="What to speak">
-                    <button type="button" role="radio" aria-checked="true" data-voice-source="script">Write a script</button>
-                    <button type="button" role="radio" aria-checked="false" tabindex="-1" data-voice-source="exact">Read exactly</button>
-                  </div>
-                  <label class="voice-picker">
-                    <span class="sr-only">Voice</span>
-                    <select id="voice-select" aria-label="Voice"></select>
-                  </label>
-                  <label class="voice-speed">
-                    <span class="sr-only">Speed</span>
-                    <select id="voice-speed" aria-label="Speech speed">
-                      <option value="0.8">0.8×</option>
-                      <option value="1" selected>1.0×</option>
-                      <option value="1.2">1.2×</option>
-                      <option value="1.5">1.5×</option>
-                    </select>
-                  </label>
-                </div>
-                <div id="image-compose" class="image-compose" hidden>
-                  <div id="image-preset" class="seg seg-sm" role="radiogroup" aria-label="What you are making">
-                    <button type="button" role="radio" aria-checked="true" data-preset="thumbnail">Thumbnail <span class="seg-hint">16:9</span></button>
-                    <button type="button" role="radio" aria-checked="false" tabindex="-1" data-preset="wallpaper">Wallpaper <span class="seg-hint">9:16</span></button>
-                    <button type="button" role="radio" aria-checked="false" tabindex="-1" data-preset="square">Square</button>
-                  </div>
-                  <div id="image-count" class="seg seg-sm" role="radiogroup" aria-label="Variations">
-                    <button type="button" role="radio" aria-checked="false" tabindex="-1" data-count="1">1</button>
-                    <button type="button" role="radio" aria-checked="false" tabindex="-1" data-count="2">2</button>
-                    <button type="button" role="radio" aria-checked="true" data-count="4">4</button>
-                  </div>
-                  <button id="image-seed" class="chip-btn" type="button" aria-pressed="true" hidden></button>
-                  <span id="image-estimate" class="chat-mode-note"></span>
-                </div>
-                <span id="chat-mode-note" class="chat-mode-note" hidden></span>
+                <span id="mode-chip-wrap" class="mode-chip-wrap" hidden>
+                  <button id="mode-chip" class="mode-chip" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="composer-menu"></button>
+                  <button id="mode-clear" class="mode-clear" type="button" aria-label="Back to text replies" title="Back to text replies">
+                    <svg class="icon icon-sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17" /></svg>
+                  </button>
+                </span>
+                <button id="image-seed" class="chip-btn" type="button" aria-pressed="true" hidden></button>
                 <span class="composer-spacer"></span>
-                <label id="speak-replies-label" class="speak-replies" hidden>
-                  <input id="speak-replies" class="switch switch-sm" type="checkbox" role="switch" />
-                  <span>Speak replies</span>
-                </label>
                 <button id="dictate" class="icon-btn dictate-btn" type="button" aria-pressed="false" aria-label="Dictate a message" title="Dictate (needs a listen model)" hidden>
                   <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" /></svg>
                 </button>
@@ -794,7 +757,55 @@
       </button>
     </div>
 
-    <div id="composer-menu" class="pop menu-pop" role="menu" aria-label="Add to message" hidden>
+    <div id="composer-menu" class="pop menu-pop composer-options" role="dialog" aria-label="Composer options" hidden>
+      <div class="menu-section">
+        <span class="menu-label">Reply as</span>
+        <div id="chat-mode" class="chat-mode seg seg-sm" role="radiogroup" aria-label="Reply as">
+          <button type="button" class="chat-mode-option" role="radio" aria-checked="true" data-mode="text">Text</button>
+          <button type="button" class="chat-mode-option" role="radio" aria-checked="false" tabindex="-1" data-mode="image">Image</button>
+          <button type="button" class="chat-mode-option" role="radio" aria-checked="false" tabindex="-1" data-mode="video">Video</button>
+          <button type="button" class="chat-mode-option" role="radio" aria-checked="false" tabindex="-1" data-mode="voice">Voice</button>
+        </div>
+        <span id="chat-mode-note" class="menu-note chat-mode-note" hidden></span>
+      </div>
+      <div id="image-compose" class="menu-section image-compose" hidden>
+        <span class="menu-label">Shape</span>
+        <div id="image-preset" class="seg seg-sm" role="radiogroup" aria-label="Shape">
+          <button type="button" role="radio" aria-checked="true" data-preset="thumbnail">Thumbnail <span class="seg-hint">16:9</span></button>
+          <button type="button" role="radio" aria-checked="false" tabindex="-1" data-preset="wallpaper">Wallpaper <span class="seg-hint">9:16</span></button>
+          <button type="button" role="radio" aria-checked="false" tabindex="-1" data-preset="square">Square</button>
+        </div>
+        <span class="menu-label">Versions</span>
+        <div id="image-count" class="seg seg-sm" role="radiogroup" aria-label="Versions">
+          <button type="button" role="radio" aria-checked="false" tabindex="-1" data-count="1">1</button>
+          <button type="button" role="radio" aria-checked="false" tabindex="-1" data-count="2">2</button>
+          <button type="button" role="radio" aria-checked="true" data-count="4">4</button>
+        </div>
+        <span id="image-estimate" class="menu-note"></span>
+      </div>
+      <div id="voice-compose" class="menu-section voice-compose" hidden>
+        <span class="menu-label">What to speak</span>
+        <div id="voice-source" class="seg seg-sm" role="radiogroup" aria-label="What to speak">
+          <button type="button" role="radio" aria-checked="true" data-voice-source="script">Write a script</button>
+          <button type="button" role="radio" aria-checked="false" tabindex="-1" data-voice-source="exact">Read exactly</button>
+        </div>
+        <div class="menu-row">
+          <label class="voice-picker"><span class="menu-label">Voice</span><select id="voice-select" aria-label="Voice"></select></label>
+          <label class="voice-speed"><span class="menu-label">Speed</span>
+            <select id="voice-speed" aria-label="Speech speed">
+              <option value="0.8">0.8×</option>
+              <option value="1" selected>1.0×</option>
+              <option value="1.2">1.2×</option>
+              <option value="1.5">1.5×</option>
+            </select>
+          </label>
+        </div>
+      </div>
+      <label id="speak-replies-label" class="speak-replies menu-section" hidden>
+        <input id="speak-replies" class="switch switch-sm" type="checkbox" role="switch" />
+        <span>Speak replies</span>
+      </label>
+      <div class="menu-divider" role="separator"></div>
       <button type="button" class="pop-item" role="menuitem" data-composer-action="context">
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5 12.5 20a5 5 0 0 1-7-7L14 4.5a3.3 3.3 0 0 1 4.7 4.7L10.2 17.7a1.7 1.7 0 0 1-2.4-2.4L15.5 7.6" /></svg>
         <span>Add context<small id="composer-context-note">Attach files, git state or pasted output</small></span>

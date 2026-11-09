@@ -96,8 +96,9 @@ document.addEventListener("DOMContentLoaded", () => {
   function refresh() {
     radios(presetGroup, "data-preset", preset);
     radios(countGroup, "data-count", count);
-    seedChip.hidden = keptSeed === null;
-    seedChip.textContent = keptSeed === null ? "" : `Keeping seed ${keptSeed} · change the words to steer it ×`;
+    seedChip.hidden = keptSeed === null || mode !== "image";
+    seedChip.textContent = keptSeed === null ? "" : `Same seed · ${keptSeed} ×`;
+    seedChip.title = "Change the words to steer this picture. Click to use new seeds again.";
     seedChip.setAttribute("aria-label", keptSeed === null ? "" : `Keeping seed ${keptSeed}. Click to stop keeping it`);
     if (!run && send && mode === "image") {
       send.textContent = `Generate ${variations() > 1 ? variations() : ""}`.trim();
@@ -331,81 +332,95 @@ document.addEventListener("DOMContentLoaded", () => {
     prompt.dispatchEvent(new Event("input", { bubbles: true }));
   }
 
+  // A small menu under a result: one open at a time, Escape or a pick closes it.
+  function openMenu(actions, anchor, entries) {
+    const open = actions.querySelector(".handoff-menu");
+    open?.remove();
+    for (const other of actions.querySelectorAll("[aria-expanded=true]")) other.setAttribute("aria-expanded", "false");
+    if (open?.dataset.for === anchor.dataset.menu) return;
+    const menu = document.createElement("div");
+    menu.className = "handoff-menu";
+    menu.dataset.for = anchor.dataset.menu;
+    menu.setAttribute("role", "menu");
+    const close = () => {
+      menu.remove();
+      anchor.setAttribute("aria-expanded", "false");
+    };
+    for (const [label, action] of entries) {
+      const item = button(label, "");
+      item.setAttribute("role", "menuitem");
+      item.addEventListener("click", () => {
+        close();
+        action();
+      });
+      menu.appendChild(item);
+    }
+    menu.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        close();
+        anchor.focus();
+      }
+    });
+    actions.appendChild(menu);
+    anchor.setAttribute("aria-expanded", "true");
+    menu.querySelector("button")?.focus();
+  }
+
   function renderActions(card, actions) {
     actions.hidden = false;
     actions.textContent = "";
-    const keep = button("");
-    const again = button(card.results.length > 1 ? `${card.results.length} new seeds` : "New seed");
     const download = document.createElement("a");
     download.className = "ghost-btn";
-    const copy = button("Copy image");
+    download.textContent = "Download";
+    const copy = button("Copy");
     const handoff = button("Send to app…");
-    handoff.setAttribute("aria-haspopup", "menu");
-    handoff.setAttribute("aria-expanded", "false");
+    const more = button("More…");
+    for (const [element, name] of [[handoff, "send"], [more, "more"]]) {
+      element.dataset.menu = name;
+      element.setAttribute("aria-haspopup", "menu");
+      element.setAttribute("aria-expanded", "false");
+    }
     const note = document.createElement("span");
     note.className = "variation-note";
     note.setAttribute("aria-live", "polite");
     const update = () => {
       const result = card.results[card.picked];
-      keep.textContent = `Keep seed of #${card.picked + 1}`;
       download.href = result.url;
       download.download = `rigspark-${card.choice.file}-${result.seed}.png`;
-      download.textContent = `Download #${card.picked + 1}`;
+      download.setAttribute("aria-label", `Download version ${card.picked + 1}`);
     };
     card.onPick = update;
     update();
-    keep.addEventListener("click", () => {
-      keptSeed = card.results[card.picked].seed;
-      pickPreset(card.preset);
-      prompt.value = card.text;
-      prompt.focus();
-      refresh();
-    });
-    again.addEventListener("click", () => {
-      if (run) return;
-      keptSeed = null;
-      pickPreset(card.preset);
-      count = card.results.length >= 4 ? 4 : card.results.length;
-      refresh();
-      generateInChat(card.text).catch((error) => gen().showError(error.message));
-    });
     copy.addEventListener("click", () => copyImage(card.results[card.picked], note));
     handoff.addEventListener("click", async () => {
-      actions.querySelector(".handoff-menu")?.remove();
-      if (handoff.getAttribute("aria-expanded") === "true") {
-        handoff.setAttribute("aria-expanded", "false");
-        return;
-      }
       const apps = await connectedApps();
       if (!apps.length) {
-        note.textContent = "No app is connected. Add one under Connectors (Canva, Figma, a file store), or use Copy or Download.";
+        note.textContent = "No app is connected. Add one under Connectors, or use Copy or Download.";
         return;
       }
-      const menu = document.createElement("div");
-      menu.className = "handoff-menu";
-      menu.setAttribute("role", "menu");
-      for (const app of apps) {
-        const item = button(app.name, "");
-        item.setAttribute("role", "menuitem");
-        item.addEventListener("click", () => {
-          menu.remove();
-          handoff.setAttribute("aria-expanded", "false");
-          handOff(app, card);
-        });
-        menu.appendChild(item);
-      }
-      menu.addEventListener("keydown", (event) => {
-        if (event.key === "Escape") {
-          menu.remove();
-          handoff.setAttribute("aria-expanded", "false");
-          handoff.focus();
-        }
-      });
-      actions.appendChild(menu);
-      handoff.setAttribute("aria-expanded", "true");
-      menu.querySelector("button")?.focus();
+      openMenu(actions, handoff, apps.map((app) => [app.name, () => handOff(app, card)]));
     });
-    actions.append(keep, again, download, copy, handoff, note);
+    more.addEventListener("click", () => {
+      const total = card.results.filter(Boolean).length;
+      openMenu(actions, more, [
+        [`Keep this seed, change the words`, () => {
+          keptSeed = card.results[card.picked].seed;
+          pickPreset(card.preset);
+          prompt.value = card.text;
+          prompt.focus();
+          refresh();
+        }],
+        [total > 1 ? `${total} new versions` : "New version", () => {
+          if (run) return;
+          keptSeed = null;
+          pickPreset(card.preset);
+          count = total >= 4 ? 4 : total;
+          refresh();
+          generateInChat(card.text).catch((error) => gen().showError(error.message));
+        }],
+      ]);
+    });
+    actions.append(download, copy, handoff, more, note);
   }
 
   form.addEventListener("submit", async (event) => {

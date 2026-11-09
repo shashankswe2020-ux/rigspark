@@ -5714,3 +5714,18 @@ input.switch.switch-sm:checked::after {
 .handoff-menu { position: absolute; left: 0; top: calc(100% + 4px); z-index: 5; min-width: 220px; display: flex; flex-direction: column; padding: 4px; border: 1px solid var(--line2); border-radius: var(--radius-sm); background: var(--surface); box-shadow: var(--shadow); }
 .handoff-menu > button { text-align: left; border: 0; background: transparent; color: var(--text); font: inherit; padding: 8px 10px; border-radius: 6px; cursor: pointer; }
 .handoff-menu > button:hover, .handoff-menu > button:focus-visible { background: var(--hover); }
+
+/* Composer: one chip for the reply mode; its controls live in the + menu. */
+.mode-chip-wrap { display: inline-flex; align-items: center; min-width: 0; max-width: 100%; border: 1px solid var(--line2); border-radius: 980px; background: var(--raised); }
+.mode-chip { min-width: 0; max-width: 32ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border: 0; background: transparent; color: var(--text); font: inherit; font-size: 0.8rem; padding: 4px 4px 4px 11px; cursor: pointer; border-radius: 980px; }
+.mode-clear { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border: 0; background: transparent; color: var(--text2); border-radius: 50%; cursor: pointer; }
+.mode-clear:hover, .mode-chip:hover { color: var(--text); }
+.composer-options { width: min(360px, calc(100vw - 24px)); overflow-y: auto; }
+.composer-options .menu-section { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 8px 10px; }
+.composer-options .menu-section[hidden] { display: none; }
+.composer-options .menu-label { font-size: 0.72rem; font-weight: 600; color: var(--text2); }
+.composer-options .menu-note { font-size: 0.74rem; color: var(--text2); }
+.composer-options .menu-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.composer-options .menu-row label { display: flex; flex-direction: column; gap: 4px; }
+.composer-options .speak-replies { flex-direction: row; align-items: center; }
+.menu-divider { height: 1px; margin: 4px 0; background: var(--line); }
