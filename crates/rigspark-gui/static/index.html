@@ -256,7 +256,6 @@
                 <div id="image-compose" class="image-compose" hidden>
                   <div id="image-preset" class="seg seg-sm" role="radiogroup" aria-label="What you are making">
                     <button type="button" role="radio" aria-checked="true" data-preset="thumbnail">Thumbnail <span class="seg-hint">16:9</span></button>
-                    <button type="button" role="radio" aria-checked="false" tabindex="-1" data-preset="board">Vision board</button>
                     <button type="button" role="radio" aria-checked="false" tabindex="-1" data-preset="wallpaper">Wallpaper <span class="seg-hint">9:16</span></button>
                     <button type="button" role="radio" aria-checked="false" tabindex="-1" data-preset="square">Square</button>
                   </div>
@@ -971,95 +970,6 @@
     </div>
 
     <link rel="stylesheet" href="/vendor/katex/katex.min.css">
-    <dialog id="thumb-editor" class="studio-dialog" aria-labelledby="thumb-editor-title">
-      <div class="studio-head">
-        <h2 id="thumb-editor-title">Add text</h2>
-        <span id="thumb-editor-meta" class="studio-meta mono"></span>
-        <span class="composer-spacer"></span>
-        <button type="button" id="thumb-export-three" class="ghost-btn" hidden>Export 3 for Test &amp; Compare</button>
-        <button type="button" id="thumb-export" class="accent-btn">Export PNG</button>
-        <button type="button" id="thumb-close" class="icon-btn" aria-label="Close">
-          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
-        </button>
-      </div>
-      <div class="studio-body">
-        <section class="studio-stage">
-          <canvas id="thumb-canvas" class="studio-canvas" role="img" aria-label="Picture with its text layer"></canvas>
-          <div id="thumb-feed" class="thumb-feed">
-            <div class="thumb-feed-head"><strong>Feed check</strong><span>The sizes people scroll past. If you can’t read it at the smallest, nobody can.</span></div>
-            <div class="thumb-feed-row">
-              <figure><canvas width="360" height="202" data-feed></canvas><figcaption>Home feed, desktop <span class="mono">360×202</span></figcaption></figure>
-              <figure><canvas width="246" height="138" data-feed></canvas><figcaption>Phone feed <span class="mono">246×138</span></figcaption></figure>
-              <figure><canvas width="168" height="94" data-feed></canvas><figcaption>Search and Up next <span class="mono">168×94</span></figcaption></figure>
-            </div>
-          </div>
-        </section>
-        <aside class="studio-side" aria-label="Layers">
-          <strong>Text layer</strong>
-          <label class="studio-field"><span>Words on the picture</span><input id="thumb-text" type="text" maxlength="60" autocomplete="off" /></label>
-          <span id="thumb-words" class="studio-note"></span>
-          <span class="studio-note">Drawn by RigSpark in a real font, so every letter is sharp. The image model never spells it.</span>
-          <div class="studio-grid">
-            <label class="studio-field"><span>Font</span><select id="thumb-font"><option value="inter">Inter Black</option><option value="anton">Anton</option></select></label>
-            <label class="studio-field"><span>Position</span><select id="thumb-position"><option value="left">Left</option><option value="right">Right</option><option value="top">Top</option><option value="bottom">Bottom</option></select></label>
-          </div>
-          <label class="studio-field"><span>Size</span><input id="thumb-size" type="range" min="6" max="22" value="13" /></label>
-          <div class="studio-field"><span>Fill</span>
-            <div id="thumb-fill" class="swatches" role="radiogroup" aria-label="Text colour">
-              <button type="button" role="radio" aria-checked="true" data-fill="#ffffff" aria-label="White" style="background:#ffffff"></button>
-              <button type="button" role="radio" aria-checked="false" data-fill="#ffd400" aria-label="Yellow" style="background:#ffd400"></button>
-              <button type="button" role="radio" aria-checked="false" data-fill="#111111" aria-label="Black" style="background:#111111"></button>
-            </div>
-          </div>
-          <label class="studio-check"><input id="thumb-outline" type="checkbox" checked /> Thick outline</label>
-          <div id="thumb-contrast" class="studio-contrast" aria-live="polite"></div>
-          <label class="studio-check"><input id="thumb-safe" type="checkbox" checked /> Show safe zones</label>
-          <strong class="studio-section">Photo layer</strong>
-          <label class="studio-field"><span>A PNG of you with a transparent background. It stays on this computer.</span><input id="thumb-photo" type="file" accept="image/png" /></label>
-          <label class="studio-field"><span>Photo size</span><input id="thumb-photo-size" type="range" min="30" max="100" value="80" disabled /></label>
-        </aside>
-      </div>
-    </dialog>
-
-    <dialog id="board-studio" class="studio-dialog" aria-labelledby="board-title-heading">
-      <div class="studio-head">
-        <h2 id="board-title-heading">Vision board</h2>
-        <span id="board-status" class="studio-meta" aria-live="polite"></span>
-        <span class="composer-spacer"></span>
-        <button type="button" id="board-run" class="accent-btn">Make tiles</button>
-        <button type="button" id="board-export" class="ghost-btn" disabled>Download PNG</button>
-        <button type="button" id="board-close" class="icon-btn" aria-label="Close">
-          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
-        </button>
-      </div>
-      <div class="studio-body">
-        <aside class="studio-side studio-side-left" aria-label="Goals">
-          <label class="studio-field"><span>Title</span><input id="board-title" type="text" maxlength="40" value="2027" /></label>
-          <div class="studio-field"><span>One look for every tile</span>
-            <div id="board-style" class="seg seg-sm seg-wrap" role="radiogroup" aria-label="Look">
-              <button type="button" role="radio" aria-checked="true" data-style="soft film photograph, warm natural light, muted colours">Soft film photo</button>
-              <button type="button" role="radio" aria-checked="false" tabindex="-1" data-style="loose watercolour painting, soft paper texture, pastel palette">Watercolour</button>
-              <button type="button" role="radio" aria-checked="false" tabindex="-1" data-style="bright flat graphic illustration, bold shapes, limited palette">Bright flat graphic</button>
-            </div>
-          </div>
-          <span class="studio-note">Added to every tile’s prompt so the board looks like one set.</span>
-          <div class="studio-goals-head"><strong>Goals</strong><span class="studio-note">Picture · words on the tile</span></div>
-          <ol id="board-goals" class="board-goals"></ol>
-          <button type="button" id="board-add" class="ghost-btn">Add a goal</button>
-        </aside>
-        <section class="studio-stage">
-          <div id="board-layout" class="seg seg-sm" role="radiogroup" aria-label="Board layout">
-            <button type="button" role="radio" aria-checked="true" data-layout="grid">Grid</button>
-            <button type="button" role="radio" aria-checked="false" tabindex="-1" data-layout="collage">Collage</button>
-            <button type="button" role="radio" aria-checked="false" tabindex="-1" data-layout="wallpaper">Phone wallpaper</button>
-            <button type="button" role="radio" aria-checked="false" tabindex="-1" data-layout="print">Print A4</button>
-          </div>
-          <canvas id="board-canvas" class="studio-canvas board-canvas" role="img" aria-label="Vision board preview"></canvas>
-          <span id="board-size" class="studio-note mono"></span>
-        </section>
-      </div>
-    </dialog>
-
     <script src="/vendor/katex/katex.min.js"></script>
     <script src="/vendor/katex/contrib/auto-render.min.js"></script>
     <script src="/vendor/marked.min.js"></script>

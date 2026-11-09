@@ -455,28 +455,27 @@ async fn image_jobs_take_an_aspect_and_report_their_seed() {
 }
 
 #[test]
-fn the_page_offers_image_presets_a_text_layer_and_a_vision_board() {
+fn the_page_offers_image_presets_variations_and_hand_off() {
     let index = include_str!("../static/index.html");
     let studio = include_str!("../static/image-studio.js");
     let generate = include_str!("../static/generate.js");
     for marker in [
         "id=\"image-compose\"",
         "data-preset=\"thumbnail\"",
-        "data-preset=\"board\"",
+        "data-preset=\"wallpaper\"",
         "data-count=\"4\"",
-        "id=\"thumb-editor\"",
-        "id=\"thumb-export-three\"",
-        "id=\"board-studio\"",
-        "data-layout=\"wallpaper\"",
         "/static/image-studio.js",
     ] {
         assert!(index.contains(marker), "{marker}");
     }
-    for marker in ["aspect", "/api/generation/jobs", "measured", "toBlob"] {
+    for marker in [
+        "aspect",
+        "/api/generation/jobs",
+        "measured",
+        "/api/connectors",
+        "ClipboardItem",
+    ] {
         assert!(studio.contains(marker), "{marker}");
     }
     assert!(generate.contains("globalThis.RigSparkGeneration"));
-    let styles = include_str!("../static/styles.css");
-    assert!(styles.contains("/static/fonts/inter-900.woff2"));
-    assert!(styles.contains("/static/fonts/anton-400.woff2"));
 }

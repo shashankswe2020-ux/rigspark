@@ -24,7 +24,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
   const placeholders = {
     text: "Message the local model…",
-    image: "Describe the picture. Add words later as a text layer…",
+    image: "Describe the picture to generate…",
     video: "Describe a video to generate…",
     voice: "Describe what to say, or paste the exact text to read…",
   };

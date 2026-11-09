@@ -4,17 +4,14 @@
 
 ### Features
 
-- **Image chat for thumbnails, wallpapers and vision boards.** The composer's
-  Image mode picks what you are making (thumbnail 16:9, wallpaper 9:16,
-  square or vision board) and how many variations, each on its own seed. A
-  text editor draws words in a real font over the picture with an outline,
-  contrast reading, safe zones and a YouTube feed check, and exports
-  1280×720 PNGs, three at a time for Test & Compare. The vision board makes
-  one tile per goal in a shared look and lays them out as a grid, collage,
-  phone wallpaper or A4 print. Generation jobs and `rigspark generate` take
-  an aspect (`square`, `landscape`, `portrait`) and report their seed; time
-  per picture is measured, never estimated. Inter Black and Anton (OFL) are
-  bundled for text layers.
+- **Image chat makes the shape you need, in several versions.** The
+  composer's Image mode picks thumbnail (16:9), wallpaper (9:16) or square and
+  1, 2 or 4 versions, each on its own seed; keep a seed to steer one picture.
+  Results download, copy to the clipboard, or go to a connected app (Canva,
+  Figma, a file store) through the chat and its approvals; RigSpark does not
+  re-implement editors. Generation jobs and `rigspark generate --aspect` take
+  `square`, `landscape` or `portrait` and report their seed; time per picture
+  is measured, never estimated.
 - **Voice in the workspace (Community Edition).** Models gains a **Voice**
   tab: a curated catalog of speak models (kokoro-82m, chatterbox via
   mlx-audio on Apple Silicon) and listen models (Whisper large-v3-turbo q8_0,
