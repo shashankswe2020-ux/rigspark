@@ -15,6 +15,7 @@ pub mod connect;
 pub mod context;
 pub mod coverage;
 pub mod diagnostics;
+pub mod engines;
 pub mod generation;
 pub mod generation_admission;
 pub mod hardware;

@@ -9,8 +9,9 @@ use axum::{
     response::IntoResponse,
 };
 use rigspark_core::generation::{GenerationCatalog, fit};
-use rigspark_runtime::generation::{
-    Aspect, DEFAULT_PORT, Events, NativeOptions, default_comfyui_dir, output_extension, prepare,
+use rigspark_runtime::{
+    engines::Engine,
+    generation::{Aspect, DEFAULT_PORT, Events, NativeOptions, output_extension, prepare},
 };
 use serde::Deserialize;
 use serde_json::{Value, json};
@@ -66,6 +67,8 @@ struct JobRequest {
     seed: Option<u64>,
     /// `square` (default), `landscape` or `portrait`; images only.
     aspect: Option<String>,
+    /// Optional: RigSpark finds (and starts) ComfyUI itself when left out.
+    #[serde(default)]
     comfyui_dir: String,
     port: Option<u16>,
     #[serde(default)]
@@ -107,7 +110,36 @@ fn output_dir(host: &Host) -> Result<PathBuf, ApiError> {
     Ok(directory)
 }
 
-async fn models() -> ApiResult {
+/// ComfyUI and mlx-audio: installed or not, and how far an install has got.
+async fn engines(host: &Host) -> ApiResult {
+    let (hardware, _) = rigspark_runtime::hardware::detect()
+        .await
+        .map_err(|_| bad())?;
+    let external_mlx_audio = rigspark_runtime::voice::probe_engine(
+        rigspark_core::voice::VoiceEngine::MlxAudio,
+        &hardware,
+    )
+    .installed;
+    let views: Vec<_> = Engine::ALL
+        .into_iter()
+        .map(|engine| host.engines.status(engine, external_mlx_audio))
+        .collect();
+    Ok(json_response(json!({ "engines": views })))
+}
+
+fn install(host: &Host, engine: &str) -> ApiResult {
+    let engine = Engine::parse(engine).ok_or_else(missing)?;
+    match host.engines.install(engine, host.shutdown.child_token()) {
+        Ok(()) => Ok((
+            StatusCode::ACCEPTED,
+            axum::Json(json!({ "engine": host.engines.status(engine, false) })),
+        )
+            .into_response()),
+        Err(error) => Ok(crate::error(StatusCode::CONFLICT, &error)),
+    }
+}
+
+async fn models(host: &Host) -> ApiResult {
     let catalog = GenerationCatalog::bundled().map_err(|_| bad())?;
     let (hardware, _) = rigspark_runtime::hardware::detect()
         .await
@@ -135,7 +167,7 @@ async fn models() -> ApiResult {
     Ok(json_response(json!({
         "models": models,
         "defaults": {
-            "comfyuiDir": default_comfyui_dir().map(|dir| dir.display().to_string()),
+            "comfyuiDir": host.engines.comfyui_dir().map(|dir| dir.display().to_string()),
             "port": DEFAULT_PORT,
         },
     })))
@@ -144,17 +176,31 @@ async fn models() -> ApiResult {
 async fn start(host: Arc<Host>, request: Request) -> ApiResult {
     authorized(&host, &request)?;
     let input: JobRequest = body(request, crate::MAX_REQUEST_BYTES).await?;
+    let input_port = input.port;
     let aspect = match input.aspect.as_deref() {
         None => Aspect::Square,
         Some(value) => Aspect::parse(value).ok_or_else(bad)?,
+    };
+    let comfyui_dir = match input.comfyui_dir.trim() {
+        "" => match host.engines.comfyui_dir() {
+            Some(dir) => dir,
+            None if host.manage_engines => {
+                return Ok(crate::error(
+                    StatusCode::CONFLICT,
+                    "ComfyUI isn't set up yet: choose Set up to install it",
+                ));
+            }
+            None => PathBuf::new(),
+        },
+        dir => PathBuf::from(dir),
     };
     let options = NativeOptions {
         model: input.model,
         prompt: input.prompt,
         seed: input.seed,
         aspect,
-        comfyui_dir: PathBuf::from(input.comfyui_dir.trim()),
-        port: input.port.unwrap_or(DEFAULT_PORT),
+        comfyui_dir,
+        port: input_port.unwrap_or(DEFAULT_PORT),
         bypass: input.bypass,
         output: None,
         output_dir: output_dir(&host)?,
@@ -210,6 +256,26 @@ async fn start(host: Arc<Host>, request: Request) -> ApiResult {
     let worker = host.clone();
     let job_id = id.clone();
     host.tasks.spawn(async move {
+        // RigSpark starts (or reuses) ComfyUI itself; a client-chosen port still wins.
+        let options = if worker.manage_engines && input_port.is_none() {
+            events("Starting ComfyUI".into());
+            match worker.engines.ensure_comfyui(&cancel).await {
+                Ok(endpoint) => NativeOptions {
+                    comfyui_dir: endpoint.dir,
+                    port: endpoint.port,
+                    ..options
+                },
+                Err(error) => {
+                    update(&worker, &job_id, |job| {
+                        job.status = "failed";
+                        job.error = Some(error);
+                    });
+                    return;
+                }
+            }
+        } else {
+            options
+        };
         let outcome = worker
             .generator
             .generate(options, events, cancel.clone())
@@ -295,7 +361,17 @@ pub async fn dispatch(host: Arc<Host>, request: Request) -> ApiResult {
     let method = request.method().as_str().to_owned();
     let path = request.uri().path().to_owned();
     match (method.as_str(), path.as_str()) {
-        ("GET", "/api/generation/models") => models().await,
+        ("GET", "/api/generation/models") => models(&host).await,
+        ("GET", "/api/generation/engines") => engines(&host).await,
+        ("POST", _)
+            if path.starts_with("/api/generation/engines/") && path.ends_with("/install") =>
+        {
+            authorized(&host, &request)?;
+            let name = path
+                .trim_start_matches("/api/generation/engines/")
+                .trim_end_matches("/install");
+            install(&host, name)
+        }
         ("POST", "/api/generation/jobs") => start(host, request).await,
         ("GET", "/api/generation/jobs/current") => {
             let job = host

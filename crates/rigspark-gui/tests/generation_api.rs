@@ -501,6 +501,46 @@ fn the_first_run_notice_states_the_licence_and_responsibilities() {
     assert!(legal.contains("localStorage"));
 }
 
+#[tokio::test]
+async fn engines_endpoint_lists_both_engines_and_install_is_guarded() {
+    let home = tempfile::tempdir().unwrap();
+    let host = host(home.path(), Arc::new(Paints));
+    let (status, value) = json_call(&host, "GET", "/api/generation/engines", None).await;
+    assert_eq!(status, StatusCode::OK);
+    let names: Vec<_> = value["engines"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|engine| engine["engine"].as_str().unwrap().to_owned())
+        .collect();
+    assert_eq!(names, ["comfyui", "mlx-audio"]);
+    for engine in value["engines"].as_array().unwrap() {
+        assert!(engine["installs"].as_str().unwrap().len() > 10);
+        assert!(engine["state"].is_string());
+    }
+
+    // No token: refused before anything is fetched.
+    let (status, _, _) = send(
+        &host,
+        "POST",
+        "/api/generation/engines/comfyui/install",
+        None,
+        false,
+    )
+    .await;
+    assert_eq!(status, StatusCode::FORBIDDEN);
+    // An engine RigSpark doesn't manage.
+    let (status, _, _) = send(
+        &host,
+        "POST",
+        "/api/generation/engines/automatic1111/install",
+        None,
+        true,
+    )
+    .await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
+}
+
 #[test]
 fn the_app_shows_every_section_of_the_terms_of_use() {
     let terms = include_str!("../../../TERMS.md");
