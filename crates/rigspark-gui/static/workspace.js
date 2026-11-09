@@ -273,7 +273,13 @@
       const turns = Number.parseInt(text("#turn-count"), 10) || 0;
       const foot = $("#composer-foot");
       if (foot) {
-        foot.textContent = `${name} · harness ${text("#backend-status") || "local"} · ${turns} turn${turns === 1 ? "" : "s"} · ${text("#context-usage") || "~0 tok"} context · on-device`;
+        // Need to know: the model and that it stays on-device. Harness and context only when they matter.
+        const harness = text("#backend-status") || "local";
+        const parts = [name];
+        if (harness !== "local") parts.push(`via ${harness}`);
+        if (turns) parts.push(`${turns} turn${turns === 1 ? "" : "s"} · ${text("#context-usage") || "~0 tok"} context`);
+        parts.push("on-device");
+        foot.textContent = parts.join(" · ");
       }
       const promptField = $("#prompt");
       if (promptField && promptField.placeholder.startsWith("Message ")) {

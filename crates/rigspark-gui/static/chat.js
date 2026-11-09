@@ -525,9 +525,21 @@ document.addEventListener("DOMContentLoaded", () => {
       runtimeToggles.appendChild(empty);
       return;
     }
+    // Runtimes that aren't installed wait behind one disclosure; install hints live there.
+    let more = null;
+    const missing = runtimes.filter((runtime) => !runtime.installed).length;
     for (const runtime of runtimes) {
       const row = document.createElement("article");
       row.className = "runtime-row";
+      if (!runtime.installed && missing < runtimes.length) {
+        if (!more) {
+          more = document.createElement("details");
+          more.className = "runtime-more";
+          const summary = document.createElement("summary");
+          summary.textContent = `${missing} more not installed`;
+          more.appendChild(summary);
+        }
+      }
 
       const info = document.createElement("div");
       info.className = "runtime-info";
@@ -589,8 +601,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
       row.appendChild(info);
       row.appendChild(toggle);
-      runtimeToggles.appendChild(row);
+      (more && !runtime.installed ? more : runtimeToggles).appendChild(row);
     }
+    if (more) runtimeToggles.appendChild(more);
   }
 
   async function loadRuntimeStatus() {
@@ -1816,7 +1829,9 @@ document.addEventListener("DOMContentLoaded", () => {
           : ` · ${formatTokens(model.contextTokens)} context tokens${model.kvPrecision && model.kvPrecision !== "fp16" ? ` · KV ${model.kvPrecision}` : ""}`
         : "";
       const origin = model.provenance === "auto" ? " · auto-sourced" : model.provenance === "local" ? " · added by you" : "";
-      meta.textContent = `${model.params} · ${model.quant} · ${formatSize(model.diskBytes)}${context}${origin}`;
+      // The row shows size only; quant, context and source are one click away in the detail panel.
+      meta.textContent = `${model.params} · ${formatSize(model.diskBytes)}${model.provenance === "local" ? " · added by you" : ""}`;
+      meta.title = `${model.params} · ${model.quant} · ${formatSize(model.diskBytes)}${context}${origin}`;
       head.append(title, meta);
 
       const fit = document.createElement("span");

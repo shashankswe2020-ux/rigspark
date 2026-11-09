@@ -748,7 +748,14 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderEngines() {
     if (!engines) return;
     engines.textContent = "";
+    // Need to know: engines this machine can't run are left out; ones not installed wait
+    // behind one disclosure (mlx-audio stays out front, since Set up installs it in one click).
+    let more = null;
+    const hidden = (probe) => probe.supported && !probe.installed && !managed(probe);
+    const missing = catalog.engines.filter(hidden).length;
+    const shown = catalog.engines.filter((probe) => probe.supported && !hidden(probe)).length;
     for (const probe of catalog.engines) {
+      if (!probe.supported) continue;
       const active = catalog.status.filter((entry) => entry.engine === probe.engine);
       const item = element("article", "runtime-row voice-engine-row");
       item.dataset.state = active.some((entry) => entry.state === "running")
@@ -788,8 +795,17 @@ document.addEventListener("DOMContentLoaded", () => {
         halt.addEventListener("click", () => stop(entry.kind));
         item.append(halt);
       }
-      engines.append(item);
+      if (hidden(probe) && shown) {
+        if (!more) {
+          more = element("details", "runtime-more");
+          more.append(element("summary", "", `${missing} more not installed`));
+        }
+        more.append(item);
+      } else {
+        engines.append(item);
+      }
     }
+    if (more) engines.append(more);
     for (const entry of catalog.status.filter((entry) => entry.engine === "attached")) {
       const item = element("article", "runtime-row voice-engine-row");
       item.dataset.state = "on";
