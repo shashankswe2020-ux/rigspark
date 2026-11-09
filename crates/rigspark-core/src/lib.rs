@@ -15,6 +15,7 @@ pub mod registry_collector;
 pub mod reports;
 pub mod site_latest;
 pub mod sizing;
+pub mod voice;
 
 /// Curated, cited model catalog bundled into every release.
 pub const MODELS_JSON: &str = include_str!("../data/models.json");
@@ -22,5 +23,7 @@ pub const MODELS_JSON: &str = include_str!("../data/models.json");
 pub const PERF_JSON: &str = include_str!("../data/perf.json");
 /// Curated, pinned image/video generation catalog (ComfyUI workflows).
 pub const GENERATION_JSON: &str = include_str!("../data/generation.json");
+/// Curated voice catalog: text-to-speech and speech-to-text models.
+pub const VOICE_JSON: &str = include_str!("../data/voice.json");
 /// Pinned registry snapshot that catalog bootstrap and refresh read.
 pub const REGISTRY_SNAPSHOT_JSON: &str = include_str!("../fixtures/registry-snapshot.json");

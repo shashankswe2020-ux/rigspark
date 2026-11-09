@@ -51,5 +51,6 @@ pub mod special_adapters;
 pub mod state;
 pub mod tool_policy;
 pub mod usage;
+pub mod voice;
 pub mod workspace;
 pub mod workspace_git;

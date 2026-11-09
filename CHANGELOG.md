@@ -1,5 +1,23 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- **Voice in the workspace (Community Edition).** Models gains a **Voice**
+  tab: a curated catalog of speak models (kokoro-82m, chatterbox via
+  mlx-audio on Apple Silicon) and listen models (Whisper large-v3-turbo q8_0,
+  small q8_0 and base.en via whisper.cpp, pinned and SHA-256 verified), each
+  with a memory-only fit and its licence. Chat can speak replies, read any
+  reply aloud, take dictation from the microphone, and a new **Voice** mode
+  writes a script with the text model and reads it, or reads your exact
+  text, with an inline player and WAV download. Any loopback server with
+  OpenAI's audio endpoints can be attached instead.
+- **Runtime view revamp.** A live memory bar shows what voice models take
+  next to everything else, voice engines show their state, endpoint and stop
+  control, and voice settings cover spoken replies, microphone, audio output
+  and attaching a server.
+
 ## 3.0.9 (2026-11-09)
 
 ### Fixes

@@ -26,6 +26,7 @@ document.addEventListener("DOMContentLoaded", () => {
     text: "Message the local model…",
     image: "Describe an image to generate…",
     video: "Describe a video to generate…",
+    voice: "Describe what to say, or paste the exact text to read…",
   };
   let models = [];
   let modelKind = "text";
@@ -185,7 +186,8 @@ document.addEventListener("DOMContentLoaded", () => {
     modelKind = kind;
     const text = kind === "text";
     textPanel.hidden = !text;
-    generationPanel.hidden = text;
+    // Voice models have their own panel, managed by voice.js.
+    generationPanel.hidden = text || kind === "voice";
     // Hugging Face additions are GGUF text models only.
     const addFromHub = document.querySelector("#hf-add-open");
     if (addFromHub) addFromHub.hidden = !text;
@@ -195,7 +197,7 @@ document.addEventListener("DOMContentLoaded", () => {
       tab.tabIndex = selected ? 0 : -1;
       if (selected && focus) tab.focus();
     }
-    if (!text) {
+    if (!text && kind !== "voice") {
       heading.textContent = `${kind === "image" ? "Image" : "Video"} models`;
       renderModels();
     }
@@ -222,15 +224,18 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     chatPrompt.placeholder = placeholders[mode];
     chatPrompt.setAttribute("aria-label", mode === "text" ? "Message the local model" : placeholders[mode].replace("…", ""));
-    const model = mode === "text" ? null : selectedModel(mode);
-    modeNote.hidden = mode === "text";
-    modeNote.textContent = model
-      ? `${model.id} via local ComfyUI · fit ${model.fit.verdict} · speed unknown`
-      : `No ${mode} model available`;
+    if (mode !== "voice") {
+      const model = mode === "text" ? null : selectedModel(mode);
+      modeNote.hidden = mode === "text";
+      modeNote.textContent = model
+        ? `${model.id} via local ComfyUI · fit ${model.fit.verdict} · speed unknown`
+        : `No ${mode} model available`;
+    }
     if (!chatJob) {
-      send.textContent = mode === "text" ? "Send" : "Generate";
+      send.textContent = mode === "text" ? "Send" : mode === "voice" ? "Speak" : "Generate";
       send.setAttribute("aria-label", send.textContent);
     }
+    globalThis.dispatchEvent(new CustomEvent("rigspark:chat-mode", { detail: { mode } }));
   }
 
   for (const option of modes) {
@@ -271,7 +276,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function setBusy(busy) {
     for (const option of modes) option.disabled = busy;
     send.classList.toggle("is-stop", busy);
-    send.textContent = busy ? "Stop" : chatMode === "text" ? "Send" : "Generate";
+    send.textContent = busy ? "Stop" : chatMode === "text" ? "Send" : chatMode === "voice" ? "Speak" : "Generate";
     send.setAttribute("aria-label", busy ? "Stop generation" : send.textContent);
   }
 
@@ -345,7 +350,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   chatForm.addEventListener("submit", async (event) => {
-    if (chatMode === "text") return;
+    // Text goes to chat.js and voice to voice.js.
+    if (chatMode === "text" || chatMode === "voice") return;
     event.preventDefault();
     event.stopImmediatePropagation();
     showError("");
