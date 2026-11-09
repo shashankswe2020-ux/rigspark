@@ -247,10 +247,11 @@ document.addEventListener("DOMContentLoaded", () => {
         const started = globalThis.performance.now();
         const job = await postJob(model, text, seeds[index], choice.aspect);
         const done = await waitJob(job.id, (event) => {
-          if (event) status.textContent = `${index} of ${seeds.length} done · ${event}`;
+          if (event) status.textContent = `${index} of ${seeds.length} done${left} · ${event}`;
         }, () => context.stopped);
         const seconds = (globalThis.performance.now() - started) / 1000;
         remember(model.id, choice.aspect, seconds);
+        refresh();
         const result = {
           url: done.outputUrl,
           seed: done.seed ?? seeds[index],
@@ -300,12 +301,17 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function copyImage(result, note) {
+    // The item is created inside the click with a pending blob: Safari and WebKit
+    // webviews refuse a clipboard write that starts after an await.
     try {
-      const blob = await (await globalThis.fetch(result.url)).blob();
-      await navigator.clipboard.write([new ClipboardItem({ [blob.type || "image/png"]: blob })]);
+      const blob = globalThis.fetch(result.url).then((response) => {
+        if (!response.ok) throw new Error("download failed");
+        return response.blob();
+      });
+      await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
       note.textContent = "Copied. Paste it into any app.";
     } catch {
-      note.textContent = "This browser would not copy images; use Download instead.";
+      note.textContent = "Copying images is blocked here; use Download instead.";
     }
   }
 

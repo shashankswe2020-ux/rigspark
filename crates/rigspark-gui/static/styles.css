@@ -5711,7 +5711,7 @@ input.switch.switch-sm:checked::after {
 .variation-actions { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 0.6rem; }
 .variation-actions a.ghost-btn { color: var(--text); text-decoration: none; }
 .variation-note { font-size: 0.76rem; color: var(--text2); }
-.handoff-menu { position: absolute; left: 0; top: calc(100% + 4px); z-index: 5; min-width: 220px; display: flex; flex-direction: column; padding: 4px; border: 1px solid var(--line2); border-radius: var(--radius-sm); background: var(--surface); box-shadow: var(--shadow); }
+.handoff-menu { position: absolute; left: 0; bottom: calc(100% + 4px); z-index: 5; min-width: 220px; display: flex; flex-direction: column; padding: 4px; border: 1px solid var(--line2); border-radius: var(--radius-sm); background: var(--surface); box-shadow: var(--shadow); }
 .handoff-menu > button { text-align: left; border: 0; background: transparent; color: var(--text); font: inherit; padding: 8px 10px; border-radius: 6px; cursor: pointer; }
 .handoff-menu > button:hover, .handoff-menu > button:focus-visible { background: var(--hover); }
 
