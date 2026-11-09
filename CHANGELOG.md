@@ -15,6 +15,15 @@
   `GET /api/generation/engines` and
   `POST /api/generation/engines/{comfyui|mlx-audio}/install`.
 
+### Changes
+
+- **First-run notice order.** The notice now opens with the user's
+  responsibilities (outputs, model licences, local data), then the warranty
+  disclaimer and the name and logo terms, and closes with the licence line.
+- **Terms of Use.** New `TERMS.md` with the full RigSpark Community Terms of
+  Use, also readable in the app from the first-run notice. Existing users see
+  the notice again once.
+
 ### Fixes
 
 - **Deleting and renaming chats works in the desktop app.** The Mac app's
