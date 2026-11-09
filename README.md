@@ -2,8 +2,9 @@
 
 <p align="center">
   <strong>Run AI on your own computer: chat, make images and video, and talk to it.</strong><br>
-  RigSpark checks your hardware and tells you which models will run <em>before</em> you download them.<br>
-  Free and open source (MIT). No account. Your chats and files stay on your computer.
+  RigSpark checks your hardware and shows which models will run, and how many GB each is, <em>before</em> you download.<br>
+  Bring any model from Hugging Face. No GPU required. No account. Free and open source (MIT).<br>
+  Your chats and files stay on your computer.
 </p>
 
 <p align="center">
@@ -11,6 +12,10 @@
   <a href="https://github.com/rigspark/rigspark/releases/latest/download/RigSpark_x86_64.dmg">Mac (Intel)</a> ·
   <a href="https://github.com/rigspark/rigspark/releases/latest/download/RigSpark_x64-setup.exe"><strong>Download for Windows</strong></a> ·
   <a href="#linux-and-the-command-line">Linux (opens in your browser)</a>
+</p>
+
+<p align="center">
+  <img src="assets/brand/3d/sparky-hero.webp" alt="Sparky, the RigSpark robot mascot, holding a processor chip" width="280">
 </p>
 
 ## What you can do
@@ -35,6 +40,10 @@ model shows its download size and memory need before you start.
 </p>
 
 ## Get started
+
+<p align="center">
+  <img src="assets/brand/3d/sparky-wave.webp" alt="Sparky waving hello" width="200">
+</p>
 
 1. **Download and open the app.** The Mac app is signed and notarized by Apple.
    The Windows installer needs no admin rights; it isn't code-signed yet, so if
@@ -93,6 +102,10 @@ can point Claude Code, Codex or OpenCode at your local model with
 
 ## Why you can trust the answers
 
+<p align="center">
+  <img src="assets/brand/3d/sparky-lineup.webp" alt="Three Sparky robots showing the yes, slow and no verdicts" width="560">
+</p>
+
 - **Honest numbers.** When RigSpark can't source a figure, it shows `unknown`
   instead of guessing. Speeds are estimates, not benchmarks.
 - **Verified downloads.** Model files must match a pinned SHA-256 digest before
@@ -127,3 +140,8 @@ model requests and pull requests are welcome:
 
 If RigSpark saved you a download that would never have run, you can
 [buy me a coffee ☕](https://buymeacoffee.com/shashanksw9).
+
+<p align="center">
+  <img src="assets/brand/3d/sparky-cheer.webp" alt="Sparky celebrating" width="240"><br>
+  <strong>Let Sparky check your rig.</strong>
+</p>
