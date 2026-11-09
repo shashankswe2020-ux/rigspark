@@ -447,6 +447,9 @@ cargo native-retirement
 
 No Node.js or TypeScript tooling is part of the project.
 
+Want to help? Read [CONTRIBUTING.md](CONTRIBUTING.md) and pick an issue labelled
+[`good first issue`](https://github.com/shashankswe2020-ux/rigspark/labels/good%20first%20issue).
+
 ## Keep exploring
 
 - [Commands, custom context, and installed models](docs/references/guide.md#commands)
