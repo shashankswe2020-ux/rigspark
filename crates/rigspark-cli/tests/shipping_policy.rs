@@ -352,7 +352,7 @@ fn readme_documents_native_install_and_primary_workflows() {
         "cargo binstall rigspark-cli rigspark-gui",
         "cargo install rigspark-cli --locked",
         "cargo install rigspark-gui --locked",
-        "docker pull ghcr.io/shashankswe2020-ux/rigspark",
+        "docker pull ghcr.io/rigspark/rigspark",
     ] {
         assert!(reference.contains(required), "{required}");
     }
@@ -394,6 +394,6 @@ fn releases_publish_the_documented_container_image_from_verified_archives() {
     assert!(dockerfile.contains("FROM debian:trixie-slim@sha256:"));
     assert!(dockerfile.contains("FROM base AS release"));
     assert!(dockerfile.contains("COPY release-bin/llmup"));
-    let documented = "docker pull ghcr.io/shashankswe2020-ux/rigspark";
+    let documented = "docker pull ghcr.io/rigspark/rigspark";
     assert!(read("docs/references/guide.md").contains(documented));
 }

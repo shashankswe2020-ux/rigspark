@@ -18,17 +18,17 @@
   <a href="https://www.rigspark.si/">Website</a> ·
   <a href="#install-rigspark">Install</a> ·
   <a href="docs/references/guide.md">Guide</a> ·
-  <a href="https://github.com/shashankswe2020-ux/rigspark/releases/latest">Latest release</a>
+  <a href="https://github.com/rigspark/rigspark/releases/latest">Latest release</a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/shashankswe2020-ux/rigspark/issues/new?template=bug_report.yml"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/btn-bug-dark.svg"><img src="assets/btn-bug-light.svg" alt="Report a bug" height="44"></picture></a>&nbsp;
-  <a href="https://github.com/shashankswe2020-ux/rigspark/issues/new?template=feature_request.yml"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/btn-idea-dark.svg"><img src="assets/btn-idea-light.svg" alt="Suggest a feature" height="44"></picture></a>
+  <a href="https://github.com/rigspark/rigspark/issues/new?template=bug_report.yml"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/btn-bug-dark.svg"><img src="assets/btn-bug-light.svg" alt="Report a bug" height="44"></picture></a>&nbsp;
+  <a href="https://github.com/rigspark/rigspark/issues/new?template=feature_request.yml"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/btn-idea-dark.svg"><img src="assets/btn-idea-light.svg" alt="Suggest a feature" height="44"></picture></a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/shashankswe2020-ux/rigspark/actions/workflows/ci.yml"><img src="https://github.com/shashankswe2020-ux/rigspark/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
-  <a href="https://github.com/shashankswe2020-ux/rigspark/releases/latest"><img src="https://img.shields.io/github/v/release/shashankswe2020-ux/rigspark?sort=semver&label=release" alt="Release"></a>
+  <a href="https://github.com/rigspark/rigspark/actions/workflows/ci.yml"><img src="https://github.com/rigspark/rigspark/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
+  <a href="https://github.com/rigspark/rigspark/releases/latest"><img src="https://img.shields.io/github/v/release/rigspark/rigspark?sort=semver&label=release" alt="Release"></a>
   <a href="https://crates.io/crates/rigspark-cli"><img src="https://img.shields.io/crates/v/rigspark-cli.svg?label=crates.io" alt="crates.io"></a>
   <a href="https://docs.rs/rigspark-core"><img src="https://img.shields.io/docsrs/rigspark-core?label=docs.rs" alt="docs.rs"></a>
   <a href="rust-toolchain.toml"><img src="https://img.shields.io/badge/rust-1.98%2B-orange.svg?logo=rust" alt="Rust 1.98 or newer"></a>
@@ -63,7 +63,7 @@ brew install shashankswe2020-ux/tap/rigspark
 
 On a Mac you can also install the desktop app: download `RigSpark_aarch64.dmg`
 (Apple Silicon) or `RigSpark_x86_64.dmg` (Intel) from the
-[latest release](https://github.com/shashankswe2020-ux/rigspark/releases/latest)
+[latest release](https://github.com/rigspark/rigspark/releases/latest)
 and drag RigSpark to Applications. The app is signed with a Developer ID and
 notarized by Apple, so it opens without a Gatekeeper warning. The app bundles llama.cpp, so it needs no other
 runtime: on first launch, **Download & start** fetches a verified starter model
@@ -72,14 +72,14 @@ off in **Tools**); closing the window keeps your model serving, and
 **Quit RigSpark** stops it. Updates install after their signature is verified.
 
 On Windows, download `RigSpark_x64-setup.exe` from the
-[latest release](https://github.com/shashankswe2020-ux/rigspark/releases/latest)
+[latest release](https://github.com/rigspark/rigspark/releases/latest)
 and run it. It installs for the current user without admin rights. The installer
 is not code-signed yet, so if SmartScreen warns, choose **More info → Run
 anyway**. The Windows app bundles a CPU build of llama.cpp, and its advice for
 that runtime counts system memory only.
 
 For the command line on Windows and other platforms, download a
-[prebuilt archive](https://github.com/shashankswe2020-ux/rigspark/releases/latest),
+[prebuilt archive](https://github.com/rigspark/rigspark/releases/latest),
 extract it, and add the folder to `PATH`. Keep `rigspark`, `llmup`, and
 `rigspark-gui` together.
 
@@ -448,7 +448,7 @@ cargo native-retirement
 No Node.js or TypeScript tooling is part of the project.
 
 Want to help? Read [CONTRIBUTING.md](CONTRIBUTING.md) and pick an issue labelled
-[`good first issue`](https://github.com/shashankswe2020-ux/rigspark/labels/good%20first%20issue).
+[`good first issue`](https://github.com/rigspark/rigspark/labels/good%20first%20issue).
 
 ## Keep exploring
 
@@ -467,8 +467,8 @@ Want to help? Read [CONTRIBUTING.md](CONTRIBUTING.md) and pick an issue labelled
 
 <p align="center">
   <strong>Let Sparky check your rig.</strong><br>
-  <a href="https://github.com/shashankswe2020-ux/rigspark/releases/latest">Download RigSpark</a> ·
-  <a href="https://github.com/shashankswe2020-ux/rigspark">Star on GitHub</a> ·
+  <a href="https://github.com/rigspark/rigspark/releases/latest">Download RigSpark</a> ·
+  <a href="https://github.com/rigspark/rigspark">Star on GitHub</a> ·
   <a href="https://buymeacoffee.com/shashanksw9">Buy me a coffee</a>
 </p>
 

@@ -42,7 +42,7 @@ categories = [
     "command-line-utilities",
 ]
 license = "MIT"
-repository = "https://github.com/shashankswe2020-ux/rigspark"
+repository = "https://github.com/rigspark/rigspark"
 
 [package.metadata.docs.rs]
 all-features = true

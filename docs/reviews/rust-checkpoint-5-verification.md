@@ -86,7 +86,7 @@ still requires migration; this does not close R26.
 | Browser streaming/cancel/keyboard | Passed (Chromium) | Passed (Chromium) | Passed (Chromium) |
 
 Passing full matrix, commit `36c96fee7ae1bfdbeaf04e4b8efeb61aaa8cf220`:
-https://github.com/shashankswe2020-ux/rigspark/actions/runs/35355772910
+https://github.com/rigspark/rigspark/actions/runs/35355772910
 Jobs: Windows `105634643675`, Linux `105634643698`, macOS `105634643880`.
 All native lint/test/build, real WebView smoke, and three browser journeys pass.
 Linux and Windows also pass actual Cancel, exact-folder selection, root
@@ -97,10 +97,10 @@ testing or signed-installer certification.
 
 On 2026-09-18, the user authorized feature-branch commits, pushes, and verification
 CI. Commit `f60c3a4` started the three-platform `Rust Desktop Verification` workflow:
-https://github.com/shashankswe2020-ux/rigspark/actions/runs/35316992201
+https://github.com/rigspark/rigspark/actions/runs/35316992201
 The complete native build/lint/test/WebView/browser matrix passed for all three
 platforms at commit `59dffd0`:
-https://github.com/shashankswe2020-ux/rigspark/actions/runs/35325069584
+https://github.com/rigspark/rigspark/actions/runs/35325069584
 Platform jobs: macOS `105536111599`, Windows `105536111731`, Linux `105536111831`.
 
 Native execution found and fixed Linux `O_PATH` directory descriptors being used
@@ -110,7 +110,7 @@ descriptor-relative operations, and identity checks were retained; no test gate
 was weakened. Test startup waits now have deadlines and CI collects all failures.
 
 Historical actual-folder-dialog failure at commit `c4f36b3`:
-https://github.com/shashankswe2020-ux/rigspark/actions/runs/35340732466
+https://github.com/rigspark/rigspark/actions/runs/35340732466
 It uses the real picker twice (Cancel, then selection), checks the selected path
 against a disposable directory, registers and revokes that root, and requires a
 successful exit. Linux uses GTK portal/Xvfb; Windows uses UI Automation. Mock

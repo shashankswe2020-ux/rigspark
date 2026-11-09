@@ -39,7 +39,7 @@ fn issue_form_event_extracts_only_the_model_url_field() {
     let event = json!({
         "issue": {
             "number": 321,
-            "html_url": "https://github.com/shashankswe2020-ux/rigspark/issues/321",
+            "html_url": "https://github.com/rigspark/rigspark/issues/321",
             "body": "### Hugging Face model URL\n\nhttps://huggingface.co/owner/model-GGUF\n\n### Reason or use case\n\nPlease add it."
         }
     });
@@ -48,7 +48,7 @@ fn issue_form_event_extracts_only_the_model_url_field() {
     assert_eq!(request.repository.as_str(), "owner/model-GGUF");
     assert_eq!(
         request.issue_url,
-        "https://github.com/shashankswe2020-ux/rigspark/issues/321"
+        "https://github.com/rigspark/rigspark/issues/321"
     );
 }
 
@@ -56,10 +56,10 @@ fn issue_form_event_extracts_only_the_model_url_field() {
 fn malformed_or_oversized_issue_events_fail_closed() {
     for event in [
         json!({}),
-        json!({"issue":{"number":0,"html_url":"https://github.com/shashankswe2020-ux/rigspark/issues/1","body":"### Hugging Face model URL\n\nhttps://huggingface.co/owner/model"}}),
+        json!({"issue":{"number":0,"html_url":"https://github.com/rigspark/rigspark/issues/1","body":"### Hugging Face model URL\n\nhttps://huggingface.co/owner/model"}}),
         json!({"issue":{"number":1,"html_url":"https://example.com/issues/1","body":"### Hugging Face model URL\n\nhttps://huggingface.co/owner/model"}}),
-        json!({"issue":{"number":1,"html_url":"https://github.com/shashankswe2020-ux/rigspark/issues/1","body":"https://huggingface.co/owner/model"}}),
-        json!({"issue":{"number":1,"html_url":"https://github.com/shashankswe2020-ux/rigspark/issues/1","body":"### Hugging Face model URL\n\nhttps://huggingface.co/owner/model\nhttps://huggingface.co/other/model"}}),
+        json!({"issue":{"number":1,"html_url":"https://github.com/rigspark/rigspark/issues/1","body":"https://huggingface.co/owner/model"}}),
+        json!({"issue":{"number":1,"html_url":"https://github.com/rigspark/rigspark/issues/1","body":"### Hugging Face model URL\n\nhttps://huggingface.co/owner/model\nhttps://huggingface.co/other/model"}}),
     ] {
         assert!(ModelRequest::from_event(&event.to_string()).is_err());
     }

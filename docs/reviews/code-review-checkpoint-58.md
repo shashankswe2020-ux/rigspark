@@ -106,7 +106,7 @@
 ### S1. Update endpoint URL in §9 exposes a specific GitHub username — use a canonical placeholder
 
 - **Section:** §9 (Auto-update endpoints)
-- **Problem:** The `endpoints` URL is `https://github.com/shashankswe2020-ux/rigspark/releases/...`. This appears to be a personal fork URL left from a draft. If this is not the canonical repository, it will silently route update checks to a different (possibly abandoned or malicious) repository. Even if it is the correct URL, hardcoding a personal GitHub username in a spec is fragile against repository transfers.
+- **Problem:** The `endpoints` URL is `https://github.com/rigspark/rigspark/releases/...`. This appears to be a personal fork URL left from a draft. If this is not the canonical repository, it will silently route update checks to a different (possibly abandoned or malicious) repository. Even if it is the correct URL, hardcoding a personal GitHub username in a spec is fragile against repository transfers.
 - **Fix:** Replace with `https://github.com/<canonical-owner>/rigspark/releases/latest/download/latest.json` and resolve the canonical owner before D5.
 
 ### S2. Binary path allowlist does not check file ownership or world-writable bit

@@ -156,7 +156,7 @@ async fn local_benchmark_report_is_not_exposed_by_gui() {
 fn model_catalog_links_to_the_structured_public_request_form() {
     let html = include_str!("../static/index.html");
     assert!(html.contains("id=\"request-model\""));
-    assert!(html.contains("https://github.com/shashankswe2020-ux/rigspark/issues/new?title="));
+    assert!(html.contains("https://github.com/rigspark/rigspark/issues/new?title="));
     assert!(html.contains("body=%23%23%23%20Hugging%20Face%20model%20URL"));
     assert!(html.contains("labels=catalog%3Arequest"));
     assert!(!html.contains("template=model_request.yml"));

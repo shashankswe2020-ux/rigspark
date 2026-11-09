@@ -51,7 +51,7 @@ responsible for enforcing repository/release permissions.
 The fixed client URL is:
 
 ```text
-https://github.com/shashankswe2020-ux/rigspark/releases/download/catalog-v1/catalog.json
+https://github.com/rigspark/rigspark/releases/download/catalog-v1/catalog.json
 ```
 
 The channel asset is mutable; its signed contents carry a monotonic revision.

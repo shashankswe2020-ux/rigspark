@@ -334,7 +334,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
       const status = await response.json();
-      const trustedUrl = "https://github.com/shashankswe2020-ux/rigspark/releases";
+      const trustedUrl = "https://github.com/rigspark/rigspark/releases";
       if (
         status.state !== "update-available" ||
         typeof status.latestVersion !== "string" ||

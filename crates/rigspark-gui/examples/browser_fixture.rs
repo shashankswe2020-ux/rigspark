@@ -440,7 +440,7 @@ fn fixture_update(kind: &str) -> Option<serde_json::Value> {
         "available" => Some(serde_json::json!({
             "state": "update-available", "currentVersion": "0.11.2",
             "latestVersion": "0.12.0",
-            "releaseUrl": "https://github.com/shashankswe2020-ux/rigspark/releases"
+            "releaseUrl": "https://github.com/rigspark/rigspark/releases"
         })),
         _ => None,
     }

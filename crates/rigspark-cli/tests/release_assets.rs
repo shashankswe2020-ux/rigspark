@@ -86,7 +86,7 @@ fn homebrew_formula_pins_every_unix_archive_and_installs_the_trio() {
     .zip(SHA)
     {
         assert!(formula.contains(&format!(
-            "url \"https://github.com/shashankswe2020-ux/rigspark/releases/download/v1.0.0/rigspark-{target}.tar.gz\"\n      sha256 \"{sha}\"\n"
+            "url \"https://github.com/rigspark/rigspark/releases/download/v1.0.0/rigspark-{target}.tar.gz\"\n      sha256 \"{sha}\"\n"
         )));
     }
     for block in ["on_macos do", "on_linux do", "on_arm do", "on_intel do"] {

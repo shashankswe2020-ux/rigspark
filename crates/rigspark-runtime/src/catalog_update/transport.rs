@@ -2,7 +2,7 @@ use super::{CatalogStatus, CatalogStore, CatalogUpdateError, MAX_ARTIFACT_BYTES}
 use std::time::Duration;
 
 pub const CATALOG_URL: &str =
-    "https://github.com/shashankswe2020-ux/rigspark/releases/download/catalog-v1/catalog.json";
+    "https://github.com/rigspark/rigspark/releases/download/catalog-v1/catalog.json";
 
 #[async_trait::async_trait]
 pub trait CatalogTransport: Send + Sync {

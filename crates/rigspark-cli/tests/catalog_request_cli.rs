@@ -66,7 +66,7 @@ fn setup(root: &Path, runnable: bool) {
         json!({
             "issue": {
                 "number": 321,
-                "html_url": "https://github.com/shashankswe2020-ux/rigspark/issues/321",
+                "html_url": "https://github.com/rigspark/rigspark/issues/321",
                 "body": format!("### Hugging Face model URL\n\nhttps://huggingface.co/{REPOSITORY}\n\n### Reason or use case\n\nTest")
             }
         })
@@ -208,7 +208,7 @@ fn image_request_reports_pinned_lineage_without_mutating_any_catalog_file() {
     .unwrap();
     fs::write(root.path().join("event.json"), json!({"issue":{
             "number":317,
-            "html_url":"https://github.com/shashankswe2020-ux/rigspark/issues/317",
+            "html_url":"https://github.com/rigspark/rigspark/issues/317",
             "body":"### Hugging Face model URL\n\nhttps://huggingface.co/inclusionAI/Ming-Image-0.1-Design\n\n### Reason or use case\n\nneed for UI/UX design"
         }}).to_string()).unwrap();
     let recorded: Value = serde_json::from_str(include_str!(

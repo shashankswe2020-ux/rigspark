@@ -156,7 +156,7 @@ RigSpark authors endorse it.
 
 RigSpark Community's source code is distributed under the MIT licence; its full
 text is in the `LICENSE` file at
-<https://github.com/shashankswe2020-ux/rigspark/blob/main/LICENSE>. Nothing in
+<https://github.com/rigspark/rigspark/blob/main/LICENSE>. Nothing in
 these terms limits the rights that licence grants for the code. RigSpark also
 includes third-party components (such as fonts and JavaScript libraries) under
 their own licences, listed with those components.
@@ -222,5 +222,5 @@ If a provision is found unenforceable, the rest stays in effect. These terms,
 together with the licences referred to above, are the whole agreement between
 you and the RigSpark authors about RigSpark Community.
 
-Questions: open an issue at <https://github.com/shashankswe2020-ux/rigspark/issues>
+Questions: open an issue at <https://github.com/rigspark/rigspark/issues>
 or contact [CONTACT EMAIL — to be added].

@@ -2,7 +2,7 @@
 
 [Back to the quick start](../../README.md)
 
-[![CI](https://github.com/shashankswe2020-ux/rigspark/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/shashankswe2020-ux/rigspark/actions/workflows/ci.yml)
+[![CI](https://github.com/rigspark/rigspark/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/rigspark/rigspark/actions/workflows/ci.yml)
 [![crates.io](https://img.shields.io/crates/v/rigspark-cli.svg?label=crates.io)](https://crates.io/crates/rigspark-cli)
 [![Downloads](https://img.shields.io/crates/d/rigspark-cli.svg)](https://crates.io/crates/rigspark-cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](../../LICENSE)
@@ -106,7 +106,7 @@ brew install shashankswe2020-ux/tap/rigspark
 
 **Prebuilt archives** for macOS (Apple Silicon, Intel), Linux (x64, ARM64) and
 Windows (x64) are attached to every
-[GitHub release](https://github.com/shashankswe2020-ux/rigspark/releases/latest)
+[GitHub release](https://github.com/rigspark/rigspark/releases/latest)
 with a `SHA256SUMS` file. Unpack one and put the folder on your `PATH`. Archives
 are unsigned; on macOS run `xattr -dr com.apple.quarantine rigspark-*` after
 unpacking.
@@ -149,11 +149,12 @@ Each release from 2.3.0 publishes a multi-platform image (`linux/amd64`,
 `linux/arm64`) to GitHub Container Registry:
 
 ```bash
-docker pull ghcr.io/shashankswe2020-ux/rigspark:latest
-docker run --rm ghcr.io/shashankswe2020-ux/rigspark:latest
+docker pull ghcr.io/rigspark/rigspark:latest
+docker run --rm ghcr.io/rigspark/rigspark:latest
 ```
 
-Pin a release with its version tag, for example `ghcr.io/shashankswe2020-ux/rigspark:2.3.0`.
+Pin a release with its version tag, for example `ghcr.io/rigspark/rigspark:3.1.2`.
+Images for releases before 3.1.2 remain at `ghcr.io/shashankswe2020-ux/rigspark`.
 The image packages the same checksum-verified binaries as that release's Linux
 archives on Debian 13, runs as a non-root user, and defaults to
 `recommend --json`; advice remains offline. Hardware detection sees the
