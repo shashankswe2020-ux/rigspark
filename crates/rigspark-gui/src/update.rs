@@ -23,7 +23,7 @@ pub fn status(current: &str, tag: Option<&str>) -> Value {
         return unknown();
     };
     let newer = latest > installed;
-    json!({"currentVersion":current,"latestVersion":tag.unwrap_or("").trim_start_matches('v'),"state":if newer{"update-available"}else{"current"},"releaseUrl":if newer{Some("https://github.com/shashankswe2020-ux/rigspark/releases")}else{None}})
+    json!({"currentVersion":current,"latestVersion":tag.unwrap_or("").trim_start_matches('v'),"state":if newer{"update-available"}else{"current"},"releaseUrl":if newer{Some("https://github.com/rigspark/rigspark/releases")}else{None}})
 }
 pub async fn fetch() -> Value {
     let current = env!("CARGO_PKG_VERSION");
@@ -35,7 +35,7 @@ pub async fn fetch() -> Value {
             .build()
             .ok()?;
         let mut response = client
-            .get("https://api.github.com/repos/shashankswe2020-ux/rigspark/releases/latest")
+            .get("https://api.github.com/repos/rigspark/rigspark/releases/latest")
             .header("accept", "application/vnd.github+json")
             .header("user-agent", "rigspark-native")
             .send()
@@ -79,7 +79,7 @@ mod tests {
         assert_eq!(status("0.11.4", None)["releaseUrl"], Value::Null);
         assert_eq!(
             status("0.11.2", Some("v0.12.0")),
-            json!({"currentVersion":"0.11.2","latestVersion":"0.12.0","state":"update-available","releaseUrl":"https://github.com/shashankswe2020-ux/rigspark/releases"})
+            json!({"currentVersion":"0.11.2","latestVersion":"0.12.0","state":"update-available","releaseUrl":"https://github.com/rigspark/rigspark/releases"})
         );
         for tag in ["v0.11.2", "v0.10.9"] {
             assert_eq!(status("0.11.2", Some(tag))["state"], "current", "{tag}");

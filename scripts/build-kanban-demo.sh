@@ -57,7 +57,7 @@ make_card(os.path.join(work, "99-outro.png"), [
     ("What you just saw", 40, "#9dd0ff"),
     ("1 prompt · 6 tool calls · 3 files · 73 seconds", 44, "white"),
     ("rigspark + opencode + ollama", 40, "white"),
-    ("github.com/shashankswe2020-ux/rigspark", 34, "#9dd0ff"),
+    ("github.com/rigspark/rigspark", 34, "#9dd0ff"),
 ])
 
 # Story frames with captions.  07 is the "money shot" showing all tool cards

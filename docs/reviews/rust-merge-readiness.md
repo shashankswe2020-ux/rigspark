@@ -93,10 +93,10 @@ GUI responsiveness, long-lived memory, or installer/archive size budgets.
 
 At commit `5e7a842`, native desktop verification passed macOS, Linux, and Windows,
 including actual folder-dialog cancellation/selection through the Rust coordinator:
-https://github.com/shashankswe2020-ux/rigspark/actions/runs/35442346134
+https://github.com/rigspark/rigspark/actions/runs/35442346134
 
 Both native release-budget jobs also passed at the same commit:
-https://github.com/shashankswe2020-ux/rigspark/actions/runs/35442346120
+https://github.com/rigspark/rigspark/actions/runs/35442346120
 The overall readiness run correctly failed its separate retirement job.
 
 The preceding performance run at `74fa886` recorded Linux p90 values of

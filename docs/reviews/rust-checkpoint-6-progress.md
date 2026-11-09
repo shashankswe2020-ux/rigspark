@@ -64,7 +64,7 @@ format change to either curated dataset. The temporary compatibility package
 includes that JSON, and retained bootstrap/freshness/refresh scripts still work.
 The refresh slice passed native macOS, Linux, and Windows verification at commit
 `d54799b` in run
-[35360845094](https://github.com/shashankswe2020-ux/rigspark/actions/runs/35360845094).
+[35360845094](https://github.com/rigspark/rigspark/actions/runs/35360845094).
 Native build/tests do not require Node or npm.
 
 ### Native Catalog Freshness

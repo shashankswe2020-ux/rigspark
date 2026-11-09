@@ -428,7 +428,7 @@ async fn accessibility(client: &Client, origin: &str) -> TestResult {
 
     set_update(client, "available").await?;
     client.refresh().await?;
-    wait_for(client, "(() => { const link = document.querySelector('#update-link'); return link && !link.hidden && link.getClientRects().length > 0 && link.textContent === 'Update to 0.12.0' && link.getAttribute('href') === 'https://github.com/shashankswe2020-ux/rigspark/releases' && link.target === '_blank' && link.rel === 'noopener noreferrer'; })()").await?;
+    wait_for(client, "(() => { const link = document.querySelector('#update-link'); return link && !link.hidden && link.getClientRects().length > 0 && link.textContent === 'Update to 0.12.0' && link.getAttribute('href') === 'https://github.com/rigspark/rigspark/releases' && link.target === '_blank' && link.rel === 'noopener noreferrer'; })()").await?;
     set_update(client, "unknown").await?;
     client.refresh().await?;
     wait_for(client, "document.querySelector('#prompt') && document.querySelector('#update-link')?.getClientRects().length === 0").await

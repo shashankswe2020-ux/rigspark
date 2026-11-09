@@ -405,7 +405,7 @@ Tauri's built-in updater plugin is configured to poll the GitHub Releases endpoi
   "plugins": {
     "updater": {
       "endpoints": [
-        "https://github.com/shashankswe2020-ux/rigspark/releases/latest/download/latest.json"
+        "https://github.com/rigspark/rigspark/releases/latest/download/latest.json"
       ],
       "dialog": true,
       "pubkey": "{{TAURI_SIGNING_PUBLIC_KEY}}"

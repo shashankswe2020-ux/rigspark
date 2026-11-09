@@ -25,9 +25,9 @@ To sign off commits you already made: `git rebase --signoff main`.
 
 ## Where to start
 
-- Issues labelled [`good first issue`](https://github.com/shashankswe2020-ux/rigspark/labels/good%20first%20issue)
+- Issues labelled [`good first issue`](https://github.com/rigspark/rigspark/labels/good%20first%20issue)
   are small and self-contained, and most say which file to change.
-- Issues labelled [`help wanted`](https://github.com/shashankswe2020-ux/rigspark/labels/help%20wanted)
+- Issues labelled [`help wanted`](https://github.com/rigspark/rigspark/labels/help%20wanted)
   are open for anyone; comment first on the larger ones so work isn't duplicated.
 - New models go through the **Request a model** issue form; every entry needs pinned,
   integrity-checked weights.
@@ -39,7 +39,7 @@ RigSpark is a Rust workspace pinned to Rust 1.98.1 (`rust-toolchain.toml`; `rust
 installs it automatically). There is no Node.js or TypeScript tooling.
 
 ```bash
-git clone https://github.com/shashankswe2020-ux/rigspark
+git clone https://github.com/rigspark/rigspark
 cd rigspark
 cargo build --workspace --locked
 cargo rigspark recommend        # run the CLI from source

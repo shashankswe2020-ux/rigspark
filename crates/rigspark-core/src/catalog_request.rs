@@ -109,7 +109,7 @@ fn extract_field(body: &str) -> Result<&str, ValidationError> {
 
 fn validate_issue_url(raw: &str, issue_number: u64) -> Result<(), ValidationError> {
     let url = Url::parse(raw).map_err(|_| invalid("invalid GitHub issue URL"))?;
-    let expected = format!("/shashankswe2020-ux/rigspark/issues/{issue_number}");
+    let expected = format!("/rigspark/rigspark/issues/{issue_number}");
     if url.scheme() != "https"
         || url.host_str() != Some("github.com")
         || url.path() != expected

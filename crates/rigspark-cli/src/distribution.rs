@@ -218,7 +218,7 @@ pub fn verify_directory(directory: &Path) -> io::Result<Manifest> {
     Ok(manifest)
 }
 
-const REPOSITORY: &str = "https://github.com/shashankswe2020-ux/rigspark";
+const REPOSITORY: &str = "https://github.com/rigspark/rigspark";
 pub const SPONSOR_URL: &str = "https://buymeacoffee.com/shashanksw9";
 pub const SPONSOR_MESSAGE: &str = "If Sparky helps you, please consider sponsoring the project:";
 pub const SPONSOR_HELP: &str = "If Sparky helps you, please consider sponsoring the project:\nhttps://buymeacoffee.com/shashanksw9";

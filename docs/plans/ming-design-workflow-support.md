@@ -2,7 +2,7 @@
 
 Status: exact INT8 pairing verified on Apple MPS; production promotion approved for v3.0.3.
 Date: 2026-10-13
-Tracking: [model request #317](https://github.com/shashankswe2020-ux/rigspark/issues/317)
+Tracking: [model request #317](https://github.com/rigspark/rigspark/issues/317)
 
 ## Current execution status
 
