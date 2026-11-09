@@ -25,7 +25,10 @@ pub fn status(current: &str, tag: Option<&str>) -> Value {
     let newer = latest > installed;
     json!({"currentVersion":current,"latestVersion":tag.unwrap_or("").trim_start_matches('v'),"state":if newer{"update-available"}else{"current"},"releaseUrl":if newer{Some("https://github.com/rigspark/rigspark/releases")}else{None}})
 }
-pub async fn fetch() -> Value {
+/// Where installed builds ask for the newest release.
+pub const LATEST_RELEASE: &str = "https://api.github.com/repos/rigspark/rigspark/releases/latest";
+/// Ask `url` (a GitHub "latest release" endpoint) whether a newer release exists.
+pub async fn fetch(url: &str) -> Value {
     let current = env!("CARGO_PKG_VERSION");
     let operation = async {
         let client = reqwest::Client::builder()
@@ -35,7 +38,7 @@ pub async fn fetch() -> Value {
             .build()
             .ok()?;
         let mut response = client
-            .get("https://api.github.com/repos/rigspark/rigspark/releases/latest")
+            .get(url)
             .header("accept", "application/vnd.github+json")
             .header("user-agent", "rigspark-native")
             .send()
@@ -68,6 +71,48 @@ pub async fn fetch() -> Value {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use tokio::io::{AsyncReadExt as _, AsyncWriteExt as _};
+
+    /// Serve one HTTP response on loopback and return its URL.
+    async fn serve_once(status: &'static str, body: &'static str) -> String {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.unwrap();
+            let mut request = [0; 4096];
+            let _ = stream.read(&mut request).await;
+            let response = format!(
+                "HTTP/1.1 {status}\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{body}",
+                body.len()
+            );
+            stream.write_all(response.as_bytes()).await.unwrap();
+        });
+        format!("http://{address}/releases/latest")
+    }
+
+    #[tokio::test]
+    async fn fetch_reads_the_latest_release_tag() {
+        let url = serve_once("200 OK", r#"{"tag_name":"v999.0.0"}"#).await;
+        let value = fetch(&url).await;
+        assert_eq!(value["state"], "update-available");
+        assert_eq!(value["latestVersion"], "999.0.0");
+        assert_eq!(value["currentVersion"], env!("CARGO_PKG_VERSION"));
+    }
+
+    #[tokio::test]
+    async fn fetch_is_unknown_when_the_release_check_fails() {
+        let url = serve_once("301 Moved Permanently", "").await;
+        assert_eq!(fetch(&url).await["state"], "unknown");
+    }
+
+    #[test]
+    fn installed_builds_ask_the_rigspark_organisation() {
+        assert_eq!(
+            LATEST_RELEASE,
+            "https://api.github.com/repos/rigspark/rigspark/releases/latest"
+        );
+    }
+
     #[test]
     fn release_comparison_is_bounded_and_honest() {
         assert_eq!(
