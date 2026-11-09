@@ -1165,6 +1165,34 @@ mod tests {
         );
     }
 
+    /// Sends `raw` verbatim to the first connection, then closes it.
+    async fn raw_reply(raw: &'static [u8]) -> reqwest::Response {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.unwrap();
+            let mut buffer = vec![0u8; 4096];
+            let _ = socket.read(&mut buffer).await;
+            let _ = socket.write_all(raw).await;
+        });
+        reqwest::get(format!("http://{address}/")).await.unwrap()
+    }
+
+    #[tokio::test]
+    async fn a_declared_length_is_checked_before_reading() {
+        let exact =
+            raw_reply(b"HTTP/1.1 200 OK\r\nContent-Length: 4\r\nConnection: close\r\n\r\nabcd")
+                .await;
+        assert_eq!(bounded(exact, 4).await.unwrap(), b"abcd");
+        // Declares 5 bytes but sends 2: refused on the header, not on the cut-off body.
+        let declared =
+            raw_reply(b"HTTP/1.1 200 OK\r\nContent-Length: 5\r\nConnection: close\r\n\r\nab").await;
+        assert_eq!(
+            bounded(declared, 4).await.unwrap_err().0,
+            "voice server reply exceeds the size limit"
+        );
+    }
+
     #[tokio::test]
     async fn attach_refuses_fragments_queries_long_endpoints_and_long_models() {
         let home = tempfile::tempdir().unwrap();
