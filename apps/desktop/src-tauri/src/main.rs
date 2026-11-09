@@ -214,12 +214,22 @@ fn build_tray(app: &tauri::App) -> tauri::Result<()> {
             "quit" => app.exit(0),
             _ => {}
         });
-    if let Some(icon) = app.default_window_icon() {
-        tray = tray.icon(icon.clone());
+    // One hood, black on clear: macOS tints it for the menu bar. RigSpark Crew shows three,
+    // so the two apps can be told apart there.
+    match tauri::image::Image::from_bytes(TRAY_ICON) {
+        Ok(icon) => tray = tray.icon(icon).icon_as_template(true),
+        Err(_) => {
+            if let Some(icon) = app.default_window_icon() {
+                tray = tray.icon(icon.clone());
+            }
+        }
     }
     tray.build(app)?;
     Ok(())
 }
+/// The menu bar icon (a template image, 22 pt at 2x).
+const TRAY_ICON: &[u8] = include_bytes!("../icons/tray-template.png");
+
 #[cfg(not(test))]
 fn main() {
     let dialog_smoke = std::env::args().any(|argument| argument == "--dialog-smoke-test");
@@ -507,6 +517,18 @@ mod tests {
         assert!(
             name.bytes()
                 .all(|byte| byte.is_ascii_alphanumeric() || b"._ -".contains(&byte))
+        );
+    }
+
+    #[test]
+    fn tray_icon_is_a_one_hood_template() {
+        let tray = tauri::image::Image::from_bytes(super::TRAY_ICON).unwrap();
+        assert_eq!((tray.width(), tray.height()), (44, 44));
+        // black ink on clear only, so macOS can tint it
+        assert!(
+            tray.rgba()
+                .chunks(4)
+                .all(|p| p[3] == 0 || (p[0] < 40 && p[1] < 40 && p[2] < 40))
         );
     }
 }
