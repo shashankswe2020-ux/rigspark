@@ -5,7 +5,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const accept = document.querySelector("#legal-accept");
   if (!dialog || !accept || typeof dialog.showModal !== "function") return;
   const KEY = "rigspark.notice";
-  const VERSION = "1";
+  const VERSION = "2";
 
   function seen() {
     try {
@@ -37,5 +37,13 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!seen()) event.preventDefault();
   });
   document.querySelector("#legal-open")?.addEventListener("click", open);
+  const terms = document.querySelector("#terms-of-use");
+  document.querySelector("#terms-open")?.addEventListener("click", () => {
+    if (!terms) return;
+    terms.showModal();
+    terms.scrollTop = 0;
+    document.querySelector("#terms-close")?.focus({ preventScroll: true });
+  });
+  document.querySelector("#terms-close")?.addEventListener("click", () => terms?.close());
   if (!seen()) open();
 });

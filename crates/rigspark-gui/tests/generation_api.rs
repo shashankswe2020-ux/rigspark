@@ -486,11 +486,11 @@ fn the_first_run_notice_states_the_licence_and_responsibilities() {
     let legal = include_str!("../static/legal.js");
     for marker in [
         "id=\"legal-notice\"",
-        "under the MIT licence.</strong>",
+        "distributed under the MIT licence",
         "without warranty of any kind</strong>",
         "you are responsible for complying with it.</strong>",
         "You are responsible for what you generate",
-        "not the RigSpark name or logo.</strong>",
+        "name and logo are not licensed for reuse.</strong>",
         "stay on this device.</strong>",
         "id=\"legal-open\"",
         "/static/legal.js",
@@ -499,4 +499,20 @@ fn the_first_run_notice_states_the_licence_and_responsibilities() {
     }
     assert!(legal.contains("showModal"));
     assert!(legal.contains("localStorage"));
+}
+
+#[test]
+fn the_app_shows_every_section_of_the_terms_of_use() {
+    let terms = include_str!("../../../TERMS.md");
+    let index = include_str!("../static/index.html");
+    let mut sections = 0;
+    for line in terms.lines() {
+        if let Some(heading) = line.strip_prefix("## ") {
+            assert!(index.contains(&format!("<h2>{heading}</h2>")), "{heading}");
+            sections += 1;
+        }
+    }
+    assert!(sections >= 20);
+    assert!(index.contains("id=\"terms-open\""));
+    assert!(index.contains("distributed under the MIT licence"));
 }
