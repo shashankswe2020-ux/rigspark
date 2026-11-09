@@ -1,5 +1,25 @@
 # Changelog
 
+## 3.1.2 (2026-11-10)
+
+RigSpark now lives at <https://github.com/rigspark/rigspark>. 3.1.1 reached
+crates.io, but its downloads and desktop update were never published, so
+3.1.2 is the first app release with the 3.1.1 changes below.
+
+### Changes
+
+- **New home: `rigspark/rigspark`.** Update checks, the desktop updater,
+  catalog updates, model requests and every link now use the new address.
+  Container images from this release are at `ghcr.io/rigspark/rigspark`.
+  Apps older than 3.1.2 may stop showing "Update to …" on their own; use
+  Runtime › Check for updates in the desktop app, or download 3.1.2 from the
+  releases page.
+
+### Fixes
+
+- A test that compared a path with forward slashes failed on Windows and
+  stopped the 3.1.1 release.
+
 ## 3.1.1 (2026-11-10)
 
 ### Features
