@@ -1747,7 +1747,7 @@ document.addEventListener("DOMContentLoaded", () => {
         payload.port = Number(installedPort.value);
         if (!payload.bypass) throw new Error("Installed models require explicit bypass consent");
       }
-      if ((payload.bypass || payload.context !== undefined || payload.kvCache || payload.parallel) && !globalThis.confirm(
+      if ((payload.bypass || payload.context !== undefined || payload.kvCache || payload.parallel) && !await globalThis.rigsparkConfirm(
         `Start ${id} at ${payload.context ?? "default"} context?${payload.bypass ? " Estimated fit may be wrong or unknown; memory exhaustion or CPU offload is possible." : ""}${payload.installed ? " Local manifest integrity will be checked, not catalog provenance." : " Weight integrity checks remain enabled."}${payload.context !== undefined && payload.backend === "ollama" ? " A separate runtime model tag will be created; the source tag stays unchanged." : ""}${payload.kvCache ? ` KV cache ${payload.kvCache} applies only to a runtime rigspark starts; an already running server is refused, not changed.` : ""}${payload.parallel ? ` ${payload.parallel} parallel slots need memory for each slot on Ollama.` : ""}`,
       )) return;
       const response = await globalThis.fetch("/api/models/up", {
@@ -3175,7 +3175,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function renameSession(session) {
-    const next = globalThis.prompt("Rename chat", session.title || "");
+    const next = await globalThis.rigsparkPrompt({ title: "Rename chat", label: "Name", value: session.title || "" });
     if (next === null) {
       return;
     }
@@ -3196,19 +3196,31 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function deleteSession(session) {
-    if (!globalThis.confirm(`Delete "${session.title || "this chat"}"?`)) {
+    const confirmed = await globalThis.rigsparkConfirm({
+      title: "Delete this chat?",
+      message: `"${session.title || "Untitled chat"}" and its messages will be removed from this Mac. This can't be undone.`,
+      confirmLabel: "Delete",
+      danger: true,
+    });
+    if (!confirmed) {
       return;
     }
     try {
-      await globalThis.fetch(`/api/sessions/${encodeURIComponent(session.id)}`, { method: "DELETE" });
+      const response = await globalThis.fetch(`/api/sessions/${encodeURIComponent(session.id)}`, { method: "DELETE" });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || `request failed (${response.status})`);
+      }
+      if (pinnedSessions.delete(session.id)) savePinned();
       if (currentSessionId === session.id) {
         currentSessionId = null;
         showEmptyMessages();
       }
-      await loadSessions(sessionSearch ? sessionSearch.value : "");
-    } catch {
-      // Ignore delete failures.
+    } catch (error) {
+      await globalThis.rigsparkNotice(`Could not delete the chat: ${error.message}`, "Not deleted");
     }
+    // Refresh either way, so the list shows what is really stored.
+    await loadSessions(sessionSearch ? sessionSearch.value : "").catch(() => {});
   }
 
   async function initSessions() {

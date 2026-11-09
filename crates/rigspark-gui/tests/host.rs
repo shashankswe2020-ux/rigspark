@@ -302,3 +302,55 @@ async fn launch_boundary_rejects_rebinding_cross_origin_and_missing_tokens() {
             .contains("llmup-token")
     );
 }
+
+/// The desktop app's WebKit view (wry) has no JavaScript dialog handler, so `confirm()`
+/// returns false (and `prompt()` null) without showing anything there: deleting or renaming a
+/// chat, installing an update and advanced starts silently did nothing. Confirmations use the page's own dialog instead.
+#[tokio::test]
+async fn confirmations_use_the_page_dialog_not_window_confirm() {
+    let scripts = [
+        ("chat.js", include_str!("../static/chat.js")),
+        ("desktop.js", include_str!("../static/desktop.js")),
+        ("generate.js", include_str!("../static/generate.js")),
+        ("voice.js", include_str!("../static/voice.js")),
+        ("image-studio.js", include_str!("../static/image-studio.js")),
+        ("workspace.js", include_str!("../static/workspace.js")),
+        ("legal.js", include_str!("../static/legal.js")),
+    ];
+    for (name, source) in scripts {
+        for call in [
+            "globalThis.confirm(",
+            "window.confirm(",
+            "globalThis.alert(",
+            "window.alert(",
+            "globalThis.prompt(",
+            "window.prompt(",
+        ] {
+            assert!(!source.contains(call), "{name} calls {call}");
+        }
+    }
+    let index = include_str!("../static/index.html");
+    let helper = index
+        .find("/static/confirm.js")
+        .expect("index loads confirm.js");
+    assert!(helper < index.find("/static/chat.js").unwrap());
+    assert!(helper < index.find("/static/desktop.js").unwrap());
+    let confirm = include_str!("../static/confirm.js");
+    assert!(confirm.contains("showModal"));
+    assert!(confirm.contains("globalThis.rigsparkConfirm"));
+    assert!(confirm.contains("globalThis.rigsparkPrompt"));
+
+    let home = tempfile::tempdir().unwrap();
+    let host = Host::new(home.path(), 43210).unwrap();
+    let response = rigspark_gui::router(host)
+        .oneshot(
+            axum::http::Request::builder()
+                .uri("/static/confirm.js")
+                .header("host", "127.0.0.1:43210")
+                .body(axum::body::Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), axum::http::StatusCode::OK);
+}

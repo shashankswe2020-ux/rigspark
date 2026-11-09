@@ -5742,6 +5742,17 @@ input.switch.switch-sm:checked::after {
 .legal-actions { display: flex; justify-content: flex-end; margin-top: 16px; }
 #legal-open { margin-top: 10px; }
 
+/* Confirmations drawn by the page (static/confirm.js): the desktop WebKit view has no window.confirm(). */
+.confirm-dialog { width: min(420px, calc(100vw - 32px)); padding: 20px; border: 1px solid var(--line2); border-radius: var(--radius); background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
+.confirm-dialog::backdrop { background: var(--scrim); }
+.confirm-dialog h2 { margin: 0 0 6px; font-size: 1.05rem; }
+.confirm-dialog p { margin: 0; color: var(--text2); line-height: 1.45; overflow-wrap: anywhere; }
+.confirm-dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+.accent-btn.danger-btn { background: var(--danger); color: #fff; }
+.confirm-dialog-field { display: grid; gap: 6px; margin-top: 12px; font-size: 0.85rem; color: var(--text2); }
+.confirm-dialog-field[hidden] { display: none; }
+.confirm-dialog-field input { height: 36px; padding: 0 10px; border: 1px solid var(--line2); border-radius: 8px; background: var(--bg); color: var(--text); font: inherit; font-size: 0.95rem; }
+
 /* Full Terms of Use, opened from the first-run notice. */
 .terms-of-use { width: min(760px, calc(100vw - 32px)); }
 .terms-body { font-size: 0.88rem; line-height: 1.55; color: var(--text); }

@@ -112,7 +112,11 @@
         return;
       }
       updateStatus.textContent = `RigSpark ${update.version} is available.`;
-      if (globalThis.confirm(`Install RigSpark ${update.version} and restart? Running models keep serving until RigSpark restarts.`)) {
+      if (await globalThis.rigsparkConfirm({
+        title: `Install RigSpark ${update.version}?`,
+        message: "RigSpark restarts to finish. Running models keep serving until it does.",
+        confirmLabel: "Install and restart",
+      })) {
         updateStatus.textContent = "Downloading and verifying the update…";
         await desktop.installUpdate();
       }
