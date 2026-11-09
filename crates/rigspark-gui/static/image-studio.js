@@ -151,11 +151,10 @@ document.addEventListener("DOMContentLoaded", () => {
   // ---- running jobs ----
 
   async function postJob(model, text, seed, aspect) {
-    const { dir, port } = gen().comfyui();
     const response = await globalThis.fetch("/api/generation/jobs", {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-LLMUP-Token": gen().token },
-      body: JSON.stringify({ model: model.id, prompt: text, seed, aspect, comfyuiDir: dir, port, bypass: false }),
+      body: JSON.stringify({ model: model.id, prompt: text, seed, aspect, bypass: false }),
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.error || `request failed (${response.status})`);
@@ -190,9 +189,6 @@ document.addEventListener("DOMContentLoaded", () => {
   function preflight() {
     const model = gen()?.selectedModel("image");
     if (!model) throw new Error("No local image model is available");
-    if (!gen().comfyui().dir) {
-      throw new Error("ComfyUI was not detected. Set RIGSPARK_COMFYUI_DIR before starting rigspark");
-    }
     if (!model.runnable) throw new Error(`${model.id} has no built-in ComfyUI workflow yet`);
     if (model.fit.verdict === "no") throw new Error(`${model.id} does not fit this machine (${model.fit.reason})`);
     return model;
@@ -208,6 +204,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function generateInChat(text) {
     const model = preflight();
+    if (!(await gen().ensureComfyui())) return;
     const choice = PRESETS[preset];
     const seeds = keptSeed === null ? Array.from({ length: variations() }, randomSeed) : [keptSeed];
     gen().chatRow("user", "You").textContent = text;

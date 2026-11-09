@@ -11,7 +11,7 @@ use axum::{
     response::IntoResponse,
 };
 use rigspark_core::voice::{SizeBasis, VoiceCatalog, VoiceEngine, VoiceKind, fit};
-use rigspark_runtime::voice::{MAX_AUDIO_BYTES, SpeakRequest, probe_engine};
+use rigspark_runtime::voice::{MAX_AUDIO_BYTES, SpeakRequest, probe_engine_in};
 use serde::Deserialize;
 use serde_json::{Value, json};
 use std::sync::Arc;
@@ -70,7 +70,7 @@ async fn engines_and_status(host: &Host) -> Result<(Value, Value), ApiError> {
         .map_err(|_| bad())?;
     let engines: Vec<_> = [VoiceEngine::WhisperCpp, VoiceEngine::MlxAudio]
         .into_iter()
-        .map(|engine| probe_engine(engine, &hardware))
+        .map(|engine| probe_engine_in(engine, &hardware, Some(host.engines.root())))
         .collect();
     Ok((
         serde_json::to_value(engines).map_err(|_| bad())?,

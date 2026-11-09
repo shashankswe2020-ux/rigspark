@@ -354,3 +354,22 @@ async fn confirmations_use_the_page_dialog_not_window_confirm() {
         .unwrap();
     assert_eq!(response.status(), axum::http::StatusCode::OK);
 }
+
+#[test]
+fn comfyui_and_mlx_audio_are_set_up_from_the_app_not_the_shell() {
+    let index = include_str!("../static/index.html");
+    let engines = include_str!("../static/engines.js");
+    let generation = include_str!("../static/generate.js");
+    let studio = include_str!("../static/image-studio.js");
+    let voice = include_str!("../static/voice.js");
+    assert!(index.contains(r#"<script src="/static/engines.js"></script>"#));
+    assert!(engines.contains("/api/generation/engines"));
+    assert!(engines.contains("rigsparkConfirm"));
+    for page in [generation, studio] {
+        assert!(!page.contains("RIGSPARK_COMFYUI_DIR"));
+        assert!(page.contains("ensureComfyui"));
+    }
+    // RigSpark picks the folder and port itself.
+    assert!(!studio.contains("comfyuiDir:"));
+    assert!(voice.contains("rigsparkEngines.ensure"));
+}

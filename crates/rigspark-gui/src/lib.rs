@@ -65,6 +65,11 @@ pub struct Host {
     pub generator: Arc<dyn rigspark_runtime::generation::Generator>,
     /// Local speak and listen servers (text to speech, speech to text).
     pub voice: Arc<rigspark_runtime::voice::VoiceService>,
+    /// ComfyUI and mlx-audio, installed and run by RigSpark (`rigspark_runtime::engines`).
+    pub engines: Arc<rigspark_runtime::engines::Engines>,
+    /// Whether generation jobs start ComfyUI themselves; off for hosts with an injected
+    /// generator (tests use fakes instead of ComfyUI).
+    pub manage_engines: bool,
     /// Hugging Face access for Add from Hugging Face; native unless a test injects one.
     hugging_face:
         std::sync::Mutex<Option<Arc<dyn rigspark_runtime::admission::AdmissionTransport>>>,
@@ -112,11 +117,12 @@ impl Host {
         port: u16,
         engine: Arc<dyn engine::Engine>,
     ) -> Result<Arc<Self>, Box<dyn std::error::Error>> {
-        Self::with_generator(
+        Self::build(
             home,
             port,
             engine,
             Arc::new(rigspark_runtime::generation::NativeGenerator),
+            true,
         )
     }
     /// Host with an injected image/video generator (tests use fakes instead of ComfyUI).
@@ -125,6 +131,15 @@ impl Host {
         port: u16,
         engine: Arc<dyn engine::Engine>,
         generator: Arc<dyn rigspark_runtime::generation::Generator>,
+    ) -> Result<Arc<Self>, Box<dyn std::error::Error>> {
+        Self::build(home, port, engine, generator, false)
+    }
+    fn build(
+        home: &Path,
+        port: u16,
+        engine: Arc<dyn engine::Engine>,
+        generator: Arc<dyn rigspark_runtime::generation::Generator>,
+        manage_engines: bool,
     ) -> Result<Arc<Self>, Box<dyn std::error::Error>> {
         let config = rigspark_runtime::state::Config::from_home(home)?;
         let store = rigspark_runtime::state::StateStore::new(config.clone());
@@ -146,6 +161,9 @@ impl Host {
             generation: Default::default(),
             generator,
             voice: Arc::new(rigspark_runtime::voice::VoiceService::new(&config.home)?),
+            engines: rigspark_runtime::engines::Engines::new(&config.home)
+                .map_err(std::io::Error::other)?,
+            manage_engines,
             hugging_face: std::sync::Mutex::new(None),
             approvals: approval::Approvals::default(),
             grants: Mutex::new(Default::default()),
@@ -360,6 +378,8 @@ pub async fn serve(listener: tokio::net::TcpListener, host: Arc<Host>) -> std::i
     host.voice.shutdown();
     host.tasks.close();
     host.tasks.wait().await;
+    // After the jobs: a generation still running may need the ComfyUI RigSpark started.
+    host.engines.shutdown().await;
     if let Ok(config) = rigspark_runtime::state::Config::from_home(&host.home) {
         host.runtimes.lock().await.shutdown(config).await;
     }

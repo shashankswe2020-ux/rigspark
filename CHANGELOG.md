@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+### Features
+
+- **RigSpark sets up ComfyUI and mlx-audio itself.** Pictures, video and voice
+  no longer ask you to install Python tools or set `RIGSPARK_COMFYUI_DIR`. The
+  first time you generate a picture or video (or choose Set up on an mlx-audio
+  voice), RigSpark asks once, then installs a pinned ComfyUI 0.38.2 or
+  mlx-audio 0.6.4 into its own folder with uv, every download checked against
+  a SHA-256 pin. After that it finds, starts and stops ComfyUI on its own, on a
+  loopback port. An existing ComfyUI (a server on 8188 or `~/ComfyUI`) and a
+  system mlx-audio are still used as they are. New routes:
+  `GET /api/generation/engines` and
+  `POST /api/generation/engines/{comfyui|mlx-audio}/install`.
+
 ### Fixes
 
 - **Deleting and renaming chats works in the desktop app.** The Mac app's

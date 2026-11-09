@@ -309,20 +309,41 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // RigSpark installs, finds and starts ComfyUI itself: one Set up click the first time.
+  async function ensureComfyui() {
+    if (comfyuiDir) return true;
+    const status = chatRow("assistant", "Setting up ComfyUI");
+    status.textContent = "Checking ComfyUI…";
+    try {
+      const ready = await globalThis.rigsparkEngines.ensure("comfyui", {
+        onStep: (step) => {
+          status.textContent = step;
+        },
+      });
+      if (!ready) {
+        status.closest(".message")?.remove();
+        return false;
+      }
+      await loadModels();
+      return true;
+    } catch (error) {
+      status.textContent = `ComfyUI setup failed: ${error.message}`;
+      return false;
+    }
+  }
+
   async function generate() {
     const text = chatPrompt.value.trim();
     if (!text) return;
     const model = selectedModel(chatMode);
     if (!model) throw new Error(`No local ${chatMode} model is available`);
-    if (!comfyuiDir) {
-      throw new Error("ComfyUI was not detected. Set RIGSPARK_COMFYUI_DIR before starting rigspark");
-    }
     if (!model.runnable) {
       throw new Error(`${model.id} has no built-in ComfyUI workflow yet (workflow coming)`);
     }
     if (model.fit.verdict === "no") {
       throw new Error(`${model.id} does not fit this machine (${model.fit.reason})`);
     }
+    if (!(await ensureComfyui())) return;
     chatRow("user", "You").textContent = text;
     chatPrompt.value = "";
     const body = chatRow("assistant", `${chatMode === "video" ? "Video" : "Image"} · ${model.id}`);
@@ -337,8 +358,6 @@ document.addEventListener("DOMContentLoaded", () => {
       body: JSON.stringify({
         model: model.id,
         prompt: text,
-        comfyuiDir,
-        port: comfyuiPort,
         bypass: false,
       }),
     });
@@ -398,6 +417,7 @@ document.addEventListener("DOMContentLoaded", () => {
   globalThis.RigSparkGeneration = {
     selectedModel,
     comfyui: () => ({ dir: comfyuiDir, port: comfyuiPort }),
+    ensureComfyui,
     chatRow,
     setBusy,
     showError,

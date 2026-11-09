@@ -160,6 +160,31 @@ document.addEventListener("DOMContentLoaded", () => {
     if (visible) load();
   }
 
+  // mlx-audio is one RigSpark installs itself; whisper.cpp still comes from the system.
+  const managed = (probe) => probe && probe.engine === "mlx-audio" && probe.supported && !probe.installed;
+  let settingUp = "";
+
+  async function setUp(probe, then) {
+    showError("");
+    settingUp = "Checking…";
+    render();
+    try {
+      const ready = await globalThis.rigsparkEngines.ensure(probe.engine, {
+        onStep: (step) => {
+          settingUp = step;
+          render();
+        },
+      });
+      settingUp = "";
+      await load();
+      if (ready && then) await then();
+    } catch (error) {
+      settingUp = "";
+      render();
+      showError(`Could not set up ${probe.label}: ${error.message}`);
+    }
+  }
+
   async function start(model) {
     showError("");
     try {
@@ -213,6 +238,16 @@ document.addEventListener("DOMContentLoaded", () => {
     if (model.fit.verdict === "no") {
       button.disabled = true;
       button.title = model.fit.reason;
+    } else if (managed(probe)) {
+      if (settingUp) {
+        wrap.append(element("span", "voice-progress", settingUp));
+        return wrap;
+      }
+      button.textContent = "Set up";
+      button.title = `Install ${probe.label} for RigSpark, then start ${model.id}`;
+      button.addEventListener("click", () => setUp(probe, () => start(model)));
+      wrap.append(button);
+      return wrap;
     } else if (probe && !probe.installed) {
       button.disabled = true;
       button.title = `Install ${probe.label}: ${probe.install}`;
@@ -241,8 +276,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const failed = slot(model.kind);
     const note = failed && failed.model === model.id && failed.state === "failed"
       ? failed.detail
-      : probe && !probe.installed
-        ? `Not installed · ${probe.install}`
+      : managed(probe)
+        ? "Not set up yet · one click installs it"
+        : probe && !probe.installed
+          ? `Not installed · ${probe.install}`
         : model.voices.length
           ? `${model.voices.length} voices · speed unknown`
           : "speed unknown";
@@ -730,11 +767,21 @@ document.addEventListener("DOMContentLoaded", () => {
             ? active.map((entry) => `${entry.kind} · ${entry.model} · ${entry.state}`).join(" · ")
             : "Installed · idle";
       info.append(element("div", "runtime-meta", `${what} · ${state}`));
-      if (probe.supported && !probe.installed) info.append(element("div", "runtime-detail", probe.install));
+      if (managed(probe)) {
+        info.append(element("div", "runtime-detail", settingUp || "RigSpark installs and runs it for you"));
+      } else if (probe.supported && !probe.installed) {
+        info.append(element("div", "runtime-detail", probe.install));
+      }
       for (const entry of active.filter((entry) => entry.endpoint)) {
         info.append(element("div", "runtime-detail", entry.endpoint.replace(/^https?:\/\//, "")));
       }
       item.append(info);
+      if (managed(probe) && !settingUp) {
+        const setup = element("button", "chip-btn", "Set up");
+        setup.type = "button";
+        setup.addEventListener("click", () => setUp(probe));
+        item.append(setup);
+      }
       for (const entry of active) {
         const halt = element("button", "chip-btn", `Stop ${entry.kind}`);
         halt.type = "button";

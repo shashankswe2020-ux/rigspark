@@ -66,6 +66,16 @@ fn binary_from(variable: Option<std::ffi::OsString>, name: &str) -> Option<PathB
 }
 
 pub fn probe_engine(engine: VoiceEngine, hardware: &Hardware) -> EngineProbe {
+    probe_engine_in(engine, hardware, None)
+}
+
+/// Like [`probe_engine`], also finding the mlx-audio RigSpark installed under `engines_root`
+/// (see `crate::engines`) when none is on PATH.
+pub fn probe_engine_in(
+    engine: VoiceEngine,
+    hardware: &Hardware,
+    engines_root: Option<&Path>,
+) -> EngineProbe {
     let (label, variable, binary, install) = match engine {
         VoiceEngine::WhisperCpp => (
             "whisper.cpp",
@@ -77,10 +87,14 @@ pub fn probe_engine(engine: VoiceEngine, hardware: &Hardware) -> EngineProbe {
             "mlx-audio",
             MLX_AUDIO_SERVER_ENV,
             "mlx_audio.server",
-            "pip install -U mlx-audio (Apple Silicon only)",
+            "choose Set up in Models › Voice, or pip install -U mlx-audio (Apple Silicon only)",
         ),
     };
-    let path = binary_from(std::env::var_os(variable), binary);
+    let path = binary_from(std::env::var_os(variable), binary).or_else(|| {
+        (engine == VoiceEngine::MlxAudio)
+            .then(|| engines_root.and_then(crate::engines::managed_mlx_audio_server_in))
+            .flatten()
+    });
     EngineProbe {
         engine: engine.name(),
         label,
@@ -141,6 +155,8 @@ pub struct SlotView {
 /// One speak and one listen server at a time, each owned or attached.
 pub struct VoiceService {
     cache: PathBuf,
+    /// Where managed engines live (`crate::engines`).
+    engines: PathBuf,
     slots: Mutex<BTreeMap<&'static str, Slot>>,
     client: reqwest::Client,
     generation: std::sync::atomic::AtomicU64,
@@ -238,6 +254,7 @@ impl VoiceService {
             .map_err(|_| VoiceError("voice client setup failed".into()))?;
         Ok(Self {
             cache: home.join("cache"),
+            engines: home.join("engines"),
             slots: Mutex::new(BTreeMap::new()),
             client,
             generation: std::sync::atomic::AtomicU64::new(0),
@@ -376,7 +393,7 @@ impl VoiceService {
         hardware: &Hardware,
         parent: &CancellationToken,
     ) -> Result<(), VoiceError> {
-        let probe = probe_engine(model.engine, hardware);
+        let probe = probe_engine_in(model.engine, hardware, Some(&self.engines));
         if !probe.supported {
             return fail(format!("{} does not run on this machine", probe.label));
         }
