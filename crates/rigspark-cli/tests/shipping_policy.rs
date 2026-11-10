@@ -215,6 +215,23 @@ fn automatic_admission_merges_only_verified_data_only_changes() {
 }
 
 #[test]
+fn the_weekly_refresh_pr_is_opened_with_the_maintainer_token() {
+    // GITHUB_TOKEN may not create PRs in the rigspark org (run 42892247489).
+    let workflow = read(".github/workflows/catalog-refresh.yml");
+    let step = workflow
+        .split("- name: Open the catalog refresh PR\n")
+        .nth(1)
+        .and_then(|rest| rest.split("\n      - name:").next())
+        .expect("refresh PR step");
+    assert!(step.contains("GH_TOKEN: ${{ secrets.CATALOG_MERGE_TOKEN || github.token }}"));
+    assert!(step.contains("gh pr create --base main"));
+    assert!(
+        !step.contains("gh pr merge"),
+        "proposals stay for human review"
+    );
+}
+
+#[test]
 fn publishable_crates_carry_crates_io_metadata_and_exclude_tests() {
     let version = env!("CARGO_PKG_VERSION");
     let workspace = read("Cargo.toml");
