@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- **Ollama models whose published manifest lists the wrong config size now start.**
+  Ollama's registry serves `qwen3-coder:30b` with a config entry listing 539 bytes
+  for a 542-byte blob whose digest is correct; the installed-model check refused it.
+  A small config is now accepted on its digest; weights and every other layer still
+  need both digest and size to match.
+
 ## 3.1.2 (2026-11-10)
 
 RigSpark now lives at <https://github.com/rigspark/rigspark>. 3.1.1 reached

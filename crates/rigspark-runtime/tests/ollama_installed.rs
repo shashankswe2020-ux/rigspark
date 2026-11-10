@@ -186,6 +186,76 @@ async fn verifies_every_local_blob_and_preserves_catalog_integrity() {
     );
 }
 
+/// Ollama's registry has published manifests whose config entry lists the wrong size
+/// (qwen3-coder:30b: 539 listed, 542 served) while the digest is right. The digest binds the
+/// content, so the config is accepted on its digest; every other layer still needs both.
+#[tokio::test]
+async fn config_blob_is_accepted_on_its_digest_when_the_listed_size_is_wrong() {
+    let root = tempfile::tempdir().unwrap();
+    let bytes = b"verified weights";
+    let config = br#"{"model_format":"gguf","renderer":"x"}"#;
+    let weight_digest = format!("{:x}", Sha256::digest(bytes));
+    let config_digest = format!("{:x}", Sha256::digest(config));
+    let write = |config_size: usize, weight_size: usize| {
+        let manifest = json!({"schemaVersion":2,
+            "config":{"digest":format!("sha256:{config_digest}"),"size":config_size,"mediaType":"config"},
+            "layers":[{"digest":format!("sha256:{weight_digest}"),"size":weight_size,
+                       "mediaType":"application/vnd.ollama.image.model"}]})
+        .to_string();
+        let directory = root
+            .path()
+            .join("manifests/registry.ollama.ai/library/test");
+        std::fs::create_dir_all(&directory).unwrap();
+        std::fs::write(directory.join("latest"), &manifest).unwrap();
+        format!("{:x}", Sha256::digest(manifest.as_bytes()))
+    };
+    std::fs::create_dir_all(root.path().join("blobs")).unwrap();
+    std::fs::write(
+        root.path().join(format!("blobs/sha256-{weight_digest}")),
+        bytes,
+    )
+    .unwrap();
+    std::fs::write(
+        root.path().join(format!("blobs/sha256-{config_digest}")),
+        config,
+    )
+    .unwrap();
+    let cancel = tokio_util::sync::CancellationToken::new();
+
+    let digest = write(config.len() - 3, bytes.len());
+    verify_manifest(
+        root.path(),
+        "test:latest",
+        &digest,
+        Some(&weight_digest),
+        None,
+        &cancel,
+    )
+    .await
+    .expect("config with the right digest and a wrong listed size is accepted");
+
+    let digest = write(config.len(), bytes.len() - 1);
+    assert!(
+        verify_manifest(root.path(), "test:latest", &digest, None, None, &cancel)
+            .await
+            .is_err(),
+        "weights still need their exact size"
+    );
+
+    let digest = write(config.len() - 3, bytes.len());
+    std::fs::write(
+        root.path().join(format!("blobs/sha256-{config_digest}")),
+        b"{}",
+    )
+    .unwrap();
+    assert!(
+        verify_manifest(root.path(), "test:latest", &digest, None, None, &cancel)
+            .await
+            .is_err(),
+        "a config whose content doesn't match its digest is still refused"
+    );
+}
+
 struct QueueTransport {
     responses: std::sync::Mutex<std::collections::VecDeque<serde_json::Value>>,
     requests: std::sync::Mutex<Vec<(String, Option<serde_json::Value>)>>,

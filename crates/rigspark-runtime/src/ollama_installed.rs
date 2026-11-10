@@ -363,6 +363,9 @@ fn identities(root: &Path, raw: &str) -> Vec<String> {
     digests
 }
 
+/// A manifest's config is a few hundred bytes of JSON; anything larger is not a config.
+const MAX_CONFIG_BYTES: u64 = 64 * 1024;
+
 pub async fn verify_catalog_manifest(
     root: &Path,
     id: &str,
@@ -442,7 +445,10 @@ pub async fn verify_catalog_manifest(
     if expected_bytes.is_some_and(|expected| total < expected.div_ceil(2)) {
         return Err(OllamaError::Integrity("catalog size floor"));
     }
-    for layer in std::iter::once(&manifest.config).chain(&manifest.layers) {
+    for (index, layer) in std::iter::once(&manifest.config)
+        .chain(&manifest.layers)
+        .enumerate()
+    {
         let sha = layer
             .digest
             .strip_prefix("sha256:")
@@ -456,7 +462,11 @@ pub async fn verify_catalog_manifest(
         let (actual, bytes) = crate::acquire::hash_file(&blob, cancel)
             .await
             .map_err(|_| OllamaError::Integrity("blob unavailable or cancelled"))?;
-        if actual != sha || bytes != layer.size {
+        // The digest binds every blob's content. Ollama's registry has published manifests
+        // whose config entry lists the wrong size with the right digest, so a small config is
+        // accepted on its digest alone; weights and every other layer need both to match.
+        let config_ok = index == 0 && bytes <= MAX_CONFIG_BYTES;
+        if actual != sha || (bytes != layer.size && !config_ok) {
             return Err(OllamaError::Integrity("blob digest or size mismatch"));
         }
     }
