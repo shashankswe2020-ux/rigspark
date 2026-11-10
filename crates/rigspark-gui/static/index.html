@@ -397,28 +397,44 @@
                         <b>GitHub</b>
                         <small id="source-github-status">Read issues, commit, push a branch and open pull requests, from any chat</small>
                       </div>
-                      <button id="source-github-connect" class="ghost-btn" type="button" aria-expanded="false" aria-controls="source-github-form">Connect</button>
+                      <button id="source-github-connect" class="ghost-btn" type="button">Connect</button>
                     </div>
+                    <div id="source-github-code" class="source-code" hidden>
+                      <p>Enter this code on GitHub to finish connecting:</p>
+                      <div class="source-code-row">
+                        <code id="source-github-user-code" class="source-user-code"></code>
+                        <button id="source-github-copy" class="ghost-btn" type="button">Copy</button>
+                        <button id="source-github-open" class="ghost-btn" type="button">Open GitHub</button>
+                        <button id="source-github-cancel" class="ghost-btn" type="button">Cancel</button>
+                      </div>
+                      <small id="source-github-wait" class="section-note" aria-live="polite">Waiting for you to approve on github.com…</small>
+                    </div>
+                    <div id="source-github-error" class="banner banner-error" hidden></div>
                     <form id="source-github-form" class="source-form" hidden>
-                      <label>
-                        Personal access token
-                        <input id="source-github-token" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_…" />
-                      </label>
-                      <small class="section-note">
-                        Create a fine-grained token with Issues and Pull requests access to the repositories you want.
-                        It is stored only on this computer and sent only to api.github.com. Leave it blank to keep
-                        the saved token, or to use local commits only.
-                      </small>
                       <label>
                         Folders RigSpark may commit in (one per line)
                         <textarea id="source-github-folders" rows="3" spellcheck="false" placeholder="/Users/you/code/project"></textarea>
                       </label>
                       <small class="section-note">Commits and pushes ask before they run. Commits add RigSpark's Co-Authored-By and Signed-off-by lines; pushes go to a new branch, never main.</small>
                       <div class="source-form-actions">
-                        <button id="source-github-disconnect" class="ghost-btn" type="button" hidden>Disconnect</button>
-                        <button id="source-github-save" class="accent-btn" type="submit">Save and connect</button>
+                        <button id="source-github-disconnect" class="ghost-btn" type="button">Disconnect</button>
+                        <button id="source-github-sign-in" class="ghost-btn" type="button">Sign in again</button>
+                        <button id="source-github-save-folders" class="accent-btn" type="button">Save folders</button>
                       </div>
-                      <div id="source-github-error" class="banner banner-error" hidden></div>
+                      <details class="reveal source-token">
+                        <summary>Use a token instead</summary>
+                        <label>
+                          Personal access token
+                          <input id="source-github-token" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_…" />
+                        </label>
+                        <small class="section-note">
+                          A fine-grained token with Contents and Pull requests access to the repositories you want.
+                          Stored only on this computer and sent only to GitHub.
+                        </small>
+                        <div class="source-form-actions">
+                          <button id="source-github-save" class="ghost-btn" type="submit">Save token</button>
+                        </div>
+                      </details>
                     </form>
                   </div>
                   <div class="source-card source-card-soon">

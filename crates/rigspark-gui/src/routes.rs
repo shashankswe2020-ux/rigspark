@@ -441,12 +441,58 @@ pub async fn dispatch(host: Arc<Host>, request: Request) -> ApiResult {
             ));
         }
     }
-    if path == "/api/source-control/github" {
+    if path == "/api/source-control/github/sign-in" && method == "POST" {
+        use rigspark_runtime::source_control::{ReqwestGithub, client_id, start_sign_in};
+        let http = checked(ReqwestGithub::new())?;
+        let code = start_sign_in(&http, &client_id())
+            .await
+            .map_err(|_| ApiError(StatusCode::BAD_GATEWAY, "GitHub sign-in could not start"))?;
+        return Ok(json_response(json!({"signIn": code})));
+    }
+    if path == "/api/source-control/github"
+        || (path == "/api/source-control/github/sign-in/poll" && method == "POST")
+    {
         use rigspark_runtime::source_control::{
-            GITHUB_ID, NativeFactory, ReqwestGithub, TokenStore, verify_token,
+            GITHUB_ID, NativeFactory, ReqwestGithub, SignIn, TokenStore, client_id, poll_sign_in,
+            verify_token,
         };
+        #[derive(serde::Deserialize, Default)]
+        #[serde(deny_unknown_fields, rename_all = "camelCase")]
+        struct Input {
+            #[serde(default)]
+            token: Option<String>,
+            #[serde(default)]
+            device_code: Option<String>,
+            #[serde(default)]
+            repositories: Vec<String>,
+        }
         let store = ConnectorStore::new(&host.home);
         let tokens = TokenStore::new(&host.home);
+        let mut input = Input::default();
+        let mut signed_in = None;
+        if method == "POST" {
+            input = body(request, MAX_REQUEST_BYTES).await?;
+        }
+        if path.ends_with("/sign-in/poll") {
+            // Polling must not interrupt chats or touch connectors until GitHub answers.
+            let device_code = input.device_code.as_deref().ok_or_else(bad)?;
+            let http = checked(ReqwestGithub::new())?;
+            match poll_sign_in(&http, &client_id(), device_code)
+                .await
+                .map_err(|_| ApiError(StatusCode::BAD_GATEWAY, "GitHub sign-in failed"))?
+            {
+                SignIn::Pending { interval } => {
+                    return Ok(json_response(
+                        json!({"status":"pending","interval":interval}),
+                    ));
+                }
+                SignIn::Denied => return Ok(json_response(json!({"status":"denied"}))),
+                SignIn::Expired => return Ok(json_response(json!({"status":"expired"}))),
+                SignIn::Token(token) => signed_in = Some(token),
+            }
+        } else if input.device_code.is_some() {
+            return Err(bad());
+        }
         if method != "GET" {
             host.cancel_chat();
             host.grants.lock().await.clear();
@@ -474,15 +520,6 @@ pub async fn dispatch(host: Arc<Host>, request: Request) -> ApiResult {
                 }})));
             }
             "POST" => {
-                #[derive(serde::Deserialize)]
-                #[serde(deny_unknown_fields)]
-                struct Input {
-                    #[serde(default)]
-                    token: Option<String>,
-                    #[serde(default)]
-                    repositories: Vec<String>,
-                }
-                let input: Input = body(request, MAX_REQUEST_BYTES).await?;
                 let mut repositories = Vec::new();
                 for folder in &input.repositories {
                     let folder = folder.trim();
@@ -504,13 +541,16 @@ pub async fn dispatch(host: Arc<Host>, request: Request) -> ApiResult {
                         repositories.push(resolved);
                     }
                 }
-                let token = input
-                    .token
-                    .as_deref()
-                    .map(str::trim)
-                    .filter(|token| !token.is_empty());
+                let token = signed_in.or_else(|| {
+                    input
+                        .token
+                        .as_deref()
+                        .map(str::trim)
+                        .filter(|token| !token.is_empty())
+                        .map(String::from)
+                });
                 let mut name = existing.map(|(name, _)| name).unwrap_or_default();
-                if let Some(token) = token {
+                if let Some(token) = token.as_deref() {
                     let http = checked(ReqwestGithub::new())?;
                     let login = verify_token(&http, token)
                         .await
@@ -553,6 +593,7 @@ pub async fn dispatch(host: Arc<Host>, request: Request) -> ApiResult {
                         .await,
                 )?;
                 return Ok(json_response(json!({
+                    "status": "connected",
                     "connector": manager.list().into_iter().find(|entry| entry.id == GITHUB_ID),
                 })));
             }

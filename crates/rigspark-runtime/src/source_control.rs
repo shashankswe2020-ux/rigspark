@@ -163,6 +163,163 @@ impl GithubHttp for ReqwestGithub {
     }
 }
 
+/// RigSpark Community's GitHub OAuth App (device flow, no client secret).
+pub const GITHUB_CLIENT_ID: &str = "Ov23liiNBR9qBdyloom2";
+/// Issues, pull requests and pushing branches, public and private.
+pub const GITHUB_SCOPE: &str = "repo";
+pub const DEVICE_PAGE: &str = "https://github.com/login/device";
+
+/// `RIGSPARK_GITHUB_CLIENT_ID` overrides the built-in client for forks and testing.
+pub fn client_id() -> String {
+    std::env::var("RIGSPARK_GITHUB_CLIENT_ID")
+        .ok()
+        .map(|id| id.trim().to_owned())
+        .filter(|id| valid_client_id(id))
+        .unwrap_or_else(|| GITHUB_CLIENT_ID.into())
+}
+
+fn valid_client_id(id: &str) -> bool {
+    (8..=64).contains(&id.len())
+        && id
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || byte == b'.')
+}
+
+/// github.com's OAuth endpoints (`/login/device/code`, `/login/oauth/access_token`).
+#[async_trait::async_trait]
+pub trait GithubSignIn: Send + Sync {
+    async fn post_form(&self, path: &str, form: &[(&str, &str)]) -> Result<HttpReply, McpError>;
+}
+
+#[async_trait::async_trait]
+impl GithubSignIn for ReqwestGithub {
+    async fn post_form(&self, path: &str, form: &[(&str, &str)]) -> Result<HttpReply, McpError> {
+        if !matches!(path, "/login/device/code" | "/login/oauth/access_token") {
+            return Err(McpError::Invalid);
+        }
+        let mut response = self
+            .client
+            .post(format!("https://github.com{path}"))
+            .header(reqwest::header::ACCEPT, "application/json")
+            .header(reqwest::header::USER_AGENT, "rigspark-community")
+            .form(form)
+            .send()
+            .await
+            .map_err(|_| McpError::Transport)?;
+        let status = response.status().as_u16();
+        let mut bytes = Vec::new();
+        while let Some(chunk) = response.chunk().await.map_err(|_| McpError::Transport)? {
+            if bytes.len() + chunk.len() > 65_536 {
+                return Err(McpError::Limit);
+            }
+            bytes.extend_from_slice(&chunk);
+        }
+        let body = serde_json::from_slice(&bytes).map_err(|_| McpError::Invalid)?;
+        Ok(HttpReply { status, body })
+    }
+}
+
+/// What the person sees: a short code to enter at github.com/login/device.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DeviceCode {
+    pub device_code: String,
+    pub user_code: String,
+    pub verification_uri: String,
+    pub interval: u64,
+    pub expires_in: u64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SignIn {
+    /// Not approved yet; poll again after `interval` seconds.
+    Pending {
+        interval: u64,
+    },
+    Token(String),
+    Denied,
+    Expired,
+}
+
+pub async fn start_sign_in(
+    http: &dyn GithubSignIn,
+    client_id: &str,
+) -> Result<DeviceCode, McpError> {
+    let reply = http
+        .post_form(
+            "/login/device/code",
+            &[("client_id", client_id), ("scope", GITHUB_SCOPE)],
+        )
+        .await?;
+    let body = &reply.body;
+    let text = |key: &str| body[key].as_str().unwrap_or_default().to_owned();
+    let code = DeviceCode {
+        device_code: text("device_code"),
+        user_code: text("user_code"),
+        verification_uri: text("verification_uri"),
+        interval: body["interval"].as_u64().unwrap_or(5).clamp(1, 60),
+        expires_in: body["expires_in"].as_u64().unwrap_or(900).clamp(60, 3600),
+    };
+    let user_code_ok = (4..=16).contains(&code.user_code.len())
+        && code
+            .user_code
+            .bytes()
+            .all(|byte| byte.is_ascii_uppercase() || byte.is_ascii_digit() || byte == b'-');
+    let device_code_ok = (1..=256).contains(&code.device_code.len())
+        && code
+            .device_code
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric());
+    // Only ever send the person to GitHub's own device page.
+    if reply.status != 200
+        || !user_code_ok
+        || !device_code_ok
+        || code.verification_uri != DEVICE_PAGE
+    {
+        return Err(McpError::Invalid);
+    }
+    Ok(code)
+}
+
+pub async fn poll_sign_in(
+    http: &dyn GithubSignIn,
+    client_id: &str,
+    device_code: &str,
+) -> Result<SignIn, McpError> {
+    if device_code.is_empty()
+        || device_code.len() > 256
+        || !device_code.bytes().all(|byte| byte.is_ascii_alphanumeric())
+    {
+        return Err(McpError::Invalid);
+    }
+    let reply = http
+        .post_form(
+            "/login/oauth/access_token",
+            &[
+                ("client_id", client_id),
+                ("device_code", device_code),
+                ("grant_type", "urn:ietf:params:oauth:grant-type:device_code"),
+            ],
+        )
+        .await?;
+    if let Some(token) = reply.body["access_token"].as_str() {
+        return if valid_token(token) {
+            Ok(SignIn::Token(token.into()))
+        } else {
+            Err(McpError::Invalid)
+        };
+    }
+    match reply.body["error"].as_str() {
+        Some("authorization_pending") => Ok(SignIn::Pending { interval: 5 }),
+        Some("slow_down") => Ok(SignIn::Pending {
+            interval: reply.body["interval"].as_u64().unwrap_or(10).clamp(1, 60),
+        }),
+        Some("expired_token") => Ok(SignIn::Expired),
+        Some("access_denied") => Ok(SignIn::Denied),
+        _ => Err(McpError::Invalid),
+    }
+}
+
 /// Checks a token and returns the GitHub login it belongs to.
 pub async fn verify_token(http: &dyn GithubHttp, token: &str) -> Result<String, McpError> {
     if !valid_token(token) {

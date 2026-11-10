@@ -5914,3 +5914,37 @@ input.switch.switch-sm:checked::after {
   justify-content: flex-end;
   gap: 8px;
 }
+.source-code {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--amber-line);
+  border-radius: 10px;
+  background: var(--amber-soft);
+}
+.source-code p {
+  margin: 0;
+}
+.source-code-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.source-user-code {
+  font-family: var(--mono);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  margin-right: auto;
+  user-select: all;
+}
+.source-token summary {
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--muted);
+}
+.source-token[open] {
+  display: grid;
+  gap: 8px;
+}

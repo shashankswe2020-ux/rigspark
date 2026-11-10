@@ -6,6 +6,7 @@ fn main() {
             "set_launch_at_login",
             "check_for_update",
             "install_update",
+            "open_github_sign_in",
         ]),
     ))
     .expect("Tauri build configuration");
