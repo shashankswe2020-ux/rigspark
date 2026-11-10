@@ -11,6 +11,7 @@ pub mod catalog_request;
 pub mod catalog_update;
 pub mod chat_service;
 pub mod command;
+pub mod commit_attribution;
 pub mod connect;
 pub mod context;
 pub mod coverage;

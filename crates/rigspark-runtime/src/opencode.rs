@@ -6,6 +6,8 @@ use tokio_util::sync::CancellationToken;
 pub struct LaunchSpec {
     pub args: Vec<String>,
     pub config: String,
+    /// The `provider/model` passed to OpenCode, also used for commit attribution.
+    pub model: String,
 }
 pub fn launch_spec(input: &HarnessRequest, unrestricted: bool) -> Result<LaunchSpec, HarnessError> {
     input.validate()?;
@@ -49,13 +51,14 @@ pub fn launch_spec(input: &HarnessRequest, unrestricted: bool) -> Result<LaunchS
             "run".into(),
             prompt,
             "--model".into(),
-            model,
+            model.clone(),
             "--agent".into(),
             "rigspark-chat".into(),
             "--format".into(),
             "json".into(),
         ],
         config: config.to_string(),
+        model,
     })
 }
 pub fn parse_event(raw: &str) -> Result<String, HarnessError> {
@@ -152,6 +155,9 @@ pub trait OpenCodeRunner: Send + Sync {
 pub struct NativeOpenCodeRunner {
     pub binary: PathBuf,
     pub env: BTreeMap<String, String>,
+    /// The RigSpark home. When set, commits OpenCode makes carry RigSpark's trailers;
+    /// the hooks are installed there when OpenCode is launched.
+    pub commit_home: Option<PathBuf>,
 }
 #[async_trait::async_trait]
 impl OpenCodeRunner for NativeOpenCodeRunner {
@@ -174,6 +180,16 @@ impl OpenCodeRunner for NativeOpenCodeRunner {
             .args(&spec.args)
             .env_clear()
             .envs(&self.env)
+            .envs(
+                self.commit_home
+                    .as_deref()
+                    .and_then(|home| crate::commit_attribution::install(home).ok())
+                    .iter()
+                    .flat_map(|installed| {
+                        let model = spec.model.rsplit('/').next().unwrap_or(&spec.model);
+                        installed.env(model, self.env.get("GIT_CONFIG_COUNT").map(String::as_str))
+                    }),
+            )
             .env("OPENCODE_CONFIG_CONTENT", &spec.config)
             .stdin(Stdio::null())
             .stdout(Stdio::piped())

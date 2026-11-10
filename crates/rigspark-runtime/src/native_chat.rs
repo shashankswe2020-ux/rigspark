@@ -119,6 +119,7 @@ pub async fn run_with_history(
     let opencode = NativeOpenCodeRunner {
         binary: runtime.binary("opencode"),
         env: env.clone(),
+        commit_home: Some(config.home.clone()),
     };
     let registry = HarnessRegistry::builtins(
         LocalHarness {

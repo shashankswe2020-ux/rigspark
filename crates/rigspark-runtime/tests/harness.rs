@@ -18,6 +18,7 @@ async fn builtin_registry_preserves_order_and_disables_missing_configuration() {
     let runner = NativeOpenCodeRunner {
         binary: root.path().join("missing-opencode"),
         env: Default::default(),
+        commit_home: None,
     };
     let registry = HarnessRegistry::builtins(
         LocalHarness {

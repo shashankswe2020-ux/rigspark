@@ -423,6 +423,7 @@ fn script(directory: &std::path::Path, body: &str) -> NativeOpenCodeRunner {
     NativeOpenCodeRunner {
         binary,
         env: BTreeMap::new(),
+        commit_home: None,
     }
 }
 
@@ -449,6 +450,7 @@ async fn native_opencode_runner_streams_rejects_failures_and_bounds_output() {
     let missing = NativeOpenCodeRunner {
         binary: directory.path().join("absent"),
         env: BTreeMap::new(),
+        commit_home: None,
     };
     assert!(
         !OpenCodeHarness {
