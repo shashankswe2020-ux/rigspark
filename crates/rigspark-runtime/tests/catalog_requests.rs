@@ -188,8 +188,13 @@ async fn repository_without_runnable_artifact_is_blocked_without_mutation() {
     assert!(outcome.observation.is_none());
 }
 
+/// Ming entries frozen at the revision the recorded upstream fixture serves; the live
+/// catalog is re-pinned by the weekly admission run.
 fn ming_catalog() -> GenerationCatalog {
-    let mut catalog = generation();
+    let mut catalog = GenerationCatalog::parse(include_str!(
+        "../../rigspark-core/fixtures/admission/generation-ming.json"
+    ))
+    .unwrap();
     catalog.models.retain(|model| model.family == "ming-image");
     assert!(!catalog.models.is_empty());
     catalog

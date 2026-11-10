@@ -89,9 +89,11 @@ impl CommandRunner for PullCommands {
         args: &[String],
         context: &OllamaCommandContext,
         _cancel: &CancellationToken,
-        _timeout: Duration,
+        timeout: Duration,
     ) -> Result<String, String> {
         assert_eq!(args, ["pull", "--", "test:latest"]);
+        // Big models take hours on ordinary links: the stall guard, not a short limit, decides.
+        assert_eq!(timeout, rigspark_runtime::pull::PULL_HARD_LIMIT);
         assert_eq!(
             context.environment()["OLLAMA_HOST"],
             "http://127.0.0.1:59125/"
@@ -544,6 +546,64 @@ async fn delegated_pull_checks_exact_local_digest_without_download() {
     assert!(
         service
             .pull(&request, Path::new("/fake/lms"), &CancellationToken::new())
+            .await
+            .is_err()
+    );
+}
+
+#[tokio::test]
+async fn stall_guard_fires_only_when_the_download_stops_growing() {
+    use rigspark_runtime::pull::stall_guard;
+    let dir = tempfile::tempdir().unwrap();
+    let blobs = dir.path().to_path_buf();
+    let cancel = CancellationToken::new();
+    // Growing: a writer adds bytes faster than the limit, so the guard keeps waiting.
+    let writer = {
+        let blobs = blobs.clone();
+        tokio::spawn(async move {
+            for i in 0..8u8 {
+                std::fs::write(blobs.join(format!("part-{i}")), vec![i; 64]).unwrap();
+                tokio::time::sleep(Duration::from_millis(40)).await;
+            }
+        })
+    };
+    let guard = stall_guard(
+        blobs.clone(),
+        Duration::from_millis(120),
+        Duration::from_millis(20),
+        &cancel,
+    );
+    let early = tokio::time::timeout(Duration::from_millis(300), guard).await;
+    assert!(early.is_err(), "fired while bytes were still arriving");
+    writer.await.unwrap();
+    // Quiet: nothing new for the limit, so it resolves.
+    let guard = stall_guard(
+        blobs,
+        Duration::from_millis(120),
+        Duration::from_millis(20),
+        &cancel,
+    );
+    assert!(
+        tokio::time::timeout(Duration::from_secs(5), guard)
+            .await
+            .is_ok()
+    );
+}
+
+#[tokio::test]
+async fn stall_guard_never_fires_once_the_pull_is_cancelled() {
+    use rigspark_runtime::pull::stall_guard;
+    let dir = tempfile::tempdir().unwrap();
+    let cancel = CancellationToken::new();
+    cancel.cancel();
+    let guard = stall_guard(
+        dir.path().into(),
+        Duration::from_millis(20),
+        Duration::from_millis(5),
+        &cancel,
+    );
+    assert!(
+        tokio::time::timeout(Duration::from_millis(200), guard)
             .await
             .is_err()
     );

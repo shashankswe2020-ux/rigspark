@@ -29,10 +29,28 @@ fn ming_design_ships_only_the_verified_int8_pairing() {
     let candidate =
         GenerationCatalog::parse(include_str!("../fixtures/ming-design-candidate.json")).unwrap();
     assert_eq!(ming.runnable().unwrap(), Workflow::MingDesign);
+    // Files are pinned by digest and size. The weekly admission run moves the revision
+    // to Hugging Face's current commit when the same files are still there, so the
+    // revision only has to be a pinned commit, the same one for every file.
+    let without_revision = |files: &[rigspark_core::generation::GenerationFile]| {
+        let mut files = serde_json::to_value(files).unwrap();
+        for file in files.as_array_mut().unwrap() {
+            let revision = file.as_object_mut().unwrap().remove("revision").unwrap();
+            let revision = revision.as_str().unwrap();
+            assert!(revision.len() == 40 && revision.bytes().all(|b| b.is_ascii_hexdigit()));
+        }
+        files
+    };
     assert_eq!(
-        serde_json::to_value(&ming.files).unwrap(),
-        serde_json::to_value(&candidate.resolve("image").unwrap().files).unwrap()
+        without_revision(&ming.files),
+        without_revision(&candidate.resolve("image").unwrap().files)
     );
+    let revisions: std::collections::HashSet<_> = ming
+        .files
+        .iter()
+        .map(|file| file.revision.as_str())
+        .collect();
+    assert_eq!(revisions.len(), 1);
     assert_eq!(ming.total_bytes(), 25_936_727_174);
     assert!(!ming.default);
     for variant in catalog
