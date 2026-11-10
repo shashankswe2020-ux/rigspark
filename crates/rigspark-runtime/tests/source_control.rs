@@ -362,16 +362,12 @@ mod commits {
             .unwrap();
         assert!(!done.is_error, "{}", done.content);
         let message = git(repo.path(), &["log", "-1", "--format=%B"]);
-        let salt = rigspark_runtime::commit_attribution::install(home.path())
-            .unwrap()
-            .salt_id;
+
         assert!(
             message.starts_with("hi from rigspark community\n\n"),
             "{message}"
         );
-        assert!(message.contains(&format!(
-            "Co-Authored-By: rigspark-community-local <{salt}+rigspark[bot]@users.noreply.github.com>"
-        )), "{message}");
+        assert!(message.contains("Co-Authored-By: rigspark-community-local <353924278+rigspark[bot]@users.noreply.github.com>"), "{message}");
         assert!(
             message.contains("Signed-off-by: Rigspark <noreply@rigspark.ai>"),
             "{message}"

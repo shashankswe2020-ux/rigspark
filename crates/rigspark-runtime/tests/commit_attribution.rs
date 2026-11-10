@@ -1,19 +1,17 @@
-use rigspark_runtime::commit_attribution::{SIGNOFF, author_name, coauthor, install, salt_id};
+use rigspark_runtime::commit_attribution::{
+    RIGSPARK_BOT_ID, SIGNOFF, author_name, coauthor, install,
+};
 use rigspark_runtime::connect::{Agent, ConnectPlan, attributed, plan};
 use std::{path::Path, process::Command};
 
 #[test]
 fn trailer_text_matches_the_required_format() {
-    let id = salt_id("0123456789abcdef0123456789abcdef");
-    assert_eq!(id.len(), 10);
-    assert!(id.bytes().all(|b| b.is_ascii_digit()));
-    assert_eq!(id, salt_id("0123456789abcdef0123456789abcdef"));
-    assert_ne!(id, salt_id("fedcba9876543210fedcba9876543210"));
+    // GitHub links a co-author only through a real account's noreply address:
+    // 353924278 is rigspark[bot], the RigSpark GitHub App.
+    assert_eq!(RIGSPARK_BOT_ID, "353924278");
     assert_eq!(
-        coauthor("qwen3:8b", &id),
-        format!(
-            "Co-Authored-By: rigspark-community-qwen3:8b <{id}+rigspark[bot]@users.noreply.github.com>"
-        )
+        coauthor("qwen3:8b"),
+        "Co-Authored-By: rigspark-community-qwen3:8b <353924278+rigspark[bot]@users.noreply.github.com>"
     );
     assert_eq!(SIGNOFF, "Signed-off-by: Rigspark <noreply@rigspark.ai>");
     // Characters that would break a trailer or an email are replaced.
@@ -25,7 +23,7 @@ fn trailer_text_matches_the_required_format() {
 }
 
 #[test]
-fn install_keeps_one_salt_and_repairs_hooks() {
+fn install_is_stable_and_repairs_hooks() {
     let home = tempfile::tempdir().unwrap();
     let first = install(home.path()).unwrap();
     let second = install(home.path()).unwrap();
@@ -54,7 +52,7 @@ fn launches_carry_attribution_and_instructions_do_not() {
     let settings: serde_json::Value = serde_json::from_str(settings).unwrap();
     assert_eq!(
         settings["attribution"]["commit"],
-        format!("{}\n{SIGNOFF}", coauthor("qwen3:8b", &installed.salt_id))
+        format!("{}\n{SIGNOFF}", coauthor("qwen3:8b"))
     );
     // An inherited GIT_CONFIG_COUNT is extended, not replaced.
     let get = |key: &str| env.iter().find(|(k, _)| k == key).map(|(_, v)| v.as_str());
@@ -139,7 +137,7 @@ mod with_git {
         let env = installed.env("qwen3:8b", None);
         assert!(commit(repo.path(), &env, "Add a file").status.success());
         let message = last_message(repo.path());
-        let co = coauthor("qwen3:8b", &installed.salt_id);
+        let co = coauthor("qwen3:8b");
         assert!(
             message.contains(&format!("\n\n{co}\n{SIGNOFF}\n")),
             "{message}"

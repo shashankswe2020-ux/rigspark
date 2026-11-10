@@ -6,22 +6,22 @@
 //! name (honouring the user's `core.hooksPath`), and `commit-msg` then adds:
 //!
 //! ```text
-//! Co-Authored-By: rigspark-community-<model> <<salt id>+rigspark[bot]@users.noreply.github.com>
+//! Co-Authored-By: rigspark-community-<model> <353924278+rigspark[bot]@users.noreply.github.com>
 //! Signed-off-by: Rigspark <noreply@rigspark.ai>
 //! ```
 //!
-//! The salt id is a number derived from a random salt kept in the RigSpark home, so
-//! commits from one install share an id without revealing anything about the machine.
+//! 353924278 is the GitHub user id of `rigspark[bot]`, the RigSpark GitHub App, so GitHub
+//! links the co-author to the app and shows it on the commit. Any other id shows nothing.
 //! `git commit --no-verify` skips hooks, and so skips these trailers.
 
-use sha2::{Digest, Sha256};
 use std::{
     io,
     path::{Path, PathBuf},
 };
 
 pub const SIGNOFF: &str = "Signed-off-by: Rigspark <noreply@rigspark.ai>";
-const SALT_FILE: &str = "commit-salt";
+/// GitHub user id of `rigspark[bot]` (https://api.github.com/users/rigspark%5Bbot%5D).
+pub const RIGSPARK_BOT_ID: &str = "353924278";
 const HOOKS_DIR: &str = "git-hooks";
 
 /// Client-side hooks git may run during commits, merges, rebases, checkouts and pushes.
@@ -67,25 +67,15 @@ fi
 exit 0
 "#;
 
-/// The hooks folder and salt id of one RigSpark home, ready to attribute launches.
+/// The hooks folder of one RigSpark home, ready to attribute launches.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Installed {
     pub hooks: PathBuf,
-    pub salt_id: String,
 }
 
-/// Creates (or repairs) the salt and hooks folder under `home`.
+/// Creates (or repairs) the hooks folder under `home`.
 pub fn install(home: &Path) -> io::Result<Installed> {
     std::fs::create_dir_all(home)?;
-    let salt_path = home.join(SALT_FILE);
-    let salt = match std::fs::read_to_string(&salt_path) {
-        Ok(salt) if valid_salt(salt.trim()) => salt.trim().to_owned(),
-        _ => {
-            let salt = uuid::Uuid::new_v4().simple().to_string();
-            write_atomic(&salt_path, salt.as_bytes(), 0o600)?;
-            salt
-        }
-    };
     let hooks = home.join(HOOKS_DIR);
     std::fs::create_dir_all(&hooks)?;
     for name in HOOKS {
@@ -94,21 +84,7 @@ pub fn install(home: &Path) -> io::Result<Installed> {
             write_atomic(&path, HOOK.as_bytes(), 0o755)?;
         }
     }
-    Ok(Installed {
-        hooks,
-        salt_id: salt_id(&salt),
-    })
-}
-
-fn valid_salt(salt: &str) -> bool {
-    salt.len() == 32 && salt.bytes().all(|byte| byte.is_ascii_hexdigit())
-}
-
-/// A ten-digit number from the salt; stable for one install.
-pub fn salt_id(salt: &str) -> String {
-    let digest = Sha256::digest(format!("rigspark-commit-attribution:{salt}"));
-    let number = u64::from_be_bytes(digest[..8].try_into().unwrap_or_default());
-    format!("{:010}", number % 10_000_000_000)
+    Ok(Installed { hooks })
 }
 
 /// `rigspark-community-<model>`, with characters git trailers or emails mishandle
@@ -132,9 +108,9 @@ pub fn author_name(model: &str) -> String {
     )
 }
 
-pub fn coauthor(model: &str, salt_id: &str) -> String {
+pub fn coauthor(model: &str) -> String {
     format!(
-        "Co-Authored-By: {} <{salt_id}+rigspark[bot]@users.noreply.github.com>",
+        "Co-Authored-By: {} <{RIGSPARK_BOT_ID}+rigspark[bot]@users.noreply.github.com>",
         author_name(model)
     )
 }
@@ -154,10 +130,7 @@ impl Installed {
                 self.hooks.display().to_string(),
             ),
             ("RIGSPARK_GIT_CONFIG_COUNT".into(), base.to_string()),
-            (
-                "RIGSPARK_COMMIT_COAUTHOR".into(),
-                coauthor(model, &self.salt_id),
-            ),
+            ("RIGSPARK_COMMIT_COAUTHOR".into(), coauthor(model)),
             ("RIGSPARK_COMMIT_SIGNOFF".into(), SIGNOFF.into()),
         ]
     }
@@ -165,7 +138,7 @@ impl Installed {
     /// instead of its default co-author line.
     pub fn claude_settings(&self, model: &str) -> String {
         serde_json::json!({"attribution": {
-            "commit": format!("{}\n{SIGNOFF}", coauthor(model, &self.salt_id)),
+            "commit": format!("{}\n{SIGNOFF}", coauthor(model)),
         }})
         .to_string()
     }
