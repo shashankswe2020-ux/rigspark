@@ -152,6 +152,8 @@ mod tests {
             b"12345"
         );
         assert_eq!(read_catalog(streamed(b"12345"), 5).await.unwrap(), b"12345");
+        // A known length under the limit is read normally.
+        assert_eq!(read_catalog(sized(200, b"123"), 5).await.unwrap(), b"123");
         for status in [302, 404, 500] {
             assert!(matches!(
                 read_catalog(sized(status, b"12345"), 5).await,

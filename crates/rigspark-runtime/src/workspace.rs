@@ -33,11 +33,8 @@ pub fn relative_path(raw: &str) -> Result<String, WorkspaceError> {
         || raw.starts_with('/')
         || raw.contains(['\\', '\0', ':'])
         || raw.split('/').any(|part| {
-            part.is_empty()
-                || part == "."
-                || part == ".."
-                || part.ends_with('.')
-                || part.trim() != part
+            // A trailing dot also refuses "." and "..".
+            part.is_empty() || part.ends_with('.') || part.trim() != part
         })
     {
         return Err(WorkspaceError("invalid relative path".into()));
