@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.1.3 (2026-11-10)
 
 ### Fixes
 
@@ -9,6 +9,13 @@
   for a 542-byte blob whose digest is correct; the installed-model check refused it.
   A small config is now accepted on its digest; weights and every other layer still
   need both digest and size to match.
+
+### Tests
+
+- New tests pin security rules that mutation testing showed no test checked:
+  tool-approval limits, the artifact lock, catalog download redirects and size
+  limits, workspace path rules, and the catalog checks on Ollama manifests
+  (layer counts, vision projector pins and blob sizes).
 
 ## 3.1.2 (2026-11-10)
 
