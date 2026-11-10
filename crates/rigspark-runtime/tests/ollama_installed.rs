@@ -650,7 +650,7 @@ async fn catalog_manifest_shape_projector_pins_and_blob_sizes_are_each_checked()
     // Blob sizes above the largest exact JSON integer are refused before hashing.
     let sized = |size: u64| {
         let mut manifest = with(json!([model.clone()]));
-        manifest["config"]["size"] = json!(size);
+        manifest["layers"][0]["size"] = json!(size);
         manifest
     };
     assert!(matches!(
