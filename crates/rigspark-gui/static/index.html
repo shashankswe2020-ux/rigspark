@@ -385,6 +385,66 @@
                 <h3>No connectors yet</h3>
                 <p>Start from a template. Every connector runs on this machine, and tools ask before they act.</p>
               </div>
+              <section class="source-control" aria-labelledby="source-control-title">
+                <h3 id="source-control-title">Source control</h3>
+                <div class="source-grid">
+                  <div class="source-card" id="source-github">
+                    <div class="source-card-head">
+                      <span class="source-logo" aria-hidden="true">
+                        <svg viewBox="0 0 16 16" class="icon"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8a8 8 0 0 0 5.47 7.59c.4.07.55-.17.55-.38v-1.33c-2.23.48-2.7-1.07-2.7-1.07-.36-.92-.89-1.17-.89-1.17-.73-.5.06-.49.06-.49.8.06 1.23.83 1.23.83.72 1.22 1.88.87 2.33.66.07-.52.28-.87.5-1.07-1.78-.2-3.65-.89-3.65-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48v2.2c0 .21.15.46.55.38A8 8 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+                      </span>
+                      <div class="source-card-text">
+                        <b>GitHub</b>
+                        <small id="source-github-status">Read issues, open pull requests and commit, from any chat</small>
+                      </div>
+                      <button id="source-github-connect" class="ghost-btn" type="button" aria-expanded="false" aria-controls="source-github-form">Connect</button>
+                    </div>
+                    <form id="source-github-form" class="source-form" hidden>
+                      <label>
+                        Personal access token
+                        <input id="source-github-token" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_…" />
+                      </label>
+                      <small class="section-note">
+                        Create a fine-grained token with Issues and Pull requests access to the repositories you want.
+                        It is stored only on this computer and sent only to api.github.com. Leave it blank to keep
+                        the saved token, or to use local commits only.
+                      </small>
+                      <label>
+                        Folders RigSpark may commit in (one per line)
+                        <textarea id="source-github-folders" rows="3" spellcheck="false" placeholder="/Users/you/code/project"></textarea>
+                      </label>
+                      <small class="section-note">Commits ask before they run and add RigSpark's Co-Authored-By and Signed-off-by lines.</small>
+                      <div class="source-form-actions">
+                        <button id="source-github-disconnect" class="ghost-btn" type="button" hidden>Disconnect</button>
+                        <button id="source-github-save" class="accent-btn" type="submit">Save and connect</button>
+                      </div>
+                      <div id="source-github-error" class="banner banner-error" hidden></div>
+                    </form>
+                  </div>
+                  <div class="source-card source-card-soon">
+                    <div class="source-card-head">
+                      <span class="source-logo source-logo-text" aria-hidden="true">GL</span>
+                      <div class="source-card-text"><b>GitLab</b><small>Merge requests and pipelines</small></div>
+                      <span class="template-tag">Coming soon</span>
+                    </div>
+                  </div>
+                  <div class="source-card source-card-soon">
+                    <div class="source-card-head">
+                      <span class="source-logo source-logo-text" aria-hidden="true">BB</span>
+                      <div class="source-card-text"><b>Bitbucket</b><small>Pull requests</small></div>
+                      <span class="template-tag">Coming soon</span>
+                    </div>
+                  </div>
+                  <div class="source-card source-card-soon">
+                    <div class="source-card-head">
+                      <span class="source-logo source-logo-text" aria-hidden="true">A</span>
+                      <div class="source-card-text"><b>Azure DevOps</b><small>Repos and work items</small></div>
+                      <span class="template-tag">Coming soon</span>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
               <div class="template-gallery" aria-label="Connector templates">
                 <button type="button" class="template" data-connector-template="filesystem">
                   <b>Filesystem<span class="template-tag">stdio</span></b>

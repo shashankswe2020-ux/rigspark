@@ -2267,6 +2267,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const data = await response.json();
       renderConnectors(Array.isArray(data.connectors) ? data.connectors : []);
       loadConnectorConfig(false);
+      loadSourceControl();
     } catch (error) {
       connectorList.innerHTML = "";
       const empty = document.createElement("div");
@@ -2274,6 +2275,102 @@ document.addEventListener("DOMContentLoaded", () => {
       empty.textContent = `Could not load connectors: ${error.message}`;
       connectorList.appendChild(empty);
     }
+  }
+
+  const sourceGithub = {
+    connect: document.querySelector("#source-github-connect"),
+    form: document.querySelector("#source-github-form"),
+    token: document.querySelector("#source-github-token"),
+    folders: document.querySelector("#source-github-folders"),
+    status: document.querySelector("#source-github-status"),
+    disconnect: document.querySelector("#source-github-disconnect"),
+    error: document.querySelector("#source-github-error"),
+  };
+
+  function sourceGithubError(message) {
+    if (sourceGithub.error) {
+      sourceGithub.error.hidden = !message;
+      sourceGithub.error.textContent = message || "";
+    }
+  }
+
+  async function sourceGithubRequest(method, payload) {
+    const response = await globalThis.fetch("/api/source-control/github", {
+      method,
+      headers: payload ? { "Content-Type": "application/json" } : undefined,
+      body: payload ? JSON.stringify(payload) : undefined,
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.error || `request failed (${response.status})`);
+    }
+    return data;
+  }
+
+  async function loadSourceControl() {
+    if (!sourceGithub.connect) {
+      return;
+    }
+    try {
+      const { github } = await sourceGithubRequest("GET");
+      const folders = Array.isArray(github.repositories) ? github.repositories : [];
+      sourceGithub.connect.textContent = github.configured ? "Manage" : "Connect";
+      sourceGithub.disconnect.hidden = !github.configured;
+      if (sourceGithub.folders && !sourceGithub.form.contains(document.activeElement)) {
+        sourceGithub.folders.value = folders.join("\n");
+      }
+      if (github.configured) {
+        const parts = [github.token ? github.name.replace(/^GitHub \((.*)\)$/, "Connected as $1") : "Local commits only"];
+        if (folders.length) {
+          parts.push(`${folders.length} folder${folders.length === 1 ? "" : "s"} for commits`);
+        }
+        sourceGithub.status.textContent = parts.join(" · ");
+      }
+    } catch (error) {
+      sourceGithub.status.textContent = `Could not load: ${error.message}`;
+    }
+  }
+
+  if (sourceGithub.connect && sourceGithub.form) {
+    sourceGithub.connect.addEventListener("click", () => {
+      const open = sourceGithub.form.hidden;
+      sourceGithub.form.hidden = !open;
+      sourceGithub.connect.setAttribute("aria-expanded", String(open));
+      if (open) {
+        sourceGithub.token.focus();
+      }
+    });
+    sourceGithub.form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      sourceGithubError("");
+      const save = sourceGithub.form.querySelector("[type=submit]");
+      save.disabled = true;
+      try {
+        await sourceGithubRequest("POST", {
+          token: sourceGithub.token.value.trim() || null,
+          repositories: sourceGithub.folders.value.split("\n").map((line) => line.trim()).filter(Boolean),
+        });
+        sourceGithub.token.value = "";
+        sourceGithub.form.hidden = true;
+        sourceGithub.connect.setAttribute("aria-expanded", "false");
+        await Promise.all([loadSourceControl(), loadConnectors()]);
+      } catch (error) {
+        sourceGithubError(`Could not connect GitHub: ${error.message}`);
+      } finally {
+        save.disabled = false;
+      }
+    });
+    sourceGithub.disconnect.addEventListener("click", async () => {
+      sourceGithubError("");
+      try {
+        await sourceGithubRequest("DELETE");
+        sourceGithub.form.hidden = true;
+        sourceGithub.status.textContent = "Read issues, open pull requests and commit, from any chat";
+        await Promise.all([loadSourceControl(), loadConnectors()]);
+      } catch (error) {
+        sourceGithubError(`Could not disconnect: ${error.message}`);
+      }
+    });
   }
 
   async function connectorAction(id, action, toggle) {

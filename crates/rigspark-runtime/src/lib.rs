@@ -49,6 +49,7 @@ pub mod registry_collector;
 pub mod runs;
 pub mod secure_fs;
 pub mod sessions;
+pub mod source_control;
 pub mod special_adapters;
 pub mod state;
 pub mod tool_policy;
