@@ -41,6 +41,14 @@ pub enum Connector {
         name: String,
         url: String,
     },
+    /// RigSpark's native GitHub integration (see `source_control`). The token is kept
+    /// outside this file; `repositories` are local folders the user allowed for commits.
+    Github {
+        id: String,
+        name: String,
+        #[serde(default)]
+        repositories: Vec<String>,
+    },
 }
 impl std::fmt::Debug for Connector {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -72,12 +80,12 @@ pub fn loopback_url(raw: &str) -> Result<url::Url, McpError> {
 impl Connector {
     pub fn id(&self) -> &str {
         match self {
-            Self::Stdio { id, .. } | Self::Http { id, .. } => id,
+            Self::Stdio { id, .. } | Self::Http { id, .. } | Self::Github { id, .. } => id,
         }
     }
     pub fn name(&self) -> &str {
         match self {
-            Self::Stdio { name, .. } | Self::Http { name, .. } => name,
+            Self::Stdio { name, .. } | Self::Http { name, .. } | Self::Github { name, .. } => name,
         }
     }
     pub fn validate(&self) -> Result<(), McpError> {
@@ -96,6 +104,14 @@ impl Connector {
         match self {
             Self::Http { url, .. } => {
                 loopback_url(url)?;
+            }
+            Self::Github {
+                id, repositories, ..
+            } => {
+                if id != crate::source_control::GITHUB_ID {
+                    return Err(McpError::Invalid);
+                }
+                crate::source_control::validate_repositories(repositories)?;
             }
             Self::Stdio {
                 command, args, env, ..
@@ -302,6 +318,14 @@ impl Manager {
                 let (transport, target) = match connector {
                     Connector::Stdio { command, .. } => ("stdio", command.clone()),
                     Connector::Http { url, .. } => ("http", url.clone()),
+                    Connector::Github { repositories, .. } => (
+                        "github",
+                        if repositories.is_empty() {
+                            "api.github.com".into()
+                        } else {
+                            format!("api.github.com · {} folder(s)", repositories.len())
+                        },
+                    ),
                 };
                 ConnectorView {
                     id: connector.id().into(),
