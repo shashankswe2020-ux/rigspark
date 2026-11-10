@@ -1,50 +1,7 @@
 {
   "observations": [
     {
-      "checkedAt": "2026-10-01T12:32:41Z",
-      "id": "bonsai:8b",
-      "model": {
-        "architecture": "dense",
-        "capabilities": [
-          "chat",
-          "code",
-          "tools"
-        ],
-        "contextLength": 65536,
-        "family": "bonsai",
-        "id": "bonsai:8b",
-        "license": "apache-2.0",
-        "openWeight": true,
-        "params": "8.19B",
-        "quantizations": [
-          {
-            "diskBytes": 1158654496,
-            "minRamBytes": 1332452671,
-            "minVramBytes": 1332452671,
-            "name": "Q1_0",
-            "sha256": "284a335aa3fb2ced3b1b01fcb40b08aa783e3b70832767f0dd2e3fdfa134bd54"
-          }
-        ],
-        "releaseDate": "2026-03-31",
-        "source": {
-          "gguf": {
-            "file": "Bonsai-8B-Q1_0.gguf",
-            "repo": "prism-ml/Bonsai-8B-gguf",
-            "revision": "48516770dd04643643e9f9019a2a349cf26c5dbd",
-            "sha256": "284a335aa3fb2ced3b1b01fcb40b08aa783e3b70832767f0dd2e3fdfa134bd54"
-          },
-          "hf": "prism-ml/Bonsai-8B-gguf"
-        }
-      },
-      "sources": [
-        "https://prismml.com/news/bonsai-8b",
-        "https://huggingface.co/prism-ml/Bonsai-8B-gguf/blob/48516770dd04643643e9f9019a2a349cf26c5dbd/README.md",
-        "https://huggingface.co/api/models/prism-ml/Bonsai-8B-gguf/revision/48516770dd04643643e9f9019a2a349cf26c5dbd",
-        "https://huggingface.co/prism-ml/Bonsai-8B-gguf/blob/48516770dd04643643e9f9019a2a349cf26c5dbd/Bonsai-8B-Q1_0.gguf"
-      ]
-    },
-    {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 131072.0,
@@ -62,7 +19,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 131072.0,
@@ -80,7 +37,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "moe",
         "contextLength": 163840.0,
@@ -98,7 +55,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 131072.0,
@@ -116,7 +73,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 131072.0,
@@ -134,7 +91,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 131072.0,
@@ -152,7 +109,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "moe",
         "contextLength": 163840.0,
@@ -169,7 +126,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 8192.0,
@@ -187,7 +144,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 8192.0,
@@ -205,7 +162,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 8192.0,
@@ -223,14 +180,20 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 131072.0,
         "defaultQuantization": {
-          "diskBytes": 8149180896.0,
+          "diskBytes": 8164030720.0,
           "name": "Q4_K_M",
-          "sha256": "e8ad13eff07a78d89926e9e8b882317d082ef5bf9768ad7b50fcdbbcd63748de"
+          "projectors": [
+            {
+              "bytes": 854200224,
+              "sha256": "4abe4caf8e680a2d508f929edbacb5b6985b988f9d89d05b196a809f62d8fa67"
+            }
+          ],
+          "sha256": "13576eb6dd8d9d04b4da04d015ff343968628d3c2984195569d9d3585651d4f1"
         },
         "license": "gemma"
       },
@@ -241,14 +204,20 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 131072.0,
         "defaultQuantization": {
-          "diskBytes": 17396927584.0,
+          "diskBytes": 17413400640.0,
           "name": "Q4_K_M",
-          "sha256": "e796792eba26c4d3b04b0ac5adb01a453dd9ec2dfd83b6c59cbf6fe5f30b0f68"
+          "projectors": [
+            {
+              "bytes": 857739168,
+              "sha256": "6770388ba3b4bb1a99abf3a5077812edb062b0d350a0167dbcc9cc9302714fb6"
+            }
+          ],
+          "sha256": "3eb75691d2db8bb04109c517466bb10bc0e4f035227d1a46cbba2f1d8e6afa45"
         },
         "license": "gemma"
       },
@@ -259,14 +228,20 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 131072.0,
         "defaultQuantization": {
-          "diskBytes": 3338792448.0,
+          "diskBytes": 3350263392.0,
           "name": "Q4_K_M",
-          "sha256": "aeda25e63ebd698fab8638ffb778e68bed908b960d39d0becc650fa981609d25"
+          "projectors": [
+            {
+              "bytes": 851251104,
+              "sha256": "7a50f9607a47389c028f2598c1f2d3e23b61913b4ce3c4a9eaaca62de1b9e098"
+            }
+          ],
+          "sha256": "f06e91e18fc74295d0c781bf91622508c75655e2c18ed869d52447ffe1e667e1"
         },
         "license": "gemma"
       },
@@ -277,14 +252,20 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 32768.0,
         "defaultQuantization": {
-          "diskBytes": 5621607424.0,
+          "diskBytes": 7836315680.0,
           "name": "Q4_K_M",
-          "sha256": "3839a254cf2d00b208c6e2524c129e4438f9d106bba4c3fbc12b631f519d1de1"
+          "projectors": [
+            {
+              "bytes": 2140823808,
+              "sha256": "79d049bcb4e446e2ca427e960799ac3e2c7152e906c1c1669e24037e0600f7d7"
+            }
+          ],
+          "sha256": "d6138de197b83fafa8ced29005f4b12c47cc4adfca8fbcdf3e4e523774d023bc"
         },
         "license": "gemma"
       },
@@ -295,14 +276,20 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 32768.0,
         "defaultQuantization": {
-          "diskBytes": 7547579904.0,
+          "diskBytes": 9768572992.0,
           "name": "Q4_K_M",
-          "sha256": "38e8dcc30df4eb0e29eaf5c74ba6ce3f2cd66badad50768fc14362acfb8b8cb6"
+          "projectors": [
+            {
+              "bytes": 2140823808,
+              "sha256": "79d049bcb4e446e2ca427e960799ac3e2c7152e906c1c1669e24037e0600f7d7"
+            }
+          ],
+          "sha256": "4e3c80c945d2db3ad542bc133e0465cb59332aa9b7e6376e38ab25782559a599"
         },
         "license": "gemma"
       },
@@ -313,7 +300,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 131072.0,
@@ -337,7 +324,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 131072.0,
@@ -354,7 +341,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "moe",
         "contextLength": 4096.0,
@@ -372,7 +359,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 131072.0,
@@ -390,7 +377,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 131072.0,
@@ -408,7 +395,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 131072.0,
@@ -427,7 +414,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 131072.0,
@@ -446,7 +433,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 131072.0,
@@ -465,7 +452,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 131072.0,
@@ -484,7 +471,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 131072.0,
@@ -502,7 +489,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 1024000.0,
@@ -521,7 +508,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 32768.0,
@@ -540,7 +527,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 32768.0,
@@ -559,7 +546,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "moe",
         "contextLength": 65536.0,
@@ -577,7 +564,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "moe",
         "contextLength": 32768.0,
@@ -595,7 +582,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 4096.0,
@@ -613,7 +600,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 4096.0,
@@ -631,7 +618,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 131072.0,
@@ -649,7 +636,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 131072.0,
@@ -666,7 +653,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 131072.0,
@@ -683,7 +670,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 16384.0,
@@ -700,7 +687,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 32768.0,
@@ -719,7 +706,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 32768.0,
@@ -738,7 +725,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 32768.0,
@@ -757,7 +744,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 32768.0,
@@ -776,7 +763,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 32768.0,
@@ -795,7 +782,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 32768.0,
@@ -814,7 +801,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 32768.0,
@@ -832,7 +819,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 32768.0,
@@ -850,7 +837,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 32768.0,
@@ -869,7 +856,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 262144.0,
@@ -893,7 +880,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "moe",
         "contextLength": 262144.0,
@@ -917,7 +904,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 40960.0,
@@ -935,7 +922,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 40960.0,
@@ -953,7 +940,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 40960.0,
@@ -971,7 +958,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "moe",
         "contextLength": 262144.0,
@@ -989,7 +976,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "moe",
         "contextLength": 262144.0,
@@ -1007,7 +994,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 40960.0,
@@ -1025,7 +1012,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 262144.0,
@@ -1043,7 +1030,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 40960.0,
@@ -1061,7 +1048,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 8192.0,
@@ -1079,7 +1066,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 8192.0,
@@ -1097,7 +1084,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 8192.0,
@@ -1115,7 +1102,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 4096.0,
@@ -1133,7 +1120,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 4096.0,
@@ -1151,7 +1138,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "facts": {
         "architecture": "dense",
         "contextLength": 4096.0,
@@ -1169,7 +1156,487 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
+      "id": "bonsai-2:27b",
+      "model": {
+        "addedAt": "2026-11-10",
+        "architecture": "dense",
+        "capabilities": [
+          "chat",
+          "vision",
+          "reasoning",
+          "tools"
+        ],
+        "contextLength": 262144.0,
+        "family": "qwen35",
+        "id": "bonsai-2:27b",
+        "license": "apache-2.0",
+        "openWeight": true,
+        "params": "26.9B",
+        "provenance": "auto",
+        "quantizations": [
+          {
+            "diskBytes": 8255255904.0,
+            "minRamBytes": 11550884023.0,
+            "minVramBytes": 11550884023.0,
+            "name": "Q2_0",
+            "projectors": [
+              {
+                "bytes": 629246976,
+                "sha256": "6807ede61d570bb86ba34b756a0fa109edc33668604de867c6ea6d8f1d631903"
+              }
+            ],
+            "sha256": "4f99aed01b8a877e153f9aa6569a4440fe17c59701cc0953e36d7f460549e70e"
+          }
+        ],
+        "source": {
+          "ollama": "bonsai-2:27b"
+        }
+      },
+      "sources": [
+        "https://registry.ollama.ai/v2/library/bonsai-2/manifests/27b",
+        "https://ollama.com/library/bonsai-2:27b"
+      ]
+    },
+    {
+      "checkedAt": "2026-11-10T20:12:13.695Z",
+      "id": "bonsai-2:2b",
+      "model": {
+        "addedAt": "2026-11-10",
+        "architecture": "dense",
+        "capabilities": [
+          "chat",
+          "vision",
+          "reasoning",
+          "tools"
+        ],
+        "contextLength": 262144.0,
+        "family": "qwen35",
+        "id": "bonsai-2:2b",
+        "license": "apache-2.0",
+        "openWeight": true,
+        "params": "1.9B",
+        "provenance": "auto",
+        "quantizations": [
+          {
+            "diskBytes": 911353856.0,
+            "minRamBytes": 1184114005.0,
+            "minVramBytes": 1184114005.0,
+            "name": "Q2_0",
+            "projectors": [
+              {
+                "bytes": 364664352,
+                "sha256": "ac9934e8d7966d0d62442c202ec8fdad99a045dea79366c1a4a246a46f5c0533"
+              }
+            ],
+            "sha256": "c2893fa6f951daee8b7263d5f49b455e57989ef56417a22125b03566dc560650"
+          }
+        ],
+        "source": {
+          "ollama": "bonsai-2:2b"
+        }
+      },
+      "sources": [
+        "https://registry.ollama.ai/v2/library/bonsai-2/manifests/2b",
+        "https://ollama.com/library/bonsai-2:2b"
+      ]
+    },
+    {
+      "checkedAt": "2026-11-10T20:12:13.695Z",
+      "id": "bonsai-2:4b",
+      "model": {
+        "addedAt": "2026-11-10",
+        "architecture": "dense",
+        "capabilities": [
+          "chat",
+          "vision",
+          "reasoning",
+          "tools"
+        ],
+        "contextLength": 262144.0,
+        "family": "qwen35",
+        "id": "bonsai-2:4b",
+        "license": "apache-2.0",
+        "openWeight": true,
+        "params": "4.2B",
+        "provenance": "auto",
+        "quantizations": [
+          {
+            "diskBytes": 1578998144.0,
+            "minRamBytes": 2112428818.0,
+            "minVramBytes": 2112428818.0,
+            "name": "Q2_0",
+            "projectors": [
+              {
+                "bytes": 366894624,
+                "sha256": "db939d5f9b7014137810205e91d05e5f54afd72b0b3af9d33bd7d82f7906a55d"
+              }
+            ],
+            "sha256": "64a5183b44921bdb5ac4a6f5f92007821d6ebe5c66997d3c147fd214ab9433d4"
+          }
+        ],
+        "source": {
+          "ollama": "bonsai-2:4b"
+        }
+      },
+      "sources": [
+        "https://registry.ollama.ai/v2/library/bonsai-2/manifests/4b",
+        "https://ollama.com/library/bonsai-2:4b"
+      ]
+    },
+    {
+      "checkedAt": "2026-11-10T20:12:13.695Z",
+      "id": "bonsai-2:9b",
+      "model": {
+        "addedAt": "2026-11-10",
+        "architecture": "dense",
+        "capabilities": [
+          "chat",
+          "vision",
+          "reasoning",
+          "tools"
+        ],
+        "contextLength": 262144.0,
+        "family": "qwen35",
+        "id": "bonsai-2:9b",
+        "license": "apache-2.0",
+        "openWeight": true,
+        "params": "9.0B",
+        "provenance": "auto",
+        "quantizations": [
+          {
+            "diskBytes": 3180869792.0,
+            "minRamBytes": 4340364114.0,
+            "minVramBytes": 4340364114.0,
+            "name": "Q2_0",
+            "projectors": [
+              {
+                "bytes": 624229664,
+                "sha256": "e0cb6f6988cea323ef798cd77d019bbb819af75582f034eaab0e7232314953db"
+              }
+            ],
+            "sha256": "1f884aa56aacd2bbbb2e4b7abaead2b1102b74a9c75a23fc33dab916813a384d"
+          }
+        ],
+        "source": {
+          "ollama": "bonsai-2:9b"
+        }
+      },
+      "sources": [
+        "https://registry.ollama.ai/v2/library/bonsai-2/manifests/9b",
+        "https://ollama.com/library/bonsai-2:9b"
+      ]
+    },
+    {
+      "checkedAt": "2026-11-10T20:12:13.695Z",
+      "id": "d3:27b",
+      "model": {
+        "addedAt": "2026-11-10",
+        "architecture": "dense",
+        "capabilities": [
+          "chat",
+          "vision"
+        ],
+        "contextLength": 262144.0,
+        "family": "qwen35",
+        "id": "d3:27b",
+        "license": "apache-2.0",
+        "openWeight": true,
+        "params": "26.9B",
+        "provenance": "auto",
+        "quantizations": [
+          {
+            "diskBytes": 29526911744.0,
+            "minRamBytes": 33955948506.0,
+            "minVramBytes": 33955948506.0,
+            "name": "Q8_0",
+            "projectors": [
+              {
+                "bytes": 931146240,
+                "sha256": "ccbd9fead22c274ba2e2be002e4ffb0de9c0b04dd77245972ba2cd8e4fb92761"
+              }
+            ],
+            "sha256": "497a0244294a9f2634b3b3fc96f0b9c1662d1c546a4b1642051b292430823ec7"
+          }
+        ],
+        "source": {
+          "ollama": "d3:27b"
+        }
+      },
+      "sources": [
+        "https://registry.ollama.ai/v2/library/d3/manifests/27b",
+        "https://ollama.com/library/d3:27b"
+      ]
+    },
+    {
+      "checkedAt": "2026-11-10T20:12:13.695Z",
+      "id": "d3:2b",
+      "model": {
+        "addedAt": "2026-11-10",
+        "architecture": "dense",
+        "capabilities": [
+          "chat",
+          "vision"
+        ],
+        "contextLength": 262144.0,
+        "family": "qwen35",
+        "id": "d3:2b",
+        "license": "apache-2.0",
+        "openWeight": true,
+        "params": "2.4B",
+        "provenance": "auto",
+        "quantizations": [
+          {
+            "diskBytes": 3223731392.0,
+            "minRamBytes": 3707291101.0,
+            "minVramBytes": 3707291101.0,
+            "name": "Q8_0",
+            "projectors": [
+              {
+                "bytes": 671372928,
+                "sha256": "5f7f721bdcf4d1efcef3385a0cb3471918bc0ba8ad506fef5da41101e1a7015d"
+              }
+            ],
+            "sha256": "47d85eed4b76e2613d2b1496f6a106841fc605638f96acf46ef54ad1a9f45707"
+          }
+        ],
+        "source": {
+          "ollama": "d3:2b"
+        }
+      },
+      "sources": [
+        "https://registry.ollama.ai/v2/library/d3/manifests/2b",
+        "https://ollama.com/library/d3:2b"
+      ]
+    },
+    {
+      "checkedAt": "2026-11-10T20:12:13.695Z",
+      "id": "d3:4b",
+      "model": {
+        "addedAt": "2026-11-10",
+        "architecture": "dense",
+        "capabilities": [
+          "chat",
+          "vision"
+        ],
+        "contextLength": 262144.0,
+        "family": "qwen35",
+        "id": "d3:4b",
+        "license": "apache-2.0",
+        "openWeight": true,
+        "params": "4.8B",
+        "provenance": "auto",
+        "quantizations": [
+          {
+            "diskBytes": 5833404704.0,
+            "minRamBytes": 6708415410.0,
+            "minVramBytes": 6708415410.0,
+            "name": "Q8_0",
+            "projectors": [
+              {
+                "bytes": 675569376,
+                "sha256": "3441fc8ecdd234496c06cd95ade5570e56eadd969aae11b9d4c3f83e03066cc1"
+              }
+            ],
+            "sha256": "bea9ace37fcca311cf7fa973bfd2b37b1599d771bed23639416a7d73109d5eda"
+          }
+        ],
+        "source": {
+          "ollama": "d3:4b"
+        }
+      },
+      "sources": [
+        "https://registry.ollama.ai/v2/library/d3/manifests/4b",
+        "https://ollama.com/library/d3:4b"
+      ]
+    },
+    {
+      "checkedAt": "2026-11-10T20:12:13.695Z",
+      "id": "d3:9b",
+      "model": {
+        "addedAt": "2026-11-10",
+        "architecture": "dense",
+        "capabilities": [
+          "chat",
+          "vision"
+        ],
+        "contextLength": 262144.0,
+        "family": "qwen35",
+        "id": "d3:9b",
+        "license": "apache-2.0",
+        "openWeight": true,
+        "params": "9.0B",
+        "provenance": "auto",
+        "quantizations": [
+          {
+            "diskBytes": 10449208288.0,
+            "minRamBytes": 12056835704.0,
+            "minVramBytes": 12056835704.0,
+            "name": "Q8_0",
+            "projectors": [
+              {
+                "bytes": 921704960,
+                "sha256": "1e081e591d84ff9fac6d50ee202744c873b20f34c29ddf073ddc96fbe6e9f911"
+              }
+            ],
+            "sha256": "2d93d972eace90a0fb8f1c70d34f557a5dad40078f697c8796aee9abfdffeef8"
+          }
+        ],
+        "source": {
+          "ollama": "d3:9b"
+        }
+      },
+      "sources": [
+        "https://registry.ollama.ai/v2/library/d3/manifests/9b",
+        "https://ollama.com/library/d3:9b"
+      ]
+    },
+    {
+      "checkedAt": "2026-11-10T20:12:13.695Z",
+      "id": "embeddinggemma-2:270m",
+      "model": {
+        "addedAt": "2026-11-10",
+        "architecture": "dense",
+        "capabilities": [
+          "vision",
+          "embedding"
+        ],
+        "contextLength": 262144.0,
+        "family": "gemma-embedding2",
+        "id": "embeddinggemma-2:270m",
+        "license": "apache-2.0",
+        "openWeight": true,
+        "params": "271.00M",
+        "provenance": "auto",
+        "quantizations": [
+          {
+            "diskBytes": 303957280.0,
+            "minRamBytes": 349550872.0,
+            "minVramBytes": 349550872.0,
+            "name": "Q8_0",
+            "sha256": "111e84992a0406bacb70d11dddd8874001c783cc56b82c462ec82a2f5b8d08b1"
+          }
+        ],
+        "source": {
+          "ollama": "embeddinggemma-2:270m"
+        }
+      },
+      "sources": [
+        "https://registry.ollama.ai/v2/library/embeddinggemma-2/manifests/270m",
+        "https://ollama.com/library/embeddinggemma-2:270m"
+      ]
+    },
+    {
+      "checkedAt": "2026-11-10T20:12:13.695Z",
+      "id": "kev:4b-q4_K_M",
+      "model": {
+        "addedAt": "2026-11-10",
+        "architecture": "dense",
+        "capabilities": [
+          "chat"
+        ],
+        "contextLength": 262144.0,
+        "family": "qwen35",
+        "id": "kev:4b-q4_K_M",
+        "license": "apache-2.0",
+        "openWeight": true,
+        "params": "4.2B",
+        "provenance": "auto",
+        "quantizations": [
+          {
+            "diskBytes": 2709547456.0,
+            "minRamBytes": 3115979575.0,
+            "minVramBytes": 3115979575.0,
+            "name": "Q4_K_M",
+            "sha256": "a1c701789d16c3e558190d647f7ebc4c1083ff45deb5d1ddce7dded50beb946a"
+          }
+        ],
+        "source": {
+          "ollama": "kev:4b-q4_K_M"
+        }
+      },
+      "sources": [
+        "https://registry.ollama.ai/v2/library/kev/manifests/4b-q4_K_M",
+        "https://ollama.com/library/kev:4b-q4_K_M"
+      ]
+    },
+    {
+      "checkedAt": "2026-11-10T20:12:13.695Z",
+      "id": "kev:9b-q4_K_M",
+      "model": {
+        "addedAt": "2026-11-10",
+        "architecture": "dense",
+        "capabilities": [
+          "chat"
+        ],
+        "contextLength": 262144.0,
+        "family": "qwen35",
+        "id": "kev:9b-q4_K_M",
+        "license": "apache-2.0",
+        "openWeight": true,
+        "params": "9.0B",
+        "provenance": "auto",
+        "quantizations": [
+          {
+            "diskBytes": 5630294528.0,
+            "minRamBytes": 6474838708.0,
+            "minVramBytes": 6474838708.0,
+            "name": "Q4_K_M",
+            "sha256": "5356a5d686ace097b4ff3e92afa906bb509f0b32689889f9181a9812d6dd9196"
+          }
+        ],
+        "source": {
+          "ollama": "kev:9b-q4_K_M"
+        }
+      },
+      "sources": [
+        "https://registry.ollama.ai/v2/library/kev/manifests/9b-q4_K_M",
+        "https://ollama.com/library/kev:9b-q4_K_M"
+      ]
+    },
+    {
+      "checkedAt": "2026-11-10T20:12:13.695Z",
+      "id": "pplx-decider:27b",
+      "model": {
+        "addedAt": "2026-11-10",
+        "architecture": "dense",
+        "capabilities": [
+          "chat",
+          "vision"
+        ],
+        "contextLength": 262144.0,
+        "family": "qwen35",
+        "id": "pplx-decider:27b",
+        "license": "apache-2.0",
+        "openWeight": true,
+        "params": "26.9B",
+        "provenance": "auto",
+        "quantizations": [
+          {
+            "diskBytes": 17475009216.0,
+            "minRamBytes": 20096260599.0,
+            "minVramBytes": 20096260599.0,
+            "name": "Q4_K_M",
+            "projectors": [
+              {
+                "bytes": 927607328,
+                "sha256": "6406d8bb4839782b974ef6fb067aaea003706c27f292cd9881ca814a6fc0cc74"
+              }
+            ],
+            "sha256": "c5789d85610cd8b70be07e89164f3d2dd571c5ad5b1af65f2446f7598a329201"
+          }
+        ],
+        "source": {
+          "ollama": "pplx-decider:27b"
+        }
+      },
+      "sources": [
+        "https://registry.ollama.ai/v2/library/pplx-decider/manifests/27b",
+        "https://ollama.com/library/pplx-decider:27b"
+      ]
+    },
+    {
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "all-minilm:22m",
       "model": {
         "addedAt": "2026-10-08",
@@ -1203,7 +1670,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "all-minilm:33m",
       "model": {
         "addedAt": "2026-10-08",
@@ -1237,7 +1704,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "bge-large:335m",
       "model": {
         "addedAt": "2026-10-08",
@@ -1271,7 +1738,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "bge-m3:567m",
       "model": {
         "addedAt": "2026-10-08",
@@ -1305,7 +1772,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "clef-flash:9b",
       "model": {
         "addedAt": "2026-10-08",
@@ -1323,17 +1790,17 @@
         "provenance": "auto",
         "quantizations": [
           {
-            "diskBytes": 10932727840.0,
-            "minRamBytes": 12572637016.0,
-            "minVramBytes": 12572637016.0,
+            "diskBytes": 10578965120.0,
+            "minRamBytes": 12179023168.0,
+            "minVramBytes": 12179023168.0,
             "name": "Q8_0",
             "projectors": [
               {
-                "bytes": 918165984,
-                "sha256": "c8a6e9e00e1baf6433c4874dbc73bed2a56e887bcbb582fffcb00b533bc638dd"
+                "bytes": 921704928,
+                "sha256": "a98ed89767816b8505e126904c4f9102976d35c88321d9deb97ac67d1626d143"
               }
             ],
-            "sha256": "c9ac3afdf0b5928b00a5762aed44a338a0096af952194ccdedecdfd46bb92c33"
+            "sha256": "d7c352faf1bdd9ea24d0b9347e8eb1eb4bbadeff6c02383bf750215a74f2f1f1"
           }
         ],
         "source": {
@@ -1346,7 +1813,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "clef:27b",
       "model": {
         "addedAt": "2026-10-08",
@@ -1364,17 +1831,17 @@
         "provenance": "auto",
         "quantizations": [
           {
-            "diskBytes": 17987242016.0,
-            "minRamBytes": 20685328319.0,
-            "minVramBytes": 20685328319.0,
+            "diskBytes": 20163365504.0,
+            "minRamBytes": 23187870330.0,
+            "minVramBytes": 23187870330.0,
             "name": "Q4_K_M",
             "projectors": [
               {
-                "bytes": 927607360,
-                "sha256": "f0e2930e301586f0932262c7d232c74e385d7b4281170111c36a686e16e59ba8"
+                "bytes": 931146304,
+                "sha256": "2a3e89934a6dbd7d4c53868cd810b89c50095dd324f846d62f4e8c779547e234"
               }
             ],
-            "sha256": "6c02216a0055c1e1e92994d240e37c440f1c09b30281f538f4a38ebab0743da9"
+            "sha256": "bd9b8ae24c5752a2bb5e2733d5168340d5f04457e02b8bf0d1bc9285ec3d4f61"
           }
         ],
         "source": {
@@ -1387,7 +1854,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "codegemma:2b",
       "model": {
         "addedAt": "2026-10-08",
@@ -1422,7 +1889,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "codegemma:7b",
       "model": {
         "addedAt": "2026-10-08",
@@ -1457,7 +1924,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "codellama:13b",
       "model": {
         "addedAt": "2026-10-08",
@@ -1492,7 +1959,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "codellama:7b",
       "model": {
         "addedAt": "2026-10-08",
@@ -1527,7 +1994,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "cogito-2.1:671b",
       "model": {
         "activeParams": "37.5B",
@@ -1562,7 +2029,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "cogito:14b",
       "model": {
         "addedAt": "2026-10-08",
@@ -1598,7 +2065,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "cogito:32b",
       "model": {
         "addedAt": "2026-10-08",
@@ -1634,7 +2101,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "cogito:3b",
       "model": {
         "addedAt": "2026-10-08",
@@ -1670,7 +2137,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "deepcoder:1.5b",
       "model": {
         "addedAt": "2026-10-08",
@@ -1705,7 +2172,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "deepcoder:14b",
       "model": {
         "addedAt": "2026-10-08",
@@ -1740,7 +2207,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "deepscaler:1.5b",
       "model": {
         "addedAt": "2026-10-08",
@@ -1775,7 +2242,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "deepseek-ocr:3b",
       "model": {
         "activeParams": "1.1B",
@@ -1812,7 +2279,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "deepseek-r1:1.5b",
       "model": {
         "addedAt": "2026-10-08",
@@ -1849,7 +2316,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "deepseek-v3.1:671b",
       "model": {
         "activeParams": "37.6B",
@@ -1886,7 +2353,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "devstral:24b",
       "model": {
         "addedAt": "2026-10-08",
@@ -1922,7 +2389,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "dolphin-llama3:70b",
       "model": {
         "addedAt": "2026-10-08",
@@ -1957,7 +2424,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "dolphin-llama3:8b",
       "model": {
         "addedAt": "2026-10-08",
@@ -1992,7 +2459,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "dolphin-mistral:7b",
       "model": {
         "addedAt": "2026-10-08",
@@ -2027,7 +2494,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "dolphin3:8b",
       "model": {
         "addedAt": "2026-10-08",
@@ -2062,7 +2529,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "embeddinggemma:300m",
       "model": {
         "addedAt": "2026-10-08",
@@ -2096,7 +2563,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "everythinglm:13b",
       "model": {
         "addedAt": "2026-10-08",
@@ -2131,7 +2598,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "firefunction-v2:70b",
       "model": {
         "addedAt": "2026-10-08",
@@ -2167,7 +2634,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "functiongemma:270m",
       "model": {
         "addedAt": "2026-10-08",
@@ -2202,7 +2669,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "gemma3:1b",
       "model": {
         "addedAt": "2026-10-08",
@@ -2220,11 +2687,11 @@
         "provenance": "auto",
         "quantizations": [
           {
-            "diskBytes": 815310432.0,
-            "minRamBytes": 937606997.0,
-            "minVramBytes": 937606997.0,
+            "diskBytes": 806058400.0,
+            "minRamBytes": 926967160.0,
+            "minVramBytes": 926967160.0,
             "name": "Q4_K_M",
-            "sha256": "7cd4618c1faf8b7233c6c906dac1694b6a47684b37b8895d470ac688520b9c01"
+            "sha256": "2f8c3d137f2496dcb4019e17a50f2974b89c1be1a742db3c80cc86f91cafeeef"
           }
         ],
         "source": {
@@ -2237,7 +2704,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "gemma3:270m",
       "model": {
         "addedAt": "2026-10-08",
@@ -2272,7 +2739,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "gemma4:12b",
       "model": {
         "addedAt": "2026-10-08",
@@ -2315,7 +2782,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "gemma4:26b",
       "model": {
         "activeParams": "3.8B",
@@ -2359,7 +2826,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "gemma4:31b",
       "model": {
         "addedAt": "2026-10-08",
@@ -2402,7 +2869,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "gemma:2b",
       "model": {
         "addedAt": "2026-10-08",
@@ -2437,7 +2904,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "gemma:7b",
       "model": {
         "addedAt": "2026-10-08",
@@ -2472,7 +2939,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "gpt-oss-safeguard:120b",
       "model": {
         "activeParams": "5.7B",
@@ -2509,7 +2976,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "gpt-oss-safeguard:20b",
       "model": {
         "activeParams": "4.2B",
@@ -2546,7 +3013,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "gpt-oss:120b",
       "model": {
         "activeParams": "5.7B",
@@ -2566,11 +3033,11 @@
         "provenance": "auto",
         "quantizations": [
           {
-            "diskBytes": 65369799840.0,
-            "minRamBytes": 75175269816.0,
-            "minVramBytes": 75175269816.0,
+            "diskBytes": 65369800832.0,
+            "minRamBytes": 75175270957.0,
+            "minVramBytes": 75175270957.0,
             "name": "MXFP4",
-            "sha256": "6be6d66a3f546d8c19b130dc41dc24b2fc159f84ffbc76a0ee0676205083cf5a"
+            "sha256": "a5b03e4c678e1671191c0115861445b61529f518e751ce38a2bb6030cca9b1d0"
           }
         ],
         "source": {
@@ -2583,7 +3050,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "gpt-oss:20b",
       "model": {
         "activeParams": "4.2B",
@@ -2603,11 +3070,11 @@
         "provenance": "auto",
         "quantizations": [
           {
-            "diskBytes": 13793422144.0,
-            "minRamBytes": 15862435466.0,
-            "minVramBytes": 15862435466.0,
+            "diskBytes": 13793422816.0,
+            "minRamBytes": 15862436239.0,
+            "minVramBytes": 15862436239.0,
             "name": "MXFP4",
-            "sha256": "e7b273f9636059a689e3ddcab3716e4f65abe0143ac978e46673ad0e52d09efb"
+            "sha256": "8ecb5d4ad6172c63f9cbf1a07a04e525985a8a11a6e516da02b674c4010de716"
           }
         ],
         "source": {
@@ -2620,7 +3087,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "granite-code:20b",
       "model": {
         "addedAt": "2026-10-08",
@@ -2655,7 +3122,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "granite-code:34b",
       "model": {
         "addedAt": "2026-10-08",
@@ -2690,7 +3157,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "granite-code:3b",
       "model": {
         "addedAt": "2026-10-08",
@@ -2725,7 +3192,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "granite-code:8b",
       "model": {
         "addedAt": "2026-10-08",
@@ -2760,7 +3227,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "granite-embedding:278m",
       "model": {
         "addedAt": "2026-10-08",
@@ -2794,7 +3261,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "granite-embedding:30m",
       "model": {
         "addedAt": "2026-10-08",
@@ -2828,7 +3295,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "granite3-dense:2b",
       "model": {
         "addedAt": "2026-10-08",
@@ -2864,7 +3331,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "granite3-dense:8b",
       "model": {
         "addedAt": "2026-10-08",
@@ -2900,7 +3367,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "granite3-guardian:2b",
       "model": {
         "addedAt": "2026-10-08",
@@ -2935,7 +3402,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "granite3-guardian:8b",
       "model": {
         "addedAt": "2026-10-08",
@@ -2970,7 +3437,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "granite3-moe:1b",
       "model": {
         "activeParams": "428.7M",
@@ -3007,7 +3474,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "granite3.1-moe:1b",
       "model": {
         "activeParams": "428.7M",
@@ -3044,7 +3511,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "granite3.1-moe:3b",
       "model": {
         "activeParams": "882.9M",
@@ -3081,7 +3548,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "granite3.2-vision:2b",
       "model": {
         "addedAt": "2026-10-08",
@@ -3124,7 +3591,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "granite3.2:2b",
       "model": {
         "addedAt": "2026-10-08",
@@ -3160,7 +3627,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "granite3.2:8b",
       "model": {
         "addedAt": "2026-10-08",
@@ -3196,7 +3663,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "granite3.3:2b",
       "model": {
         "addedAt": "2026-10-08",
@@ -3232,7 +3699,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "granite3.3:8b",
       "model": {
         "addedAt": "2026-10-08",
@@ -3268,7 +3735,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "granite4.1-guardian:8b",
       "model": {
         "addedAt": "2026-10-08",
@@ -3305,7 +3772,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "granite4.1:30b",
       "model": {
         "addedAt": "2026-10-08",
@@ -3341,7 +3808,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "granite4.1:3b",
       "model": {
         "addedAt": "2026-10-08",
@@ -3377,7 +3844,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "granite4.1:8b",
       "model": {
         "addedAt": "2026-10-08",
@@ -3413,7 +3880,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "granite4.2:30b",
       "model": {
         "addedAt": "2026-10-08",
@@ -3448,7 +3915,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "granite4.2:3b",
       "model": {
         "addedAt": "2026-10-08",
@@ -3483,7 +3950,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "granite4.2:8b",
       "model": {
         "addedAt": "2026-10-08",
@@ -3518,7 +3985,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "granite4:1b",
       "model": {
         "addedAt": "2026-10-08",
@@ -3553,7 +4020,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "granite4:350m",
       "model": {
         "addedAt": "2026-10-08",
@@ -3588,7 +4055,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "granite4:3b",
       "model": {
         "addedAt": "2026-10-08",
@@ -3623,7 +4090,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "hermes3:3b",
       "model": {
         "addedAt": "2026-10-08",
@@ -3659,7 +4126,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "hermes3:405b",
       "model": {
         "addedAt": "2026-10-08",
@@ -3695,7 +4162,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "hermes3:70b",
       "model": {
         "addedAt": "2026-10-08",
@@ -3731,7 +4198,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "hermes3:8b",
       "model": {
         "addedAt": "2026-10-08",
@@ -3767,7 +4234,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "internlm2:7b",
       "model": {
         "addedAt": "2026-10-08",
@@ -3802,7 +4269,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "llama-guard3:1b",
       "model": {
         "addedAt": "2026-10-08",
@@ -3837,7 +4304,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "llama-guard3:8b",
       "model": {
         "addedAt": "2026-10-08",
@@ -3872,7 +4339,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "llama2-uncensored:7b",
       "model": {
         "addedAt": "2026-10-08",
@@ -3907,7 +4374,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "llama2:13b",
       "model": {
         "addedAt": "2026-10-08",
@@ -3942,7 +4409,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "llama2:70b",
       "model": {
         "addedAt": "2026-10-08",
@@ -3977,7 +4444,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "llama2:7b",
       "model": {
         "addedAt": "2026-10-08",
@@ -4012,7 +4479,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "llama3-chatqa:70b",
       "model": {
         "addedAt": "2026-10-08",
@@ -4047,7 +4514,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "llama3-chatqa:8b",
       "model": {
         "addedAt": "2026-10-08",
@@ -4082,7 +4549,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "llama3-gradient:70b",
       "model": {
         "addedAt": "2026-10-08",
@@ -4117,7 +4584,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "llama3-gradient:8b",
       "model": {
         "addedAt": "2026-10-08",
@@ -4152,7 +4619,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "llama3-groq-tool-use:70b",
       "model": {
         "addedAt": "2026-10-08",
@@ -4188,7 +4655,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "llama3-groq-tool-use:8b",
       "model": {
         "addedAt": "2026-10-08",
@@ -4224,7 +4691,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "llama3.1:405b",
       "model": {
         "addedAt": "2026-10-08",
@@ -4260,7 +4727,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "llama3:70b",
       "model": {
         "addedAt": "2026-10-08",
@@ -4295,7 +4762,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "llama3:8b",
       "model": {
         "addedAt": "2026-10-08",
@@ -4330,7 +4797,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "llava:13b",
       "model": {
         "addedAt": "2026-10-08",
@@ -4372,7 +4839,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "llava:34b",
       "model": {
         "addedAt": "2026-10-08",
@@ -4414,7 +4881,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "llava:7b",
       "model": {
         "addedAt": "2026-10-08",
@@ -4456,7 +4923,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "magistral:24b",
       "model": {
         "addedAt": "2026-10-08",
@@ -4493,7 +4960,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "marco-o1:7b",
       "model": {
         "addedAt": "2026-10-08",
@@ -4528,7 +4995,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "mathstral:7b",
       "model": {
         "addedAt": "2026-10-08",
@@ -4563,7 +5030,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "megadolphin:120b",
       "model": {
         "addedAt": "2026-10-08",
@@ -4598,7 +5065,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "ministral-3:14b",
       "model": {
         "addedAt": "2026-10-08",
@@ -4635,7 +5102,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "ministral-3:3b",
       "model": {
         "addedAt": "2026-10-08",
@@ -4672,7 +5139,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "ministral-3:8b",
       "model": {
         "addedAt": "2026-10-08",
@@ -4709,7 +5176,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "mistral-small3.2:24b",
       "model": {
         "addedAt": "2026-10-08",
@@ -4746,7 +5213,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "moondream:1.8b",
       "model": {
         "addedAt": "2026-10-08",
@@ -4788,7 +5255,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "mxbai-embed-large:335m",
       "model": {
         "addedAt": "2026-10-08",
@@ -4822,7 +5289,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "nemotron:70b",
       "model": {
         "addedAt": "2026-10-08",
@@ -4858,7 +5325,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "nimble:9b",
       "model": {
         "addedAt": "2026-10-08",
@@ -4877,11 +5344,11 @@
         "provenance": "auto",
         "quantizations": [
           {
-            "diskBytes": 9527501312.0,
+            "diskBytes": 9527503648.0,
             "minRamBytes": 10996875000.0,
             "minVramBytes": 10996875000.0,
             "name": "Q8_0",
-            "sha256": "bbf1d6fc03bb0ed24d88f4c214ed7b5d1768aeb43d5cf433fb69eff0c8578013"
+            "sha256": "15d64cb733d619b7cd85b81973f3fae7d2d0387f0cb3931bd265623f4dabbc6f"
           }
         ],
         "source": {
@@ -4894,7 +5361,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "notus:7b",
       "model": {
         "addedAt": "2026-10-08",
@@ -4929,7 +5396,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "nous-hermes2:10.7b",
       "model": {
         "addedAt": "2026-10-08",
@@ -4964,7 +5431,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "nous-hermes2:34b",
       "model": {
         "addedAt": "2026-10-08",
@@ -4999,7 +5466,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "olmo-3.1:32b",
       "model": {
         "addedAt": "2026-10-08",
@@ -5035,7 +5502,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "olmo-3:32b",
       "model": {
         "addedAt": "2026-10-08",
@@ -5071,7 +5538,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "olmo-3:7b",
       "model": {
         "addedAt": "2026-10-08",
@@ -5107,7 +5574,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "openchat:7b",
       "model": {
         "addedAt": "2026-10-08",
@@ -5142,7 +5609,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "openthinker:32b",
       "model": {
         "addedAt": "2026-10-08",
@@ -5177,7 +5644,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "openthinker:7b",
       "model": {
         "addedAt": "2026-10-08",
@@ -5212,7 +5679,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "ornith:35b",
       "model": {
         "activeParams": "3.5B",
@@ -5249,7 +5716,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "ornith:9b",
       "model": {
         "addedAt": "2026-10-08",
@@ -5285,7 +5752,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "paraphrase-multilingual:278m",
       "model": {
         "addedAt": "2026-10-08",
@@ -5319,7 +5786,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "phi:2.7b",
       "model": {
         "addedAt": "2026-10-08",
@@ -5354,7 +5821,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "phind-codellama:34b",
       "model": {
         "addedAt": "2026-10-08",
@@ -5389,7 +5856,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "qwen2-math:1.5b",
       "model": {
         "addedAt": "2026-10-08",
@@ -5424,7 +5891,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "qwen2-math:7b",
       "model": {
         "addedAt": "2026-10-08",
@@ -5459,7 +5926,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "qwen2.5-coder:0.5b",
       "model": {
         "addedAt": "2026-10-08",
@@ -5495,7 +5962,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "qwen2.5-coder:1.5b",
       "model": {
         "addedAt": "2026-10-08",
@@ -5531,7 +5998,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "qwen2.5-coder:14b",
       "model": {
         "addedAt": "2026-10-08",
@@ -5567,7 +6034,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "qwen2.5vl:32b",
       "model": {
         "addedAt": "2026-10-08",
@@ -5603,7 +6070,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "qwen2.5vl:3b",
       "model": {
         "addedAt": "2026-10-08",
@@ -5639,7 +6106,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "qwen2.5vl:72b",
       "model": {
         "addedAt": "2026-10-08",
@@ -5675,7 +6142,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "qwen2.5vl:7b",
       "model": {
         "addedAt": "2026-10-08",
@@ -5711,7 +6178,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "qwen2:0.5b",
       "model": {
         "addedAt": "2026-10-08",
@@ -5747,7 +6214,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "qwen2:1.5b",
       "model": {
         "addedAt": "2026-10-08",
@@ -5783,7 +6250,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "qwen2:7b",
       "model": {
         "addedAt": "2026-10-08",
@@ -5819,7 +6286,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "qwen3-coder:30b",
       "model": {
         "activeParams": "3.4B",
@@ -5856,7 +6323,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "qwen3-coder:480b",
       "model": {
         "activeParams": "35.5B",
@@ -5893,7 +6360,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "qwen3-embedding:0.6b",
       "model": {
         "addedAt": "2026-10-08",
@@ -5928,7 +6395,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "qwen3-embedding:4b",
       "model": {
         "addedAt": "2026-10-08",
@@ -5963,7 +6430,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "qwen3-embedding:8b",
       "model": {
         "addedAt": "2026-10-08",
@@ -5998,7 +6465,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "qwen3-next:80b",
       "model": {
         "activeParams": "3.9B",
@@ -6035,7 +6502,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "qwen3-vl:235b",
       "model": {
         "activeParams": "22.8B",
@@ -6074,7 +6541,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "qwen3-vl:2b",
       "model": {
         "addedAt": "2026-10-08",
@@ -6112,7 +6579,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "qwen3-vl:30b",
       "model": {
         "activeParams": "3.9B",
@@ -6151,7 +6618,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "qwen3-vl:32b",
       "model": {
         "addedAt": "2026-10-08",
@@ -6189,7 +6656,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "qwen3-vl:4b",
       "model": {
         "addedAt": "2026-10-08",
@@ -6210,11 +6677,17 @@
         "provenance": "auto",
         "quantizations": [
           {
-            "diskBytes": 3295612832.0,
-            "minRamBytes": 3789954757.0,
-            "minVramBytes": 3789954757.0,
+            "diskBytes": 3336607584.0,
+            "minRamBytes": 3937974882.0,
+            "minVramBytes": 3937974882.0,
             "name": "Q4_K_M",
-            "sha256": "9c60bdd691c1897bbfe5ddbc67336848e18c346b7ee2ab8541b135f208e5bb38"
+            "projectors": [
+              {
+                "bytes": 839325984,
+                "sha256": "ee8b93fa272aaa217f8552e59da89730c9a50ec5146357e2ee8fce36e55a7671"
+              }
+            ],
+            "sha256": "02fb4392a076adea79559e7a0eb119859bf618f49cb20c966a5a068843273249"
           }
         ],
         "source": {
@@ -6227,7 +6700,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "qwen3-vl:8b",
       "model": {
         "addedAt": "2026-10-08",
@@ -6248,11 +6721,17 @@
         "provenance": "auto",
         "quantizations": [
           {
-            "diskBytes": 6140392576.0,
-            "minRamBytes": 7061451463.0,
-            "minVramBytes": 7061451463.0,
+            "diskBytes": 6190960096.0,
+            "minRamBytes": 7282453973.0,
+            "minVramBytes": 7282453973.0,
             "name": "Q4_K_M",
-            "sha256": "ed12a4674d727a74ac4816c906094ea9d3119fbea46ca93288c3ce4ffbe38c55"
+            "projectors": [
+              {
+                "bytes": 1162568672,
+                "sha256": "9a42417378dd18094b163f529239c42636ef487932f220d8763ab923e6a8a3cb"
+              }
+            ],
+            "sha256": "9c3e4853af40205c11b5d1000dfcf08e96454adfd872e48b934cd67d59ec3097"
           }
         ],
         "source": {
@@ -6265,7 +6744,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "qwen3.5:0.8b",
       "model": {
         "addedAt": "2026-10-08",
@@ -6308,7 +6787,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "qwen3.5:122b",
       "model": {
         "activeParams": "12.7B",
@@ -6346,7 +6825,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "qwen3.5:27b",
       "model": {
         "addedAt": "2026-10-08",
@@ -6389,7 +6868,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "qwen3.5:2b",
       "model": {
         "addedAt": "2026-10-08",
@@ -6432,7 +6911,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "qwen3.5:35b",
       "model": {
         "activeParams": "3.5B",
@@ -6476,7 +6955,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "qwen3.5:9b",
       "model": {
         "addedAt": "2026-10-08",
@@ -6519,7 +6998,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "qwen3.6:27b",
       "model": {
         "addedAt": "2026-10-08",
@@ -6562,7 +7041,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "qwen3.8:27b",
       "model": {
         "addedAt": "2026-10-08",
@@ -6605,7 +7084,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "qwq:32b",
       "model": {
         "addedAt": "2026-10-08",
@@ -6641,7 +7120,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "r1-1776:671b",
       "model": {
         "activeParams": "37.6B",
@@ -6676,7 +7155,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "r1-1776:70b",
       "model": {
         "addedAt": "2026-10-08",
@@ -6711,7 +7190,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "reflection:70b",
       "model": {
         "addedAt": "2026-10-08",
@@ -6746,7 +7225,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "rnj-1:8b",
       "model": {
         "addedAt": "2026-10-08",
@@ -6781,7 +7260,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "sailor2:1b",
       "model": {
         "addedAt": "2026-10-08",
@@ -6816,7 +7295,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "sailor2:20b",
       "model": {
         "addedAt": "2026-10-08",
@@ -6851,7 +7330,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "sailor2:8b",
       "model": {
         "addedAt": "2026-10-08",
@@ -6886,7 +7365,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "shieldgemma:27b",
       "model": {
         "addedAt": "2026-10-08",
@@ -6920,7 +7399,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "shieldgemma:2b",
       "model": {
         "addedAt": "2026-10-08",
@@ -6954,7 +7433,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "shieldgemma:9b",
       "model": {
         "addedAt": "2026-10-08",
@@ -6988,7 +7467,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "smollm:1.7b",
       "model": {
         "addedAt": "2026-10-08",
@@ -7023,7 +7502,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "smollm:135m",
       "model": {
         "addedAt": "2026-10-08",
@@ -7058,7 +7537,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "smollm:360m",
       "model": {
         "addedAt": "2026-10-08",
@@ -7093,7 +7572,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "snowflake-arctic-embed2:568m",
       "model": {
         "addedAt": "2026-10-08",
@@ -7127,7 +7606,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "snowflake-arctic-embed:110m",
       "model": {
         "addedAt": "2026-10-08",
@@ -7161,7 +7640,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "snowflake-arctic-embed:137m",
       "model": {
         "addedAt": "2026-10-08",
@@ -7195,7 +7674,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "snowflake-arctic-embed:22m",
       "model": {
         "addedAt": "2026-10-08",
@@ -7229,7 +7708,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "snowflake-arctic-embed:335m",
       "model": {
         "addedAt": "2026-10-08",
@@ -7263,7 +7742,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "snowflake-arctic-embed:33m",
       "model": {
         "addedAt": "2026-10-08",
@@ -7297,7 +7776,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "solar-pro:22b",
       "model": {
         "addedAt": "2026-10-08",
@@ -7332,7 +7811,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "starling-lm:7b",
       "model": {
         "addedAt": "2026-10-08",
@@ -7367,7 +7846,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "tev1:0.8b",
       "model": {
         "addedAt": "2026-10-08",
@@ -7386,11 +7865,11 @@
         "provenance": "auto",
         "quantizations": [
           {
-            "diskBytes": 811843424.0,
-            "minRamBytes": 933619938.0,
-            "minVramBytes": 933619938.0,
+            "diskBytes": 833594080.0,
+            "minRamBytes": 958633192.0,
+            "minVramBytes": 958633192.0,
             "name": "Q8_0",
-            "sha256": "fa9732e3924db99f614181a7a28384a0891ae17f478db228a47c989462b2405a"
+            "sha256": "7daa72d2ed4fa16f5120bc1bb89713531d0f511c360e9228905ba88c092f13b5"
           }
         ],
         "source": {
@@ -7403,7 +7882,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "tev1:4b",
       "model": {
         "addedAt": "2026-10-08",
@@ -7422,11 +7901,11 @@
         "provenance": "auto",
         "quantizations": [
           {
-            "diskBytes": 4482403072.0,
-            "minRamBytes": 5154763533.0,
-            "minVramBytes": 5154763533.0,
+            "diskBytes": 4610582112.0,
+            "minRamBytes": 5302169429.0,
+            "minVramBytes": 5302169429.0,
             "name": "Q8_0",
-            "sha256": "35f9281a3df58b566b24091572467001906a5a6aac879fe8005c4db19c8d4a2e"
+            "sha256": "50696f76ca4ee208f01de2727a48eedabbf2f4c1ed6da7e2b8626e37baace809"
           }
         ],
         "source": {
@@ -7439,7 +7918,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "tinydolphin:1.1b",
       "model": {
         "addedAt": "2026-10-08",
@@ -7474,7 +7953,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "translategemma:12b",
       "model": {
         "addedAt": "2026-10-08",
@@ -7509,7 +7988,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "translategemma:27b",
       "model": {
         "addedAt": "2026-10-08",
@@ -7544,7 +8023,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "translategemma:4b",
       "model": {
         "addedAt": "2026-10-08",
@@ -7579,7 +8058,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "tulu3:70b",
       "model": {
         "addedAt": "2026-10-08",
@@ -7614,7 +8093,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "tulu3:8b",
       "model": {
         "addedAt": "2026-10-08",
@@ -7649,7 +8128,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "wizardlm2:7b",
       "model": {
         "addedAt": "2026-10-08",
@@ -7684,7 +8163,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "yi-coder:1.5b",
       "model": {
         "addedAt": "2026-10-08",
@@ -7719,7 +8198,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "yi-coder:9b",
       "model": {
         "addedAt": "2026-10-08",
@@ -7754,7 +8233,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "zephyr:141b",
       "model": {
         "activeParams": "39.2B",
@@ -7790,7 +8269,7 @@
       ]
     },
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "id": "zephyr:7b",
       "model": {
         "addedAt": "2026-10-08",
@@ -7828,7 +8307,7 @@
   "policyVersion": 1,
   "scopes": [
     {
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "complete": true,
       "name": "ollama-local-variants",
       "source": "https://ollama.com/library",
@@ -7837,6 +8316,11 @@
         "all-minilm:33m",
         "bge-large:335m",
         "bge-m3:567m",
+        "bitnet-b1.58:2b",
+        "bonsai-2:27b",
+        "bonsai-2:2b",
+        "bonsai-2:4b",
+        "bonsai-2:9b",
         "bonsai:8b",
         "clef-flash:9b",
         "clef:27b",
@@ -7848,6 +8332,10 @@
         "cogito:14b",
         "cogito:32b",
         "cogito:3b",
+        "d3:27b",
+        "d3:2b",
+        "d3:4b",
+        "d3:9b",
         "deepcoder:1.5b",
         "deepcoder:14b",
         "deepscaler:1.5b",
@@ -7866,6 +8354,7 @@
         "dolphin-llama3:8b",
         "dolphin-mistral:7b",
         "dolphin3:8b",
+        "embeddinggemma-2:270m",
         "embeddinggemma:300m",
         "everythinglm:13b",
         "firefunction-v2:70b",
@@ -7927,6 +8416,8 @@
         "hermes3:70b",
         "hermes3:8b",
         "internlm2:7b",
+        "kev:4b-q4_K_M",
+        "kev:9b-q4_K_M",
         "kimi-dev-72b",
         "kimi-k2-thinking",
         "kimi-k2:base",
@@ -7993,6 +8484,7 @@
         "phi4:14b",
         "phi:2.7b",
         "phind-codellama:34b",
+        "pplx-decider:27b",
         "qwen2-math:1.5b",
         "qwen2-math:7b",
         "qwen2.5-coder:0.5b",
