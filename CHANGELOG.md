@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+### Fixes
+
+- **Big Ollama models no longer fail with "command timed out".** Starting a
+  model that wasn't downloaded yet ran `ollama pull` with a fixed 30-minute
+  limit, so a 20 GB model on an ordinary connection (about 4 MB/s needs over an
+  hour) was stopped partway through. The pull now runs until it finishes and
+  only gives up if Ollama writes nothing new for 10 minutes ("download stalled
+  … start it again to resume"; Ollama keeps what it already has), with a
+  12-hour upper bound.
+
 ### Changes
 
 - **Source control in Connectors: GitHub.** Connect GitHub with a personal access

@@ -13,6 +13,59 @@ use std::{
 };
 use tokio_util::sync::CancellationToken;
 
+/// An `ollama pull` that writes nothing new for this long has stalled.
+pub const PULL_STALL_LIMIT: Duration = Duration::from_secs(10 * 60);
+const PULL_STALL_POLL: Duration = Duration::from_secs(15);
+/// Upper bound for one pull, however slow: 12 hours.
+pub const PULL_HARD_LIMIT: Duration = Duration::from_secs(12 * 3600);
+
+/// Bytes under `dir` (one level: Ollama keeps blobs and their partial files flat).
+fn directory_bytes(dir: &Path) -> u64 {
+    std::fs::read_dir(dir)
+        .map(|entries| {
+            entries
+                .filter_map(Result::ok)
+                .filter_map(|entry| entry.metadata().ok())
+                .filter(std::fs::Metadata::is_file)
+                .map(|metadata| metadata.len())
+                .sum()
+        })
+        .unwrap_or(0)
+}
+
+/// Resolves once `dir` has not grown for `limit` (checked every `poll`), or never if `cancel` fires.
+pub async fn stall_guard(
+    dir: PathBuf,
+    limit: Duration,
+    poll: Duration,
+    cancel: &CancellationToken,
+) {
+    let mut last = directory_bytes(&dir);
+    let mut quiet = Duration::ZERO;
+    loop {
+        tokio::select! {
+            biased;
+            () = cancel.cancelled() => return std::future::pending().await,
+            () = tokio::time::sleep(poll) => {}
+        }
+        let now = tokio::task::spawn_blocking({
+            let dir = dir.clone();
+            move || directory_bytes(&dir)
+        })
+        .await
+        .unwrap_or(last);
+        if now != last {
+            last = now;
+            quiet = Duration::ZERO;
+        } else {
+            quiet += poll;
+            if quiet >= limit {
+                return;
+            }
+        }
+    }
+}
+
 pub async fn with_ollama_daemon<T>(
     adapter: &dyn BackendAdapter,
     endpoint: &str,
@@ -163,16 +216,33 @@ impl PullService<'_> {
                     LifecycleScope::Runtime,
                     LifecycleStage::Acquisition,
                     async {
-                        self.commands
-                            .run_ollama(
-                                binary,
-                                &["pull".into(), "--".into(), request.model_id.clone()],
-                                &context,
-                                cancel,
-                                Duration::from_secs(1800),
-                            )
-                            .await
-                            .map_err(BackendError)
+                        // A 20 GB model on a 4 MB/s link takes well over an hour, so a fixed limit
+                        // fails good downloads. Give up only when Ollama stops writing bytes.
+                        let pull = cancel.child_token();
+                        let stalled = stall_guard(
+                            self.ollama_models.join("blobs"),
+                            PULL_STALL_LIMIT,
+                            PULL_STALL_POLL,
+                            &pull,
+                        );
+                        let args = ["pull".into(), "--".into(), request.model_id.clone()];
+                        let run = self.commands.run_ollama(
+                            binary,
+                            &args,
+                            &context,
+                            &pull,
+                            PULL_HARD_LIMIT,
+                        );
+                        tokio::select! {
+                            result = run => result.map_err(BackendError),
+                            () = stalled => {
+                                pull.cancel();
+                                Err(BackendError(format!(
+                                    "download stalled: no new data for {} minutes; start it again to resume",
+                                    PULL_STALL_LIMIT.as_secs() / 60
+                                )))
+                            }
+                        }
                     },
                 )
                 .await?;
