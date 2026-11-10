@@ -3,3 +3,7 @@
 additional_cargo_test_args = ["--", "--test-threads=2"]
 # Tests run only in the package that contains each mutant (the default), which keeps
 # a full run within the per-shard time limit in .github/workflows/mutants.yml.
+# OfficialCatalogTransport::download only builds the HTTPS client and sends the request;
+# it needs the real catalog host. Its rules are tested through follow_redirect and
+# read_catalog, and the downloaded bytes must still pass signature verification.
+exclude_re = ["<impl CatalogTransport for OfficialCatalogTransport>::download"]
