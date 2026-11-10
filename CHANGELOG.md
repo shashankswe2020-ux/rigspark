@@ -26,9 +26,9 @@
 - **Commits made through RigSpark are marked.** Coding agents started with
   `rigspark connect` (Claude Code, Codex, OpenCode) and the OpenCode chat harness
   add two trailers to every commit:
-  `Co-Authored-By: rigspark-community-<model> <<id>+rigspark[bot]@users.noreply.github.com>`
-  and `Signed-off-by: Rigspark <noreply@rigspark.ai>`. The id comes from a random
-  salt kept in the RigSpark home. Git's hooks path is set for the agent process
+  `Co-Authored-By: rigspark-community-<model> <353924278+rigspark[bot]@users.noreply.github.com>`
+  and `Signed-off-by: Rigspark <noreply@rigspark.ai>`. 353924278 is the
+  `rigspark[bot]` account, so GitHub shows the RigSpark app as co-author. Git's hooks path is set for the agent process
   only; the repository's own hooks still run first, and no git config is edited.
   `git commit --no-verify` skips hooks and so skips the trailers. Agents set up by
   hand (Pi, Hermes, OpenClaw, Cline) are not covered.
