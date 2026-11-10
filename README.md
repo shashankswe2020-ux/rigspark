@@ -13,6 +13,8 @@
   <a href="#linux-and-the-command-line">Linux (opens in your browser)</a>
 </p>
 
+<p align="center"><sub>If RigSpark is useful to you, a ⭐ on GitHub helps other people find it.</sub></p>
+
 ## What you can do
 
 - **Chat** with open models such as Llama, Qwen, Gemma and DeepSeek, fully offline.
