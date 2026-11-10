@@ -36,12 +36,15 @@
     "2af3b81862c6be03c769683af18efdadb2c33f60ff32ab6f83e42c043d6c7816:none": "license missing",
     "2b73056c35a2106beea6334d57af1b6387962874fa3a569a13601850aecb0914:6b53223f338a00ae8b62bc09590ac7dc87e617cd60bc3e385746d8561f70fc5c": "license not recognised as open",
     "2c0d857fd309d0129447bd82ec1b8ca467a4b683391160855540f49b278bda3e:cdf767b699c73a7d6ed7628b840cdbca3b4b2ebb5b9bbaf59033d3382424907c": "license not recognised as open",
+    "2f0942d5a5f64cf69c3356d2be439b71644b1f0eb3a580912a5a0179eeaba77d:none": "license not recognised as open",
     "2fbe5c091143c1641e22e79e2ee0264b047fc5c538da826842de9a74c29ec715:43070e2d4e532684de521b885f385d0841030efa2b1a20bafb76133a5e1379c1": "license sources disagree",
     "305c4103a989d3f8ac457f912af30f32693f20dcffe1495e18c2ed7b5596b2d1:none": "license missing",
     "338f3218c250672ae8a00677fc1cf879b675ae786322d57f80ca6dfb1f88b76d:4ec42cd966c9d5cf067cc4438869e0737679203b4d6fc551c226c15a1c2d7997": "license not recognised as open",
     "362afdd3a3127f6349aa624ed9f3a516aec6f3a6545d81872fb99f193c59b6cb:none": "license missing",
     "3717a52b7aea39f25a27695a9f25f8785007fd97dc31152f1fdd86bda41a53df:58f83c52a4e3e18f776002f7ceff9030e74ea0b985fc41bc04f8ebb2a15586cc": "license not recognised as open",
+    "372522dee468d7090dc3463d5c05dde557359a41b5cf8adc9d86b4714bd4321b:8a0c5e232551abcb102d1bd39a34866ef4520361b613bd6405d55b36562e4d88": "license not recognised as open",
     "377876be20bac24488716c04824ab3a6978900679b40013b0d2585004555e658:none": "license missing",
+    "3793e1e6e2266919d6e015287221b41100175a98eddaba92e111aed3b05c93c4:4d28ca14dedc0b3d0fcc2b3339f0e79931faa33874f3d24f522183a8fc70068c": "license not recognised as open",
     "383cc0823946ae2313734418d5e611ed5b0cc0a2720f80995966cddedd359eb5:294fd63925d81e9a11a2bd71fefecbfefb0d1a329eef7de28b96e49b6da4f67e": "license not recognised as open",
     "397f02a8d32c293bcb63e2578a03a3d8430d8ec744f5b3180cc677e702fcd2cf:none": "license missing",
     "3b8e1d43f3ff0442194ca5b200434009c5a8c61a9214852a0aaba8157599ee9c:d0b8774a6ecda89a5d36b9f2a28c087a93018487f74291941c02527a0e014733": "license not recognised as open",
@@ -60,6 +63,7 @@
     "507a09a3e731f3ea08b1f161e8bcc5ee1f5b9b0e0ff4424ca9af809abb91e9f1:none": "parameter count disagrees with tensor table",
     "508ec557716d736bb1b949c4acdd5e990c1f1d3dbb70edc9474674346e9b65c3:8d08f5d4470023d315661cc14a49e5d9946c6d468f314dcb906ed74459dd9cb3": "license not recognised as open",
     "527db2cf6c705d8fabb95693d038d9c06b4a2b0b8b0a4bbdbd01212d37242970:355e036064fa9b3a96ce0cdbb69abe54f5c7ce0b6aa2c7d5f8ec8580b011c20e": "license not recognised as open",
+    "56dac2e192ff0d9ab8507f4f1aeb4aed0463449bbbefaac79497f041c95f21eb:30adf9d6478191fb87f2424f63ba0728598335aaf99cd2848ef17e8e545fe94b": "license not recognised as open",
     "5768750fc96e296081ba7531933c7eb5c5bacfafbd06b81d1bb495e97f6a4b20:none": "license missing",
     "59bb50d8116b6a1f9bfbb940d6bb946a05554e591e30c8c2429ed6c854867ecb:a3a0e9449cb691a12f4de1d03725fd41326614fdeaf5d80b28c51187da0bed0e": "license not recognised as open",
     "5b2b5f73b685e98b4a1cc826515b1463cf6d3e2e757d454a13d348aad2dd0757:none": "parameter count disagrees with tensor table",
@@ -77,6 +81,7 @@
     "6b0c74962c44bc6bf4b655b9b02c13eda9d5a0491543ae976d1ac18e4b7892e2:none": "license missing",
     "6bbfda8eb96dadd0300076196110f78ff709829c3be9778e86948b839cf05408:4bb71764481f96d4161efc810c6185a0d0eb5a50ab7a0dedbdd283670cbcc2b5": "license not recognised as open",
     "71b5c9c9abbc2a9e7c13550b6f9fe1f062650117a24490b15a310cbd7de03f8b:none": "license missing",
+    "729fe18c2491aaa446074a923e12f184f9f2239ffd5ce3dae47b0ce9cf8df40c:none": "license missing",
     "75e23a78e375b5a92f60ec2b5d9c2e930730e60c2b71d4c64b6759b9d0d6b89b:fcc5a6bec9daf9b561a68827b67ab6088e1dba9d1fa2a50d7bbcc8384e0a265d": "license sources disagree",
     "75e800abd059a4a806c8618eab71c9c86e16a75914e615b5bc10ba91ad942773:945eaa8b14280408800a409b7db5d18dbb266a21610d85cb8eb32c93c3243f90": "license not recognised as open",
     "764a0e0f24d4746e8c239b1955a37145b562ede94f3889234b6f0d31fdce6560:none": "license missing",
@@ -99,10 +104,17 @@
     "89f38c5f78de6092c203b63dd62ff1285276a6f8ee140dd1eb2f6e196a631f40:fa8235e5b48faca34e3ca98cf4f694ef08bd216d28b58071a1f85b1d50cb814d": "license not recognised as open",
     "8b2160511b0e94d6d49fe4f4c6c29671b682fff6a9be229e2ce9e9a627b830d2:none": "license missing",
     "8e0609b8f0fe36530ac9966544e6cf780cfcda006fbe739eeab278aef89b3df7:945eaa8b14280408800a409b7db5d18dbb266a21610d85cb8eb32c93c3243f90": "license not recognised as open",
+    "8f367423ee68d5712710ceda6a21a840ee6b4ff507065aebad155ce92789ccbc:607f82dcb20beab5d9d0bd41f93d1cf63671c2d4094e1be38ac11fde8bf718b0": "license not recognised as open",
+    "91d63363e782c8a3d5f4be42816eba8e0d42dd2530bd07a7d0d2dc440599af75:bf6afc09321cbabba412015fa925ab9480d04859607f233b278334544937ea34": "license not recognised as open",
     "936798ec22850321911e13acca1a4e937c2e9776f03509ac244effd94019d3ec:6b53223f338a00ae8b62bc09590ac7dc87e617cd60bc3e385746d8561f70fc5c": "license not recognised as open",
+    "9386bcbb10011662be9033857f00c02d9e19d2b72f6a37cbbb086b098e3bb869:11cc89ebc0f4db20218516f636d64995442b9e77cccd3a882155fb4d76b52618": "license not recognised as open",
+    "97cc8009ff9b132d5cf3c488e6767962bb5a5dc158a90ed661bbbddf876b8bde:cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30": "quantization cannot be sized",
     "9999d473417a8e179d993498195be5f42cab963acc75f4a6b15d981e8b68abed:d3ed60b917572dd5aa69bf5ff7825f2db00d65e73dc07a43fbc31c60eb31449e": "license not recognised as open",
+    "9a773289bd321ed879cd3a76545f6aca506e403851a45fb315420aee45625be2:4d28ca14dedc0b3d0fcc2b3339f0e79931faa33874f3d24f522183a8fc70068c": "license not recognised as open",
     "9e0c827cfd6a6d000032be3da3d0914668b0c1112977e927186d29c4487466c4:355e036064fa9b3a96ce0cdbb69abe54f5c7ce0b6aa2c7d5f8ec8580b011c20e": "license not recognised as open",
+    "9f8d30e9d4fd7a9349d586e077988229b3ca0a0e4ad730897563d1eccc9893e2:4d28ca14dedc0b3d0fcc2b3339f0e79931faa33874f3d24f522183a8fc70068c": "license not recognised as open",
     "a051c2bd4ab8d5b7f4df8eec344f2fdd603efb2d098da799dc16c95e9e8bc838:12cef37dd8275db7a4adf6d29f85c21b66903d9bb3976c0948e437bc4a2945f2": "license not recognised as open",
+    "a392aaeadf2a4ce839624a70f63f45a1a21bc8fd7466e8d3cba3f19209edf682:2af71558e438db0b73a20beab92dc278a94e1bbe974c00c1a33e3ab62d53a608": "license not recognised as open",
     "a46088eccd0d171cc2694f315f2921bd0fda0ae3577099c4864cbe98f190807e:none": "license missing",
     "a70437c41b3b0b768c48737e15f8160c90f13dc963f5226aabb3a160f708d1ce:bca58c750377d01da1bea95cdbc6f0176f3b58003f6a31c7b069a2746cbea78f": "license not recognised as open",
     "a7b19185f31650af480c3fa28dd240c75862182e0f30b118dbfadb192e4beb0a:55a61add48383d18363d9c80355acc747a1b0fb2bdb527964ce0583bb54b689d": "license not recognised as open",
@@ -136,11 +148,13 @@
     "ca7d20b78b4a51111bb532a88e450512de046adfb566b2c188a26e4ac866393d:none": "license missing",
     "cbf2ef8a6e09db4886ef5d020fcf62800f18d0c128449541d6350cf8ec2cc188:d3ed60b917572dd5aa69bf5ff7825f2db00d65e73dc07a43fbc31c60eb31449e": "license not recognised as open",
     "cc9f2665d1004eebb89afc3c6b9df4fa923e3dc53ab3fda4aa966665c164085a:none": "license missing",
+    "cd94463f4cac9c700ec6750df8df005bb6846de410e159d1f5e985e1171693d3:bf6fc91bb102e63817e68c5bed4aa6852ac5ed20c85707016324537d48ba8075": "license not recognised as open",
     "cf866ccad4e444eb559c9389867d3b67cf1dc93d79e9cc976049367ce3519adb:4ec42cd966c9d5cf067cc4438869e0737679203b4d6fc551c226c15a1c2d7997": "license not recognised as open",
     "d040cc18521592f70c199396aeaa44cdc40224079156dc09d4283d745d9dc5fd:a3a0e9449cb691a12f4de1d03725fd41326614fdeaf5d80b28c51187da0bed0e": "license not recognised as open",
     "d19ab7a61a4145a7a0bcd09c5a49f96389c3881558943d18eeb2662ef927d4a3:none": "license missing",
     "d1d201b9e957ab5f47b30f765d17ed3f3224a51f4a625e8730f6b60553417f23:12cef37dd8275db7a4adf6d29f85c21b66903d9bb3976c0948e437bc4a2945f2": "license not recognised as open",
     "d1ee5fdcfdb2c157b5feff7a1c73f006f6c19df3757186ee206c64f172d833fb:945eaa8b14280408800a409b7db5d18dbb266a21610d85cb8eb32c93c3243f90": "license not recognised as open",
+    "d3334405b96228eb9908cdebb5c6194908f2da64282bda852afc3a3910c64e7d:058cb51ed3d592a7bf27945e31eb8a2657ea72c46b7a97672a4814a90786071c": "license not recognised as open",
     "d4ac29db52d3cff82fdce6aa39586453bd5f1b41e9b51426d3a96cbca4e8a8ff:58f83c52a4e3e18f776002f7ceff9030e74ea0b985fc41bc04f8ebb2a15586cc": "license not recognised as open",
     "d55ab0bfb1b80102465eef8a17f05d201fb17dbe27a62f153f0db6c446aed077:2453818a9efbcfa715075d7b1142468a25ba244b54545fa8e190a1066c5b7e5d": "license not recognised as open",
     "d6e077ce2bb2d36ad179739ea96d8b8d387f024b0bedede04741745d21c41b28:294fd63925d81e9a11a2bd71fefecbfefb0d1a329eef7de28b96e49b6da4f67e": "license not recognised as open",
@@ -172,6 +186,11 @@
       "architecture": "dense",
       "license": "apache-2.0",
       "kvBytesPerToken": 163840.0
+    },
+    "13576eb6dd8d9d04b4da04d015ff343968628d3c2984195569d9d3585651d4f1:dd084c7d92a3c1c14cc09ae77153b903fd2024b64a100a0cc8ec9316063d2dbc": {
+      "contextLength": 131072,
+      "architecture": "dense",
+      "license": "gemma"
     },
     "183715c435899236895da3869489cc30ac241476b4971a20285b1a462818a5b4:832dd9e00a68dd83b3c3fb9f5588dad7dcf337a0db50f7d9483f310cd292e92e": {
       "contextLength": 32768,
@@ -235,6 +254,11 @@
       "license": "apache-2.0",
       "kvBytesPerToken": 147456.0
     },
+    "3eb75691d2db8bb04109c517466bb10bc0e4f035227d1a46cbba2f1d8e6afa45:dd084c7d92a3c1c14cc09ae77153b903fd2024b64a100a0cc8ec9316063d2dbc": {
+      "contextLength": 131072,
+      "architecture": "dense",
+      "license": "gemma"
+    },
     "439dd1a5e05286918f54941f49f9b56118c757440f6333f67f1cd5cbb5c8520b:6e4c38e1172f42fdbff13edf9a7a017679fb82b0fde415a3e8b3c31c6ed4a4e4": {
       "contextLength": 163840,
       "architecture": "moe",
@@ -262,6 +286,11 @@
       "architecture": "dense",
       "license": "apache-2.0",
       "kvBytesPerToken": 196608.0
+    },
+    "4e3c80c945d2db3ad542bc133e0465cb59332aa9b7e6376e38ab25782559a599:1adbfec9dcf025cbf301c072f3847527468dcfa399da7491ee4a1c9e9f1b33e9": {
+      "contextLength": 32768,
+      "architecture": "dense",
+      "license": "gemma"
     },
     "58574f2e94b99fb9e4391408b57e5aeaaaec10f6384e9a699fc2cb43a5c8eabf:d18a5cc71b84bc4af394a31116bd3932b42241de70c77d2b76d69a314ec8aa12": {
       "contextLength": 262144,
@@ -427,6 +456,11 @@
       "architecture": "moe",
       "license": "apache-2.0"
     },
+    "d6138de197b83fafa8ced29005f4b12c47cc4adfca8fbcdf3e4e523774d023bc:1adbfec9dcf025cbf301c072f3847527468dcfa399da7491ee4a1c9e9f1b33e9": {
+      "contextLength": 32768,
+      "architecture": "dense",
+      "license": "gemma"
+    },
     "d7e4b00a7d7a8d03d4eed9b0f3f61a427e9f0fc5dea6aeb414e41dee23dc8ecc:097a36493f718248845233af1d3fefe7a303f864fae13bc31a3a9704229378ca": {
       "contextLength": 8192,
       "architecture": "dense",
@@ -480,6 +514,11 @@
       "architecture": "dense",
       "license": "apache-2.0",
       "kvBytesPerToken": 262144.0
+    },
+    "f06e91e18fc74295d0c781bf91622508c75655e2c18ed869d52447ffe1e667e1:dd084c7d92a3c1c14cc09ae77153b903fd2024b64a100a0cc8ec9316063d2dbc": {
+      "contextLength": 131072,
+      "architecture": "dense",
+      "license": "gemma"
     },
     "f2dc41fa964b42bfe34e9fb09c0acdcfbfd6e52f1332930b4eacc9d6ad1c6cd2:43070e2d4e532684de521b885f385d0841030efa2b1a20bafb76133a5e1379c1": {
       "contextLength": 32768,

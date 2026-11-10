@@ -1,7 +1,391 @@
 {
   "schemaVersion": 4,
-  "generatedAt": "2026-10-30T09:00:00.000Z",
+  "generatedAt": "2026-11-10T20:12:13.695Z",
   "models": [
+    {
+      "id": "bonsai-2:27b",
+      "family": "qwen35",
+      "params": "26.9B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 262144.0,
+      "capabilities": [
+        "chat",
+        "vision",
+        "reasoning",
+        "tools"
+      ],
+      "addedAt": "2026-11-10",
+      "provenance": "auto",
+      "source": {
+        "ollama": "bonsai-2:27b"
+      },
+      "quantizations": [
+        {
+          "name": "Q2_0",
+          "diskBytes": 8255255904.0,
+          "minRamBytes": 11550884023.0,
+          "minVramBytes": 11550884023.0,
+          "sha256": "4f99aed01b8a877e153f9aa6569a4440fe17c59701cc0953e36d7f460549e70e",
+          "projectors": [
+            {
+              "bytes": 629246976,
+              "sha256": "6807ede61d570bb86ba34b756a0fa109edc33668604de867c6ea6d8f1d631903"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bonsai-2:2b",
+      "family": "qwen35",
+      "params": "1.9B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 262144.0,
+      "capabilities": [
+        "chat",
+        "vision",
+        "reasoning",
+        "tools"
+      ],
+      "addedAt": "2026-11-10",
+      "provenance": "auto",
+      "source": {
+        "ollama": "bonsai-2:2b"
+      },
+      "quantizations": [
+        {
+          "name": "Q2_0",
+          "diskBytes": 911353856.0,
+          "minRamBytes": 1184114005.0,
+          "minVramBytes": 1184114005.0,
+          "sha256": "c2893fa6f951daee8b7263d5f49b455e57989ef56417a22125b03566dc560650",
+          "projectors": [
+            {
+              "bytes": 364664352,
+              "sha256": "ac9934e8d7966d0d62442c202ec8fdad99a045dea79366c1a4a246a46f5c0533"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bonsai-2:4b",
+      "family": "qwen35",
+      "params": "4.2B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 262144.0,
+      "capabilities": [
+        "chat",
+        "vision",
+        "reasoning",
+        "tools"
+      ],
+      "addedAt": "2026-11-10",
+      "provenance": "auto",
+      "source": {
+        "ollama": "bonsai-2:4b"
+      },
+      "quantizations": [
+        {
+          "name": "Q2_0",
+          "diskBytes": 1578998144.0,
+          "minRamBytes": 2112428818.0,
+          "minVramBytes": 2112428818.0,
+          "sha256": "64a5183b44921bdb5ac4a6f5f92007821d6ebe5c66997d3c147fd214ab9433d4",
+          "projectors": [
+            {
+              "bytes": 366894624,
+              "sha256": "db939d5f9b7014137810205e91d05e5f54afd72b0b3af9d33bd7d82f7906a55d"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bonsai-2:9b",
+      "family": "qwen35",
+      "params": "9.0B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 262144.0,
+      "capabilities": [
+        "chat",
+        "vision",
+        "reasoning",
+        "tools"
+      ],
+      "addedAt": "2026-11-10",
+      "provenance": "auto",
+      "source": {
+        "ollama": "bonsai-2:9b"
+      },
+      "quantizations": [
+        {
+          "name": "Q2_0",
+          "diskBytes": 3180869792.0,
+          "minRamBytes": 4340364114.0,
+          "minVramBytes": 4340364114.0,
+          "sha256": "1f884aa56aacd2bbbb2e4b7abaead2b1102b74a9c75a23fc33dab916813a384d",
+          "projectors": [
+            {
+              "bytes": 624229664,
+              "sha256": "e0cb6f6988cea323ef798cd77d019bbb819af75582f034eaab0e7232314953db"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "d3:27b",
+      "family": "qwen35",
+      "params": "26.9B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 262144.0,
+      "capabilities": [
+        "chat",
+        "vision"
+      ],
+      "addedAt": "2026-11-10",
+      "provenance": "auto",
+      "source": {
+        "ollama": "d3:27b"
+      },
+      "quantizations": [
+        {
+          "name": "Q8_0",
+          "diskBytes": 29526911744.0,
+          "minRamBytes": 33955948506.0,
+          "minVramBytes": 33955948506.0,
+          "sha256": "497a0244294a9f2634b3b3fc96f0b9c1662d1c546a4b1642051b292430823ec7",
+          "projectors": [
+            {
+              "bytes": 931146240,
+              "sha256": "ccbd9fead22c274ba2e2be002e4ffb0de9c0b04dd77245972ba2cd8e4fb92761"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "d3:2b",
+      "family": "qwen35",
+      "params": "2.4B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 262144.0,
+      "capabilities": [
+        "chat",
+        "vision"
+      ],
+      "addedAt": "2026-11-10",
+      "provenance": "auto",
+      "source": {
+        "ollama": "d3:2b"
+      },
+      "quantizations": [
+        {
+          "name": "Q8_0",
+          "diskBytes": 3223731392.0,
+          "minRamBytes": 3707291101.0,
+          "minVramBytes": 3707291101.0,
+          "sha256": "47d85eed4b76e2613d2b1496f6a106841fc605638f96acf46ef54ad1a9f45707",
+          "projectors": [
+            {
+              "bytes": 671372928,
+              "sha256": "5f7f721bdcf4d1efcef3385a0cb3471918bc0ba8ad506fef5da41101e1a7015d"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "d3:4b",
+      "family": "qwen35",
+      "params": "4.8B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 262144.0,
+      "capabilities": [
+        "chat",
+        "vision"
+      ],
+      "addedAt": "2026-11-10",
+      "provenance": "auto",
+      "source": {
+        "ollama": "d3:4b"
+      },
+      "quantizations": [
+        {
+          "name": "Q8_0",
+          "diskBytes": 5833404704.0,
+          "minRamBytes": 6708415410.0,
+          "minVramBytes": 6708415410.0,
+          "sha256": "bea9ace37fcca311cf7fa973bfd2b37b1599d771bed23639416a7d73109d5eda",
+          "projectors": [
+            {
+              "bytes": 675569376,
+              "sha256": "3441fc8ecdd234496c06cd95ade5570e56eadd969aae11b9d4c3f83e03066cc1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "d3:9b",
+      "family": "qwen35",
+      "params": "9.0B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 262144.0,
+      "capabilities": [
+        "chat",
+        "vision"
+      ],
+      "addedAt": "2026-11-10",
+      "provenance": "auto",
+      "source": {
+        "ollama": "d3:9b"
+      },
+      "quantizations": [
+        {
+          "name": "Q8_0",
+          "diskBytes": 10449208288.0,
+          "minRamBytes": 12056835704.0,
+          "minVramBytes": 12056835704.0,
+          "sha256": "2d93d972eace90a0fb8f1c70d34f557a5dad40078f697c8796aee9abfdffeef8",
+          "projectors": [
+            {
+              "bytes": 921704960,
+              "sha256": "1e081e591d84ff9fac6d50ee202744c873b20f34c29ddf073ddc96fbe6e9f911"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "embeddinggemma-2:270m",
+      "family": "gemma-embedding2",
+      "params": "271.00M",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 262144.0,
+      "capabilities": [
+        "vision",
+        "embedding"
+      ],
+      "addedAt": "2026-11-10",
+      "provenance": "auto",
+      "source": {
+        "ollama": "embeddinggemma-2:270m"
+      },
+      "quantizations": [
+        {
+          "name": "Q8_0",
+          "diskBytes": 303957280.0,
+          "minRamBytes": 349550872.0,
+          "minVramBytes": 349550872.0,
+          "sha256": "111e84992a0406bacb70d11dddd8874001c783cc56b82c462ec82a2f5b8d08b1"
+        }
+      ]
+    },
+    {
+      "id": "kev:4b-q4_K_M",
+      "family": "qwen35",
+      "params": "4.2B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 262144.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-11-10",
+      "provenance": "auto",
+      "source": {
+        "ollama": "kev:4b-q4_K_M"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 2709547456.0,
+          "minRamBytes": 3115979575.0,
+          "minVramBytes": 3115979575.0,
+          "sha256": "a1c701789d16c3e558190d647f7ebc4c1083ff45deb5d1ddce7dded50beb946a"
+        }
+      ]
+    },
+    {
+      "id": "kev:9b-q4_K_M",
+      "family": "qwen35",
+      "params": "9.0B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 262144.0,
+      "capabilities": [
+        "chat"
+      ],
+      "addedAt": "2026-11-10",
+      "provenance": "auto",
+      "source": {
+        "ollama": "kev:9b-q4_K_M"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 5630294528.0,
+          "minRamBytes": 6474838708.0,
+          "minVramBytes": 6474838708.0,
+          "sha256": "5356a5d686ace097b4ff3e92afa906bb509f0b32689889f9181a9812d6dd9196"
+        }
+      ]
+    },
+    {
+      "id": "pplx-decider:27b",
+      "family": "qwen35",
+      "params": "26.9B",
+      "architecture": "dense",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "contextLength": 262144.0,
+      "capabilities": [
+        "chat",
+        "vision"
+      ],
+      "addedAt": "2026-11-10",
+      "provenance": "auto",
+      "source": {
+        "ollama": "pplx-decider:27b"
+      },
+      "quantizations": [
+        {
+          "name": "Q4_K_M",
+          "diskBytes": 17475009216.0,
+          "minRamBytes": 20096260599.0,
+          "minVramBytes": 20096260599.0,
+          "sha256": "c5789d85610cd8b70be07e89164f3d2dd571c5ad5b1af65f2446f7598a329201",
+          "projectors": [
+            {
+              "bytes": 927607328,
+              "sha256": "6406d8bb4839782b974ef6fb067aaea003706c27f292cd9881ca814a6fc0cc74"
+            }
+          ]
+        }
+      ]
+    },
     {
       "id": "all-minilm:22m",
       "family": "bert",
@@ -126,14 +510,14 @@
       "quantizations": [
         {
           "name": "Q8_0",
-          "diskBytes": 10932727840.0,
-          "minRamBytes": 12572637016.0,
-          "minVramBytes": 12572637016.0,
-          "sha256": "c9ac3afdf0b5928b00a5762aed44a338a0096af952194ccdedecdfd46bb92c33",
+          "diskBytes": 10578965120.0,
+          "minRamBytes": 12179023168.0,
+          "minVramBytes": 12179023168.0,
+          "sha256": "d7c352faf1bdd9ea24d0b9347e8eb1eb4bbadeff6c02383bf750215a74f2f1f1",
           "projectors": [
             {
-              "bytes": 918165984,
-              "sha256": "c8a6e9e00e1baf6433c4874dbc73bed2a56e887bcbb582fffcb00b533bc638dd"
+              "bytes": 921704928,
+              "sha256": "a98ed89767816b8505e126904c4f9102976d35c88321d9deb97ac67d1626d143"
             }
           ]
         }
@@ -159,14 +543,14 @@
       "quantizations": [
         {
           "name": "Q4_K_M",
-          "diskBytes": 17987242016.0,
-          "minRamBytes": 20685328319.0,
-          "minVramBytes": 20685328319.0,
-          "sha256": "6c02216a0055c1e1e92994d240e37c440f1c09b30281f538f4a38ebab0743da9",
+          "diskBytes": 20163365504.0,
+          "minRamBytes": 23187870330.0,
+          "minVramBytes": 23187870330.0,
+          "sha256": "bd9b8ae24c5752a2bb5e2733d5168340d5f04457e02b8bf0d1bc9285ec3d4f61",
           "projectors": [
             {
-              "bytes": 927607360,
-              "sha256": "f0e2930e301586f0932262c7d232c74e385d7b4281170111c36a686e16e59ba8"
+              "bytes": 931146304,
+              "sha256": "2a3e89934a6dbd7d4c53868cd810b89c50095dd324f846d62f4e8c779547e234"
             }
           ]
         }
@@ -823,10 +1207,10 @@
       "quantizations": [
         {
           "name": "Q4_K_M",
-          "diskBytes": 815310432.0,
-          "minRamBytes": 937606997.0,
-          "minVramBytes": 937606997.0,
-          "sha256": "7cd4618c1faf8b7233c6c906dac1694b6a47684b37b8895d470ac688520b9c01"
+          "diskBytes": 806058400.0,
+          "minRamBytes": 926967160.0,
+          "minVramBytes": 926967160.0,
+          "sha256": "2f8c3d137f2496dcb4019e17a50f2974b89c1be1a742db3c80cc86f91cafeeef"
         }
       ]
     },
@@ -1097,10 +1481,10 @@
       "quantizations": [
         {
           "name": "MXFP4",
-          "diskBytes": 65369799840.0,
-          "minRamBytes": 75175269816.0,
-          "minVramBytes": 75175269816.0,
-          "sha256": "6be6d66a3f546d8c19b130dc41dc24b2fc159f84ffbc76a0ee0676205083cf5a"
+          "diskBytes": 65369800832.0,
+          "minRamBytes": 75175270957.0,
+          "minVramBytes": 75175270957.0,
+          "sha256": "a5b03e4c678e1671191c0115861445b61529f518e751ce38a2bb6030cca9b1d0"
         }
       ]
     },
@@ -1126,10 +1510,10 @@
       "quantizations": [
         {
           "name": "MXFP4",
-          "diskBytes": 13793422144.0,
-          "minRamBytes": 15862435466.0,
-          "minVramBytes": 15862435466.0,
-          "sha256": "e7b273f9636059a689e3ddcab3716e4f65abe0143ac978e46673ad0e52d09efb"
+          "diskBytes": 13793422816.0,
+          "minRamBytes": 15862436239.0,
+          "minVramBytes": 15862436239.0,
+          "sha256": "8ecb5d4ad6172c63f9cbf1a07a04e525985a8a11a6e516da02b674c4010de716"
         }
       ]
     },
@@ -2896,10 +3280,10 @@
       "quantizations": [
         {
           "name": "Q8_0",
-          "diskBytes": 9527501312.0,
+          "diskBytes": 9527503648.0,
           "minRamBytes": 10996875000.0,
           "minVramBytes": 10996875000.0,
-          "sha256": "bbf1d6fc03bb0ed24d88f4c214ed7b5d1768aeb43d5cf433fb69eff0c8578013"
+          "sha256": "15d64cb733d619b7cd85b81973f3fae7d2d0387f0cb3931bd265623f4dabbc6f"
         }
       ]
     },
@@ -3932,10 +4316,16 @@
       "quantizations": [
         {
           "name": "Q4_K_M",
-          "diskBytes": 3295612832.0,
-          "minRamBytes": 3789954757.0,
-          "minVramBytes": 3789954757.0,
-          "sha256": "9c60bdd691c1897bbfe5ddbc67336848e18c346b7ee2ab8541b135f208e5bb38"
+          "diskBytes": 3336607584.0,
+          "minRamBytes": 3937974882.0,
+          "minVramBytes": 3937974882.0,
+          "sha256": "02fb4392a076adea79559e7a0eb119859bf618f49cb20c966a5a068843273249",
+          "projectors": [
+            {
+              "bytes": 839325984,
+              "sha256": "ee8b93fa272aaa217f8552e59da89730c9a50ec5146357e2ee8fce36e55a7671"
+            }
+          ]
         }
       ],
       "kvBytesPerToken": 147456.0
@@ -3962,10 +4352,16 @@
       "quantizations": [
         {
           "name": "Q4_K_M",
-          "diskBytes": 6140392576.0,
-          "minRamBytes": 7061451463.0,
-          "minVramBytes": 7061451463.0,
-          "sha256": "ed12a4674d727a74ac4816c906094ea9d3119fbea46ca93288c3ce4ffbe38c55"
+          "diskBytes": 6190960096.0,
+          "minRamBytes": 7282453973.0,
+          "minVramBytes": 7282453973.0,
+          "sha256": "9c3e4853af40205c11b5d1000dfcf08e96454adfd872e48b934cd67d59ec3097",
+          "projectors": [
+            {
+              "bytes": 1162568672,
+              "sha256": "9a42417378dd18094b163f529239c42636ef487932f220d8763ab923e6a8a3cb"
+            }
+          ]
         }
       ],
       "kvBytesPerToken": 147456.0
@@ -4853,10 +5249,10 @@
       "quantizations": [
         {
           "name": "Q8_0",
-          "diskBytes": 811843424.0,
-          "minRamBytes": 933619938.0,
-          "minVramBytes": 933619938.0,
-          "sha256": "fa9732e3924db99f614181a7a28384a0891ae17f478db228a47c989462b2405a"
+          "diskBytes": 833594080.0,
+          "minRamBytes": 958633192.0,
+          "minVramBytes": 958633192.0,
+          "sha256": "7daa72d2ed4fa16f5120bc1bb89713531d0f511c360e9228905ba88c092f13b5"
         }
       ]
     },
@@ -4881,10 +5277,10 @@
       "quantizations": [
         {
           "name": "Q8_0",
-          "diskBytes": 4482403072.0,
-          "minRamBytes": 5154763533.0,
-          "minVramBytes": 5154763533.0,
-          "sha256": "35f9281a3df58b566b24091572467001906a5a6aac879fe8005c4db19c8d4a2e"
+          "diskBytes": 4610582112.0,
+          "minRamBytes": 5302169429.0,
+          "minVramBytes": 5302169429.0,
+          "sha256": "50696f76ca4ee208f01de2727a48eedabbf2f4c1ed6da7e2b8626e37baace809"
         }
       ]
     },
@@ -5462,10 +5858,16 @@
       "quantizations": [
         {
           "name": "Q4_K_M",
-          "diskBytes": 5621607424.0,
-          "minRamBytes": 6464848538.0,
-          "minVramBytes": 6464848538.0,
-          "sha256": "3839a254cf2d00b208c6e2524c129e4438f9d106bba4c3fbc12b631f519d1de1"
+          "diskBytes": 7836315680.0,
+          "minRamBytes": 9011763032.0,
+          "minVramBytes": 9011763032.0,
+          "sha256": "d6138de197b83fafa8ced29005f4b12c47cc4adfca8fbcdf3e4e523774d023bc",
+          "projectors": [
+            {
+              "bytes": 2140823808,
+              "sha256": "79d049bcb4e446e2ca427e960799ac3e2c7152e906c1c1669e24037e0600f7d7"
+            }
+          ]
         }
       ],
       "benchmarkProxy": 0.42
@@ -5491,10 +5893,16 @@
       "quantizations": [
         {
           "name": "Q4_K_M",
-          "diskBytes": 7547579904.0,
-          "minRamBytes": 8679716890.0,
-          "minVramBytes": 8679716890.0,
-          "sha256": "38e8dcc30df4eb0e29eaf5c74ba6ce3f2cd66badad50768fc14362acfb8b8cb6"
+          "diskBytes": 9768572992.0,
+          "minRamBytes": 11233858941.0,
+          "minVramBytes": 11233858941.0,
+          "sha256": "4e3c80c945d2db3ad542bc133e0465cb59332aa9b7e6376e38ab25782559a599",
+          "projectors": [
+            {
+              "bytes": 2140823808,
+              "sha256": "79d049bcb4e446e2ca427e960799ac3e2c7152e906c1c1669e24037e0600f7d7"
+            }
+          ]
         }
       ],
       "benchmarkProxy": 0.5
@@ -5914,10 +6322,16 @@
       "quantizations": [
         {
           "name": "Q4_K_M",
-          "diskBytes": 8149180896.0,
-          "minRamBytes": 9371558031.0,
-          "minVramBytes": 9371558031.0,
-          "sha256": "e8ad13eff07a78d89926e9e8b882317d082ef5bf9768ad7b50fcdbbcd63748de"
+          "diskBytes": 8164030720.0,
+          "minRamBytes": 9388635328.0,
+          "minVramBytes": 9388635328.0,
+          "sha256": "13576eb6dd8d9d04b4da04d015ff343968628d3c2984195569d9d3585651d4f1",
+          "projectors": [
+            {
+              "bytes": 854200224,
+              "sha256": "4abe4caf8e680a2d508f929edbacb5b6985b988f9d89d05b196a809f62d8fa67"
+            }
+          ]
         }
       ],
       "benchmarkProxy": 0.58
@@ -5944,10 +6358,16 @@
       "quantizations": [
         {
           "name": "Q4_K_M",
-          "diskBytes": 17396927584.0,
-          "minRamBytes": 20006466722.0,
-          "minVramBytes": 20006466722.0,
-          "sha256": "e796792eba26c4d3b04b0ac5adb01a453dd9ec2dfd83b6c59cbf6fe5f30b0f68"
+          "diskBytes": 17413400640.0,
+          "minRamBytes": 20025410736.0,
+          "minVramBytes": 20025410736.0,
+          "sha256": "3eb75691d2db8bb04109c517466bb10bc0e4f035227d1a46cbba2f1d8e6afa45",
+          "projectors": [
+            {
+              "bytes": 857739168,
+              "sha256": "6770388ba3b4bb1a99abf3a5077812edb062b0d350a0167dbcc9cc9302714fb6"
+            }
+          ]
         }
       ],
       "benchmarkProxy": 0.7
@@ -5972,10 +6392,16 @@
       "quantizations": [
         {
           "name": "Q4_K_M",
-          "diskBytes": 3338792448.0,
-          "minRamBytes": 3839611316.0,
-          "minVramBytes": 3839611316.0,
-          "sha256": "aeda25e63ebd698fab8638ffb778e68bed908b960d39d0becc650fa981609d25"
+          "diskBytes": 3350263392.0,
+          "minRamBytes": 3852802901.0,
+          "minVramBytes": 3852802901.0,
+          "sha256": "f06e91e18fc74295d0c781bf91622508c75655e2c18ed869d52447ffe1e667e1",
+          "projectors": [
+            {
+              "bytes": 851251104,
+              "sha256": "7a50f9607a47389c028f2598c1f2d3e23b61913b4ce3c4a9eaaca62de1b9e098"
+            }
+          ]
         }
       ],
       "benchmarkProxy": 0.42

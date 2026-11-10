@@ -1,26 +1,26 @@
 {
   "policyVersion": 1,
-  "evaluatedAt": "2026-10-08T12:28:02.908356204Z",
-  "catalogSha256": "e9d469b0050a097c25ca21b8aedb7a54de344e1e477c606c0caca7e86d4cbb05",
-  "evidenceSha256": "3bb7d073fb26b1da6cad845dfb812874fee83bc33b1020ca18e00e1ec06b65c8",
+  "evaluatedAt": "2026-11-10T20:22:26.827612263Z",
+  "catalogSha256": "889ab7d2fbbe9b123ec3fb69edd494a121975f7972d7e61b1ad803f9892a6b46",
+  "evidenceSha256": "f759b58c0e53b690d8a6e2ac0f7b7436bfaa33a03fb27d9a4e0522229aa02d9a",
   "minimumPercent": 90,
   "evidenceMaxAgeDays": 7,
-  "catalogEntries": 253,
-  "freshEntries": 246,
-  "verifiedEntries": 246,
-  "eligibleVariants": 253,
-  "coveredVariants": 253,
+  "catalogEntries": 266,
+  "freshEntries": 257,
+  "verifiedEntries": 257,
+  "eligibleVariants": 266,
+  "coveredVariants": 266,
   "coveragePercent": 100.0,
-  "recencyPercent": 97.23320158102767,
-  "freshnessPercent": 97.23320158102767,
-  "correctnessPercent": 97.23320158102767,
+  "recencyPercent": 96.61654135338345,
+  "freshnessPercent": 96.61654135338345,
+  "correctnessPercent": 96.61654135338345,
   "passed": true,
   "blockers": [],
   "missingVariants": [],
   "scopes": [
     {
       "name": "ollama-local-variants",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "source": "https://ollama.com/library",
       "complete": true,
       "variants": [
@@ -28,6 +28,11 @@
         "all-minilm:33m",
         "bge-large:335m",
         "bge-m3:567m",
+        "bitnet-b1.58:2b",
+        "bonsai-2:27b",
+        "bonsai-2:2b",
+        "bonsai-2:4b",
+        "bonsai-2:9b",
         "bonsai:8b",
         "clef-flash:9b",
         "clef:27b",
@@ -39,6 +44,10 @@
         "cogito:14b",
         "cogito:32b",
         "cogito:3b",
+        "d3:27b",
+        "d3:2b",
+        "d3:4b",
+        "d3:9b",
         "deepcoder:1.5b",
         "deepcoder:14b",
         "deepscaler:1.5b",
@@ -57,6 +66,7 @@
         "dolphin-llama3:8b",
         "dolphin-mistral:7b",
         "dolphin3:8b",
+        "embeddinggemma-2:270m",
         "embeddinggemma:300m",
         "everythinglm:13b",
         "firefunction-v2:70b",
@@ -118,6 +128,8 @@
         "hermes3:70b",
         "hermes3:8b",
         "internlm2:7b",
+        "kev:4b-q4_K_M",
+        "kev:9b-q4_K_M",
         "kimi-dev-72b",
         "kimi-k2-thinking",
         "kimi-k2:base",
@@ -184,6 +196,7 @@
         "phi4:14b",
         "phi:2.7b",
         "phind-codellama:34b",
+        "pplx-decider:27b",
         "qwen2-math:1.5b",
         "qwen2-math:7b",
         "qwen2.5-coder:0.5b",
@@ -282,8 +295,140 @@
   ],
   "entries": [
     {
+      "id": "bonsai-2:27b",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
+      "sources": [
+        "https://registry.ollama.ai/v2/library/bonsai-2/manifests/27b",
+        "https://ollama.com/library/bonsai-2:27b"
+      ],
+      "fresh": true,
+      "verified": true,
+      "reason": "verified"
+    },
+    {
+      "id": "bonsai-2:2b",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
+      "sources": [
+        "https://registry.ollama.ai/v2/library/bonsai-2/manifests/2b",
+        "https://ollama.com/library/bonsai-2:2b"
+      ],
+      "fresh": true,
+      "verified": true,
+      "reason": "verified"
+    },
+    {
+      "id": "bonsai-2:4b",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
+      "sources": [
+        "https://registry.ollama.ai/v2/library/bonsai-2/manifests/4b",
+        "https://ollama.com/library/bonsai-2:4b"
+      ],
+      "fresh": true,
+      "verified": true,
+      "reason": "verified"
+    },
+    {
+      "id": "bonsai-2:9b",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
+      "sources": [
+        "https://registry.ollama.ai/v2/library/bonsai-2/manifests/9b",
+        "https://ollama.com/library/bonsai-2:9b"
+      ],
+      "fresh": true,
+      "verified": true,
+      "reason": "verified"
+    },
+    {
+      "id": "d3:27b",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
+      "sources": [
+        "https://registry.ollama.ai/v2/library/d3/manifests/27b",
+        "https://ollama.com/library/d3:27b"
+      ],
+      "fresh": true,
+      "verified": true,
+      "reason": "verified"
+    },
+    {
+      "id": "d3:2b",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
+      "sources": [
+        "https://registry.ollama.ai/v2/library/d3/manifests/2b",
+        "https://ollama.com/library/d3:2b"
+      ],
+      "fresh": true,
+      "verified": true,
+      "reason": "verified"
+    },
+    {
+      "id": "d3:4b",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
+      "sources": [
+        "https://registry.ollama.ai/v2/library/d3/manifests/4b",
+        "https://ollama.com/library/d3:4b"
+      ],
+      "fresh": true,
+      "verified": true,
+      "reason": "verified"
+    },
+    {
+      "id": "d3:9b",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
+      "sources": [
+        "https://registry.ollama.ai/v2/library/d3/manifests/9b",
+        "https://ollama.com/library/d3:9b"
+      ],
+      "fresh": true,
+      "verified": true,
+      "reason": "verified"
+    },
+    {
+      "id": "embeddinggemma-2:270m",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
+      "sources": [
+        "https://registry.ollama.ai/v2/library/embeddinggemma-2/manifests/270m",
+        "https://ollama.com/library/embeddinggemma-2:270m"
+      ],
+      "fresh": true,
+      "verified": true,
+      "reason": "verified"
+    },
+    {
+      "id": "kev:4b-q4_K_M",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
+      "sources": [
+        "https://registry.ollama.ai/v2/library/kev/manifests/4b-q4_K_M",
+        "https://ollama.com/library/kev:4b-q4_K_M"
+      ],
+      "fresh": true,
+      "verified": true,
+      "reason": "verified"
+    },
+    {
+      "id": "kev:9b-q4_K_M",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
+      "sources": [
+        "https://registry.ollama.ai/v2/library/kev/manifests/9b-q4_K_M",
+        "https://ollama.com/library/kev:9b-q4_K_M"
+      ],
+      "fresh": true,
+      "verified": true,
+      "reason": "verified"
+    },
+    {
+      "id": "pplx-decider:27b",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
+      "sources": [
+        "https://registry.ollama.ai/v2/library/pplx-decider/manifests/27b",
+        "https://ollama.com/library/pplx-decider:27b"
+      ],
+      "fresh": true,
+      "verified": true,
+      "reason": "verified"
+    },
+    {
       "id": "all-minilm:22m",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/all-minilm/manifests/22m",
         "https://ollama.com/library/all-minilm:22m"
@@ -294,7 +439,7 @@
     },
     {
       "id": "all-minilm:33m",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/all-minilm/manifests/33m",
         "https://ollama.com/library/all-minilm:33m"
@@ -305,7 +450,7 @@
     },
     {
       "id": "bge-large:335m",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/bge-large/manifests/335m",
         "https://ollama.com/library/bge-large:335m"
@@ -316,7 +461,7 @@
     },
     {
       "id": "bge-m3:567m",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/bge-m3/manifests/567m",
         "https://ollama.com/library/bge-m3:567m"
@@ -327,7 +472,7 @@
     },
     {
       "id": "clef-flash:9b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/clef-flash/manifests/9b",
         "https://ollama.com/library/clef-flash:9b"
@@ -338,7 +483,7 @@
     },
     {
       "id": "clef:27b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/clef/manifests/27b",
         "https://ollama.com/library/clef:27b"
@@ -349,7 +494,7 @@
     },
     {
       "id": "codegemma:2b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/codegemma/manifests/2b",
         "https://ollama.com/library/codegemma:2b"
@@ -360,7 +505,7 @@
     },
     {
       "id": "codegemma:7b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/codegemma/manifests/7b",
         "https://ollama.com/library/codegemma:7b"
@@ -371,7 +516,7 @@
     },
     {
       "id": "codellama:13b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/codellama/manifests/13b",
         "https://ollama.com/library/codellama:13b"
@@ -382,7 +527,7 @@
     },
     {
       "id": "codellama:7b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/codellama/manifests/7b",
         "https://ollama.com/library/codellama:7b"
@@ -393,7 +538,7 @@
     },
     {
       "id": "cogito-2.1:671b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/cogito-2.1/manifests/671b",
         "https://ollama.com/library/cogito-2.1:671b"
@@ -404,7 +549,7 @@
     },
     {
       "id": "cogito:14b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/cogito/manifests/14b",
         "https://ollama.com/library/cogito:14b"
@@ -415,7 +560,7 @@
     },
     {
       "id": "cogito:32b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/cogito/manifests/32b",
         "https://ollama.com/library/cogito:32b"
@@ -426,7 +571,7 @@
     },
     {
       "id": "cogito:3b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/cogito/manifests/3b",
         "https://ollama.com/library/cogito:3b"
@@ -437,7 +582,7 @@
     },
     {
       "id": "deepcoder:1.5b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/deepcoder/manifests/1.5b",
         "https://ollama.com/library/deepcoder:1.5b"
@@ -448,7 +593,7 @@
     },
     {
       "id": "deepcoder:14b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/deepcoder/manifests/14b",
         "https://ollama.com/library/deepcoder:14b"
@@ -459,7 +604,7 @@
     },
     {
       "id": "deepscaler:1.5b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/deepscaler/manifests/1.5b",
         "https://ollama.com/library/deepscaler:1.5b"
@@ -470,7 +615,7 @@
     },
     {
       "id": "deepseek-ocr:3b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/deepseek-ocr/manifests/3b",
         "https://ollama.com/library/deepseek-ocr:3b"
@@ -481,7 +626,7 @@
     },
     {
       "id": "deepseek-r1:1.5b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/deepseek-r1/manifests/1.5b",
         "https://ollama.com/library/deepseek-r1:1.5b"
@@ -492,7 +637,7 @@
     },
     {
       "id": "deepseek-v3.1:671b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/deepseek-v3.1/manifests/671b",
         "https://ollama.com/library/deepseek-v3.1:671b"
@@ -503,7 +648,7 @@
     },
     {
       "id": "devstral:24b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/devstral/manifests/24b",
         "https://ollama.com/library/devstral:24b"
@@ -514,7 +659,7 @@
     },
     {
       "id": "dolphin-llama3:70b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/dolphin-llama3/manifests/70b",
         "https://ollama.com/library/dolphin-llama3:70b"
@@ -525,7 +670,7 @@
     },
     {
       "id": "dolphin-llama3:8b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/dolphin-llama3/manifests/8b",
         "https://ollama.com/library/dolphin-llama3:8b"
@@ -536,7 +681,7 @@
     },
     {
       "id": "dolphin-mistral:7b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/dolphin-mistral/manifests/7b",
         "https://ollama.com/library/dolphin-mistral:7b"
@@ -547,7 +692,7 @@
     },
     {
       "id": "dolphin3:8b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/dolphin3/manifests/8b",
         "https://ollama.com/library/dolphin3:8b"
@@ -558,7 +703,7 @@
     },
     {
       "id": "embeddinggemma:300m",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/embeddinggemma/manifests/300m",
         "https://ollama.com/library/embeddinggemma:300m"
@@ -569,7 +714,7 @@
     },
     {
       "id": "everythinglm:13b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/everythinglm/manifests/13b",
         "https://ollama.com/library/everythinglm:13b"
@@ -580,7 +725,7 @@
     },
     {
       "id": "firefunction-v2:70b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/firefunction-v2/manifests/70b",
         "https://ollama.com/library/firefunction-v2:70b"
@@ -591,7 +736,7 @@
     },
     {
       "id": "functiongemma:270m",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/functiongemma/manifests/270m",
         "https://ollama.com/library/functiongemma:270m"
@@ -602,7 +747,7 @@
     },
     {
       "id": "gemma3:1b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/gemma3/manifests/1b",
         "https://ollama.com/library/gemma3:1b"
@@ -613,7 +758,7 @@
     },
     {
       "id": "gemma3:270m",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/gemma3/manifests/270m",
         "https://ollama.com/library/gemma3:270m"
@@ -624,7 +769,7 @@
     },
     {
       "id": "gemma4:12b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/gemma4/manifests/12b",
         "https://ollama.com/library/gemma4:12b"
@@ -635,7 +780,7 @@
     },
     {
       "id": "gemma4:26b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/gemma4/manifests/26b",
         "https://ollama.com/library/gemma4:26b"
@@ -646,7 +791,7 @@
     },
     {
       "id": "gemma4:31b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/gemma4/manifests/31b",
         "https://ollama.com/library/gemma4:31b"
@@ -657,7 +802,7 @@
     },
     {
       "id": "gemma:2b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/gemma/manifests/2b",
         "https://ollama.com/library/gemma:2b"
@@ -668,7 +813,7 @@
     },
     {
       "id": "gemma:7b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/gemma/manifests/7b",
         "https://ollama.com/library/gemma:7b"
@@ -679,7 +824,7 @@
     },
     {
       "id": "gpt-oss-safeguard:120b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/gpt-oss-safeguard/manifests/120b",
         "https://ollama.com/library/gpt-oss-safeguard:120b"
@@ -690,7 +835,7 @@
     },
     {
       "id": "gpt-oss-safeguard:20b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/gpt-oss-safeguard/manifests/20b",
         "https://ollama.com/library/gpt-oss-safeguard:20b"
@@ -701,7 +846,7 @@
     },
     {
       "id": "gpt-oss:120b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/gpt-oss/manifests/120b",
         "https://ollama.com/library/gpt-oss:120b"
@@ -712,7 +857,7 @@
     },
     {
       "id": "gpt-oss:20b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/gpt-oss/manifests/20b",
         "https://ollama.com/library/gpt-oss:20b"
@@ -723,7 +868,7 @@
     },
     {
       "id": "granite-code:20b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/granite-code/manifests/20b",
         "https://ollama.com/library/granite-code:20b"
@@ -734,7 +879,7 @@
     },
     {
       "id": "granite-code:34b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/granite-code/manifests/34b",
         "https://ollama.com/library/granite-code:34b"
@@ -745,7 +890,7 @@
     },
     {
       "id": "granite-code:3b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/granite-code/manifests/3b",
         "https://ollama.com/library/granite-code:3b"
@@ -756,7 +901,7 @@
     },
     {
       "id": "granite-code:8b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/granite-code/manifests/8b",
         "https://ollama.com/library/granite-code:8b"
@@ -767,7 +912,7 @@
     },
     {
       "id": "granite-embedding:278m",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/granite-embedding/manifests/278m",
         "https://ollama.com/library/granite-embedding:278m"
@@ -778,7 +923,7 @@
     },
     {
       "id": "granite-embedding:30m",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/granite-embedding/manifests/30m",
         "https://ollama.com/library/granite-embedding:30m"
@@ -789,7 +934,7 @@
     },
     {
       "id": "granite3-dense:2b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/granite3-dense/manifests/2b",
         "https://ollama.com/library/granite3-dense:2b"
@@ -800,7 +945,7 @@
     },
     {
       "id": "granite3-dense:8b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/granite3-dense/manifests/8b",
         "https://ollama.com/library/granite3-dense:8b"
@@ -811,7 +956,7 @@
     },
     {
       "id": "granite3-guardian:2b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/granite3-guardian/manifests/2b",
         "https://ollama.com/library/granite3-guardian:2b"
@@ -822,7 +967,7 @@
     },
     {
       "id": "granite3-guardian:8b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/granite3-guardian/manifests/8b",
         "https://ollama.com/library/granite3-guardian:8b"
@@ -833,7 +978,7 @@
     },
     {
       "id": "granite3-moe:1b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/granite3-moe/manifests/1b",
         "https://ollama.com/library/granite3-moe:1b"
@@ -844,7 +989,7 @@
     },
     {
       "id": "granite3.1-moe:1b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/granite3.1-moe/manifests/1b",
         "https://ollama.com/library/granite3.1-moe:1b"
@@ -855,7 +1000,7 @@
     },
     {
       "id": "granite3.1-moe:3b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/granite3.1-moe/manifests/3b",
         "https://ollama.com/library/granite3.1-moe:3b"
@@ -866,7 +1011,7 @@
     },
     {
       "id": "granite3.2-vision:2b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/granite3.2-vision/manifests/2b",
         "https://ollama.com/library/granite3.2-vision:2b"
@@ -877,7 +1022,7 @@
     },
     {
       "id": "granite3.2:2b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/granite3.2/manifests/2b",
         "https://ollama.com/library/granite3.2:2b"
@@ -888,7 +1033,7 @@
     },
     {
       "id": "granite3.2:8b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/granite3.2/manifests/8b",
         "https://ollama.com/library/granite3.2:8b"
@@ -899,7 +1044,7 @@
     },
     {
       "id": "granite3.3:2b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/granite3.3/manifests/2b",
         "https://ollama.com/library/granite3.3:2b"
@@ -910,7 +1055,7 @@
     },
     {
       "id": "granite3.3:8b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/granite3.3/manifests/8b",
         "https://ollama.com/library/granite3.3:8b"
@@ -921,7 +1066,7 @@
     },
     {
       "id": "granite4.1-guardian:8b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/granite4.1-guardian/manifests/8b",
         "https://ollama.com/library/granite4.1-guardian:8b"
@@ -932,7 +1077,7 @@
     },
     {
       "id": "granite4.1:30b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/granite4.1/manifests/30b",
         "https://ollama.com/library/granite4.1:30b"
@@ -943,7 +1088,7 @@
     },
     {
       "id": "granite4.1:3b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/granite4.1/manifests/3b",
         "https://ollama.com/library/granite4.1:3b"
@@ -954,7 +1099,7 @@
     },
     {
       "id": "granite4.1:8b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/granite4.1/manifests/8b",
         "https://ollama.com/library/granite4.1:8b"
@@ -965,7 +1110,7 @@
     },
     {
       "id": "granite4.2:30b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/granite4.2/manifests/30b",
         "https://ollama.com/library/granite4.2:30b"
@@ -976,7 +1121,7 @@
     },
     {
       "id": "granite4.2:3b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/granite4.2/manifests/3b",
         "https://ollama.com/library/granite4.2:3b"
@@ -987,7 +1132,7 @@
     },
     {
       "id": "granite4.2:8b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/granite4.2/manifests/8b",
         "https://ollama.com/library/granite4.2:8b"
@@ -998,7 +1143,7 @@
     },
     {
       "id": "granite4:1b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/granite4/manifests/1b",
         "https://ollama.com/library/granite4:1b"
@@ -1009,7 +1154,7 @@
     },
     {
       "id": "granite4:350m",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/granite4/manifests/350m",
         "https://ollama.com/library/granite4:350m"
@@ -1020,7 +1165,7 @@
     },
     {
       "id": "granite4:3b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/granite4/manifests/3b",
         "https://ollama.com/library/granite4:3b"
@@ -1031,7 +1176,7 @@
     },
     {
       "id": "hermes3:3b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/hermes3/manifests/3b",
         "https://ollama.com/library/hermes3:3b"
@@ -1042,7 +1187,7 @@
     },
     {
       "id": "hermes3:405b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/hermes3/manifests/405b",
         "https://ollama.com/library/hermes3:405b"
@@ -1053,7 +1198,7 @@
     },
     {
       "id": "hermes3:70b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/hermes3/manifests/70b",
         "https://ollama.com/library/hermes3:70b"
@@ -1064,7 +1209,7 @@
     },
     {
       "id": "hermes3:8b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/hermes3/manifests/8b",
         "https://ollama.com/library/hermes3:8b"
@@ -1075,7 +1220,7 @@
     },
     {
       "id": "internlm2:7b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/internlm2/manifests/7b",
         "https://ollama.com/library/internlm2:7b"
@@ -1086,7 +1231,7 @@
     },
     {
       "id": "llama-guard3:1b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/llama-guard3/manifests/1b",
         "https://ollama.com/library/llama-guard3:1b"
@@ -1097,7 +1242,7 @@
     },
     {
       "id": "llama-guard3:8b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/llama-guard3/manifests/8b",
         "https://ollama.com/library/llama-guard3:8b"
@@ -1108,7 +1253,7 @@
     },
     {
       "id": "llama2-uncensored:7b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/llama2-uncensored/manifests/7b",
         "https://ollama.com/library/llama2-uncensored:7b"
@@ -1119,7 +1264,7 @@
     },
     {
       "id": "llama2:13b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/llama2/manifests/13b",
         "https://ollama.com/library/llama2:13b"
@@ -1130,7 +1275,7 @@
     },
     {
       "id": "llama2:70b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/llama2/manifests/70b",
         "https://ollama.com/library/llama2:70b"
@@ -1141,7 +1286,7 @@
     },
     {
       "id": "llama2:7b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/llama2/manifests/7b",
         "https://ollama.com/library/llama2:7b"
@@ -1152,7 +1297,7 @@
     },
     {
       "id": "llama3-chatqa:70b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/llama3-chatqa/manifests/70b",
         "https://ollama.com/library/llama3-chatqa:70b"
@@ -1163,7 +1308,7 @@
     },
     {
       "id": "llama3-chatqa:8b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/llama3-chatqa/manifests/8b",
         "https://ollama.com/library/llama3-chatqa:8b"
@@ -1174,7 +1319,7 @@
     },
     {
       "id": "llama3-gradient:70b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/llama3-gradient/manifests/70b",
         "https://ollama.com/library/llama3-gradient:70b"
@@ -1185,7 +1330,7 @@
     },
     {
       "id": "llama3-gradient:8b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/llama3-gradient/manifests/8b",
         "https://ollama.com/library/llama3-gradient:8b"
@@ -1196,7 +1341,7 @@
     },
     {
       "id": "llama3-groq-tool-use:70b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/llama3-groq-tool-use/manifests/70b",
         "https://ollama.com/library/llama3-groq-tool-use:70b"
@@ -1207,7 +1352,7 @@
     },
     {
       "id": "llama3-groq-tool-use:8b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/llama3-groq-tool-use/manifests/8b",
         "https://ollama.com/library/llama3-groq-tool-use:8b"
@@ -1218,7 +1363,7 @@
     },
     {
       "id": "llama3.1:405b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/llama3.1/manifests/405b",
         "https://ollama.com/library/llama3.1:405b"
@@ -1229,7 +1374,7 @@
     },
     {
       "id": "llama3:70b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/llama3/manifests/70b",
         "https://ollama.com/library/llama3:70b"
@@ -1240,7 +1385,7 @@
     },
     {
       "id": "llama3:8b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/llama3/manifests/8b",
         "https://ollama.com/library/llama3:8b"
@@ -1251,7 +1396,7 @@
     },
     {
       "id": "llava:13b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/llava/manifests/13b",
         "https://ollama.com/library/llava:13b"
@@ -1262,7 +1407,7 @@
     },
     {
       "id": "llava:34b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/llava/manifests/34b",
         "https://ollama.com/library/llava:34b"
@@ -1273,7 +1418,7 @@
     },
     {
       "id": "llava:7b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/llava/manifests/7b",
         "https://ollama.com/library/llava:7b"
@@ -1284,7 +1429,7 @@
     },
     {
       "id": "magistral:24b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/magistral/manifests/24b",
         "https://ollama.com/library/magistral:24b"
@@ -1295,7 +1440,7 @@
     },
     {
       "id": "marco-o1:7b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/marco-o1/manifests/7b",
         "https://ollama.com/library/marco-o1:7b"
@@ -1306,7 +1451,7 @@
     },
     {
       "id": "mathstral:7b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/mathstral/manifests/7b",
         "https://ollama.com/library/mathstral:7b"
@@ -1317,7 +1462,7 @@
     },
     {
       "id": "megadolphin:120b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/megadolphin/manifests/120b",
         "https://ollama.com/library/megadolphin:120b"
@@ -1328,7 +1473,7 @@
     },
     {
       "id": "ministral-3:14b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/ministral-3/manifests/14b",
         "https://ollama.com/library/ministral-3:14b"
@@ -1339,7 +1484,7 @@
     },
     {
       "id": "ministral-3:3b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/ministral-3/manifests/3b",
         "https://ollama.com/library/ministral-3:3b"
@@ -1350,7 +1495,7 @@
     },
     {
       "id": "ministral-3:8b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/ministral-3/manifests/8b",
         "https://ollama.com/library/ministral-3:8b"
@@ -1361,7 +1506,7 @@
     },
     {
       "id": "mistral-small3.2:24b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/mistral-small3.2/manifests/24b",
         "https://ollama.com/library/mistral-small3.2:24b"
@@ -1372,7 +1517,7 @@
     },
     {
       "id": "moondream:1.8b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/moondream/manifests/1.8b",
         "https://ollama.com/library/moondream:1.8b"
@@ -1383,7 +1528,7 @@
     },
     {
       "id": "mxbai-embed-large:335m",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/mxbai-embed-large/manifests/335m",
         "https://ollama.com/library/mxbai-embed-large:335m"
@@ -1394,7 +1539,7 @@
     },
     {
       "id": "nemotron:70b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/nemotron/manifests/70b",
         "https://ollama.com/library/nemotron:70b"
@@ -1405,7 +1550,7 @@
     },
     {
       "id": "nimble:9b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/nimble/manifests/9b",
         "https://ollama.com/library/nimble:9b"
@@ -1416,7 +1561,7 @@
     },
     {
       "id": "notus:7b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/notus/manifests/7b",
         "https://ollama.com/library/notus:7b"
@@ -1427,7 +1572,7 @@
     },
     {
       "id": "nous-hermes2:10.7b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/nous-hermes2/manifests/10.7b",
         "https://ollama.com/library/nous-hermes2:10.7b"
@@ -1438,7 +1583,7 @@
     },
     {
       "id": "nous-hermes2:34b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/nous-hermes2/manifests/34b",
         "https://ollama.com/library/nous-hermes2:34b"
@@ -1449,7 +1594,7 @@
     },
     {
       "id": "olmo-3.1:32b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/olmo-3.1/manifests/32b",
         "https://ollama.com/library/olmo-3.1:32b"
@@ -1460,7 +1605,7 @@
     },
     {
       "id": "olmo-3:32b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/olmo-3/manifests/32b",
         "https://ollama.com/library/olmo-3:32b"
@@ -1471,7 +1616,7 @@
     },
     {
       "id": "olmo-3:7b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/olmo-3/manifests/7b",
         "https://ollama.com/library/olmo-3:7b"
@@ -1482,7 +1627,7 @@
     },
     {
       "id": "openchat:7b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/openchat/manifests/7b",
         "https://ollama.com/library/openchat:7b"
@@ -1493,7 +1638,7 @@
     },
     {
       "id": "openthinker:32b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/openthinker/manifests/32b",
         "https://ollama.com/library/openthinker:32b"
@@ -1504,7 +1649,7 @@
     },
     {
       "id": "openthinker:7b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/openthinker/manifests/7b",
         "https://ollama.com/library/openthinker:7b"
@@ -1515,7 +1660,7 @@
     },
     {
       "id": "ornith:35b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/ornith/manifests/35b",
         "https://ollama.com/library/ornith:35b"
@@ -1526,7 +1671,7 @@
     },
     {
       "id": "ornith:9b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/ornith/manifests/9b",
         "https://ollama.com/library/ornith:9b"
@@ -1537,7 +1682,7 @@
     },
     {
       "id": "paraphrase-multilingual:278m",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/paraphrase-multilingual/manifests/278m",
         "https://ollama.com/library/paraphrase-multilingual:278m"
@@ -1548,7 +1693,7 @@
     },
     {
       "id": "phi:2.7b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/phi/manifests/2.7b",
         "https://ollama.com/library/phi:2.7b"
@@ -1559,7 +1704,7 @@
     },
     {
       "id": "phind-codellama:34b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/phind-codellama/manifests/34b",
         "https://ollama.com/library/phind-codellama:34b"
@@ -1570,7 +1715,7 @@
     },
     {
       "id": "qwen2-math:1.5b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen2-math/manifests/1.5b",
         "https://ollama.com/library/qwen2-math:1.5b"
@@ -1581,7 +1726,7 @@
     },
     {
       "id": "qwen2-math:7b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen2-math/manifests/7b",
         "https://ollama.com/library/qwen2-math:7b"
@@ -1592,7 +1737,7 @@
     },
     {
       "id": "qwen2.5-coder:0.5b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen2.5-coder/manifests/0.5b",
         "https://ollama.com/library/qwen2.5-coder:0.5b"
@@ -1603,7 +1748,7 @@
     },
     {
       "id": "qwen2.5-coder:1.5b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen2.5-coder/manifests/1.5b",
         "https://ollama.com/library/qwen2.5-coder:1.5b"
@@ -1614,7 +1759,7 @@
     },
     {
       "id": "qwen2.5-coder:14b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen2.5-coder/manifests/14b",
         "https://ollama.com/library/qwen2.5-coder:14b"
@@ -1625,7 +1770,7 @@
     },
     {
       "id": "qwen2.5vl:32b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen2.5vl/manifests/32b",
         "https://ollama.com/library/qwen2.5vl:32b"
@@ -1636,7 +1781,7 @@
     },
     {
       "id": "qwen2.5vl:3b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen2.5vl/manifests/3b",
         "https://ollama.com/library/qwen2.5vl:3b"
@@ -1647,7 +1792,7 @@
     },
     {
       "id": "qwen2.5vl:72b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen2.5vl/manifests/72b",
         "https://ollama.com/library/qwen2.5vl:72b"
@@ -1658,7 +1803,7 @@
     },
     {
       "id": "qwen2.5vl:7b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen2.5vl/manifests/7b",
         "https://ollama.com/library/qwen2.5vl:7b"
@@ -1669,7 +1814,7 @@
     },
     {
       "id": "qwen2:0.5b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen2/manifests/0.5b",
         "https://ollama.com/library/qwen2:0.5b"
@@ -1680,7 +1825,7 @@
     },
     {
       "id": "qwen2:1.5b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen2/manifests/1.5b",
         "https://ollama.com/library/qwen2:1.5b"
@@ -1691,7 +1836,7 @@
     },
     {
       "id": "qwen2:7b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen2/manifests/7b",
         "https://ollama.com/library/qwen2:7b"
@@ -1702,7 +1847,7 @@
     },
     {
       "id": "qwen3-coder:30b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen3-coder/manifests/30b",
         "https://ollama.com/library/qwen3-coder:30b"
@@ -1713,7 +1858,7 @@
     },
     {
       "id": "qwen3-coder:480b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen3-coder/manifests/480b",
         "https://ollama.com/library/qwen3-coder:480b"
@@ -1724,7 +1869,7 @@
     },
     {
       "id": "qwen3-embedding:0.6b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen3-embedding/manifests/0.6b",
         "https://ollama.com/library/qwen3-embedding:0.6b"
@@ -1735,7 +1880,7 @@
     },
     {
       "id": "qwen3-embedding:4b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen3-embedding/manifests/4b",
         "https://ollama.com/library/qwen3-embedding:4b"
@@ -1746,7 +1891,7 @@
     },
     {
       "id": "qwen3-embedding:8b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen3-embedding/manifests/8b",
         "https://ollama.com/library/qwen3-embedding:8b"
@@ -1757,7 +1902,7 @@
     },
     {
       "id": "qwen3-next:80b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen3-next/manifests/80b",
         "https://ollama.com/library/qwen3-next:80b"
@@ -1768,7 +1913,7 @@
     },
     {
       "id": "qwen3-vl:235b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen3-vl/manifests/235b",
         "https://ollama.com/library/qwen3-vl:235b"
@@ -1779,7 +1924,7 @@
     },
     {
       "id": "qwen3-vl:2b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen3-vl/manifests/2b",
         "https://ollama.com/library/qwen3-vl:2b"
@@ -1790,7 +1935,7 @@
     },
     {
       "id": "qwen3-vl:30b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen3-vl/manifests/30b",
         "https://ollama.com/library/qwen3-vl:30b"
@@ -1801,7 +1946,7 @@
     },
     {
       "id": "qwen3-vl:32b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen3-vl/manifests/32b",
         "https://ollama.com/library/qwen3-vl:32b"
@@ -1812,7 +1957,7 @@
     },
     {
       "id": "qwen3-vl:4b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen3-vl/manifests/4b",
         "https://ollama.com/library/qwen3-vl:4b"
@@ -1823,7 +1968,7 @@
     },
     {
       "id": "qwen3-vl:8b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen3-vl/manifests/8b",
         "https://ollama.com/library/qwen3-vl:8b"
@@ -1834,7 +1979,7 @@
     },
     {
       "id": "qwen3.5:0.8b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen3.5/manifests/0.8b",
         "https://ollama.com/library/qwen3.5:0.8b"
@@ -1845,7 +1990,7 @@
     },
     {
       "id": "qwen3.5:122b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen3.5/manifests/122b",
         "https://ollama.com/library/qwen3.5:122b"
@@ -1856,7 +2001,7 @@
     },
     {
       "id": "qwen3.5:27b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen3.5/manifests/27b",
         "https://ollama.com/library/qwen3.5:27b"
@@ -1867,7 +2012,7 @@
     },
     {
       "id": "qwen3.5:2b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen3.5/manifests/2b",
         "https://ollama.com/library/qwen3.5:2b"
@@ -1878,7 +2023,7 @@
     },
     {
       "id": "qwen3.5:35b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen3.5/manifests/35b",
         "https://ollama.com/library/qwen3.5:35b"
@@ -1889,7 +2034,7 @@
     },
     {
       "id": "qwen3.5:9b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen3.5/manifests/9b",
         "https://ollama.com/library/qwen3.5:9b"
@@ -1900,7 +2045,7 @@
     },
     {
       "id": "qwen3.6:27b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen3.6/manifests/27b",
         "https://ollama.com/library/qwen3.6:27b"
@@ -1911,7 +2056,7 @@
     },
     {
       "id": "qwen3.8:27b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen3.8/manifests/27b",
         "https://ollama.com/library/qwen3.8:27b"
@@ -1922,7 +2067,7 @@
     },
     {
       "id": "qwq:32b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwq/manifests/32b",
         "https://ollama.com/library/qwq:32b"
@@ -1933,7 +2078,7 @@
     },
     {
       "id": "r1-1776:671b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/r1-1776/manifests/671b",
         "https://ollama.com/library/r1-1776:671b"
@@ -1944,7 +2089,7 @@
     },
     {
       "id": "r1-1776:70b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/r1-1776/manifests/70b",
         "https://ollama.com/library/r1-1776:70b"
@@ -1955,7 +2100,7 @@
     },
     {
       "id": "reflection:70b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/reflection/manifests/70b",
         "https://ollama.com/library/reflection:70b"
@@ -1966,7 +2111,7 @@
     },
     {
       "id": "rnj-1:8b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/rnj-1/manifests/8b",
         "https://ollama.com/library/rnj-1:8b"
@@ -1977,7 +2122,7 @@
     },
     {
       "id": "sailor2:1b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/sailor2/manifests/1b",
         "https://ollama.com/library/sailor2:1b"
@@ -1988,7 +2133,7 @@
     },
     {
       "id": "sailor2:20b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/sailor2/manifests/20b",
         "https://ollama.com/library/sailor2:20b"
@@ -1999,7 +2144,7 @@
     },
     {
       "id": "sailor2:8b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/sailor2/manifests/8b",
         "https://ollama.com/library/sailor2:8b"
@@ -2010,7 +2155,7 @@
     },
     {
       "id": "shieldgemma:27b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/shieldgemma/manifests/27b",
         "https://ollama.com/library/shieldgemma:27b"
@@ -2021,7 +2166,7 @@
     },
     {
       "id": "shieldgemma:2b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/shieldgemma/manifests/2b",
         "https://ollama.com/library/shieldgemma:2b"
@@ -2032,7 +2177,7 @@
     },
     {
       "id": "shieldgemma:9b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/shieldgemma/manifests/9b",
         "https://ollama.com/library/shieldgemma:9b"
@@ -2043,7 +2188,7 @@
     },
     {
       "id": "smollm:1.7b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/smollm/manifests/1.7b",
         "https://ollama.com/library/smollm:1.7b"
@@ -2054,7 +2199,7 @@
     },
     {
       "id": "smollm:135m",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/smollm/manifests/135m",
         "https://ollama.com/library/smollm:135m"
@@ -2065,7 +2210,7 @@
     },
     {
       "id": "smollm:360m",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/smollm/manifests/360m",
         "https://ollama.com/library/smollm:360m"
@@ -2076,7 +2221,7 @@
     },
     {
       "id": "snowflake-arctic-embed2:568m",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/snowflake-arctic-embed2/manifests/568m",
         "https://ollama.com/library/snowflake-arctic-embed2:568m"
@@ -2087,7 +2232,7 @@
     },
     {
       "id": "snowflake-arctic-embed:110m",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/snowflake-arctic-embed/manifests/110m",
         "https://ollama.com/library/snowflake-arctic-embed:110m"
@@ -2098,7 +2243,7 @@
     },
     {
       "id": "snowflake-arctic-embed:137m",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/snowflake-arctic-embed/manifests/137m",
         "https://ollama.com/library/snowflake-arctic-embed:137m"
@@ -2109,7 +2254,7 @@
     },
     {
       "id": "snowflake-arctic-embed:22m",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/snowflake-arctic-embed/manifests/22m",
         "https://ollama.com/library/snowflake-arctic-embed:22m"
@@ -2120,7 +2265,7 @@
     },
     {
       "id": "snowflake-arctic-embed:335m",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/snowflake-arctic-embed/manifests/335m",
         "https://ollama.com/library/snowflake-arctic-embed:335m"
@@ -2131,7 +2276,7 @@
     },
     {
       "id": "snowflake-arctic-embed:33m",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/snowflake-arctic-embed/manifests/33m",
         "https://ollama.com/library/snowflake-arctic-embed:33m"
@@ -2142,7 +2287,7 @@
     },
     {
       "id": "solar-pro:22b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/solar-pro/manifests/22b",
         "https://ollama.com/library/solar-pro:22b"
@@ -2153,7 +2298,7 @@
     },
     {
       "id": "starling-lm:7b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/starling-lm/manifests/7b",
         "https://ollama.com/library/starling-lm:7b"
@@ -2164,7 +2309,7 @@
     },
     {
       "id": "tev1:0.8b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/tev1/manifests/0.8b",
         "https://ollama.com/library/tev1:0.8b"
@@ -2175,7 +2320,7 @@
     },
     {
       "id": "tev1:4b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/tev1/manifests/4b",
         "https://ollama.com/library/tev1:4b"
@@ -2186,7 +2331,7 @@
     },
     {
       "id": "tinydolphin:1.1b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/tinydolphin/manifests/1.1b",
         "https://ollama.com/library/tinydolphin:1.1b"
@@ -2197,7 +2342,7 @@
     },
     {
       "id": "translategemma:12b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/translategemma/manifests/12b",
         "https://ollama.com/library/translategemma:12b"
@@ -2208,7 +2353,7 @@
     },
     {
       "id": "translategemma:27b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/translategemma/manifests/27b",
         "https://ollama.com/library/translategemma:27b"
@@ -2219,7 +2364,7 @@
     },
     {
       "id": "translategemma:4b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/translategemma/manifests/4b",
         "https://ollama.com/library/translategemma:4b"
@@ -2230,7 +2375,7 @@
     },
     {
       "id": "tulu3:70b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/tulu3/manifests/70b",
         "https://ollama.com/library/tulu3:70b"
@@ -2241,7 +2386,7 @@
     },
     {
       "id": "tulu3:8b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/tulu3/manifests/8b",
         "https://ollama.com/library/tulu3:8b"
@@ -2252,7 +2397,7 @@
     },
     {
       "id": "wizardlm2:7b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/wizardlm2/manifests/7b",
         "https://ollama.com/library/wizardlm2:7b"
@@ -2263,7 +2408,7 @@
     },
     {
       "id": "yi-coder:1.5b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/yi-coder/manifests/1.5b",
         "https://ollama.com/library/yi-coder:1.5b"
@@ -2274,7 +2419,7 @@
     },
     {
       "id": "yi-coder:9b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/yi-coder/manifests/9b",
         "https://ollama.com/library/yi-coder:9b"
@@ -2285,7 +2430,7 @@
     },
     {
       "id": "zephyr:141b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/zephyr/manifests/141b",
         "https://ollama.com/library/zephyr:141b"
@@ -2296,7 +2441,7 @@
     },
     {
       "id": "zephyr:7b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/zephyr/manifests/7b",
         "https://ollama.com/library/zephyr:7b"
@@ -2307,7 +2452,7 @@
     },
     {
       "id": "qwen3.6:35b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen3.6/manifests/35b",
         "https://ollama.com/library/qwen3.6:35b"
@@ -2324,20 +2469,15 @@
     },
     {
       "id": "bonsai:8b",
-      "checkedAt": "2026-10-01T12:32:41Z",
-      "sources": [
-        "https://prismml.com/news/bonsai-8b",
-        "https://huggingface.co/prism-ml/Bonsai-8B-gguf/blob/48516770dd04643643e9f9019a2a349cf26c5dbd/README.md",
-        "https://huggingface.co/api/models/prism-ml/Bonsai-8B-gguf/revision/48516770dd04643643e9f9019a2a349cf26c5dbd",
-        "https://huggingface.co/prism-ml/Bonsai-8B-gguf/blob/48516770dd04643643e9f9019a2a349cf26c5dbd/Bonsai-8B-Q1_0.gguf"
-      ],
-      "fresh": true,
-      "verified": true,
-      "reason": "verified"
+      "checkedAt": null,
+      "sources": [],
+      "fresh": false,
+      "verified": false,
+      "reason": "missing evidence"
     },
     {
       "id": "gemma4:e4b-it-qat",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/gemma4/manifests/e4b-it-qat",
         "https://ollama.com/library/gemma4:e4b-it-qat"
@@ -2354,7 +2494,7 @@
     },
     {
       "id": "qwen3.5:4b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen3.5/manifests/4b",
         "https://ollama.com/library/qwen3.5:4b"
@@ -2403,7 +2543,7 @@
     },
     {
       "id": "gemma3n:e2b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/gemma3n/manifests/e2b",
         "https://ollama.com/library/gemma3n:e2b"
@@ -2420,7 +2560,7 @@
     },
     {
       "id": "gemma3n:e4b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/gemma3n/manifests/e4b",
         "https://ollama.com/library/gemma3n:e4b"
@@ -2445,7 +2585,7 @@
     },
     {
       "id": "qwen3:0.6b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen3/manifests/0.6b",
         "https://ollama.com/library/qwen3:0.6b"
@@ -2462,7 +2602,7 @@
     },
     {
       "id": "qwen3:1.7b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen3/manifests/1.7b",
         "https://ollama.com/library/qwen3:1.7b"
@@ -2479,7 +2619,7 @@
     },
     {
       "id": "qwen3:4b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen3/manifests/4b",
         "https://ollama.com/library/qwen3:4b"
@@ -2496,7 +2636,7 @@
     },
     {
       "id": "qwen3:14b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen3/manifests/14b",
         "https://ollama.com/library/qwen3:14b"
@@ -2513,7 +2653,7 @@
     },
     {
       "id": "qwen3:235b-a22b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen3/manifests/235b-a22b",
         "https://ollama.com/library/qwen3:235b-a22b"
@@ -2530,7 +2670,7 @@
     },
     {
       "id": "qwen3:30b-a3b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen3/manifests/30b-a3b",
         "https://ollama.com/library/qwen3:30b-a3b"
@@ -2547,7 +2687,7 @@
     },
     {
       "id": "qwen3:32b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen3/manifests/32b",
         "https://ollama.com/library/qwen3:32b"
@@ -2564,7 +2704,7 @@
     },
     {
       "id": "qwen3:8b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen3/manifests/8b",
         "https://ollama.com/library/qwen3:8b"
@@ -2580,8 +2720,16 @@
       ]
     },
     {
+      "id": "bitnet-b1.58:2b",
+      "checkedAt": null,
+      "sources": [],
+      "fresh": false,
+      "verified": false,
+      "reason": "missing evidence"
+    },
+    {
       "id": "glm4:9b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/glm4/manifests/9b",
         "https://ollama.com/library/glm4:9b"
@@ -2605,7 +2753,7 @@
     },
     {
       "id": "gemma3:12b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/gemma3/manifests/12b",
         "https://ollama.com/library/gemma3:12b"
@@ -2622,7 +2770,7 @@
     },
     {
       "id": "gemma3:27b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/gemma3/manifests/27b",
         "https://ollama.com/library/gemma3:27b"
@@ -2639,7 +2787,7 @@
     },
     {
       "id": "gemma3:4b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/gemma3/manifests/4b",
         "https://ollama.com/library/gemma3:4b"
@@ -2656,7 +2804,7 @@
     },
     {
       "id": "phi4-mini:3.8b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/phi4-mini/manifests/3.8b",
         "https://ollama.com/library/phi4-mini:3.8b"
@@ -2672,7 +2820,7 @@
     },
     {
       "id": "mistral-small:24b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/mistral-small/manifests/24b",
         "https://ollama.com/library/mistral-small:24b"
@@ -2690,7 +2838,7 @@
     },
     {
       "id": "deepseek-r1:14b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/deepseek-r1/manifests/14b",
         "https://ollama.com/library/deepseek-r1:14b"
@@ -2707,7 +2855,7 @@
     },
     {
       "id": "deepseek-r1:32b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/deepseek-r1/manifests/32b",
         "https://ollama.com/library/deepseek-r1:32b"
@@ -2724,7 +2872,7 @@
     },
     {
       "id": "deepseek-r1:671b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/deepseek-r1/manifests/671b",
         "https://ollama.com/library/deepseek-r1:671b"
@@ -2741,7 +2889,7 @@
     },
     {
       "id": "deepseek-r1:70b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/deepseek-r1/manifests/70b",
         "https://ollama.com/library/deepseek-r1:70b"
@@ -2758,7 +2906,7 @@
     },
     {
       "id": "deepseek-r1:7b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/deepseek-r1/manifests/7b",
         "https://ollama.com/library/deepseek-r1:7b"
@@ -2775,7 +2923,7 @@
     },
     {
       "id": "deepseek-r1:8b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/deepseek-r1/manifests/8b",
         "https://ollama.com/library/deepseek-r1:8b"
@@ -2792,7 +2940,7 @@
     },
     {
       "id": "deepseek-v3",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/deepseek-v3/manifests/latest",
         "https://ollama.com/library/deepseek-v3:latest"
@@ -2808,7 +2956,7 @@
     },
     {
       "id": "granite3.1:2b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/granite3.1-dense/manifests/2b",
         "https://ollama.com/library/granite3.1-dense:2b"
@@ -2825,7 +2973,7 @@
     },
     {
       "id": "granite3.1:8b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/granite3.1-dense/manifests/8b",
         "https://ollama.com/library/granite3.1-dense:8b"
@@ -2842,7 +2990,7 @@
     },
     {
       "id": "phi4:14b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/phi4/manifests/14b",
         "https://ollama.com/library/phi4:14b"
@@ -2858,7 +3006,7 @@
     },
     {
       "id": "llama3.3:70b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/llama3.3/manifests/70b",
         "https://ollama.com/library/llama3.3:70b"
@@ -2875,7 +3023,7 @@
     },
     {
       "id": "olmo2:13b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/olmo2/manifests/13b",
         "https://ollama.com/library/olmo2:13b"
@@ -2892,7 +3040,7 @@
     },
     {
       "id": "olmo2:7b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/olmo2/manifests/7b",
         "https://ollama.com/library/olmo2:7b"
@@ -2909,7 +3057,7 @@
     },
     {
       "id": "qwen2.5-coder:32b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen2.5-coder/manifests/32b",
         "https://ollama.com/library/qwen2.5-coder:32b"
@@ -2927,7 +3075,7 @@
     },
     {
       "id": "qwen2.5-coder:7b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen2.5-coder/manifests/7b",
         "https://ollama.com/library/qwen2.5-coder:7b"
@@ -2945,7 +3093,7 @@
     },
     {
       "id": "smollm2:1.7b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/smollm2/manifests/1.7b",
         "https://ollama.com/library/smollm2:1.7b"
@@ -2962,7 +3110,7 @@
     },
     {
       "id": "smollm2:135m",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/smollm2/manifests/135m",
         "https://ollama.com/library/smollm2:135m"
@@ -2979,7 +3127,7 @@
     },
     {
       "id": "smollm2:360m",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/smollm2/manifests/360m",
         "https://ollama.com/library/smollm2:360m"
@@ -2996,7 +3144,7 @@
     },
     {
       "id": "granite3-moe:3b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/granite3-moe/manifests/3b",
         "https://ollama.com/library/granite3-moe:3b"
@@ -3013,7 +3161,7 @@
     },
     {
       "id": "llama3.2:1b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/llama3.2/manifests/1b",
         "https://ollama.com/library/llama3.2:1b"
@@ -3031,7 +3179,7 @@
     },
     {
       "id": "llama3.2:3b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/llama3.2/manifests/3b",
         "https://ollama.com/library/llama3.2:3b"
@@ -3049,7 +3197,7 @@
     },
     {
       "id": "qwen2.5:0.5b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen2.5/manifests/0.5b",
         "https://ollama.com/library/qwen2.5:0.5b"
@@ -3075,7 +3223,7 @@
     },
     {
       "id": "qwen2.5:1.5b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen2.5/manifests/1.5b",
         "https://ollama.com/library/qwen2.5:1.5b"
@@ -3093,7 +3241,7 @@
     },
     {
       "id": "qwen2.5:14b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen2.5/manifests/14b",
         "https://ollama.com/library/qwen2.5:14b"
@@ -3111,7 +3259,7 @@
     },
     {
       "id": "qwen2.5:32b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen2.5/manifests/32b",
         "https://ollama.com/library/qwen2.5:32b"
@@ -3129,7 +3277,7 @@
     },
     {
       "id": "qwen2.5:3b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen2.5/manifests/3b",
         "https://ollama.com/library/qwen2.5:3b"
@@ -3146,7 +3294,7 @@
     },
     {
       "id": "qwen2.5:72b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen2.5/manifests/72b",
         "https://ollama.com/library/qwen2.5:72b"
@@ -3163,7 +3311,7 @@
     },
     {
       "id": "qwen2.5:7b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/qwen2.5/manifests/7b",
         "https://ollama.com/library/qwen2.5:7b"
@@ -3181,7 +3329,7 @@
     },
     {
       "id": "phi3.5:mini",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/phi3.5/manifests/3.8b",
         "https://ollama.com/library/phi3.5:3.8b"
@@ -3198,7 +3346,7 @@
     },
     {
       "id": "gemma2:2b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/gemma2/manifests/2b",
         "https://ollama.com/library/gemma2:2b"
@@ -3215,7 +3363,7 @@
     },
     {
       "id": "llama3.1:70b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/llama3.1/manifests/70b",
         "https://ollama.com/library/llama3.1:70b"
@@ -3233,7 +3381,7 @@
     },
     {
       "id": "llama3.1:8b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/llama3.1/manifests/8b",
         "https://ollama.com/library/llama3.1:8b"
@@ -3251,7 +3399,7 @@
     },
     {
       "id": "mistral-nemo:12b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/mistral-nemo/manifests/12b",
         "https://ollama.com/library/mistral-nemo:12b"
@@ -3269,7 +3417,7 @@
     },
     {
       "id": "gemma2:27b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/gemma2/manifests/27b",
         "https://ollama.com/library/gemma2:27b"
@@ -3286,7 +3434,7 @@
     },
     {
       "id": "gemma2:9b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/gemma2/manifests/9b",
         "https://ollama.com/library/gemma2:9b"
@@ -3303,7 +3451,7 @@
     },
     {
       "id": "yi:34b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/yi/manifests/34b",
         "https://ollama.com/library/yi:34b"
@@ -3320,7 +3468,7 @@
     },
     {
       "id": "yi:6b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/yi/manifests/6b",
         "https://ollama.com/library/yi:6b"
@@ -3337,7 +3485,7 @@
     },
     {
       "id": "yi:9b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/yi/manifests/9b",
         "https://ollama.com/library/yi:9b"
@@ -3354,7 +3502,7 @@
     },
     {
       "id": "phi3:mini",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/phi3/manifests/mini",
         "https://ollama.com/library/phi3:mini"
@@ -3370,7 +3518,7 @@
     },
     {
       "id": "mixtral:8x22b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/mixtral/manifests/8x22b",
         "https://ollama.com/library/mixtral:8x22b"
@@ -3387,7 +3535,7 @@
     },
     {
       "id": "mixtral:8x7b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/mixtral/manifests/8x7b",
         "https://ollama.com/library/mixtral:8x7b"
@@ -3404,7 +3552,7 @@
     },
     {
       "id": "mistral:7b",
-      "checkedAt": "2026-10-08T12:11:08.720Z",
+      "checkedAt": "2026-11-10T20:12:13.695Z",
       "sources": [
         "https://registry.ollama.ai/v2/library/mistral/manifests/7b",
         "https://ollama.com/library/mistral:7b"
