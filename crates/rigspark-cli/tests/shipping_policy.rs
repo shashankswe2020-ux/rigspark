@@ -225,7 +225,10 @@ fn the_weekly_refresh_pr_is_opened_with_the_maintainer_token() {
         .expect("refresh PR step");
     assert!(step.contains("GH_TOKEN: ${{ secrets.CATALOG_MERGE_TOKEN || github.token }}"));
     assert!(step.contains("gh pr create --base main"));
-    assert!(!step.contains("gh pr merge"), "proposals stay for human review");
+    assert!(
+        !step.contains("gh pr merge"),
+        "proposals stay for human review"
+    );
 }
 
 #[test]
