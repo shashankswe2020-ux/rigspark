@@ -456,3 +456,139 @@ async fn catalog_integrity_inputs_are_checked_before_any_file_is_read() {
     assert!(!rejected(check(None, Some(9_007_199_254_740_991)).await));
     assert!(!rejected(check(None, None).await));
 }
+
+#[tokio::test]
+async fn catalog_manifest_shape_projector_pins_and_blob_sizes_are_each_checked() {
+    use rigspark_core::sizing::ProjectorArtifact;
+    use rigspark_runtime::ollama_installed::{OllamaError, verify_catalog_manifest};
+    let root = tempfile::tempdir().unwrap();
+    let directory = root
+        .path()
+        .join("manifests/registry.ollama.ai/library/test");
+    std::fs::create_dir_all(&directory).unwrap();
+    std::fs::create_dir(root.path().join("blobs")).unwrap();
+    let sha = |bytes: &[u8]| format!("{:x}", Sha256::digest(bytes));
+    let blob = |bytes: &[u8], media_type: &str| {
+        std::fs::write(
+            root.path().join(format!("blobs/sha256-{}", sha(bytes))),
+            bytes,
+        )
+        .unwrap();
+        json!({"digest":format!("sha256:{}", sha(bytes)), "size":bytes.len(), "mediaType":media_type})
+    };
+    const PROJECTOR: &str = "application/vnd.ollama.image.projector";
+    let config = blob(b"{}", "config");
+    let model = blob(b"model", "application/vnd.ollama.image.model");
+    let cancel = tokio_util::sync::CancellationToken::new();
+    let verify = |manifest: serde_json::Value, pins: Vec<ProjectorArtifact>| {
+        let raw = manifest.to_string();
+        std::fs::write(directory.join("latest"), &raw).unwrap();
+        let root = root.path().to_owned();
+        let cancel = cancel.clone();
+        async move {
+            verify_catalog_manifest(
+                &root,
+                "test:latest",
+                &sha(raw.as_bytes()),
+                None,
+                None,
+                &pins,
+                &cancel,
+            )
+            .await
+        }
+    };
+    let with =
+        |layers: serde_json::Value| json!({"schemaVersion":2,"config":config,"layers":layers});
+    let shape = |result: Result<(), OllamaError>| {
+        matches!(result, Err(OllamaError::Invalid("manifest layers")))
+    };
+    let projector_mismatch = |result: Result<(), OllamaError>| {
+        matches!(
+            result,
+            Err(OllamaError::Integrity("catalog projector mismatch"))
+        )
+    };
+
+    // Manifest shape: schema 2, at least one layer, at most 10000. Each rule stands alone.
+    assert!(verify(with(json!([model.clone()])), vec![]).await.is_ok());
+    let mut wrong_schema = with(json!([model.clone()]));
+    wrong_schema["schemaVersion"] = json!(3);
+    assert!(shape(verify(wrong_schema, vec![]).await));
+    assert!(shape(verify(with(json!([])), vec![]).await));
+    let filler = |count: usize| {
+        let layer =
+            json!({"digest":format!("sha256:{}", "0".repeat(64)),"size":1,"mediaType":"other"});
+        serde_json::Value::Array(vec![layer; count])
+    };
+    assert!(shape(verify(with(filler(10_001)), vec![]).await));
+    // 10000 layers pass the shape check (and then fail for having no weights).
+    assert!(!shape(verify(with(filler(10_000)), vec![]).await));
+
+    // Projector pins: at most 16, each a lowercase digest, non-empty and listed once.
+    let projectors = |count: usize| {
+        let mut layers = vec![model.clone()];
+        let mut pins = vec![];
+        for index in 0..count {
+            let bytes = format!("projector-{index}").into_bytes();
+            layers.push(blob(&bytes, PROJECTOR));
+            pins.push(ProjectorArtifact {
+                bytes: bytes.len() as u64,
+                sha256: sha(&bytes),
+            });
+        }
+        (with(serde_json::Value::Array(layers)), pins)
+    };
+    let (manifest, pins) = projectors(16);
+    assert!(verify(manifest, pins).await.is_ok());
+    let (manifest, pins) = projectors(17);
+    assert!(projector_mismatch(verify(manifest, pins).await));
+    // An uppercase digest is refused even when the manifest names the same uppercase digest.
+    let upper = sha(b"upper").to_uppercase();
+    std::fs::write(root.path().join(format!("blobs/sha256-{upper}")), b"upper").unwrap();
+    let layer = json!({"digest":format!("sha256:{upper}"),"size":5,"mediaType":PROJECTOR});
+    let pin = ProjectorArtifact {
+        bytes: 5,
+        sha256: upper.clone(),
+    };
+    assert!(projector_mismatch(
+        verify(with(json!([model.clone(), layer])), vec![pin]).await
+    ));
+    // An empty projector is refused even when the manifest lists it as empty.
+    let empty = blob(b"", PROJECTOR);
+    let pin = ProjectorArtifact {
+        bytes: 0,
+        sha256: sha(b""),
+    };
+    assert!(projector_mismatch(
+        verify(with(json!([model.clone(), empty])), vec![pin]).await
+    ));
+    // The same projector pinned twice is refused.
+    let twice = blob(b"twice", PROJECTOR);
+    let pin = ProjectorArtifact {
+        bytes: 5,
+        sha256: sha(b"twice"),
+    };
+    assert!(projector_mismatch(
+        verify(
+            with(json!([model.clone(), twice.clone(), twice])),
+            vec![pin.clone(), pin]
+        )
+        .await
+    ));
+
+    // Blob sizes above the largest exact JSON integer are refused before hashing.
+    let sized = |size: u64| {
+        let mut manifest = with(json!([model.clone()]));
+        manifest["config"]["size"] = json!(size);
+        manifest
+    };
+    assert!(matches!(
+        verify(sized(9_007_199_254_740_992), vec![]).await,
+        Err(OllamaError::Invalid("blob size"))
+    ));
+    assert!(matches!(
+        verify(sized(9_007_199_254_740_991), vec![]).await,
+        Err(OllamaError::Integrity("blob digest or size mismatch"))
+    ));
+}
