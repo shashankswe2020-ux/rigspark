@@ -2297,6 +2297,7 @@ document.addEventListener("DOMContentLoaded", () => {
     wait: document.querySelector("#source-github-wait"),
   };
   let sourceGithubPoll = null;
+  let sourceGithubConfigured = false;
 
   function sourceGithubError(message) {
     if (sourceGithub.error) {
@@ -2339,28 +2340,28 @@ document.addEventListener("DOMContentLoaded", () => {
       sourceGithubPoll = null;
     }
     sourceGithub.code.hidden = true;
-    sourceGithub.cancel.hidden = true;
     sourceGithub.signIn.disabled = false;
+    sourceGithub.connect.disabled = false;
   }
 
   async function finishSourceGithub() {
     stopSourceGithubSignIn();
     sourceGithub.token.value = "";
     sourceGithub.form.hidden = true;
-    sourceGithub.connect.setAttribute("aria-expanded", "false");
     await Promise.all([loadSourceControl(), loadConnectors()]);
   }
 
   async function startSourceGithubSignIn() {
     sourceGithubError("");
     stopSourceGithubSignIn();
+    sourceGithub.form.hidden = true;
     sourceGithub.signIn.disabled = true;
+    sourceGithub.connect.disabled = true;
     try {
       const { signIn } = await sourceGithubRequest("POST", "/sign-in");
       sourceGithub.userCode.textContent = signIn.userCode;
       sourceGithub.wait.textContent = "Waiting for you to approve on github.com…";
       sourceGithub.code.hidden = false;
-      sourceGithub.cancel.hidden = false;
       openGithubDevicePage();
       const deadline = Date.now() + signIn.expiresIn * 1000;
       const poll = async (interval) => {
@@ -2403,9 +2404,8 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const { github } = await sourceGithubRequest("GET");
       const folders = Array.isArray(github.repositories) ? github.repositories : [];
+      sourceGithubConfigured = github.configured;
       sourceGithub.connect.textContent = github.configured ? "Manage" : "Connect";
-      sourceGithub.disconnect.hidden = !github.configured;
-      sourceGithub.saveFolders.hidden = !github.configured;
       sourceGithub.signIn.textContent = github.token ? "Sign in again" : "Sign in with GitHub";
       if (sourceGithub.folders && !sourceGithub.form.contains(document.activeElement)) {
         sourceGithub.folders.value = folders.join("\n");
@@ -2435,12 +2435,15 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   if (sourceGithub.connect && sourceGithub.form) {
+    // Connect signs in straight away; once connected the same button opens Manage.
     sourceGithub.connect.addEventListener("click", () => {
-      const open = sourceGithub.form.hidden;
-      sourceGithub.form.hidden = !open;
-      sourceGithub.connect.setAttribute("aria-expanded", String(open));
-      if (!open) {
-        stopSourceGithubSignIn();
+      if (!sourceGithubConfigured) {
+        startSourceGithubSignIn();
+        return;
+      }
+      sourceGithub.form.hidden = !sourceGithub.form.hidden;
+      if (!sourceGithub.form.hidden) {
+        sourceGithub.folders.focus();
       }
     });
     sourceGithub.signIn.addEventListener("click", startSourceGithubSignIn);
