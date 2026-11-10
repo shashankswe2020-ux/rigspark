@@ -354,18 +354,69 @@ impl GithubConnection {
         ))
     }
 
-    async fn commit(&self, args: &Value, cancel: &CancellationToken) -> Result<String, ToolResult> {
+    fn allowed_folder(&self, args: &Value) -> Result<PathBuf, ToolResult> {
         let folder = args["folder"]
             .as_str()
             .ok_or_else(|| error("folder is required"))?;
-        let folder = std::fs::canonicalize(folder)
+        std::fs::canonicalize(folder)
             .ok()
             .filter(|folder| self.repositories.contains(folder))
             .ok_or_else(|| {
                 error(
                     "That folder isn't allowed. Add it under Connectors > Source control > GitHub.",
                 )
-            })?;
+            })
+    }
+
+    async fn git(
+        &self,
+        folder: &Path,
+        env: &std::collections::BTreeMap<String, String>,
+        args: &[&str],
+        timeout: Duration,
+        cancel: &CancellationToken,
+    ) -> Result<String, ToolResult> {
+        let binary = crate::process_control::resolve_binary("git")
+            .map_err(|_| error("git is not installed"))?;
+        let run = tokio::process::Command::new(binary)
+            .arg("-C")
+            .arg(folder)
+            .args(args)
+            .env_clear()
+            .envs(env)
+            .stdin(std::process::Stdio::null())
+            .kill_on_drop(true)
+            .output();
+        let output = tokio::select! {
+            biased;
+            _ = cancel.cancelled() => return Err(error("cancelled")),
+            output = tokio::time::timeout(timeout, run) => output
+                .map_err(|_| error("git timed out"))?
+                .map_err(|_| error("git could not run"))?,
+        };
+        let combined = format!(
+            "{}{}",
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr)
+        );
+        // Never echo the token back, whatever git prints.
+        let combined = match &self.token {
+            Some(token) => combined.replace(token.as_str(), "••••••"),
+            None => combined,
+        };
+        if output.status.success() {
+            Ok(combined)
+        } else {
+            Err(error(&format!(
+                "git {} failed: {}",
+                args[0],
+                clip(combined.trim(), 2000)
+            )))
+        }
+    }
+
+    async fn commit(&self, args: &Value, cancel: &CancellationToken) -> Result<String, ToolResult> {
+        let folder = self.allowed_folder(args)?;
         let message = args["message"]
             .as_str()
             .map(str::trim)
@@ -384,54 +435,96 @@ impl GithubConnection {
             .map_err(|_| error("Could not set up commit attribution."))?;
         let mut env = crate::process_control::minimal_env();
         env.extend(attribution.env(&model, None));
-        let git = |args: Vec<&str>| {
-            let env = env.clone();
-            let folder = folder.clone();
-            let args: Vec<String> = args.into_iter().map(String::from).collect();
-            async move {
-                let binary = crate::process_control::resolve_binary("git")
-                    .map_err(|_| error("git is not installed"))?;
-                let run = tokio::process::Command::new(binary)
-                    .arg("-C")
-                    .arg(&folder)
-                    .args(&args)
-                    .env_clear()
-                    .envs(env)
-                    .stdin(std::process::Stdio::null())
-                    .kill_on_drop(true)
-                    .output();
-                let output = tokio::select! {
-                    biased;
-                    _ = cancel.cancelled() => return Err(error("cancelled")),
-                    output = tokio::time::timeout(Duration::from_secs(60), run) => output
-                        .map_err(|_| error("git timed out"))?
-                        .map_err(|_| error("git could not run"))?,
-                };
-                let combined = format!(
-                    "{}{}",
-                    String::from_utf8_lossy(&output.stdout),
-                    String::from_utf8_lossy(&output.stderr)
-                );
-                if output.status.success() {
-                    Ok(combined)
-                } else {
-                    Err(error(&format!(
-                        "git {} failed: {}",
-                        args[0],
-                        clip(combined.trim(), 2000)
-                    )))
-                }
-            }
-        };
-        git(vec!["add", "--all"]).await?;
-        git(vec!["commit", "--quiet", "--message", message]).await?;
-        let summary = git(vec!["log", "-1", "--format=%h %s%n%n%b"]).await?;
+        let minute = Duration::from_secs(60);
+        self.git(&folder, &env, &["add", "--all"], minute, cancel)
+            .await?;
+        self.git(
+            &folder,
+            &env,
+            &["commit", "--quiet", "--message", message],
+            minute,
+            cancel,
+        )
+        .await?;
+        let summary = self
+            .git(
+                &folder,
+                &env,
+                &["log", "-1", "--format=%h %s%n%n%b"],
+                minute,
+                cancel,
+            )
+            .await?;
         Ok(format!(
             "Committed in {}:\n{}",
             folder.display(),
             summary.trim()
         ))
     }
+
+    async fn push(&self, args: &Value, cancel: &CancellationToken) -> Result<String, ToolResult> {
+        let folder = self.allowed_folder(args)?;
+        let branch = args["branch"]
+            .as_str()
+            .filter(|branch| valid_branch(branch))
+            .ok_or_else(|| error("branch must be a branch name"))?;
+        // Changes reach the default branch through a pull request, never a direct push.
+        if ["main", "master", "HEAD"].contains(&branch) {
+            return Err(error(
+                "Push to a new branch and open a pull request instead of pushing to the default branch.",
+            ));
+        }
+        let mut env = crate::process_control::minimal_env();
+        env.insert("GIT_TERMINAL_PROMPT".into(), "0".into());
+        if let Some(token) = &self.token {
+            // HTTPS remotes on github.com authenticate with the connected token; it goes
+            // through the environment, never the command line.
+            env.insert("GIT_CONFIG_COUNT".into(), "1".into());
+            env.insert(
+                "GIT_CONFIG_KEY_0".into(),
+                "http.https://github.com/.extraheader".into(),
+            );
+            env.insert(
+                "GIT_CONFIG_VALUE_0".into(),
+                format!(
+                    "AUTHORIZATION: basic {}",
+                    base64(format!("x-access-token:{token}").as_bytes())
+                ),
+            );
+        }
+        let target = format!("HEAD:refs/heads/{branch}");
+        let output = self
+            .git(
+                &folder,
+                &env,
+                &["push", "--porcelain", "origin", &target],
+                Duration::from_secs(120),
+                cancel,
+            )
+            .await?;
+        Ok(format!(
+            "Pushed to branch {branch} on origin.\n{}",
+            clip(output.trim(), 2000)
+        ))
+    }
+}
+
+fn base64(bytes: &[u8]) -> String {
+    const TABLE: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let mut out = String::with_capacity(bytes.len().div_ceil(3) * 4);
+    for chunk in bytes.chunks(3) {
+        let value = (u32::from(chunk[0]) << 16)
+            | (u32::from(*chunk.get(1).unwrap_or(&0)) << 8)
+            | u32::from(*chunk.get(2).unwrap_or(&0));
+        for index in 0..4 {
+            if index <= chunk.len() {
+                out.push(TABLE[(value >> (18 - 6 * index) & 63) as usize] as char);
+            } else {
+                out.push('=');
+            }
+        }
+    }
+    out
 }
 
 #[async_trait::async_trait]
@@ -487,6 +580,14 @@ impl Connection for GithubConnection {
                     "message": {"type":"string","description":"commit message"},
                 }}),
             });
+            tools.push(Tool {
+                name: "git_push".into(),
+                description: "Upload the current commit of an allowed local folder to a new branch on its origin remote, so a pull request can be opened from it. Not for main or master.".into(),
+                input_schema: json!({"type":"object","required":["folder","branch"],"properties":{
+                    "folder": {"type":"string","enum": folders},
+                    "branch": {"type":"string","description":"branch to create or update, for example rigspark/hello"},
+                }}),
+            });
         }
         Ok(tools)
     }
@@ -502,6 +603,7 @@ impl Connection for GithubConnection {
             "github_read_issue" => self.read_issue(&args).await,
             "github_create_pull_request" => self.create_pull_request(&args).await,
             "git_commit" => self.commit(&args, cancel).await,
+            "git_push" => self.push(&args, cancel).await,
             _ => return Err(McpError::Invalid),
         };
         Ok(result.map_or_else(
@@ -582,4 +684,21 @@ fn text(value: &Value, limit: usize) -> String {
         .map(rigspark_core::reports::strip_control)
         .collect();
     clip(&lines.join("\n"), limit)
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn base64_matches_the_standard_alphabet_and_padding() {
+        for (input, expected) in [
+            ("", ""),
+            ("f", "Zg=="),
+            ("fo", "Zm8="),
+            ("foo", "Zm9v"),
+            ("foob", "Zm9vYg=="),
+            ("x-access-token:ghp_abc", "eC1hY2Nlc3MtdG9rZW46Z2hwX2FiYw=="),
+        ] {
+            assert_eq!(super::base64(input.as_bytes()), expected, "{input}");
+        }
+    }
 }

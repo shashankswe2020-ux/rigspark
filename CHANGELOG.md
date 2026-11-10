@@ -6,10 +6,11 @@
 
 - **Source control in Connectors: GitHub.** Connect GitHub with a personal access
   token and every chat session can list and read issues and open pull requests;
-  add local repository folders and it can commit there too. RigSpark talks to
+  add local repository folders and it can commit there, and push a new branch
+  (never `main` or `master`) so it can open a pull request. RigSpark talks to
   `api.github.com` itself (no MCP server to install). The token is kept in an
   owner-only file and sent only to GitHub. Reads ask once per session; pull
-  requests and commits ask every time, and commits carry RigSpark's trailers.
+  requests, commits and pushes ask every time, and commits carry RigSpark's trailers.
   GitLab, Bitbucket and Azure DevOps are listed as coming soon.
 
 - **Commits made through RigSpark are marked.** Coding agents started with

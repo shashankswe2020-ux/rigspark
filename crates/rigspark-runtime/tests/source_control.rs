@@ -119,6 +119,8 @@ async fn tools_follow_what_is_connected() {
         let risk = rigspark_runtime::tool_policy::classify(&tool.name, &tool.description);
         let expected = if tool.name.contains("list") || tool.name.contains("read") {
             ToolRisk::ReadOnly
+        } else if tool.name == "git_push" {
+            ToolRisk::ProcessNetwork
         } else {
             ToolRisk::WorkspaceMutation
         };
@@ -130,7 +132,8 @@ async fn tools_follow_what_is_connected() {
             "github_list_issues",
             "github_read_issue",
             "github_create_pull_request",
-            "git_commit"
+            "git_commit",
+            "git_push"
         ]
     );
 }
@@ -387,5 +390,85 @@ mod commits {
             .await
             .unwrap();
         assert!(again.is_error, "{}", again.content);
+    }
+
+    #[tokio::test]
+    async fn pushes_go_to_a_new_branch_never_the_default_one() {
+        if Command::new("git").arg("--version").output().is_err() {
+            return;
+        }
+        let home = tempfile::tempdir().unwrap();
+        let origin = tempfile::tempdir().unwrap();
+        let repo = tempfile::tempdir().unwrap();
+        git(origin.path(), &["init", "-q", "--bare"]);
+        git(repo.path(), &["init", "-q"]);
+        for (key, value) in [
+            ("user.name", "Person"),
+            ("user.email", "person@example.com"),
+            ("commit.gpgsign", "false"),
+        ] {
+            git(repo.path(), &["config", key, value]);
+        }
+        git(
+            repo.path(),
+            &[
+                "remote",
+                "add",
+                "origin",
+                &origin.path().display().to_string(),
+            ],
+        );
+        std::fs::write(repo.path().join("hello.txt"), "hi\n").unwrap();
+        let cancel = CancellationToken::new();
+        let folder = repo.path().display().to_string();
+        // With a token connected: the token header is only for https://github.com.
+        let mut github = connection(
+            home.path(),
+            Some(TOKEN),
+            std::slice::from_ref(&folder),
+            Recorded::default(),
+        );
+        let commit = github
+            .call(
+                "git_commit",
+                json!({"folder": folder, "message":"hi from rigspark community"}),
+                &cancel,
+            )
+            .await
+            .unwrap();
+        assert!(!commit.is_error, "{}", commit.content);
+        for branch in ["main", "master", "HEAD", "a b", "-x"] {
+            let refused = github
+                .call(
+                    "git_push",
+                    json!({"folder": folder, "branch": branch}),
+                    &cancel,
+                )
+                .await
+                .unwrap();
+            assert!(refused.is_error, "{branch}");
+        }
+        let pushed = github
+            .call(
+                "git_push",
+                json!({"folder": folder, "branch":"rigspark/hello"}),
+                &cancel,
+            )
+            .await
+            .unwrap();
+        assert!(!pushed.is_error, "{}", pushed.content);
+        assert!(!pushed.content.contains(TOKEN));
+        let message = git(
+            origin.path(),
+            &["log", "-1", "--format=%B", "rigspark/hello"],
+        );
+        assert!(
+            message.starts_with("hi from rigspark community"),
+            "{message}"
+        );
+        assert!(
+            message.contains("Signed-off-by: Rigspark <noreply@rigspark.ai>"),
+            "{message}"
+        );
     }
 }

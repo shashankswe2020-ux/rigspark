@@ -2365,7 +2365,7 @@ document.addEventListener("DOMContentLoaded", () => {
       try {
         await sourceGithubRequest("DELETE");
         sourceGithub.form.hidden = true;
-        sourceGithub.status.textContent = "Read issues, open pull requests and commit, from any chat";
+        sourceGithub.status.textContent = "Read issues, commit, push a branch and open pull requests, from any chat";
         await Promise.all([loadSourceControl(), loadConnectors()]);
       } catch (error) {
         sourceGithubError(`Could not disconnect: ${error.message}`);
