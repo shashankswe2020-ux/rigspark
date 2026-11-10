@@ -499,3 +499,30 @@ fn ollama_v2_content_addressed_manifests_are_read_and_verified() {
         "links only point into blobs/"
     );
 }
+
+#[tokio::test]
+async fn catalog_integrity_inputs_are_checked_before_any_file_is_read() {
+    use rigspark_runtime::ollama_installed::{OllamaError, verify_catalog_manifest};
+    // An empty root: any call that gets past input checks fails on the files instead.
+    let root = tempfile::tempdir().unwrap();
+    let cancel = tokio_util::sync::CancellationToken::new();
+    let good = "a".repeat(64);
+    let check = |weight: Option<&'static str>, bytes: Option<u64>| {
+        let root = root.path().to_owned();
+        let cancel = cancel.clone();
+        let good = good.clone();
+        async move {
+            verify_catalog_manifest(&root, "test:latest", &good, weight, bytes, &[], &cancel).await
+        }
+    };
+    let rejected = |result: Result<(), OllamaError>| {
+        matches!(result, Err(OllamaError::Invalid("expected integrity")))
+    };
+    // Each bad input is refused on its own, as an input error.
+    assert!(rejected(check(Some("not-a-digest"), Some(1)).await));
+    assert!(rejected(check(None, Some(0)).await));
+    assert!(rejected(check(None, Some(9_007_199_254_740_992)).await));
+    // The largest exact JSON integer is accepted as input (and then fails on the files).
+    assert!(!rejected(check(None, Some(9_007_199_254_740_991)).await));
+    assert!(!rejected(check(None, None).await));
+}

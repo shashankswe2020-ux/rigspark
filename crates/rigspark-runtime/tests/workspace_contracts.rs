@@ -65,6 +65,30 @@ fn relative_paths_normalize_the_root_and_reject_escapes() {
 }
 
 #[test]
+fn relative_path_limits_are_exact_and_each_part_rule_stands_alone() {
+    // Length: 1024 bytes pass, 1025 fail.
+    assert!(relative_path(&"a".repeat(1024)).is_ok());
+    assert!(relative_path(&"a".repeat(1025)).is_err());
+    // Depth: 40 segments pass, 41 fail.
+    assert!(relative_path(&vec!["x"; 40].join("/")).is_ok());
+    assert!(relative_path(&vec!["x"; 41].join("/")).is_err());
+    // Each segment rule rejects on its own.
+    for bad in [
+        "src//main.rs",
+        "./main.rs",
+        "src/trailing.",
+        "src/ leading",
+        "src/trailing ",
+        "drive:file",
+    ] {
+        assert!(relative_path(bad).is_err(), "{bad}");
+    }
+    for good in ["src/.hidden", "a.b/c.d", "with space/inside"] {
+        assert_eq!(relative_path(good).unwrap(), good);
+    }
+}
+
+#[test]
 fn secret_paths_are_denied_and_ordinary_sources_are_allowed() {
     for path in [
         ".git/config",

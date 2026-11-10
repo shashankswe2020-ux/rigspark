@@ -1038,6 +1038,18 @@ mod boundary_tests {
         }
     }
 
+    #[test]
+    fn artifact_lock_check_fails_once_the_lock_file_is_replaced() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("model.gguf.lock");
+        let lock = ArtifactLock::acquire(path.clone()).unwrap();
+        assert!(lock.check().is_ok());
+        // Another process deleting and re-creating the lock takes ownership away.
+        std::fs::remove_file(&path).unwrap();
+        std::fs::write(&path, b"someone else").unwrap();
+        assert!(lock.check().is_err());
+    }
+
     fn addresses(ips: &[&str]) -> Vec<std::net::SocketAddr> {
         ips.iter()
             .map(|ip| std::net::SocketAddr::new(ip.parse().unwrap(), 443))
