@@ -97,4 +97,41 @@ mod tests {
         approvals.clear();
         assert!(!approvals.resolve("cancelled", Decision::ApproveOnce));
     }
+
+    #[test]
+    fn a_call_id_is_registered_once_and_at_most_64_wait() {
+        let approvals = Approvals::default();
+        approvals.register("call").unwrap();
+        // A second tool call with the same id must not share the first one's decision.
+        assert!(matches!(
+            approvals.register("call"),
+            Err(HarnessError::Limit)
+        ));
+        for index in 1..64 {
+            approvals.register(&format!("call-{index}")).unwrap();
+        }
+        assert!(matches!(
+            approvals.register("call-64"),
+            Err(HarnessError::Limit)
+        ));
+    }
+
+    #[tokio::test]
+    async fn a_finished_decision_is_forgotten() {
+        let approvals = Approvals::default();
+        approvals.register("call").unwrap();
+        assert!(approvals.resolve("call", Decision::ApproveOnce));
+        {
+            // What `decide` does: take the receiver and hold a Pending slot.
+            let receiver = approvals.take_receiver("call").unwrap();
+            let _pending = Pending {
+                owner: &approvals,
+                id: "call".into(),
+            };
+            assert!(matches!(receiver.await.unwrap(), Decision::ApproveOnce));
+        }
+        // Dropping the slot frees the id, so a stale decision can't linger.
+        assert!(!approvals.resolve("call", Decision::ApproveOnce));
+        approvals.register("call").unwrap();
+    }
 }
