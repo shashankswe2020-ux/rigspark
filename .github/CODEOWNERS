@@ -1,0 +1,3 @@
+# Only approvals from @rigspark/maintainers count toward merging into main:
+# the main ruleset requires review from Code Owners.
+* @rigspark/maintainers
