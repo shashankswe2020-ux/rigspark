@@ -1,0 +1,238 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-08T12:20:27.742Z",
+  "models": [
+    {
+      "id": "flux1-schnell:fp8",
+      "family": "flux1-schnell",
+      "kind": "image",
+      "params": "12B",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "releaseDate": "2024-08-01",
+      "default": true,
+      "source": "https://huggingface.co/black-forest-labs/FLUX.1-schnell",
+      "workflow": "flux-checkpoint",
+      "workflowSource": "https://comfyanonymous.github.io/ComfyUI_examples/flux/",
+      "files": [
+        {
+          "role": "checkpoint",
+          "folder": "checkpoints",
+          "repo": "Comfy-Org/flux1-schnell",
+          "revision": "c2b683ea00713d6feadcd54b39e3725bbc78638b",
+          "file": "flux1-schnell-fp8.safetensors",
+          "sha256": "ead426278b49030e9da5df862994f25ce94ab2ee4df38b556ddddb3db093bf72",
+          "bytes": 17236328572
+        }
+      ]
+    },
+    {
+      "id": "wan2.1-t2v:1.3b",
+      "family": "wan2.1-t2v",
+      "kind": "video",
+      "params": "1.3B",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "releaseDate": "2025-02-25",
+      "default": true,
+      "source": "https://huggingface.co/Wan-AI/Wan2.1-T2V-1.3B",
+      "workflow": "wan-t2v",
+      "workflowSource": "https://comfyanonymous.github.io/ComfyUI_examples/wan/",
+      "files": [
+        {
+          "role": "diffusion",
+          "folder": "diffusion_models",
+          "repo": "Comfy-Org/Wan_2.1_ComfyUI_repackaged",
+          "revision": "123acf1cc74bccbb9bfff8ac1ee72edc08c2341d",
+          "file": "split_files/diffusion_models/wan2.1_t2v_1.3B_fp16.safetensors",
+          "sha256": "be531024cd9018cb5b48c40cfbb6a6191645b1c792eb8bf4f8c1c6e10f924dc5",
+          "bytes": 2838303560
+        },
+        {
+          "role": "text-encoder",
+          "folder": "text_encoders",
+          "repo": "Comfy-Org/Wan_2.1_ComfyUI_repackaged",
+          "revision": "123acf1cc74bccbb9bfff8ac1ee72edc08c2341d",
+          "file": "split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+          "sha256": "c3355d30191f1f066b26d93fba017ae9809dce6c627dda5f6a66eaa651204f68",
+          "bytes": 6735906897
+        },
+        {
+          "role": "vae",
+          "folder": "vae",
+          "repo": "Comfy-Org/Wan_2.1_ComfyUI_repackaged",
+          "revision": "123acf1cc74bccbb9bfff8ac1ee72edc08c2341d",
+          "file": "split_files/vae/wan_2.1_vae.safetensors",
+          "sha256": "2fc39d31359a4b0a64f55876d8ff7fa8d780956ae2cb13463b0223e15148976b",
+          "bytes": 253815318
+        }
+      ]
+    },
+    {
+      "id": "ming-image:ming_image_0.1_design_bf16",
+      "family": "ming-image",
+      "kind": "image",
+      "params": "6.2B",
+      "license": "mit",
+      "openWeight": true,
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "default": false,
+      "source": "https://huggingface.co/Comfy-Org/Ming-Image",
+      "files": [
+        {
+          "role": "diffusion",
+          "folder": "diffusion_models",
+          "repo": "Comfy-Org/Ming-Image",
+          "revision": "53654871e47a5d2daed7b3a986cbf1010ef81c78",
+          "file": "diffusion_models/ming_image_0.1_design_bf16.safetensors",
+          "sha256": "8781c6fc679f1812ad318cc7fd84c4d05a23b3571b9a7efeff73a92054ef4659",
+          "bytes": 12309858664
+        },
+        {
+          "role": "text-encoder",
+          "folder": "text_encoders",
+          "repo": "Comfy-Org/Ming-Image",
+          "revision": "53654871e47a5d2daed7b3a986cbf1010ef81c78",
+          "file": "text_encoders/ming_image_0.1_ling_mini_2.0_w4a8.safetensors",
+          "sha256": "91de4cd0718bec1452b74ff3b0df0dfde280493dab384f0eb4007c18bf932ccd",
+          "bytes": 12813574339
+        },
+        {
+          "role": "vae",
+          "folder": "vae",
+          "repo": "Comfy-Org/Ming-Image",
+          "revision": "53654871e47a5d2daed7b3a986cbf1010ef81c78",
+          "file": "vae/ming_image_vae_bf16.safetensors",
+          "sha256": "7f5bed402dc8c77dc2e0ab1929a85d4df433b7cf7b599dfa8c353da98db0b90a",
+          "bytes": 253816696
+        }
+      ]
+    },
+    {
+      "id": "ming-image:ming_image_0.1_design_int8_convrot",
+      "family": "ming-image",
+      "kind": "image",
+      "params": "6.2B",
+      "license": "mit",
+      "openWeight": true,
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "default": false,
+      "source": "https://huggingface.co/Comfy-Org/Ming-Image",
+      "workflow": "ming-design",
+      "workflowSource": "https://github.com/Comfy-Org/workflow_templates/blob/99e3d43745926b78466d99f937c0cd2bb622423a/templates/image_ming_image_01_design_t2i.json",
+      "files": [
+        {
+          "role": "diffusion",
+          "folder": "diffusion_models",
+          "repo": "Comfy-Org/Ming-Image",
+          "revision": "53654871e47a5d2daed7b3a986cbf1010ef81c78",
+          "file": "diffusion_models/ming_image_0.1_design_int8_convrot.safetensors",
+          "sha256": "0d3f5bcc6d2cb830578ea6d0925b30b9fb66058bcb651cc8633e60760dceb1d0",
+          "bytes": 6175239953
+        },
+        {
+          "role": "text-encoder",
+          "folder": "text_encoders",
+          "repo": "Comfy-Org/Ming-Image",
+          "revision": "53654871e47a5d2daed7b3a986cbf1010ef81c78",
+          "file": "text_encoders/ming_image_0.1_ling_mini_2.0_int8_convrot.safetensors",
+          "sha256": "9d9f31cfce37c24ae1589287f5c33bd9dda80e14ddf773b5e17a0bb69c8cc4b1",
+          "bytes": 19507670525
+        },
+        {
+          "role": "vae",
+          "folder": "vae",
+          "repo": "Comfy-Org/Ming-Image",
+          "revision": "53654871e47a5d2daed7b3a986cbf1010ef81c78",
+          "file": "vae/ming_image_vae_bf16.safetensors",
+          "sha256": "7f5bed402dc8c77dc2e0ab1929a85d4df433b7cf7b599dfa8c353da98db0b90a",
+          "bytes": 253816696
+        }
+      ]
+    },
+    {
+      "id": "ming-image:ming_image_0.1_design_layer_bf16",
+      "family": "ming-image",
+      "kind": "image",
+      "params": "6.2B",
+      "license": "mit",
+      "openWeight": true,
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "default": false,
+      "source": "https://huggingface.co/Comfy-Org/Ming-Image",
+      "files": [
+        {
+          "role": "diffusion",
+          "folder": "diffusion_models",
+          "repo": "Comfy-Org/Ming-Image",
+          "revision": "53654871e47a5d2daed7b3a986cbf1010ef81c78",
+          "file": "diffusion_models/ming_image_0.1_design_layer_bf16.safetensors",
+          "sha256": "31c588e279f0dd461d3366ae7e21b4a0f6926fbc8b5a1f6580ab899a761be34a",
+          "bytes": 12309874192
+        },
+        {
+          "role": "text-encoder",
+          "folder": "text_encoders",
+          "repo": "Comfy-Org/Ming-Image",
+          "revision": "53654871e47a5d2daed7b3a986cbf1010ef81c78",
+          "file": "text_encoders/ming_image_0.1_ling_mini_2.0_w4a8.safetensors",
+          "sha256": "91de4cd0718bec1452b74ff3b0df0dfde280493dab384f0eb4007c18bf932ccd",
+          "bytes": 12813574339
+        },
+        {
+          "role": "vae",
+          "folder": "vae",
+          "repo": "Comfy-Org/Ming-Image",
+          "revision": "53654871e47a5d2daed7b3a986cbf1010ef81c78",
+          "file": "vae/ming_image_vae_bf16.safetensors",
+          "sha256": "7f5bed402dc8c77dc2e0ab1929a85d4df433b7cf7b599dfa8c353da98db0b90a",
+          "bytes": 253816696
+        }
+      ]
+    },
+    {
+      "id": "ming-image:ming_image_0.1_design_layer_int8_convrot",
+      "family": "ming-image",
+      "kind": "image",
+      "params": "6.2B",
+      "license": "mit",
+      "openWeight": true,
+      "addedAt": "2026-10-08",
+      "provenance": "auto",
+      "default": false,
+      "source": "https://huggingface.co/Comfy-Org/Ming-Image",
+      "files": [
+        {
+          "role": "diffusion",
+          "folder": "diffusion_models",
+          "repo": "Comfy-Org/Ming-Image",
+          "revision": "53654871e47a5d2daed7b3a986cbf1010ef81c78",
+          "file": "diffusion_models/ming_image_0.1_design_layer_int8_convrot.safetensors",
+          "sha256": "ef3f306c7981ac477f1fc28693144338ea35fb3f17cb0954c570553f53727a92",
+          "bytes": 6175255481
+        },
+        {
+          "role": "text-encoder",
+          "folder": "text_encoders",
+          "repo": "Comfy-Org/Ming-Image",
+          "revision": "53654871e47a5d2daed7b3a986cbf1010ef81c78",
+          "file": "text_encoders/ming_image_0.1_ling_mini_2.0_w4a8.safetensors",
+          "sha256": "91de4cd0718bec1452b74ff3b0df0dfde280493dab384f0eb4007c18bf932ccd",
+          "bytes": 12813574339
+        },
+        {
+          "role": "vae",
+          "folder": "vae",
+          "repo": "Comfy-Org/Ming-Image",
+          "revision": "53654871e47a5d2daed7b3a986cbf1010ef81c78",
+          "file": "vae/ming_image_vae_bf16.safetensors",
+          "sha256": "7f5bed402dc8c77dc2e0ab1929a85d4df433b7cf7b599dfa8c353da98db0b90a",
+          "bytes": 253816696
+        }
+      ]
+    }
+  ]
+}

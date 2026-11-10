@@ -48,7 +48,11 @@ fn gguf() -> Vec<u8> {
 }
 
 fn setup(root: &Path, runnable: bool) {
-    fs::write(root.join("generation.json"), rigspark_core::GENERATION_JSON).unwrap();
+    fs::write(
+        root.join("generation.json"),
+        include_str!("../../rigspark-core/fixtures/generation-baseline.json"),
+    )
+    .unwrap();
     let mut catalog = Catalog::parse(include_str!("../../rigspark-core/data/models.json")).unwrap();
     catalog.models.retain(|model| model.id == "mistral:7b");
     fs::write(
@@ -187,12 +191,13 @@ fn blocked_and_dry_run_requests_leave_inputs_byte_stable() {
 fn image_request_reports_pinned_lineage_without_mutating_any_catalog_file() {
     let root = tempfile::tempdir().unwrap();
     setup(root.path(), false);
-    let mut catalog =
-        rigspark_core::generation::GenerationCatalog::parse(rigspark_core::GENERATION_JSON)
-            .unwrap();
-    catalog
-        .models
-        .retain(|model| model.family == "ming-image" || model.default);
+    // A frozen snapshot pinned to the same Ming-Image revision as the recorded upstream
+    // fixture. The live catalog is re-pinned by the weekly admission run, which must not
+    // break this test.
+    let mut catalog = rigspark_core::generation::GenerationCatalog::parse(include_str!(
+        "../../rigspark-core/fixtures/admission/generation-ming.json"
+    ))
+    .unwrap();
     for model in catalog
         .models
         .iter_mut()
