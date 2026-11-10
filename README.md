@@ -13,6 +13,8 @@
   <a href="#linux-and-the-command-line">Linux (opens in your browser)</a>
 </p>
 
+<p align="center"><sub>If RigSpark is useful to you, a ⭐ on GitHub helps other people find it.</sub></p>
+
 ## What you can do
 
 - **Chat** with open models such as Llama, Qwen, Gemma and DeepSeek, fully offline.
@@ -127,3 +129,12 @@ model requests and pull requests are welcome:
 
 If RigSpark saved you a download that would never have run, you can
 [buy me a coffee ☕](https://buymeacoffee.com/shashanksw9).
+
+
+## Code signing policy
+
+Windows releases are being set up for free code signing provided by [SignPath.io](https://about.signpath.io/), with a certificate by [SignPath Foundation](https://signpath.org/) (application under review).
+
+Committers and reviewers: [Shashank Mishra](https://github.com/shashankswe2020-ux). Approvers: [Shashank Mishra](https://github.com/shashankswe2020-ux).
+
+Privacy: RigSpark does not transfer any information to other networked systems unless you ask it to, such as downloading a model, an update or the model catalog. See the [Terms of Use](TERMS.md).
