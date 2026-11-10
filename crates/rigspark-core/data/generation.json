@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-08T12:20:27.742Z",
+  "generatedAt": "2026-11-10T20:15:45.546Z",
   "models": [
     {
       "id": "flux1-schnell:fp16",
@@ -162,6 +162,213 @@
       ]
     },
     {
+      "id": "bernini-r:wan2.1_bernini_1.3b_fp16",
+      "family": "bernini-r",
+      "kind": "video",
+      "params": "1.4B",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "addedAt": "2026-11-10",
+      "provenance": "auto",
+      "default": false,
+      "source": "https://huggingface.co/Comfy-Org/Bernini-R",
+      "files": [
+        {
+          "role": "diffusion",
+          "folder": "diffusion_models",
+          "repo": "Comfy-Org/Bernini-R",
+          "revision": "f7fd9812e54095d0c511d5e7429e6d8f6acc381a",
+          "file": "diffusion_models/wan2.1_bernini_1.3B_fp16.safetensors",
+          "sha256": "80fa7848325b948eb29c61b46af5c22a748b0b1f1d66039f6f56c5c77e9ed803",
+          "bytes": 2838276200
+        }
+      ]
+    },
+    {
+      "id": "bernini-r:wan2.2_bernini_r_high_noise_fp16",
+      "family": "bernini-r",
+      "kind": "video",
+      "params": "14.3B",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "addedAt": "2026-11-10",
+      "provenance": "auto",
+      "default": false,
+      "source": "https://huggingface.co/Comfy-Org/Bernini-R",
+      "files": [
+        {
+          "role": "diffusion",
+          "folder": "diffusion_models",
+          "repo": "Comfy-Org/Bernini-R",
+          "revision": "f7fd9812e54095d0c511d5e7429e6d8f6acc381a",
+          "file": "diffusion_models/wan2.2_bernini_r_high_noise_fp16.safetensors",
+          "sha256": "ee77e2e80bfbaadb8ab5ceb379863eb07d7534067187eba06cc395abe18799e3",
+          "bytes": 28577761232
+        }
+      ]
+    },
+    {
+      "id": "bernini-r:wan2.2_bernini_r_high_noise_fp8_scaled",
+      "family": "bernini-r",
+      "kind": "video",
+      "params": "14.3B",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "addedAt": "2026-11-10",
+      "provenance": "auto",
+      "default": false,
+      "source": "https://huggingface.co/Comfy-Org/Bernini-R",
+      "files": [
+        {
+          "role": "diffusion",
+          "folder": "diffusion_models",
+          "repo": "Comfy-Org/Bernini-R",
+          "revision": "f7fd9812e54095d0c511d5e7429e6d8f6acc381a",
+          "file": "diffusion_models/wan2.2_bernini_r_high_noise_fp8_scaled.safetensors",
+          "sha256": "9ff3d7369da98f8eaf71045f7d0e99d5e344eea5e7dc934a930608786fe73f52",
+          "bytes": 15574833216
+        }
+      ]
+    },
+    {
+      "id": "bernini-r:wan2.2_bernini_r_high_noise_int8_convrot",
+      "family": "bernini-r",
+      "kind": "video",
+      "params": "14.3B",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "addedAt": "2026-11-10",
+      "provenance": "auto",
+      "default": false,
+      "source": "https://huggingface.co/Comfy-Org/Bernini-R",
+      "files": [
+        {
+          "role": "diffusion",
+          "folder": "diffusion_models",
+          "repo": "Comfy-Org/Bernini-R",
+          "revision": "f7fd9812e54095d0c511d5e7429e6d8f6acc381a",
+          "file": "diffusion_models/wan2.2_bernini_r_high_noise_int8_convrot.safetensors",
+          "sha256": "9d9a84f6e70032bd8f1dab40f5b0270fefd259ac5111a52b4acb752773c119b3",
+          "bytes": 14535868680
+        }
+      ]
+    },
+    {
+      "id": "bernini-r:wan2.2_bernini_r_high_noise_mxfp8",
+      "family": "bernini-r",
+      "kind": "video",
+      "params": "14.7B",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "addedAt": "2026-11-10",
+      "provenance": "auto",
+      "default": false,
+      "source": "https://huggingface.co/Comfy-Org/Bernini-R",
+      "files": [
+        {
+          "role": "diffusion",
+          "folder": "diffusion_models",
+          "repo": "Comfy-Org/Bernini-R",
+          "revision": "f7fd9812e54095d0c511d5e7429e6d8f6acc381a",
+          "file": "diffusion_models/wan2.2_bernini_r_high_noise_mxfp8.safetensors",
+          "sha256": "cd3b76a42a00c229aad8ae066217bd1169b1f922466a377422a349d9dfa4e938",
+          "bytes": 14966031368
+        }
+      ]
+    },
+    {
+      "id": "bernini-r:wan2.2_bernini_r_low_noise_fp16",
+      "family": "bernini-r",
+      "kind": "video",
+      "params": "14.3B",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "addedAt": "2026-11-10",
+      "provenance": "auto",
+      "default": false,
+      "source": "https://huggingface.co/Comfy-Org/Bernini-R",
+      "files": [
+        {
+          "role": "diffusion",
+          "folder": "diffusion_models",
+          "repo": "Comfy-Org/Bernini-R",
+          "revision": "f7fd9812e54095d0c511d5e7429e6d8f6acc381a",
+          "file": "diffusion_models/wan2.2_bernini_r_low_noise_fp16.safetensors",
+          "sha256": "3c5f17f2f6024ee96942cb03351fd9d365383a83eb5974739dc5ca7f2cb0e3bb",
+          "bytes": 28577761232
+        }
+      ]
+    },
+    {
+      "id": "bernini-r:wan2.2_bernini_r_low_noise_fp8_scaled",
+      "family": "bernini-r",
+      "kind": "video",
+      "params": "14.3B",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "addedAt": "2026-11-10",
+      "provenance": "auto",
+      "default": false,
+      "source": "https://huggingface.co/Comfy-Org/Bernini-R",
+      "files": [
+        {
+          "role": "diffusion",
+          "folder": "diffusion_models",
+          "repo": "Comfy-Org/Bernini-R",
+          "revision": "f7fd9812e54095d0c511d5e7429e6d8f6acc381a",
+          "file": "diffusion_models/wan2.2_bernini_r_low_noise_fp8_scaled.safetensors",
+          "sha256": "ce35c070f345c91abe43d6bf29b0eccb8687e4026fadc0e0a70a73c9afb7bbb3",
+          "bytes": 15574833216
+        }
+      ]
+    },
+    {
+      "id": "bernini-r:wan2.2_bernini_r_low_noise_int8_convrot",
+      "family": "bernini-r",
+      "kind": "video",
+      "params": "14.3B",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "addedAt": "2026-11-10",
+      "provenance": "auto",
+      "default": false,
+      "source": "https://huggingface.co/Comfy-Org/Bernini-R",
+      "files": [
+        {
+          "role": "diffusion",
+          "folder": "diffusion_models",
+          "repo": "Comfy-Org/Bernini-R",
+          "revision": "f7fd9812e54095d0c511d5e7429e6d8f6acc381a",
+          "file": "diffusion_models/wan2.2_bernini_r_low_noise_int8_convrot.safetensors",
+          "sha256": "98fe00c6e38a745929cd7770a84ae3814c834d2ed7bef6b8a0a526c896fe8e5c",
+          "bytes": 14535868680
+        }
+      ]
+    },
+    {
+      "id": "bernini-r:wan2.2_bernini_r_low_noise_mxfp8",
+      "family": "bernini-r",
+      "kind": "video",
+      "params": "14.7B",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "addedAt": "2026-11-10",
+      "provenance": "auto",
+      "default": false,
+      "source": "https://huggingface.co/Comfy-Org/Bernini-R",
+      "files": [
+        {
+          "role": "diffusion",
+          "folder": "diffusion_models",
+          "repo": "Comfy-Org/Bernini-R",
+          "revision": "f7fd9812e54095d0c511d5e7429e6d8f6acc381a",
+          "file": "diffusion_models/wan2.2_bernini_r_low_noise_mxfp8.safetensors",
+          "sha256": "a3ad3c68bcccd68d69ab2abf59d8e9150d3ee611575c5a4a01de164e62e061b9",
+          "bytes": 14966031368
+        }
+      ]
+    },
+    {
       "id": "boogu-image:boogu_image_base_bf16",
       "family": "boogu-image",
       "kind": "image",
@@ -177,7 +384,7 @@
           "role": "diffusion",
           "folder": "diffusion_models",
           "repo": "Comfy-Org/Boogu-Image",
-          "revision": "79631d893bddb0f77ecf729715f2c2a97ae32e0f",
+          "revision": "8606e7df2f5389282617b8b534db290e1f5d7811",
           "file": "diffusion_models/boogu_image_base_bf16.safetensors",
           "sha256": "d7db0185063a1a7b1a26c01678fbb08c3484baf959a476707e08fe47a522b45d",
           "bytes": 20585228872
@@ -186,7 +393,7 @@
           "role": "text-encoder",
           "folder": "text_encoders",
           "repo": "Comfy-Org/Boogu-Image",
-          "revision": "79631d893bddb0f77ecf729715f2c2a97ae32e0f",
+          "revision": "8606e7df2f5389282617b8b534db290e1f5d7811",
           "file": "text_encoders/qwen3vl_8b_fp8_scaled.safetensors",
           "sha256": "4ba424cf62e51392e4d1a39933e803706f4e823c1065f36aaf149c6453f66bcd",
           "bytes": 10588637512
@@ -195,7 +402,7 @@
           "role": "vae",
           "folder": "vae",
           "repo": "Comfy-Org/Boogu-Image",
-          "revision": "79631d893bddb0f77ecf729715f2c2a97ae32e0f",
+          "revision": "8606e7df2f5389282617b8b534db290e1f5d7811",
           "file": "vae/flux1_vae_bf16.safetensors",
           "sha256": "0c0c8ac49850d6bd174107d4001685f4f6c876768a1c84dde751f2aed69f46ce",
           "bytes": 167664710
@@ -218,7 +425,7 @@
           "role": "diffusion",
           "folder": "diffusion_models",
           "repo": "Comfy-Org/Boogu-Image",
-          "revision": "79631d893bddb0f77ecf729715f2c2a97ae32e0f",
+          "revision": "8606e7df2f5389282617b8b534db290e1f5d7811",
           "file": "diffusion_models/boogu_image_base_fp8_scaled.safetensors",
           "sha256": "8171b1b591e294ee2898572145e65789bb51d4fbda826ad75f9d1590b43900fe",
           "bytes": 10313835784
@@ -227,7 +434,7 @@
           "role": "text-encoder",
           "folder": "text_encoders",
           "repo": "Comfy-Org/Boogu-Image",
-          "revision": "79631d893bddb0f77ecf729715f2c2a97ae32e0f",
+          "revision": "8606e7df2f5389282617b8b534db290e1f5d7811",
           "file": "text_encoders/qwen3vl_8b_fp8_scaled.safetensors",
           "sha256": "4ba424cf62e51392e4d1a39933e803706f4e823c1065f36aaf149c6453f66bcd",
           "bytes": 10588637512
@@ -236,7 +443,7 @@
           "role": "vae",
           "folder": "vae",
           "repo": "Comfy-Org/Boogu-Image",
-          "revision": "79631d893bddb0f77ecf729715f2c2a97ae32e0f",
+          "revision": "8606e7df2f5389282617b8b534db290e1f5d7811",
           "file": "vae/flux1_vae_bf16.safetensors",
           "sha256": "0c0c8ac49850d6bd174107d4001685f4f6c876768a1c84dde751f2aed69f46ce",
           "bytes": 167664710
@@ -259,7 +466,7 @@
           "role": "diffusion",
           "folder": "diffusion_models",
           "repo": "Comfy-Org/Boogu-Image",
-          "revision": "79631d893bddb0f77ecf729715f2c2a97ae32e0f",
+          "revision": "8606e7df2f5389282617b8b534db290e1f5d7811",
           "file": "diffusion_models/boogu_image_base_nvfp4.safetensors",
           "sha256": "0be51170f818064d594bd3ddee4408ad40cb98db75ae7ac3b152c25a77de9d2a",
           "bytes": 5834379760
@@ -268,7 +475,7 @@
           "role": "text-encoder",
           "folder": "text_encoders",
           "repo": "Comfy-Org/Boogu-Image",
-          "revision": "79631d893bddb0f77ecf729715f2c2a97ae32e0f",
+          "revision": "8606e7df2f5389282617b8b534db290e1f5d7811",
           "file": "text_encoders/qwen3vl_8b_fp8_scaled.safetensors",
           "sha256": "4ba424cf62e51392e4d1a39933e803706f4e823c1065f36aaf149c6453f66bcd",
           "bytes": 10588637512
@@ -277,7 +484,7 @@
           "role": "vae",
           "folder": "vae",
           "repo": "Comfy-Org/Boogu-Image",
-          "revision": "79631d893bddb0f77ecf729715f2c2a97ae32e0f",
+          "revision": "8606e7df2f5389282617b8b534db290e1f5d7811",
           "file": "vae/flux1_vae_bf16.safetensors",
           "sha256": "0c0c8ac49850d6bd174107d4001685f4f6c876768a1c84dde751f2aed69f46ce",
           "bytes": 167664710
@@ -300,7 +507,7 @@
           "role": "diffusion",
           "folder": "diffusion_models",
           "repo": "Comfy-Org/Boogu-Image",
-          "revision": "79631d893bddb0f77ecf729715f2c2a97ae32e0f",
+          "revision": "8606e7df2f5389282617b8b534db290e1f5d7811",
           "file": "diffusion_models/boogu_image_turbo_bf16.safetensors",
           "sha256": "cfaa43d470a015e05989b76195f2011161b69562c0e379c1f722966ec875db79",
           "bytes": 20585228840
@@ -309,7 +516,7 @@
           "role": "text-encoder",
           "folder": "text_encoders",
           "repo": "Comfy-Org/Boogu-Image",
-          "revision": "79631d893bddb0f77ecf729715f2c2a97ae32e0f",
+          "revision": "8606e7df2f5389282617b8b534db290e1f5d7811",
           "file": "text_encoders/qwen3vl_8b_fp8_scaled.safetensors",
           "sha256": "4ba424cf62e51392e4d1a39933e803706f4e823c1065f36aaf149c6453f66bcd",
           "bytes": 10588637512
@@ -318,7 +525,7 @@
           "role": "vae",
           "folder": "vae",
           "repo": "Comfy-Org/Boogu-Image",
-          "revision": "79631d893bddb0f77ecf729715f2c2a97ae32e0f",
+          "revision": "8606e7df2f5389282617b8b534db290e1f5d7811",
           "file": "vae/flux1_vae_bf16.safetensors",
           "sha256": "0c0c8ac49850d6bd174107d4001685f4f6c876768a1c84dde751f2aed69f46ce",
           "bytes": 167664710
@@ -341,7 +548,7 @@
           "role": "diffusion",
           "folder": "diffusion_models",
           "repo": "Comfy-Org/Boogu-Image",
-          "revision": "79631d893bddb0f77ecf729715f2c2a97ae32e0f",
+          "revision": "8606e7df2f5389282617b8b534db290e1f5d7811",
           "file": "diffusion_models/boogu_image_turbo_fp8_scaled.safetensors",
           "sha256": "a97ccbf40f0e607fb5727fe6568335bf3d2b81c32c704a521d2f129aa428a20b",
           "bytes": 10313835784
@@ -350,7 +557,7 @@
           "role": "text-encoder",
           "folder": "text_encoders",
           "repo": "Comfy-Org/Boogu-Image",
-          "revision": "79631d893bddb0f77ecf729715f2c2a97ae32e0f",
+          "revision": "8606e7df2f5389282617b8b534db290e1f5d7811",
           "file": "text_encoders/qwen3vl_8b_fp8_scaled.safetensors",
           "sha256": "4ba424cf62e51392e4d1a39933e803706f4e823c1065f36aaf149c6453f66bcd",
           "bytes": 10588637512
@@ -359,7 +566,7 @@
           "role": "vae",
           "folder": "vae",
           "repo": "Comfy-Org/Boogu-Image",
-          "revision": "79631d893bddb0f77ecf729715f2c2a97ae32e0f",
+          "revision": "8606e7df2f5389282617b8b534db290e1f5d7811",
           "file": "vae/flux1_vae_bf16.safetensors",
           "sha256": "0c0c8ac49850d6bd174107d4001685f4f6c876768a1c84dde751f2aed69f46ce",
           "bytes": 167664710
@@ -382,7 +589,7 @@
           "role": "diffusion",
           "folder": "diffusion_models",
           "repo": "Comfy-Org/Boogu-Image",
-          "revision": "79631d893bddb0f77ecf729715f2c2a97ae32e0f",
+          "revision": "8606e7df2f5389282617b8b534db290e1f5d7811",
           "file": "diffusion_models/boogu_image_turbo_hotfix_bf16.safetensors",
           "sha256": "4ee394c49de8d6e12cd6feff8254b261de1a802e853700ff68c4be73eaf82306",
           "bytes": 20585228872
@@ -391,7 +598,7 @@
           "role": "text-encoder",
           "folder": "text_encoders",
           "repo": "Comfy-Org/Boogu-Image",
-          "revision": "79631d893bddb0f77ecf729715f2c2a97ae32e0f",
+          "revision": "8606e7df2f5389282617b8b534db290e1f5d7811",
           "file": "text_encoders/qwen3vl_8b_fp8_scaled.safetensors",
           "sha256": "4ba424cf62e51392e4d1a39933e803706f4e823c1065f36aaf149c6453f66bcd",
           "bytes": 10588637512
@@ -400,7 +607,7 @@
           "role": "vae",
           "folder": "vae",
           "repo": "Comfy-Org/Boogu-Image",
-          "revision": "79631d893bddb0f77ecf729715f2c2a97ae32e0f",
+          "revision": "8606e7df2f5389282617b8b534db290e1f5d7811",
           "file": "vae/flux1_vae_bf16.safetensors",
           "sha256": "0c0c8ac49850d6bd174107d4001685f4f6c876768a1c84dde751f2aed69f46ce",
           "bytes": 167664710
@@ -423,7 +630,7 @@
           "role": "diffusion",
           "folder": "diffusion_models",
           "repo": "Comfy-Org/Boogu-Image",
-          "revision": "79631d893bddb0f77ecf729715f2c2a97ae32e0f",
+          "revision": "8606e7df2f5389282617b8b534db290e1f5d7811",
           "file": "diffusion_models/boogu_image_turbo_hotfix_int8_convrot.safetensors",
           "sha256": "ba2e6d956e5e97fccfcfa95eddccc33056306b5d68db37e8ad3ffff575261865",
           "bytes": 11370550632
@@ -432,7 +639,7 @@
           "role": "text-encoder",
           "folder": "text_encoders",
           "repo": "Comfy-Org/Boogu-Image",
-          "revision": "79631d893bddb0f77ecf729715f2c2a97ae32e0f",
+          "revision": "8606e7df2f5389282617b8b534db290e1f5d7811",
           "file": "text_encoders/qwen3vl_8b_fp8_scaled.safetensors",
           "sha256": "4ba424cf62e51392e4d1a39933e803706f4e823c1065f36aaf149c6453f66bcd",
           "bytes": 10588637512
@@ -441,7 +648,7 @@
           "role": "vae",
           "folder": "vae",
           "repo": "Comfy-Org/Boogu-Image",
-          "revision": "79631d893bddb0f77ecf729715f2c2a97ae32e0f",
+          "revision": "8606e7df2f5389282617b8b534db290e1f5d7811",
           "file": "vae/flux1_vae_bf16.safetensors",
           "sha256": "0c0c8ac49850d6bd174107d4001685f4f6c876768a1c84dde751f2aed69f46ce",
           "bytes": 167664710
@@ -464,7 +671,7 @@
           "role": "diffusion",
           "folder": "diffusion_models",
           "repo": "Comfy-Org/Boogu-Image",
-          "revision": "79631d893bddb0f77ecf729715f2c2a97ae32e0f",
+          "revision": "8606e7df2f5389282617b8b534db290e1f5d7811",
           "file": "diffusion_models/boogu_image_turbo_hotfix_nvfp4.safetensors",
           "sha256": "caadacb2a022679fa7a94820b30dfc2ed6494071acbd2c51a19e614f6fc60bb7",
           "bytes": 5834379760
@@ -473,7 +680,7 @@
           "role": "text-encoder",
           "folder": "text_encoders",
           "repo": "Comfy-Org/Boogu-Image",
-          "revision": "79631d893bddb0f77ecf729715f2c2a97ae32e0f",
+          "revision": "8606e7df2f5389282617b8b534db290e1f5d7811",
           "file": "text_encoders/qwen3vl_8b_fp8_scaled.safetensors",
           "sha256": "4ba424cf62e51392e4d1a39933e803706f4e823c1065f36aaf149c6453f66bcd",
           "bytes": 10588637512
@@ -482,7 +689,7 @@
           "role": "vae",
           "folder": "vae",
           "repo": "Comfy-Org/Boogu-Image",
-          "revision": "79631d893bddb0f77ecf729715f2c2a97ae32e0f",
+          "revision": "8606e7df2f5389282617b8b534db290e1f5d7811",
           "file": "vae/flux1_vae_bf16.safetensors",
           "sha256": "0c0c8ac49850d6bd174107d4001685f4f6c876768a1c84dde751f2aed69f46ce",
           "bytes": 167664710
@@ -505,7 +712,7 @@
           "role": "diffusion",
           "folder": "diffusion_models",
           "repo": "Comfy-Org/Boogu-Image",
-          "revision": "79631d893bddb0f77ecf729715f2c2a97ae32e0f",
+          "revision": "8606e7df2f5389282617b8b534db290e1f5d7811",
           "file": "diffusion_models/boogu_image_turbo_nvfp4.safetensors",
           "sha256": "52ccf5fcc0eff9f68924e741e8175ef2c5cb23fce53b5ecf092c811ebb7917b6",
           "bytes": 5834379760
@@ -514,7 +721,7 @@
           "role": "text-encoder",
           "folder": "text_encoders",
           "repo": "Comfy-Org/Boogu-Image",
-          "revision": "79631d893bddb0f77ecf729715f2c2a97ae32e0f",
+          "revision": "8606e7df2f5389282617b8b534db290e1f5d7811",
           "file": "text_encoders/qwen3vl_8b_fp8_scaled.safetensors",
           "sha256": "4ba424cf62e51392e4d1a39933e803706f4e823c1065f36aaf149c6453f66bcd",
           "bytes": 10588637512
@@ -523,7 +730,7 @@
           "role": "vae",
           "folder": "vae",
           "repo": "Comfy-Org/Boogu-Image",
-          "revision": "79631d893bddb0f77ecf729715f2c2a97ae32e0f",
+          "revision": "8606e7df2f5389282617b8b534db290e1f5d7811",
           "file": "vae/flux1_vae_bf16.safetensors",
           "sha256": "0c0c8ac49850d6bd174107d4001685f4f6c876768a1c84dde751f2aed69f46ce",
           "bytes": 167664710
@@ -531,22 +738,22 @@
       ]
     },
     {
-      "id": "causal_forcing_framewise:causal_forcing-framewise",
-      "family": "causal_forcing_framewise",
+      "id": "causal-forcing-framewise:causal_forcing-framewise",
+      "family": "causal-forcing-framewise",
       "kind": "video",
       "params": "1.4B",
       "license": "apache-2.0",
       "openWeight": true,
-      "addedAt": "2026-10-08",
+      "addedAt": "2026-11-10",
       "provenance": "auto",
       "default": false,
-      "source": "https://huggingface.co/Comfy-Org/causal_forcing_framewise_ComfyUI_repackaged",
+      "source": "https://huggingface.co/Comfy-Org/Causal-Forcing-Framewise",
       "files": [
         {
           "role": "diffusion",
           "folder": "diffusion_models",
-          "repo": "Comfy-Org/causal_forcing_framewise_ComfyUI_repackaged",
-          "revision": "f208499adcca1bbcc91597c7cbbbb74da5abf20c",
+          "repo": "Comfy-Org/Causal-Forcing-Framewise",
+          "revision": "d9f57daa65cad35be555081349adb3a517e55d19",
           "file": "split_files/diffusion_models/causal_forcing-framewise.safetensors",
           "sha256": "408c67a8c6725756f5be2c5cf2d5c584c15dd147f5a0c458be62dcb3efb78477",
           "bytes": 5676070464
@@ -563,13 +770,13 @@
       "addedAt": "2026-10-08",
       "provenance": "auto",
       "default": false,
-      "source": "https://huggingface.co/Comfy-Org/Chroma1-HD_repackaged",
+      "source": "https://huggingface.co/Comfy-Org/Chroma1-HD",
       "files": [
         {
           "role": "diffusion",
           "folder": "diffusion_models",
-          "repo": "Comfy-Org/Chroma1-HD_repackaged",
-          "revision": "409cfff960d66598d4d0ff46cb932f53492cc6d9",
+          "repo": "Comfy-Org/Chroma1-HD",
+          "revision": "595f6c4194ea076c87f2d88f753f331edc221644",
           "file": "split_files/diffusion_models/Chroma1-HD.safetensors",
           "sha256": "d446d9695d08276f61e53653e025289dd96f7a489c27982a1fa54ecabc06642a",
           "bytes": 17800038288
@@ -586,16 +793,39 @@
       "addedAt": "2026-10-08",
       "provenance": "auto",
       "default": false,
-      "source": "https://huggingface.co/Comfy-Org/Chroma1-HD_repackaged",
+      "source": "https://huggingface.co/Comfy-Org/Chroma1-HD",
       "files": [
         {
           "role": "diffusion",
           "folder": "diffusion_models",
-          "repo": "Comfy-Org/Chroma1-HD_repackaged",
-          "revision": "409cfff960d66598d4d0ff46cb932f53492cc6d9",
+          "repo": "Comfy-Org/Chroma1-HD",
+          "revision": "595f6c4194ea076c87f2d88f753f331edc221644",
           "file": "split_files/diffusion_models/Chroma1-HD-fp8mixed.safetensors",
           "sha256": "a2928ca6075f308f4d5e2182e2b96120fa8ad270ec6ea9b1b5c724c85c49a575",
           "bytes": 9193379316
+        }
+      ]
+    },
+    {
+      "id": "chroma1-radiance:chroma-radiance-x0",
+      "family": "chroma1-radiance",
+      "kind": "image",
+      "params": "9.5B",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "addedAt": "2026-11-10",
+      "provenance": "auto",
+      "default": false,
+      "source": "https://huggingface.co/Comfy-Org/Chroma1-Radiance",
+      "files": [
+        {
+          "role": "diffusion",
+          "folder": "diffusion_models",
+          "repo": "Comfy-Org/Chroma1-Radiance",
+          "revision": "a94a9efb873f66878541890410f2a6f79d07dd73",
+          "file": "split_files/diffusion_models/chroma-radiance-x0.safetensors",
+          "sha256": "086e11d033ccd7470e67fa80e00a29902df2868cc84e16df0b48853be3a8672a",
+          "bytes": 19012346326
         }
       ]
     },
@@ -615,7 +845,7 @@
           "role": "diffusion",
           "folder": "diffusion_models",
           "repo": "Comfy-Org/ERNIE-Image",
-          "revision": "82fe29a5cd056f8b1deebc50570f125bcd4f4bea",
+          "revision": "50509a88bc4fb9e89583a98605f4c81dc221eb8c",
           "file": "diffusion_models/ernie-image.safetensors",
           "sha256": "94a35abaa0899cccc34d2e37310abf74a0a714256526117bba782c7eb4eb91c7",
           "bytes": 16067025480
@@ -624,7 +854,7 @@
           "role": "text-encoder",
           "folder": "text_encoders",
           "repo": "Comfy-Org/ERNIE-Image",
-          "revision": "82fe29a5cd056f8b1deebc50570f125bcd4f4bea",
+          "revision": "50509a88bc4fb9e89583a98605f4c81dc221eb8c",
           "file": "text_encoders/ernie-image-prompt-enhancer.safetensors",
           "sha256": "e823e002626858be92e6600609f72fde33c5f21d3c6574721ce9f41bf1c50771",
           "bytes": 6877439999
@@ -633,7 +863,7 @@
           "role": "vae",
           "folder": "vae",
           "repo": "Comfy-Org/ERNIE-Image",
-          "revision": "82fe29a5cd056f8b1deebc50570f125bcd4f4bea",
+          "revision": "50509a88bc4fb9e89583a98605f4c81dc221eb8c",
           "file": "vae/flux2-vae.safetensors",
           "sha256": "d64f3a68e1cc4f9f4e29b6e0da38a0204fe9a49f2d4053f0ec1fa1ca02f9c4b5",
           "bytes": 336213556
@@ -656,7 +886,7 @@
           "role": "diffusion",
           "folder": "diffusion_models",
           "repo": "Comfy-Org/ERNIE-Image",
-          "revision": "82fe29a5cd056f8b1deebc50570f125bcd4f4bea",
+          "revision": "50509a88bc4fb9e89583a98605f4c81dc221eb8c",
           "file": "diffusion_models/ernie-image-turbo.safetensors",
           "sha256": "741a4cc0467d4b9f04490d7faa9a5869ff4aa97eb2914927a1df9abb070e8e52",
           "bytes": 16067025480
@@ -665,7 +895,7 @@
           "role": "text-encoder",
           "folder": "text_encoders",
           "repo": "Comfy-Org/ERNIE-Image",
-          "revision": "82fe29a5cd056f8b1deebc50570f125bcd4f4bea",
+          "revision": "50509a88bc4fb9e89583a98605f4c81dc221eb8c",
           "file": "text_encoders/ernie-image-prompt-enhancer.safetensors",
           "sha256": "e823e002626858be92e6600609f72fde33c5f21d3c6574721ce9f41bf1c50771",
           "bytes": 6877439999
@@ -674,10 +904,489 @@
           "role": "vae",
           "folder": "vae",
           "repo": "Comfy-Org/ERNIE-Image",
-          "revision": "82fe29a5cd056f8b1deebc50570f125bcd4f4bea",
+          "revision": "50509a88bc4fb9e89583a98605f4c81dc221eb8c",
           "file": "vae/flux2-vae.safetensors",
           "sha256": "d64f3a68e1cc4f9f4e29b6e0da38a0204fe9a49f2d4053f0ec1fa1ca02f9c4b5",
           "bytes": 336213556
+        }
+      ]
+    },
+    {
+      "id": "flux-2-klein-4b:flux-2-klein-4b",
+      "family": "flux-2-klein-4b",
+      "kind": "image",
+      "params": "3.9B",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "addedAt": "2026-11-10",
+      "provenance": "auto",
+      "default": false,
+      "source": "https://huggingface.co/Comfy-Org/Flux-2-Klein-4B",
+      "files": [
+        {
+          "role": "diffusion",
+          "folder": "diffusion_models",
+          "repo": "Comfy-Org/Flux-2-Klein-4B",
+          "revision": "5b3abca5c0dc1ecd4eaf3340868d09063fc1c965",
+          "file": "split_files/diffusion_models/flux-2-klein-4b.safetensors",
+          "sha256": "ec3d4e733a771f61c052fb4856c48b336c55eaf2c65487c2a1faeb9bbda7a343",
+          "bytes": 7751105712
+        },
+        {
+          "role": "text-encoder",
+          "folder": "text_encoders",
+          "repo": "Comfy-Org/Flux-2-Klein-4B",
+          "revision": "5b3abca5c0dc1ecd4eaf3340868d09063fc1c965",
+          "file": "split_files/text_encoders/qwen_3_4b_fp4_flux2.safetensors",
+          "sha256": "3eab03a77adb0ee5304a4e677d5c10ac22f9049c1d7c894adca4f8bb39206ca8",
+          "bytes": 3848213998
+        },
+        {
+          "role": "vae",
+          "folder": "vae",
+          "repo": "Comfy-Org/Flux-2-Klein-4B",
+          "revision": "5b3abca5c0dc1ecd4eaf3340868d09063fc1c965",
+          "file": "split_files/vae/flux2-vae.safetensors",
+          "sha256": "868fe7b343cc8f3a19dbcfcafbc3d5f888802be3f89bd81b65b3621a066ce8f3",
+          "bytes": 336211292
+        }
+      ]
+    },
+    {
+      "id": "flux-2-klein-4b:flux-2-klein-base-4b",
+      "family": "flux-2-klein-4b",
+      "kind": "image",
+      "params": "3.9B",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "addedAt": "2026-11-10",
+      "provenance": "auto",
+      "default": false,
+      "source": "https://huggingface.co/Comfy-Org/Flux-2-Klein-4B",
+      "files": [
+        {
+          "role": "diffusion",
+          "folder": "diffusion_models",
+          "repo": "Comfy-Org/Flux-2-Klein-4B",
+          "revision": "5b3abca5c0dc1ecd4eaf3340868d09063fc1c965",
+          "file": "split_files/diffusion_models/flux-2-klein-base-4b.safetensors",
+          "sha256": "9c5fed22b76baea749d88fc2abe3ad53245e7b21a0d353a762665eea00043b92",
+          "bytes": 7751105712
+        },
+        {
+          "role": "text-encoder",
+          "folder": "text_encoders",
+          "repo": "Comfy-Org/Flux-2-Klein-4B",
+          "revision": "5b3abca5c0dc1ecd4eaf3340868d09063fc1c965",
+          "file": "split_files/text_encoders/qwen_3_4b_fp4_flux2.safetensors",
+          "sha256": "3eab03a77adb0ee5304a4e677d5c10ac22f9049c1d7c894adca4f8bb39206ca8",
+          "bytes": 3848213998
+        },
+        {
+          "role": "vae",
+          "folder": "vae",
+          "repo": "Comfy-Org/Flux-2-Klein-4B",
+          "revision": "5b3abca5c0dc1ecd4eaf3340868d09063fc1c965",
+          "file": "split_files/vae/flux2-vae.safetensors",
+          "sha256": "868fe7b343cc8f3a19dbcfcafbc3d5f888802be3f89bd81b65b3621a066ce8f3",
+          "bytes": 336211292
+        }
+      ]
+    },
+    {
+      "id": "hidream:hidream_e1_1_bf16",
+      "family": "hidream",
+      "kind": "image",
+      "params": "17.1B",
+      "license": "mit",
+      "openWeight": true,
+      "addedAt": "2026-11-10",
+      "provenance": "auto",
+      "default": false,
+      "source": "https://huggingface.co/Comfy-Org/HiDream",
+      "files": [
+        {
+          "role": "diffusion",
+          "folder": "diffusion_models",
+          "repo": "Comfy-Org/HiDream",
+          "revision": "942970a008493fc9bf05b4827374009e69f6a993",
+          "file": "split_files/diffusion_models/hidream_e1_1_bf16.safetensors",
+          "sha256": "b5d14b8d55fbbd42a1f2aaf6d0974623d48275fab4bbeae2663ace4ac13ad241",
+          "bytes": 34211675392
+        },
+        {
+          "role": "text-encoder",
+          "folder": "text_encoders",
+          "repo": "Comfy-Org/HiDream",
+          "revision": "942970a008493fc9bf05b4827374009e69f6a993",
+          "file": "split_files/text_encoders/clip_l_hidream.safetensors",
+          "sha256": "706fdb88e22e18177b207837c02f4b86a652abca0302821f2bfa24ac6aea4f71",
+          "bytes": 247586528
+        },
+        {
+          "role": "vae",
+          "folder": "vae",
+          "repo": "Comfy-Org/HiDream",
+          "revision": "942970a008493fc9bf05b4827374009e69f6a993",
+          "file": "split_files/vae/ae.safetensors",
+          "sha256": "afc8e28272cd15db3919bacdb6918ce9c1ed22e96cb12c4d5ed0fba823529e38",
+          "bytes": 335304388
+        }
+      ]
+    },
+    {
+      "id": "hidream:hidream_e1_full_bf16",
+      "family": "hidream",
+      "kind": "image",
+      "params": "17.1B",
+      "license": "mit",
+      "openWeight": true,
+      "addedAt": "2026-11-10",
+      "provenance": "auto",
+      "default": false,
+      "source": "https://huggingface.co/Comfy-Org/HiDream",
+      "files": [
+        {
+          "role": "diffusion",
+          "folder": "diffusion_models",
+          "repo": "Comfy-Org/HiDream",
+          "revision": "942970a008493fc9bf05b4827374009e69f6a993",
+          "file": "split_files/diffusion_models/hidream_e1_full_bf16.safetensors",
+          "sha256": "b645503c5d5d583a135d7e77c655237ebc6dc132d49d763759c1dd51683bd1dd",
+          "bytes": 34211675392
+        },
+        {
+          "role": "text-encoder",
+          "folder": "text_encoders",
+          "repo": "Comfy-Org/HiDream",
+          "revision": "942970a008493fc9bf05b4827374009e69f6a993",
+          "file": "split_files/text_encoders/clip_l_hidream.safetensors",
+          "sha256": "706fdb88e22e18177b207837c02f4b86a652abca0302821f2bfa24ac6aea4f71",
+          "bytes": 247586528
+        },
+        {
+          "role": "vae",
+          "folder": "vae",
+          "repo": "Comfy-Org/HiDream",
+          "revision": "942970a008493fc9bf05b4827374009e69f6a993",
+          "file": "split_files/vae/ae.safetensors",
+          "sha256": "afc8e28272cd15db3919bacdb6918ce9c1ed22e96cb12c4d5ed0fba823529e38",
+          "bytes": 335304388
+        }
+      ]
+    },
+    {
+      "id": "hidream:hidream_i1_dev_bf16",
+      "family": "hidream",
+      "kind": "image",
+      "params": "17.1B",
+      "license": "mit",
+      "openWeight": true,
+      "addedAt": "2026-11-10",
+      "provenance": "auto",
+      "default": false,
+      "source": "https://huggingface.co/Comfy-Org/HiDream",
+      "files": [
+        {
+          "role": "diffusion",
+          "folder": "diffusion_models",
+          "repo": "Comfy-Org/HiDream",
+          "revision": "942970a008493fc9bf05b4827374009e69f6a993",
+          "file": "split_files/diffusion_models/hidream_i1_dev_bf16.safetensors",
+          "sha256": "09a56b88b61ce2d0cc0eacebbab2e841fd758f858f2e717d01d8947cfe8fac6c",
+          "bytes": 34211675392
+        },
+        {
+          "role": "text-encoder",
+          "folder": "text_encoders",
+          "repo": "Comfy-Org/HiDream",
+          "revision": "942970a008493fc9bf05b4827374009e69f6a993",
+          "file": "split_files/text_encoders/clip_l_hidream.safetensors",
+          "sha256": "706fdb88e22e18177b207837c02f4b86a652abca0302821f2bfa24ac6aea4f71",
+          "bytes": 247586528
+        },
+        {
+          "role": "vae",
+          "folder": "vae",
+          "repo": "Comfy-Org/HiDream",
+          "revision": "942970a008493fc9bf05b4827374009e69f6a993",
+          "file": "split_files/vae/ae.safetensors",
+          "sha256": "afc8e28272cd15db3919bacdb6918ce9c1ed22e96cb12c4d5ed0fba823529e38",
+          "bytes": 335304388
+        }
+      ]
+    },
+    {
+      "id": "hidream:hidream_i1_dev_fp8",
+      "family": "hidream",
+      "kind": "image",
+      "params": "17.1B",
+      "license": "mit",
+      "openWeight": true,
+      "addedAt": "2026-11-10",
+      "provenance": "auto",
+      "default": false,
+      "source": "https://huggingface.co/Comfy-Org/HiDream",
+      "files": [
+        {
+          "role": "diffusion",
+          "folder": "diffusion_models",
+          "repo": "Comfy-Org/HiDream",
+          "revision": "942970a008493fc9bf05b4827374009e69f6a993",
+          "file": "split_files/diffusion_models/hidream_i1_dev_fp8.safetensors",
+          "sha256": "9a372d7384d56e34a8cc7fd77a0fa3d26d6b75d82c7582fd5347e2fd9e6f8664",
+          "bytes": 17105946040
+        },
+        {
+          "role": "text-encoder",
+          "folder": "text_encoders",
+          "repo": "Comfy-Org/HiDream",
+          "revision": "942970a008493fc9bf05b4827374009e69f6a993",
+          "file": "split_files/text_encoders/clip_l_hidream.safetensors",
+          "sha256": "706fdb88e22e18177b207837c02f4b86a652abca0302821f2bfa24ac6aea4f71",
+          "bytes": 247586528
+        },
+        {
+          "role": "vae",
+          "folder": "vae",
+          "repo": "Comfy-Org/HiDream",
+          "revision": "942970a008493fc9bf05b4827374009e69f6a993",
+          "file": "split_files/vae/ae.safetensors",
+          "sha256": "afc8e28272cd15db3919bacdb6918ce9c1ed22e96cb12c4d5ed0fba823529e38",
+          "bytes": 335304388
+        }
+      ]
+    },
+    {
+      "id": "hidream:hidream_i1_fast_bf16",
+      "family": "hidream",
+      "kind": "image",
+      "params": "17.1B",
+      "license": "mit",
+      "openWeight": true,
+      "addedAt": "2026-11-10",
+      "provenance": "auto",
+      "default": false,
+      "source": "https://huggingface.co/Comfy-Org/HiDream",
+      "files": [
+        {
+          "role": "diffusion",
+          "folder": "diffusion_models",
+          "repo": "Comfy-Org/HiDream",
+          "revision": "942970a008493fc9bf05b4827374009e69f6a993",
+          "file": "split_files/diffusion_models/hidream_i1_fast_bf16.safetensors",
+          "sha256": "fdae2014b7178c5387e49e5c46742e1975310f62349f577a1bb5104eddd3ae70",
+          "bytes": 34211675392
+        },
+        {
+          "role": "text-encoder",
+          "folder": "text_encoders",
+          "repo": "Comfy-Org/HiDream",
+          "revision": "942970a008493fc9bf05b4827374009e69f6a993",
+          "file": "split_files/text_encoders/clip_l_hidream.safetensors",
+          "sha256": "706fdb88e22e18177b207837c02f4b86a652abca0302821f2bfa24ac6aea4f71",
+          "bytes": 247586528
+        },
+        {
+          "role": "vae",
+          "folder": "vae",
+          "repo": "Comfy-Org/HiDream",
+          "revision": "942970a008493fc9bf05b4827374009e69f6a993",
+          "file": "split_files/vae/ae.safetensors",
+          "sha256": "afc8e28272cd15db3919bacdb6918ce9c1ed22e96cb12c4d5ed0fba823529e38",
+          "bytes": 335304388
+        }
+      ]
+    },
+    {
+      "id": "hidream:hidream_i1_fast_fp8",
+      "family": "hidream",
+      "kind": "image",
+      "params": "17.1B",
+      "license": "mit",
+      "openWeight": true,
+      "addedAt": "2026-11-10",
+      "provenance": "auto",
+      "default": false,
+      "source": "https://huggingface.co/Comfy-Org/HiDream",
+      "files": [
+        {
+          "role": "diffusion",
+          "folder": "diffusion_models",
+          "repo": "Comfy-Org/HiDream",
+          "revision": "942970a008493fc9bf05b4827374009e69f6a993",
+          "file": "split_files/diffusion_models/hidream_i1_fast_fp8.safetensors",
+          "sha256": "2d471e82523234e157b9ddd44c0428c89907eeb4e7923b316d49362d17020236",
+          "bytes": 17105946040
+        },
+        {
+          "role": "text-encoder",
+          "folder": "text_encoders",
+          "repo": "Comfy-Org/HiDream",
+          "revision": "942970a008493fc9bf05b4827374009e69f6a993",
+          "file": "split_files/text_encoders/clip_l_hidream.safetensors",
+          "sha256": "706fdb88e22e18177b207837c02f4b86a652abca0302821f2bfa24ac6aea4f71",
+          "bytes": 247586528
+        },
+        {
+          "role": "vae",
+          "folder": "vae",
+          "repo": "Comfy-Org/HiDream",
+          "revision": "942970a008493fc9bf05b4827374009e69f6a993",
+          "file": "split_files/vae/ae.safetensors",
+          "sha256": "afc8e28272cd15db3919bacdb6918ce9c1ed22e96cb12c4d5ed0fba823529e38",
+          "bytes": 335304388
+        }
+      ]
+    },
+    {
+      "id": "hidream:hidream_i1_full_fp16",
+      "family": "hidream",
+      "kind": "image",
+      "params": "17.1B",
+      "license": "mit",
+      "openWeight": true,
+      "addedAt": "2026-11-10",
+      "provenance": "auto",
+      "default": false,
+      "source": "https://huggingface.co/Comfy-Org/HiDream",
+      "files": [
+        {
+          "role": "diffusion",
+          "folder": "diffusion_models",
+          "repo": "Comfy-Org/HiDream",
+          "revision": "942970a008493fc9bf05b4827374009e69f6a993",
+          "file": "split_files/diffusion_models/hidream_i1_full_fp16.safetensors",
+          "sha256": "8bbebd53a19ff0ff685c51b9425cee9529f283e3efb052e22add4a28f414ab3e",
+          "bytes": 34211673776
+        },
+        {
+          "role": "text-encoder",
+          "folder": "text_encoders",
+          "repo": "Comfy-Org/HiDream",
+          "revision": "942970a008493fc9bf05b4827374009e69f6a993",
+          "file": "split_files/text_encoders/clip_l_hidream.safetensors",
+          "sha256": "706fdb88e22e18177b207837c02f4b86a652abca0302821f2bfa24ac6aea4f71",
+          "bytes": 247586528
+        },
+        {
+          "role": "vae",
+          "folder": "vae",
+          "repo": "Comfy-Org/HiDream",
+          "revision": "942970a008493fc9bf05b4827374009e69f6a993",
+          "file": "split_files/vae/ae.safetensors",
+          "sha256": "afc8e28272cd15db3919bacdb6918ce9c1ed22e96cb12c4d5ed0fba823529e38",
+          "bytes": 335304388
+        }
+      ]
+    },
+    {
+      "id": "hidream:hidream_i1_full_fp8",
+      "family": "hidream",
+      "kind": "image",
+      "params": "17.1B",
+      "license": "mit",
+      "openWeight": true,
+      "addedAt": "2026-11-10",
+      "provenance": "auto",
+      "default": false,
+      "source": "https://huggingface.co/Comfy-Org/HiDream",
+      "files": [
+        {
+          "role": "diffusion",
+          "folder": "diffusion_models",
+          "repo": "Comfy-Org/HiDream",
+          "revision": "942970a008493fc9bf05b4827374009e69f6a993",
+          "file": "split_files/diffusion_models/hidream_i1_full_fp8.safetensors",
+          "sha256": "807e458dd2ea31e69e40db27afadde4a14ffd0c4c0a23b8c9a0833102e055337",
+          "bytes": 17105946040
+        },
+        {
+          "role": "text-encoder",
+          "folder": "text_encoders",
+          "repo": "Comfy-Org/HiDream",
+          "revision": "942970a008493fc9bf05b4827374009e69f6a993",
+          "file": "split_files/text_encoders/clip_l_hidream.safetensors",
+          "sha256": "706fdb88e22e18177b207837c02f4b86a652abca0302821f2bfa24ac6aea4f71",
+          "bytes": 247586528
+        },
+        {
+          "role": "vae",
+          "folder": "vae",
+          "repo": "Comfy-Org/HiDream",
+          "revision": "942970a008493fc9bf05b4827374009e69f6a993",
+          "file": "split_files/vae/ae.safetensors",
+          "sha256": "afc8e28272cd15db3919bacdb6918ce9c1ed22e96cb12c4d5ed0fba823529e38",
+          "bytes": 335304388
+        }
+      ]
+    },
+    {
+      "id": "humo:humo_1.7b_fp16",
+      "family": "humo",
+      "kind": "video",
+      "params": "1.7B",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "addedAt": "2026-11-10",
+      "provenance": "auto",
+      "default": false,
+      "source": "https://huggingface.co/Comfy-Org/HuMo",
+      "files": [
+        {
+          "role": "diffusion",
+          "folder": "diffusion_models",
+          "repo": "Comfy-Org/HuMo",
+          "revision": "41dae8144803b33957fa2a675a69f571ef5c952c",
+          "file": "split_files/diffusion_models/humo_1.7B_fp16.safetensors",
+          "sha256": "3f8c08e7db17e807397b9a9ed9d9b28a6e42c8083029395674e95544191b1b15",
+          "bytes": 3483511088
+        }
+      ]
+    },
+    {
+      "id": "humo:humo_17b_fp16",
+      "family": "humo",
+      "kind": "video",
+      "params": "17.1B",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "addedAt": "2026-11-10",
+      "provenance": "auto",
+      "default": false,
+      "source": "https://huggingface.co/Comfy-Org/HuMo",
+      "files": [
+        {
+          "role": "diffusion",
+          "folder": "diffusion_models",
+          "repo": "Comfy-Org/HuMo",
+          "revision": "41dae8144803b33957fa2a675a69f571ef5c952c",
+          "file": "split_files/diffusion_models/humo_17B_fp16.safetensors",
+          "sha256": "0c0fcb0d4de0b1cbaae4e2808eeb0308cd14e6c85c330a9f80b297c5fdaefe1e",
+          "bytes": 34113566032
+        }
+      ]
+    },
+    {
+      "id": "humo:humo_17b_fp8_e4m3fn",
+      "family": "humo",
+      "kind": "video",
+      "params": "17.1B",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "addedAt": "2026-11-10",
+      "provenance": "auto",
+      "default": false,
+      "source": "https://huggingface.co/Comfy-Org/HuMo",
+      "files": [
+        {
+          "role": "diffusion",
+          "folder": "diffusion_models",
+          "repo": "Comfy-Org/HuMo",
+          "revision": "41dae8144803b33957fa2a675a69f571ef5c952c",
+          "file": "split_files/diffusion_models/humo_17B_fp8_e4m3fn.safetensors",
+          "sha256": "222ddeac4dea6b78363cb5be78c47660c92963a69386026cd6dc0de4d3094f66",
+          "bytes": 17058372152
         }
       ]
     },
@@ -705,21 +1414,21 @@
       ]
     },
     {
-      "id": "lumina_image_2.0:lumina_2_model_bf16",
-      "family": "lumina_image_2.0",
+      "id": "lumina-image-2:lumina_2_model_bf16",
+      "family": "lumina-image-2",
       "kind": "image",
       "params": "2.6B",
       "license": "apache-2.0",
       "openWeight": true,
-      "addedAt": "2026-10-08",
+      "addedAt": "2026-11-10",
       "provenance": "auto",
       "default": false,
-      "source": "https://huggingface.co/Comfy-Org/Lumina_Image_2.0_Repackaged",
+      "source": "https://huggingface.co/Comfy-Org/Lumina-Image-2",
       "files": [
         {
           "role": "diffusion",
           "folder": "diffusion_models",
-          "repo": "Comfy-Org/Lumina_Image_2.0_Repackaged",
+          "repo": "Comfy-Org/Lumina-Image-2",
           "revision": "5b072540ef86570fecb8249c505f23d5bdeb88cd",
           "file": "split_files/diffusion_models/lumina_2_model_bf16.safetensors",
           "sha256": "736e7a524186c943568dfe688d87ce3556cfbd97f7026125065b0aa44c351f6a",
@@ -728,7 +1437,7 @@
         {
           "role": "text-encoder",
           "folder": "text_encoders",
-          "repo": "Comfy-Org/Lumina_Image_2.0_Repackaged",
+          "repo": "Comfy-Org/Lumina-Image-2",
           "revision": "5b072540ef86570fecb8249c505f23d5bdeb88cd",
           "file": "split_files/text_encoders/gemma_2_2b_fp16.safetensors",
           "sha256": "29761442862f8d064d3f854bb6fabf4379dcff511a7f6ba9405a00bd0f7e2dbd",
@@ -737,7 +1446,7 @@
         {
           "role": "vae",
           "folder": "vae",
-          "repo": "Comfy-Org/Lumina_Image_2.0_Repackaged",
+          "repo": "Comfy-Org/Lumina-Image-2",
           "revision": "5b072540ef86570fecb8249c505f23d5bdeb88cd",
           "file": "split_files/vae/ae.safetensors",
           "sha256": "afc8e28272cd15db3919bacdb6918ce9c1ed22e96cb12c4d5ed0fba823529e38",
@@ -761,7 +1470,7 @@
           "role": "diffusion",
           "folder": "diffusion_models",
           "repo": "Comfy-Org/Ming-Image",
-          "revision": "53654871e47a5d2daed7b3a986cbf1010ef81c78",
+          "revision": "93804ff3747517a318969c5f61b25a57daefe09f",
           "file": "diffusion_models/ming_image_0.1_design_bf16.safetensors",
           "sha256": "8781c6fc679f1812ad318cc7fd84c4d05a23b3571b9a7efeff73a92054ef4659",
           "bytes": 12309858664
@@ -770,7 +1479,7 @@
           "role": "text-encoder",
           "folder": "text_encoders",
           "repo": "Comfy-Org/Ming-Image",
-          "revision": "53654871e47a5d2daed7b3a986cbf1010ef81c78",
+          "revision": "93804ff3747517a318969c5f61b25a57daefe09f",
           "file": "text_encoders/ming_image_0.1_ling_mini_2.0_w4a8.safetensors",
           "sha256": "91de4cd0718bec1452b74ff3b0df0dfde280493dab384f0eb4007c18bf932ccd",
           "bytes": 12813574339
@@ -779,7 +1488,7 @@
           "role": "vae",
           "folder": "vae",
           "repo": "Comfy-Org/Ming-Image",
-          "revision": "53654871e47a5d2daed7b3a986cbf1010ef81c78",
+          "revision": "93804ff3747517a318969c5f61b25a57daefe09f",
           "file": "vae/ming_image_vae_bf16.safetensors",
           "sha256": "7f5bed402dc8c77dc2e0ab1929a85d4df433b7cf7b599dfa8c353da98db0b90a",
           "bytes": 253816696
@@ -804,7 +1513,7 @@
           "role": "diffusion",
           "folder": "diffusion_models",
           "repo": "Comfy-Org/Ming-Image",
-          "revision": "53654871e47a5d2daed7b3a986cbf1010ef81c78",
+          "revision": "93804ff3747517a318969c5f61b25a57daefe09f",
           "file": "diffusion_models/ming_image_0.1_design_int8_convrot.safetensors",
           "sha256": "0d3f5bcc6d2cb830578ea6d0925b30b9fb66058bcb651cc8633e60760dceb1d0",
           "bytes": 6175239953
@@ -813,7 +1522,7 @@
           "role": "text-encoder",
           "folder": "text_encoders",
           "repo": "Comfy-Org/Ming-Image",
-          "revision": "53654871e47a5d2daed7b3a986cbf1010ef81c78",
+          "revision": "93804ff3747517a318969c5f61b25a57daefe09f",
           "file": "text_encoders/ming_image_0.1_ling_mini_2.0_int8_convrot.safetensors",
           "sha256": "9d9f31cfce37c24ae1589287f5c33bd9dda80e14ddf773b5e17a0bb69c8cc4b1",
           "bytes": 19507670525
@@ -822,7 +1531,7 @@
           "role": "vae",
           "folder": "vae",
           "repo": "Comfy-Org/Ming-Image",
-          "revision": "53654871e47a5d2daed7b3a986cbf1010ef81c78",
+          "revision": "93804ff3747517a318969c5f61b25a57daefe09f",
           "file": "vae/ming_image_vae_bf16.safetensors",
           "sha256": "7f5bed402dc8c77dc2e0ab1929a85d4df433b7cf7b599dfa8c353da98db0b90a",
           "bytes": 253816696
@@ -845,7 +1554,7 @@
           "role": "diffusion",
           "folder": "diffusion_models",
           "repo": "Comfy-Org/Ming-Image",
-          "revision": "53654871e47a5d2daed7b3a986cbf1010ef81c78",
+          "revision": "93804ff3747517a318969c5f61b25a57daefe09f",
           "file": "diffusion_models/ming_image_0.1_design_layer_bf16.safetensors",
           "sha256": "31c588e279f0dd461d3366ae7e21b4a0f6926fbc8b5a1f6580ab899a761be34a",
           "bytes": 12309874192
@@ -854,7 +1563,7 @@
           "role": "text-encoder",
           "folder": "text_encoders",
           "repo": "Comfy-Org/Ming-Image",
-          "revision": "53654871e47a5d2daed7b3a986cbf1010ef81c78",
+          "revision": "93804ff3747517a318969c5f61b25a57daefe09f",
           "file": "text_encoders/ming_image_0.1_ling_mini_2.0_w4a8.safetensors",
           "sha256": "91de4cd0718bec1452b74ff3b0df0dfde280493dab384f0eb4007c18bf932ccd",
           "bytes": 12813574339
@@ -863,7 +1572,7 @@
           "role": "vae",
           "folder": "vae",
           "repo": "Comfy-Org/Ming-Image",
-          "revision": "53654871e47a5d2daed7b3a986cbf1010ef81c78",
+          "revision": "93804ff3747517a318969c5f61b25a57daefe09f",
           "file": "vae/ming_image_vae_bf16.safetensors",
           "sha256": "7f5bed402dc8c77dc2e0ab1929a85d4df433b7cf7b599dfa8c353da98db0b90a",
           "bytes": 253816696
@@ -886,7 +1595,7 @@
           "role": "diffusion",
           "folder": "diffusion_models",
           "repo": "Comfy-Org/Ming-Image",
-          "revision": "53654871e47a5d2daed7b3a986cbf1010ef81c78",
+          "revision": "93804ff3747517a318969c5f61b25a57daefe09f",
           "file": "diffusion_models/ming_image_0.1_design_layer_int8_convrot.safetensors",
           "sha256": "ef3f306c7981ac477f1fc28693144338ea35fb3f17cb0954c570553f53727a92",
           "bytes": 6175255481
@@ -895,7 +1604,7 @@
           "role": "text-encoder",
           "folder": "text_encoders",
           "repo": "Comfy-Org/Ming-Image",
-          "revision": "53654871e47a5d2daed7b3a986cbf1010ef81c78",
+          "revision": "93804ff3747517a318969c5f61b25a57daefe09f",
           "file": "text_encoders/ming_image_0.1_ling_mini_2.0_w4a8.safetensors",
           "sha256": "91de4cd0718bec1452b74ff3b0df0dfde280493dab384f0eb4007c18bf932ccd",
           "bytes": 12813574339
@@ -904,7 +1613,7 @@
           "role": "vae",
           "folder": "vae",
           "repo": "Comfy-Org/Ming-Image",
-          "revision": "53654871e47a5d2daed7b3a986cbf1010ef81c78",
+          "revision": "93804ff3747517a318969c5f61b25a57daefe09f",
           "file": "vae/ming_image_vae_bf16.safetensors",
           "sha256": "7f5bed402dc8c77dc2e0ab1929a85d4df433b7cf7b599dfa8c353da98db0b90a",
           "bytes": 253816696
@@ -912,21 +1621,21 @@
       ]
     },
     {
-      "id": "mochi_preview:mochi_preview_bf16",
-      "family": "mochi_preview",
+      "id": "mochi-preview:mochi_preview_bf16",
+      "family": "mochi-preview",
       "kind": "video",
       "params": "10B",
       "license": "apache-2.0",
       "openWeight": true,
-      "addedAt": "2026-10-08",
+      "addedAt": "2026-11-10",
       "provenance": "auto",
       "default": false,
-      "source": "https://huggingface.co/Comfy-Org/mochi_preview_repackaged",
+      "source": "https://huggingface.co/Comfy-Org/Mochi-Preview",
       "files": [
         {
           "role": "diffusion",
           "folder": "diffusion_models",
-          "repo": "Comfy-Org/mochi_preview_repackaged",
+          "repo": "Comfy-Org/Mochi-Preview",
           "revision": "ed4b8585dc4d3204397291c35e100884686178d6",
           "file": "split_files/diffusion_models/mochi_preview_bf16.safetensors",
           "sha256": "e445b9b393c70c431543b062cc16ee29b5dc4dc187487fa3e1f5a4b6162c8be1",
@@ -935,7 +1644,7 @@
         {
           "role": "text-encoder",
           "folder": "text_encoders",
-          "repo": "Comfy-Org/mochi_preview_repackaged",
+          "repo": "Comfy-Org/Mochi-Preview",
           "revision": "ed4b8585dc4d3204397291c35e100884686178d6",
           "file": "split_files/text_encoders/t5xxl_fp8_e4m3fn_scaled.safetensors",
           "sha256": "a498f0485dc9536735258018417c3fd7758dc3bccc0a645feaa472b34955557a",
@@ -944,7 +1653,7 @@
         {
           "role": "vae",
           "folder": "vae",
-          "repo": "Comfy-Org/mochi_preview_repackaged",
+          "repo": "Comfy-Org/Mochi-Preview",
           "revision": "ed4b8585dc4d3204397291c35e100884686178d6",
           "file": "split_files/vae/mochi_vae.safetensors",
           "sha256": "1be451cec94b911980406169286babc5269e7cf6a94bbbbdf45e8d3f2c961083",
@@ -953,21 +1662,21 @@
       ]
     },
     {
-      "id": "mochi_preview:mochi_preview_fp8_scaled",
-      "family": "mochi_preview",
+      "id": "mochi-preview:mochi_preview_fp8_scaled",
+      "family": "mochi-preview",
       "kind": "video",
       "params": "10B",
       "license": "apache-2.0",
       "openWeight": true,
-      "addedAt": "2026-10-08",
+      "addedAt": "2026-11-10",
       "provenance": "auto",
       "default": false,
-      "source": "https://huggingface.co/Comfy-Org/mochi_preview_repackaged",
+      "source": "https://huggingface.co/Comfy-Org/Mochi-Preview",
       "files": [
         {
           "role": "diffusion",
           "folder": "diffusion_models",
-          "repo": "Comfy-Org/mochi_preview_repackaged",
+          "repo": "Comfy-Org/Mochi-Preview",
           "revision": "ed4b8585dc4d3204397291c35e100884686178d6",
           "file": "split_files/diffusion_models/mochi_preview_fp8_scaled.safetensors",
           "sha256": "8a6475b5380c90461a40d5c08ad574a5ad5ac4e6047e5f5f3f294df363f50705",
@@ -976,7 +1685,7 @@
         {
           "role": "text-encoder",
           "folder": "text_encoders",
-          "repo": "Comfy-Org/mochi_preview_repackaged",
+          "repo": "Comfy-Org/Mochi-Preview",
           "revision": "ed4b8585dc4d3204397291c35e100884686178d6",
           "file": "split_files/text_encoders/t5xxl_fp8_e4m3fn_scaled.safetensors",
           "sha256": "a498f0485dc9536735258018417c3fd7758dc3bccc0a645feaa472b34955557a",
@@ -985,11 +1694,175 @@
         {
           "role": "vae",
           "folder": "vae",
-          "repo": "Comfy-Org/mochi_preview_repackaged",
+          "repo": "Comfy-Org/Mochi-Preview",
           "revision": "ed4b8585dc4d3204397291c35e100884686178d6",
           "file": "split_files/vae/mochi_vae.safetensors",
           "sha256": "1be451cec94b911980406169286babc5269e7cf6a94bbbbdf45e8d3f2c961083",
           "bytes": 919544702
+        }
+      ]
+    },
+    {
+      "id": "moss-image:moss_image_base_bf16",
+      "family": "moss-image",
+      "kind": "image",
+      "params": "5.1B",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "addedAt": "2026-11-10",
+      "provenance": "auto",
+      "default": false,
+      "source": "https://huggingface.co/Comfy-Org/MOSS-Image",
+      "files": [
+        {
+          "role": "diffusion",
+          "folder": "diffusion_models",
+          "repo": "Comfy-Org/MOSS-Image",
+          "revision": "2929efe3cdd506c0a430bcfca70a9a8d805cc095",
+          "file": "diffusion_models/moss_image_base_bf16.safetensors",
+          "sha256": "cacd158728a1fb9e57c408a922b54752ec71fceb566b3821269927964e62b41f",
+          "bytes": 10164655808
+        },
+        {
+          "role": "text-encoder",
+          "folder": "text_encoders",
+          "repo": "Comfy-Org/MOSS-Image",
+          "revision": "2929efe3cdd506c0a430bcfca70a9a8d805cc095",
+          "file": "text_encoders/qwen3.5_9b_w4a8_gptq.safetensors",
+          "sha256": "4cc6a1543ad2061806da46f35f90cadb4801dcba246c44782cf42ec0feb6407c",
+          "bytes": 7343591088
+        },
+        {
+          "role": "vae",
+          "folder": "vae",
+          "repo": "Comfy-Org/MOSS-Image",
+          "revision": "2929efe3cdd506c0a430bcfca70a9a8d805cc095",
+          "file": "vae/flux2-vae_small.safetensors",
+          "sha256": "d8d52ba036475f5fb07c8b435e176d3d97ebfa82f0d1a1c317f9cc1e25bd013b",
+          "bytes": 249521340
+        }
+      ]
+    },
+    {
+      "id": "moss-image:moss_image_base_int8_convrot",
+      "family": "moss-image",
+      "kind": "image",
+      "params": "5.1B",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "addedAt": "2026-11-10",
+      "provenance": "auto",
+      "default": false,
+      "source": "https://huggingface.co/Comfy-Org/MOSS-Image",
+      "files": [
+        {
+          "role": "diffusion",
+          "folder": "diffusion_models",
+          "repo": "Comfy-Org/MOSS-Image",
+          "revision": "2929efe3cdd506c0a430bcfca70a9a8d805cc095",
+          "file": "diffusion_models/moss_image_base_int8_convrot.safetensors",
+          "sha256": "f601c1e1161915fb3fea003da0c1782e374dd960fbb3978bc0e4e3fa1f2d8e6f",
+          "bytes": 5413698958
+        },
+        {
+          "role": "text-encoder",
+          "folder": "text_encoders",
+          "repo": "Comfy-Org/MOSS-Image",
+          "revision": "2929efe3cdd506c0a430bcfca70a9a8d805cc095",
+          "file": "text_encoders/qwen3.5_9b_w4a8_gptq.safetensors",
+          "sha256": "4cc6a1543ad2061806da46f35f90cadb4801dcba246c44782cf42ec0feb6407c",
+          "bytes": 7343591088
+        },
+        {
+          "role": "vae",
+          "folder": "vae",
+          "repo": "Comfy-Org/MOSS-Image",
+          "revision": "2929efe3cdd506c0a430bcfca70a9a8d805cc095",
+          "file": "vae/flux2-vae_small.safetensors",
+          "sha256": "d8d52ba036475f5fb07c8b435e176d3d97ebfa82f0d1a1c317f9cc1e25bd013b",
+          "bytes": 249521340
+        }
+      ]
+    },
+    {
+      "id": "moss-image:moss_image_sft_bf16",
+      "family": "moss-image",
+      "kind": "image",
+      "params": "5.1B",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "addedAt": "2026-11-10",
+      "provenance": "auto",
+      "default": false,
+      "source": "https://huggingface.co/Comfy-Org/MOSS-Image",
+      "files": [
+        {
+          "role": "diffusion",
+          "folder": "diffusion_models",
+          "repo": "Comfy-Org/MOSS-Image",
+          "revision": "2929efe3cdd506c0a430bcfca70a9a8d805cc095",
+          "file": "diffusion_models/moss_image_sft_bf16.safetensors",
+          "sha256": "f96738d8116d78b7316b57c663d8c98591ddafab7488f48e3099b7655e34ab6f",
+          "bytes": 10164655808
+        },
+        {
+          "role": "text-encoder",
+          "folder": "text_encoders",
+          "repo": "Comfy-Org/MOSS-Image",
+          "revision": "2929efe3cdd506c0a430bcfca70a9a8d805cc095",
+          "file": "text_encoders/qwen3.5_9b_w4a8_gptq.safetensors",
+          "sha256": "4cc6a1543ad2061806da46f35f90cadb4801dcba246c44782cf42ec0feb6407c",
+          "bytes": 7343591088
+        },
+        {
+          "role": "vae",
+          "folder": "vae",
+          "repo": "Comfy-Org/MOSS-Image",
+          "revision": "2929efe3cdd506c0a430bcfca70a9a8d805cc095",
+          "file": "vae/flux2-vae_small.safetensors",
+          "sha256": "d8d52ba036475f5fb07c8b435e176d3d97ebfa82f0d1a1c317f9cc1e25bd013b",
+          "bytes": 249521340
+        }
+      ]
+    },
+    {
+      "id": "moss-image:moss_image_sft_int8_convrot",
+      "family": "moss-image",
+      "kind": "image",
+      "params": "5.1B",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "addedAt": "2026-11-10",
+      "provenance": "auto",
+      "default": false,
+      "source": "https://huggingface.co/Comfy-Org/MOSS-Image",
+      "files": [
+        {
+          "role": "diffusion",
+          "folder": "diffusion_models",
+          "repo": "Comfy-Org/MOSS-Image",
+          "revision": "2929efe3cdd506c0a430bcfca70a9a8d805cc095",
+          "file": "diffusion_models/moss_image_sft_int8_convrot.safetensors",
+          "sha256": "b4d1475bc7eeffd7b809e82ea13a1fba1fb85c4e18365af3813722faa5c0fe4f",
+          "bytes": 5413698958
+        },
+        {
+          "role": "text-encoder",
+          "folder": "text_encoders",
+          "repo": "Comfy-Org/MOSS-Image",
+          "revision": "2929efe3cdd506c0a430bcfca70a9a8d805cc095",
+          "file": "text_encoders/qwen3.5_9b_w4a8_gptq.safetensors",
+          "sha256": "4cc6a1543ad2061806da46f35f90cadb4801dcba246c44782cf42ec0feb6407c",
+          "bytes": 7343591088
+        },
+        {
+          "role": "vae",
+          "folder": "vae",
+          "repo": "Comfy-Org/MOSS-Image",
+          "revision": "2929efe3cdd506c0a430bcfca70a9a8d805cc095",
+          "file": "vae/flux2-vae_small.safetensors",
+          "sha256": "d8d52ba036475f5fb07c8b435e176d3d97ebfa82f0d1a1c317f9cc1e25bd013b",
+          "bytes": 249521340
         }
       ]
     },
@@ -1026,683 +1899,21 @@
       ]
     },
     {
-      "id": "qwen-image:qwen_image_2512_bf16",
-      "family": "qwen-image",
-      "kind": "image",
-      "params": "20.4B",
-      "license": "apache-2.0",
-      "openWeight": true,
-      "addedAt": "2026-10-08",
-      "provenance": "auto",
-      "default": false,
-      "source": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI",
-      "files": [
-        {
-          "role": "diffusion",
-          "folder": "diffusion_models",
-          "repo": "Comfy-Org/Qwen-Image_ComfyUI",
-          "revision": "1f12b17be14c89b026c51a91d67c32f84bb047bc",
-          "file": "split_files/diffusion_models/qwen_image_2512_bf16.safetensors",
-          "sha256": "cbf55390fff27dbc785046d7007b04e0c5dd7421e7ef128f2831eacb53a8e075",
-          "bytes": 40861031488
-        },
-        {
-          "role": "text-encoder",
-          "folder": "text_encoders",
-          "repo": "Comfy-Org/Qwen-Image_ComfyUI",
-          "revision": "1f12b17be14c89b026c51a91d67c32f84bb047bc",
-          "file": "split_files/text_encoders/qwen_2.5_vl_7b_nvfp4.safetensors",
-          "sha256": "c7bb24d331f5df991bab2ce76a15195b12652e86a69a79823183c6a047407463",
-          "bytes": 6114433446
-        },
-        {
-          "role": "vae",
-          "folder": "vae",
-          "repo": "Comfy-Org/Qwen-Image_ComfyUI",
-          "revision": "1f12b17be14c89b026c51a91d67c32f84bb047bc",
-          "file": "split_files/vae/qwen_image_vae.safetensors",
-          "sha256": "a70580f0213e67967ee9c95f05bb400e8fb08307e017a924bf3441223e023d1f",
-          "bytes": 253806246
-        }
-      ]
-    },
-    {
-      "id": "qwen-image:qwen_image_2512_fp8_e4m3fn",
-      "family": "qwen-image",
-      "kind": "image",
-      "params": "20.4B",
-      "license": "apache-2.0",
-      "openWeight": true,
-      "addedAt": "2026-10-08",
-      "provenance": "auto",
-      "default": false,
-      "source": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI",
-      "files": [
-        {
-          "role": "diffusion",
-          "folder": "diffusion_models",
-          "repo": "Comfy-Org/Qwen-Image_ComfyUI",
-          "revision": "1f12b17be14c89b026c51a91d67c32f84bb047bc",
-          "file": "split_files/diffusion_models/qwen_image_2512_fp8_e4m3fn.safetensors",
-          "sha256": "5dc80554d5d83390046a2f4a94ece06afb7700bf7b0aaf8bde9769793875876b",
-          "bytes": 20430679144
-        },
-        {
-          "role": "text-encoder",
-          "folder": "text_encoders",
-          "repo": "Comfy-Org/Qwen-Image_ComfyUI",
-          "revision": "1f12b17be14c89b026c51a91d67c32f84bb047bc",
-          "file": "split_files/text_encoders/qwen_2.5_vl_7b_nvfp4.safetensors",
-          "sha256": "c7bb24d331f5df991bab2ce76a15195b12652e86a69a79823183c6a047407463",
-          "bytes": 6114433446
-        },
-        {
-          "role": "vae",
-          "folder": "vae",
-          "repo": "Comfy-Org/Qwen-Image_ComfyUI",
-          "revision": "1f12b17be14c89b026c51a91d67c32f84bb047bc",
-          "file": "split_files/vae/qwen_image_vae.safetensors",
-          "sha256": "a70580f0213e67967ee9c95f05bb400e8fb08307e017a924bf3441223e023d1f",
-          "bytes": 253806246
-        }
-      ]
-    },
-    {
-      "id": "qwen-image:qwen_image_bf16",
-      "family": "qwen-image",
-      "kind": "image",
-      "params": "20.4B",
-      "license": "apache-2.0",
-      "openWeight": true,
-      "addedAt": "2026-10-08",
-      "provenance": "auto",
-      "default": false,
-      "source": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI",
-      "workflow": "qwen-image",
-      "workflowSource": "https://comfyanonymous.github.io/ComfyUI_examples/qwen_image/",
-      "files": [
-        {
-          "role": "diffusion",
-          "folder": "diffusion_models",
-          "repo": "Comfy-Org/Qwen-Image_ComfyUI",
-          "revision": "1f12b17be14c89b026c51a91d67c32f84bb047bc",
-          "file": "split_files/diffusion_models/qwen_image_bf16.safetensors",
-          "sha256": "d08fb5d68026c0d87325f9a7b3ad6454061113a2bc73cc883114dae172937ae7",
-          "bytes": 40861031488
-        },
-        {
-          "role": "text-encoder",
-          "folder": "text_encoders",
-          "repo": "Comfy-Org/Qwen-Image_ComfyUI",
-          "revision": "1f12b17be14c89b026c51a91d67c32f84bb047bc",
-          "file": "split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors",
-          "sha256": "cb5636d852a0ea6a9075ab1bef496c0db7aef13c02350571e388aea959c5c0b4",
-          "bytes": 9384670680
-        },
-        {
-          "role": "vae",
-          "folder": "vae",
-          "repo": "Comfy-Org/Qwen-Image_ComfyUI",
-          "revision": "1f12b17be14c89b026c51a91d67c32f84bb047bc",
-          "file": "split_files/vae/qwen_image_vae.safetensors",
-          "sha256": "a70580f0213e67967ee9c95f05bb400e8fb08307e017a924bf3441223e023d1f",
-          "bytes": 253806246
-        }
-      ]
-    },
-    {
-      "id": "qwen-image:qwen_image_distill_full_bf16",
-      "family": "qwen-image",
-      "kind": "image",
-      "params": "20.4B",
-      "license": "apache-2.0",
-      "openWeight": true,
-      "addedAt": "2026-10-08",
-      "provenance": "auto",
-      "default": false,
-      "source": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI",
-      "files": [
-        {
-          "role": "diffusion",
-          "folder": "diffusion_models",
-          "repo": "Comfy-Org/Qwen-Image_ComfyUI",
-          "revision": "1f12b17be14c89b026c51a91d67c32f84bb047bc",
-          "file": "non_official/diffusion_models/qwen_image_distill_full_bf16.safetensors",
-          "sha256": "92e35de442292fc2058e215dde56694ddc0dc5d9dda1688394e043ba00b84605",
-          "bytes": 40861031488
-        },
-        {
-          "role": "text-encoder",
-          "folder": "text_encoders",
-          "repo": "Comfy-Org/Qwen-Image_ComfyUI",
-          "revision": "1f12b17be14c89b026c51a91d67c32f84bb047bc",
-          "file": "split_files/text_encoders/qwen_2.5_vl_7b_nvfp4.safetensors",
-          "sha256": "c7bb24d331f5df991bab2ce76a15195b12652e86a69a79823183c6a047407463",
-          "bytes": 6114433446
-        },
-        {
-          "role": "vae",
-          "folder": "vae",
-          "repo": "Comfy-Org/Qwen-Image_ComfyUI",
-          "revision": "1f12b17be14c89b026c51a91d67c32f84bb047bc",
-          "file": "split_files/vae/qwen_image_vae.safetensors",
-          "sha256": "a70580f0213e67967ee9c95f05bb400e8fb08307e017a924bf3441223e023d1f",
-          "bytes": 253806246
-        }
-      ]
-    },
-    {
-      "id": "qwen-image:qwen_image_distill_full_fp8_e4m3fn",
-      "family": "qwen-image",
-      "kind": "image",
-      "params": "20.4B",
-      "license": "apache-2.0",
-      "openWeight": true,
-      "addedAt": "2026-10-08",
-      "provenance": "auto",
-      "default": false,
-      "source": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI",
-      "files": [
-        {
-          "role": "diffusion",
-          "folder": "diffusion_models",
-          "repo": "Comfy-Org/Qwen-Image_ComfyUI",
-          "revision": "1f12b17be14c89b026c51a91d67c32f84bb047bc",
-          "file": "non_official/diffusion_models/qwen_image_distill_full_fp8_e4m3fn.safetensors",
-          "sha256": "a1d50aa60140f156fc2fae6b4b370c95fde65d5d3485dbbd7a1b387fd7ae8612",
-          "bytes": 20430635136
-        },
-        {
-          "role": "text-encoder",
-          "folder": "text_encoders",
-          "repo": "Comfy-Org/Qwen-Image_ComfyUI",
-          "revision": "1f12b17be14c89b026c51a91d67c32f84bb047bc",
-          "file": "split_files/text_encoders/qwen_2.5_vl_7b_nvfp4.safetensors",
-          "sha256": "c7bb24d331f5df991bab2ce76a15195b12652e86a69a79823183c6a047407463",
-          "bytes": 6114433446
-        },
-        {
-          "role": "vae",
-          "folder": "vae",
-          "repo": "Comfy-Org/Qwen-Image_ComfyUI",
-          "revision": "1f12b17be14c89b026c51a91d67c32f84bb047bc",
-          "file": "split_files/vae/qwen_image_vae.safetensors",
-          "sha256": "a70580f0213e67967ee9c95f05bb400e8fb08307e017a924bf3441223e023d1f",
-          "bytes": 253806246
-        }
-      ]
-    },
-    {
-      "id": "qwen-image:qwen_image_fp8_e4m3fn",
-      "family": "qwen-image",
-      "kind": "image",
-      "params": "20.4B",
-      "license": "apache-2.0",
-      "openWeight": true,
-      "addedAt": "2026-10-08",
-      "provenance": "auto",
-      "default": false,
-      "source": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI",
-      "workflow": "qwen-image",
-      "workflowSource": "https://comfyanonymous.github.io/ComfyUI_examples/qwen_image/",
-      "files": [
-        {
-          "role": "diffusion",
-          "folder": "diffusion_models",
-          "repo": "Comfy-Org/Qwen-Image_ComfyUI",
-          "revision": "1f12b17be14c89b026c51a91d67c32f84bb047bc",
-          "file": "split_files/diffusion_models/qwen_image_fp8_e4m3fn.safetensors",
-          "sha256": "98763a127701eb6fb59096f7742cb3aa7d64ed510b9f4e882d8351f8176e3ce3",
-          "bytes": 20430635136
-        },
-        {
-          "role": "text-encoder",
-          "folder": "text_encoders",
-          "repo": "Comfy-Org/Qwen-Image_ComfyUI",
-          "revision": "1f12b17be14c89b026c51a91d67c32f84bb047bc",
-          "file": "split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors",
-          "sha256": "cb5636d852a0ea6a9075ab1bef496c0db7aef13c02350571e388aea959c5c0b4",
-          "bytes": 9384670680
-        },
-        {
-          "role": "vae",
-          "folder": "vae",
-          "repo": "Comfy-Org/Qwen-Image_ComfyUI",
-          "revision": "1f12b17be14c89b026c51a91d67c32f84bb047bc",
-          "file": "split_files/vae/qwen_image_vae.safetensors",
-          "sha256": "a70580f0213e67967ee9c95f05bb400e8fb08307e017a924bf3441223e023d1f",
-          "bytes": 253806246
-        }
-      ]
-    },
-    {
-      "id": "qwen-image:qwen_image_fp8_hq",
-      "family": "qwen-image",
-      "kind": "image",
-      "params": "20.4B",
-      "license": "apache-2.0",
-      "openWeight": true,
-      "addedAt": "2026-10-08",
-      "provenance": "auto",
-      "default": false,
-      "source": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI",
-      "files": [
-        {
-          "role": "diffusion",
-          "folder": "diffusion_models",
-          "repo": "Comfy-Org/Qwen-Image_ComfyUI",
-          "revision": "1f12b17be14c89b026c51a91d67c32f84bb047bc",
-          "file": "split_files/diffusion_models/qwen_image_fp8_hq.safetensors",
-          "sha256": "d6027c88c850c25f56752d9d0ab79910c5d04e9e8515d00301c5c9301210ce4c",
-          "bytes": 22741809576
-        },
-        {
-          "role": "text-encoder",
-          "folder": "text_encoders",
-          "repo": "Comfy-Org/Qwen-Image_ComfyUI",
-          "revision": "1f12b17be14c89b026c51a91d67c32f84bb047bc",
-          "file": "split_files/text_encoders/qwen_2.5_vl_7b_nvfp4.safetensors",
-          "sha256": "c7bb24d331f5df991bab2ce76a15195b12652e86a69a79823183c6a047407463",
-          "bytes": 6114433446
-        },
-        {
-          "role": "vae",
-          "folder": "vae",
-          "repo": "Comfy-Org/Qwen-Image_ComfyUI",
-          "revision": "1f12b17be14c89b026c51a91d67c32f84bb047bc",
-          "file": "split_files/vae/qwen_image_vae.safetensors",
-          "sha256": "a70580f0213e67967ee9c95f05bb400e8fb08307e017a924bf3441223e023d1f",
-          "bytes": 253806246
-        }
-      ]
-    },
-    {
-      "id": "qwen-image:qwen_image_fp8mixed",
-      "family": "qwen-image",
-      "kind": "image",
-      "params": "20.4B",
-      "license": "apache-2.0",
-      "openWeight": true,
-      "addedAt": "2026-10-08",
-      "provenance": "auto",
-      "default": false,
-      "source": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI",
-      "files": [
-        {
-          "role": "diffusion",
-          "folder": "diffusion_models",
-          "repo": "Comfy-Org/Qwen-Image_ComfyUI",
-          "revision": "1f12b17be14c89b026c51a91d67c32f84bb047bc",
-          "file": "split_files/diffusion_models/qwen_image_fp8mixed.safetensors",
-          "sha256": "0ee8375df948e428b5cee97b62f7311ab11a6085eb5b1918f66bfab047fedc18",
-          "bytes": 20533672381
-        },
-        {
-          "role": "text-encoder",
-          "folder": "text_encoders",
-          "repo": "Comfy-Org/Qwen-Image_ComfyUI",
-          "revision": "1f12b17be14c89b026c51a91d67c32f84bb047bc",
-          "file": "split_files/text_encoders/qwen_2.5_vl_7b_nvfp4.safetensors",
-          "sha256": "c7bb24d331f5df991bab2ce76a15195b12652e86a69a79823183c6a047407463",
-          "bytes": 6114433446
-        },
-        {
-          "role": "vae",
-          "folder": "vae",
-          "repo": "Comfy-Org/Qwen-Image_ComfyUI",
-          "revision": "1f12b17be14c89b026c51a91d67c32f84bb047bc",
-          "file": "split_files/vae/qwen_image_vae.safetensors",
-          "sha256": "a70580f0213e67967ee9c95f05bb400e8fb08307e017a924bf3441223e023d1f",
-          "bytes": 253806246
-        }
-      ]
-    },
-    {
-      "id": "qwen-image:qwen_image_nvfp4",
-      "family": "qwen-image",
-      "kind": "image",
-      "params": "17.5B",
-      "license": "apache-2.0",
-      "openWeight": true,
-      "addedAt": "2026-10-08",
-      "provenance": "auto",
-      "default": false,
-      "source": "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI",
-      "files": [
-        {
-          "role": "diffusion",
-          "folder": "diffusion_models",
-          "repo": "Comfy-Org/Qwen-Image_ComfyUI",
-          "revision": "1f12b17be14c89b026c51a91d67c32f84bb047bc",
-          "file": "split_files/diffusion_models/qwen_image_nvfp4.safetensors",
-          "sha256": "54df91fa379a6487aa7869b678d5c1fa9e4b30db1019d0ab8dbce629daa8a5a8",
-          "bytes": 19769139136
-        },
-        {
-          "role": "text-encoder",
-          "folder": "text_encoders",
-          "repo": "Comfy-Org/Qwen-Image_ComfyUI",
-          "revision": "1f12b17be14c89b026c51a91d67c32f84bb047bc",
-          "file": "split_files/text_encoders/qwen_2.5_vl_7b_nvfp4.safetensors",
-          "sha256": "c7bb24d331f5df991bab2ce76a15195b12652e86a69a79823183c6a047407463",
-          "bytes": 6114433446
-        },
-        {
-          "role": "vae",
-          "folder": "vae",
-          "repo": "Comfy-Org/Qwen-Image_ComfyUI",
-          "revision": "1f12b17be14c89b026c51a91d67c32f84bb047bc",
-          "file": "split_files/vae/qwen_image_vae.safetensors",
-          "sha256": "a70580f0213e67967ee9c95f05bb400e8fb08307e017a924bf3441223e023d1f",
-          "bytes": 253806246
-        }
-      ]
-    },
-    {
-      "id": "wan_2.2:wan2.2_t2v_high_noise_14b_fp16",
-      "family": "wan_2.2",
-      "kind": "video",
-      "params": "14.3B",
-      "license": "apache-2.0",
-      "openWeight": true,
-      "addedAt": "2026-10-08",
-      "provenance": "auto",
-      "default": false,
-      "source": "https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
-      "files": [
-        {
-          "role": "diffusion",
-          "folder": "diffusion_models",
-          "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
-          "revision": "ee6f4a40737a995bf5818954cfce6d59443b0f04",
-          "file": "split_files/diffusion_models/wan2.2_t2v_high_noise_14B_fp16.safetensors",
-          "sha256": "c793e1515320fc8883ac8f97e2a45270c35edd8c4e334a6d42d3e95455bd8da2",
-          "bytes": 28577095592
-        },
-        {
-          "role": "text-encoder",
-          "folder": "text_encoders",
-          "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
-          "revision": "ee6f4a40737a995bf5818954cfce6d59443b0f04",
-          "file": "split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors",
-          "sha256": "c3355d30191f1f066b26d93fba017ae9809dce6c627dda5f6a66eaa651204f68",
-          "bytes": 6735906897
-        },
-        {
-          "role": "vae",
-          "folder": "vae",
-          "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
-          "revision": "ee6f4a40737a995bf5818954cfce6d59443b0f04",
-          "file": "split_files/vae/wan_2.1_vae.safetensors",
-          "sha256": "2fc39d31359a4b0a64f55876d8ff7fa8d780956ae2cb13463b0223e15148976b",
-          "bytes": 253815318
-        }
-      ]
-    },
-    {
-      "id": "wan_2.2:wan2.2_t2v_high_noise_14b_fp8_scaled",
-      "family": "wan_2.2",
-      "kind": "video",
-      "params": "14.3B",
-      "license": "apache-2.0",
-      "openWeight": true,
-      "addedAt": "2026-10-08",
-      "provenance": "auto",
-      "default": false,
-      "source": "https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
-      "files": [
-        {
-          "role": "diffusion",
-          "folder": "diffusion_models",
-          "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
-          "revision": "ee6f4a40737a995bf5818954cfce6d59443b0f04",
-          "file": "split_files/diffusion_models/wan2.2_t2v_high_noise_14B_fp8_scaled.safetensors",
-          "sha256": "cad711ae211c8b23455ec68cd6a190a33a3d874234a77eb57266d73f8f0e6c9f",
-          "bytes": 14293923632
-        },
-        {
-          "role": "text-encoder",
-          "folder": "text_encoders",
-          "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
-          "revision": "ee6f4a40737a995bf5818954cfce6d59443b0f04",
-          "file": "split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors",
-          "sha256": "c3355d30191f1f066b26d93fba017ae9809dce6c627dda5f6a66eaa651204f68",
-          "bytes": 6735906897
-        },
-        {
-          "role": "vae",
-          "folder": "vae",
-          "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
-          "revision": "ee6f4a40737a995bf5818954cfce6d59443b0f04",
-          "file": "split_files/vae/wan_2.1_vae.safetensors",
-          "sha256": "2fc39d31359a4b0a64f55876d8ff7fa8d780956ae2cb13463b0223e15148976b",
-          "bytes": 253815318
-        }
-      ]
-    },
-    {
-      "id": "wan_2.2:wan2.2_t2v_low_noise_14b_fp16",
-      "family": "wan_2.2",
-      "kind": "video",
-      "params": "14.3B",
-      "license": "apache-2.0",
-      "openWeight": true,
-      "addedAt": "2026-10-08",
-      "provenance": "auto",
-      "default": false,
-      "source": "https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
-      "files": [
-        {
-          "role": "diffusion",
-          "folder": "diffusion_models",
-          "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
-          "revision": "ee6f4a40737a995bf5818954cfce6d59443b0f04",
-          "file": "split_files/diffusion_models/wan2.2_t2v_low_noise_14B_fp16.safetensors",
-          "sha256": "431d1613ffa809ae1f735b661a01788c6d74991f51efd01f45d5aee955ccd224",
-          "bytes": 28577095592
-        },
-        {
-          "role": "text-encoder",
-          "folder": "text_encoders",
-          "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
-          "revision": "ee6f4a40737a995bf5818954cfce6d59443b0f04",
-          "file": "split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors",
-          "sha256": "c3355d30191f1f066b26d93fba017ae9809dce6c627dda5f6a66eaa651204f68",
-          "bytes": 6735906897
-        },
-        {
-          "role": "vae",
-          "folder": "vae",
-          "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
-          "revision": "ee6f4a40737a995bf5818954cfce6d59443b0f04",
-          "file": "split_files/vae/wan_2.1_vae.safetensors",
-          "sha256": "2fc39d31359a4b0a64f55876d8ff7fa8d780956ae2cb13463b0223e15148976b",
-          "bytes": 253815318
-        }
-      ]
-    },
-    {
-      "id": "wan_2.2:wan2.2_t2v_low_noise_14b_fp8_scaled",
-      "family": "wan_2.2",
-      "kind": "video",
-      "params": "14.3B",
-      "license": "apache-2.0",
-      "openWeight": true,
-      "addedAt": "2026-10-08",
-      "provenance": "auto",
-      "default": false,
-      "source": "https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
-      "files": [
-        {
-          "role": "diffusion",
-          "folder": "diffusion_models",
-          "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
-          "revision": "ee6f4a40737a995bf5818954cfce6d59443b0f04",
-          "file": "split_files/diffusion_models/wan2.2_t2v_low_noise_14B_fp8_scaled.safetensors",
-          "sha256": "e71b96d7c82e638694c5e7fb98fac4bfb0e4ddc5fbbb4b1df40da8f0f1278a97",
-          "bytes": 14293923632
-        },
-        {
-          "role": "text-encoder",
-          "folder": "text_encoders",
-          "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
-          "revision": "ee6f4a40737a995bf5818954cfce6d59443b0f04",
-          "file": "split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors",
-          "sha256": "c3355d30191f1f066b26d93fba017ae9809dce6c627dda5f6a66eaa651204f68",
-          "bytes": 6735906897
-        },
-        {
-          "role": "vae",
-          "folder": "vae",
-          "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
-          "revision": "ee6f4a40737a995bf5818954cfce6d59443b0f04",
-          "file": "split_files/vae/wan_2.1_vae.safetensors",
-          "sha256": "2fc39d31359a4b0a64f55876d8ff7fa8d780956ae2cb13463b0223e15148976b",
-          "bytes": 253815318
-        }
-      ]
-    },
-    {
-      "id": "wan_2.2:wan2.2_ti2v_5b_fp16",
-      "family": "wan_2.2",
-      "kind": "video",
-      "params": "5B",
-      "license": "apache-2.0",
-      "openWeight": true,
-      "addedAt": "2026-10-08",
-      "provenance": "auto",
-      "default": false,
-      "source": "https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
-      "workflow": "wan22-ti2v",
-      "workflowSource": "https://comfyanonymous.github.io/ComfyUI_examples/wan22/",
-      "files": [
-        {
-          "role": "diffusion",
-          "folder": "diffusion_models",
-          "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
-          "revision": "ee6f4a40737a995bf5818954cfce6d59443b0f04",
-          "file": "split_files/diffusion_models/wan2.2_ti2v_5B_fp16.safetensors",
-          "sha256": "456f901338bd9eadbded3828b819109a9b68e8a525ca5cf8d0049a69fcfeca1e",
-          "bytes": 9999658848
-        },
-        {
-          "role": "text-encoder",
-          "folder": "text_encoders",
-          "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
-          "revision": "ee6f4a40737a995bf5818954cfce6d59443b0f04",
-          "file": "split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors",
-          "sha256": "c3355d30191f1f066b26d93fba017ae9809dce6c627dda5f6a66eaa651204f68",
-          "bytes": 6735906897
-        },
-        {
-          "role": "vae",
-          "folder": "vae",
-          "repo": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
-          "revision": "ee6f4a40737a995bf5818954cfce6d59443b0f04",
-          "file": "split_files/vae/wan2.2_vae.safetensors",
-          "sha256": "e40321bd36b9709991dae2530eb4ac303dd168276980d3e9bc4b6e2b75fed156",
-          "bytes": 1409400960
-        }
-      ]
-    },
-    {
-      "id": "z_image:z_image_bf16",
-      "family": "z_image",
+      "id": "z-image-turbo:z_image_turbo_bf16",
+      "family": "z-image-turbo",
       "kind": "image",
       "params": "6.2B",
       "license": "apache-2.0",
       "openWeight": true,
-      "addedAt": "2026-10-08",
+      "addedAt": "2026-11-10",
       "provenance": "auto",
       "default": false,
-      "source": "https://huggingface.co/Comfy-Org/z_image",
+      "source": "https://huggingface.co/Comfy-Org/Z-Image-Turbo",
       "files": [
         {
           "role": "diffusion",
           "folder": "diffusion_models",
-          "repo": "Comfy-Org/z_image",
-          "revision": "94d47a468ec820d29a5dc09d4642539d76d49542",
-          "file": "split_files/diffusion_models/z_image_bf16.safetensors",
-          "sha256": "996a67d3ff666946b1c25cbc16d1b1918b6cc0ac166309e23fe3b3d830263dee",
-          "bytes": 12309866400
-        },
-        {
-          "role": "text-encoder",
-          "folder": "text_encoders",
-          "repo": "Comfy-Org/z_image",
-          "revision": "94d47a468ec820d29a5dc09d4642539d76d49542",
-          "file": "split_files/text_encoders/qwen_3_4b_fp4_mixed.safetensors",
-          "sha256": "7ca32dcf07dfe7692945d80fff86e3a74cb83c6206b9b223ac6836b939bb85d6",
-          "bytes": 3479416193
-        },
-        {
-          "role": "vae",
-          "folder": "vae",
-          "repo": "Comfy-Org/z_image",
-          "revision": "94d47a468ec820d29a5dc09d4642539d76d49542",
-          "file": "split_files/vae/ae.safetensors",
-          "sha256": "afc8e28272cd15db3919bacdb6918ce9c1ed22e96cb12c4d5ed0fba823529e38",
-          "bytes": 335304388
-        }
-      ]
-    },
-    {
-      "id": "z_image:z_image_int8_convrot",
-      "family": "z_image",
-      "kind": "image",
-      "params": "6.2B",
-      "license": "apache-2.0",
-      "openWeight": true,
-      "addedAt": "2026-10-08",
-      "provenance": "auto",
-      "default": false,
-      "source": "https://huggingface.co/Comfy-Org/z_image",
-      "files": [
-        {
-          "role": "diffusion",
-          "folder": "diffusion_models",
-          "repo": "Comfy-Org/z_image",
-          "revision": "94d47a468ec820d29a5dc09d4642539d76d49542",
-          "file": "split_files/diffusion_models/z_image_int8_convrot.safetensors",
-          "sha256": "eb2b470694fbd9778f15efd309000ea0091312c018c10a352c120b1da9bf4279",
-          "bytes": 6201001296
-        },
-        {
-          "role": "text-encoder",
-          "folder": "text_encoders",
-          "repo": "Comfy-Org/z_image",
-          "revision": "94d47a468ec820d29a5dc09d4642539d76d49542",
-          "file": "split_files/text_encoders/qwen_3_4b_fp4_mixed.safetensors",
-          "sha256": "7ca32dcf07dfe7692945d80fff86e3a74cb83c6206b9b223ac6836b939bb85d6",
-          "bytes": 3479416193
-        },
-        {
-          "role": "vae",
-          "folder": "vae",
-          "repo": "Comfy-Org/z_image",
-          "revision": "94d47a468ec820d29a5dc09d4642539d76d49542",
-          "file": "split_files/vae/ae.safetensors",
-          "sha256": "afc8e28272cd15db3919bacdb6918ce9c1ed22e96cb12c4d5ed0fba823529e38",
-          "bytes": 335304388
-        }
-      ]
-    },
-    {
-      "id": "z_image_turbo:z_image_turbo_bf16",
-      "family": "z_image_turbo",
-      "kind": "image",
-      "params": "6.2B",
-      "license": "apache-2.0",
-      "openWeight": true,
-      "addedAt": "2026-10-08",
-      "provenance": "auto",
-      "default": false,
-      "source": "https://huggingface.co/Comfy-Org/z_image_turbo",
-      "files": [
-        {
-          "role": "diffusion",
-          "folder": "diffusion_models",
-          "repo": "Comfy-Org/z_image_turbo",
+          "repo": "Comfy-Org/Z-Image-Turbo",
           "revision": "6fc90a3b1b653e935a0d175e260736de25b84df5",
           "file": "split_files/diffusion_models/z_image_turbo_bf16.safetensors",
           "sha256": "2407613050b809ffdff18a4ac99af83ea6b95443ecebdf80e064a79c825574a6",
@@ -1711,7 +1922,7 @@
         {
           "role": "text-encoder",
           "folder": "text_encoders",
-          "repo": "Comfy-Org/z_image_turbo",
+          "repo": "Comfy-Org/Z-Image-Turbo",
           "revision": "6fc90a3b1b653e935a0d175e260736de25b84df5",
           "file": "split_files/text_encoders/qwen_3_4b_fp4_mixed.safetensors",
           "sha256": "7ca32dcf07dfe7692945d80fff86e3a74cb83c6206b9b223ac6836b939bb85d6",
@@ -1720,7 +1931,7 @@
         {
           "role": "vae",
           "folder": "vae",
-          "repo": "Comfy-Org/z_image_turbo",
+          "repo": "Comfy-Org/Z-Image-Turbo",
           "revision": "6fc90a3b1b653e935a0d175e260736de25b84df5",
           "file": "split_files/vae/ae.safetensors",
           "sha256": "afc8e28272cd15db3919bacdb6918ce9c1ed22e96cb12c4d5ed0fba823529e38",
@@ -1729,21 +1940,21 @@
       ]
     },
     {
-      "id": "z_image_turbo:z_image_turbo_int8_convrot",
-      "family": "z_image_turbo",
+      "id": "z-image-turbo:z_image_turbo_int8_convrot",
+      "family": "z-image-turbo",
       "kind": "image",
       "params": "6.2B",
       "license": "apache-2.0",
       "openWeight": true,
-      "addedAt": "2026-10-08",
+      "addedAt": "2026-11-10",
       "provenance": "auto",
       "default": false,
-      "source": "https://huggingface.co/Comfy-Org/z_image_turbo",
+      "source": "https://huggingface.co/Comfy-Org/Z-Image-Turbo",
       "files": [
         {
           "role": "diffusion",
           "folder": "diffusion_models",
-          "repo": "Comfy-Org/z_image_turbo",
+          "repo": "Comfy-Org/Z-Image-Turbo",
           "revision": "6fc90a3b1b653e935a0d175e260736de25b84df5",
           "file": "split_files/diffusion_models/z_image_turbo_int8_convrot.safetensors",
           "sha256": "be517ebd47c912a5626a588e1aeea43e6be4a43c0cdcd2b48a2a780d9f358635",
@@ -1752,7 +1963,7 @@
         {
           "role": "text-encoder",
           "folder": "text_encoders",
-          "repo": "Comfy-Org/z_image_turbo",
+          "repo": "Comfy-Org/Z-Image-Turbo",
           "revision": "6fc90a3b1b653e935a0d175e260736de25b84df5",
           "file": "split_files/text_encoders/qwen_3_4b_fp4_mixed.safetensors",
           "sha256": "7ca32dcf07dfe7692945d80fff86e3a74cb83c6206b9b223ac6836b939bb85d6",
@@ -1761,7 +1972,7 @@
         {
           "role": "vae",
           "folder": "vae",
-          "repo": "Comfy-Org/z_image_turbo",
+          "repo": "Comfy-Org/Z-Image-Turbo",
           "revision": "6fc90a3b1b653e935a0d175e260736de25b84df5",
           "file": "split_files/vae/ae.safetensors",
           "sha256": "afc8e28272cd15db3919bacdb6918ce9c1ed22e96cb12c4d5ed0fba823529e38",
@@ -1770,21 +1981,21 @@
       ]
     },
     {
-      "id": "z_image_turbo:z_image_turbo_nvfp4",
-      "family": "z_image_turbo",
+      "id": "z-image-turbo:z_image_turbo_nvfp4",
+      "family": "z-image-turbo",
       "kind": "image",
       "params": "3.8B",
       "license": "apache-2.0",
       "openWeight": true,
-      "addedAt": "2026-10-08",
+      "addedAt": "2026-11-10",
       "provenance": "auto",
       "default": false,
-      "source": "https://huggingface.co/Comfy-Org/z_image_turbo",
+      "source": "https://huggingface.co/Comfy-Org/Z-Image-Turbo",
       "files": [
         {
           "role": "diffusion",
           "folder": "diffusion_models",
-          "repo": "Comfy-Org/z_image_turbo",
+          "repo": "Comfy-Org/Z-Image-Turbo",
           "revision": "6fc90a3b1b653e935a0d175e260736de25b84df5",
           "file": "split_files/diffusion_models/z_image_turbo_nvfp4.safetensors",
           "sha256": "a553c889dbcb910de4c98293237573219a37007c1074a3f04576646a088bd5c8",
@@ -1793,7 +2004,7 @@
         {
           "role": "text-encoder",
           "folder": "text_encoders",
-          "repo": "Comfy-Org/z_image_turbo",
+          "repo": "Comfy-Org/Z-Image-Turbo",
           "revision": "6fc90a3b1b653e935a0d175e260736de25b84df5",
           "file": "split_files/text_encoders/qwen_3_4b_fp4_mixed.safetensors",
           "sha256": "7ca32dcf07dfe7692945d80fff86e3a74cb83c6206b9b223ac6836b939bb85d6",
@@ -1802,8 +2013,90 @@
         {
           "role": "vae",
           "folder": "vae",
-          "repo": "Comfy-Org/z_image_turbo",
+          "repo": "Comfy-Org/Z-Image-Turbo",
           "revision": "6fc90a3b1b653e935a0d175e260736de25b84df5",
+          "file": "split_files/vae/ae.safetensors",
+          "sha256": "afc8e28272cd15db3919bacdb6918ce9c1ed22e96cb12c4d5ed0fba823529e38",
+          "bytes": 335304388
+        }
+      ]
+    },
+    {
+      "id": "z-image:z_image_bf16",
+      "family": "z-image",
+      "kind": "image",
+      "params": "6.2B",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "addedAt": "2026-11-10",
+      "provenance": "auto",
+      "default": false,
+      "source": "https://huggingface.co/Comfy-Org/Z-Image",
+      "files": [
+        {
+          "role": "diffusion",
+          "folder": "diffusion_models",
+          "repo": "Comfy-Org/Z-Image",
+          "revision": "94d47a468ec820d29a5dc09d4642539d76d49542",
+          "file": "split_files/diffusion_models/z_image_bf16.safetensors",
+          "sha256": "996a67d3ff666946b1c25cbc16d1b1918b6cc0ac166309e23fe3b3d830263dee",
+          "bytes": 12309866400
+        },
+        {
+          "role": "text-encoder",
+          "folder": "text_encoders",
+          "repo": "Comfy-Org/Z-Image",
+          "revision": "94d47a468ec820d29a5dc09d4642539d76d49542",
+          "file": "split_files/text_encoders/qwen_3_4b_fp4_mixed.safetensors",
+          "sha256": "7ca32dcf07dfe7692945d80fff86e3a74cb83c6206b9b223ac6836b939bb85d6",
+          "bytes": 3479416193
+        },
+        {
+          "role": "vae",
+          "folder": "vae",
+          "repo": "Comfy-Org/Z-Image",
+          "revision": "94d47a468ec820d29a5dc09d4642539d76d49542",
+          "file": "split_files/vae/ae.safetensors",
+          "sha256": "afc8e28272cd15db3919bacdb6918ce9c1ed22e96cb12c4d5ed0fba823529e38",
+          "bytes": 335304388
+        }
+      ]
+    },
+    {
+      "id": "z-image:z_image_int8_convrot",
+      "family": "z-image",
+      "kind": "image",
+      "params": "6.2B",
+      "license": "apache-2.0",
+      "openWeight": true,
+      "addedAt": "2026-11-10",
+      "provenance": "auto",
+      "default": false,
+      "source": "https://huggingface.co/Comfy-Org/Z-Image",
+      "files": [
+        {
+          "role": "diffusion",
+          "folder": "diffusion_models",
+          "repo": "Comfy-Org/Z-Image",
+          "revision": "94d47a468ec820d29a5dc09d4642539d76d49542",
+          "file": "split_files/diffusion_models/z_image_int8_convrot.safetensors",
+          "sha256": "eb2b470694fbd9778f15efd309000ea0091312c018c10a352c120b1da9bf4279",
+          "bytes": 6201001296
+        },
+        {
+          "role": "text-encoder",
+          "folder": "text_encoders",
+          "repo": "Comfy-Org/Z-Image",
+          "revision": "94d47a468ec820d29a5dc09d4642539d76d49542",
+          "file": "split_files/text_encoders/qwen_3_4b_fp4_mixed.safetensors",
+          "sha256": "7ca32dcf07dfe7692945d80fff86e3a74cb83c6206b9b223ac6836b939bb85d6",
+          "bytes": 3479416193
+        },
+        {
+          "role": "vae",
+          "folder": "vae",
+          "repo": "Comfy-Org/Z-Image",
+          "revision": "94d47a468ec820d29a5dc09d4642539d76d49542",
           "file": "split_files/vae/ae.safetensors",
           "sha256": "afc8e28272cd15db3919bacdb6918ce9c1ed22e96cb12c4d5ed0fba823529e38",
           "bytes": 335304388
