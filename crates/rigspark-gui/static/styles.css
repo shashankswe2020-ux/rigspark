@@ -5914,6 +5914,60 @@ input.switch.switch-sm:checked::after {
   justify-content: flex-end;
   gap: 8px;
 }
+.source-repos {
+  display: grid;
+  gap: 6px;
+}
+.source-repos-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.source-repos-head b {
+  margin-right: auto;
+  font-size: 13px;
+}
+.source-repo-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+.source-repo-list:empty {
+  display: none;
+}
+.source-repo-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  font-size: 13px;
+}
+.source-repo-list li + li {
+  border-top: 1px solid var(--line);
+}
+.source-repo-list .source-repo-name {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--mono);
+}
+.source-repo-list .source-repo-private {
+  color: var(--muted);
+  font-size: 12px;
+}
+.source-repo-list select {
+  font: inherit;
+}
+.source-repo-empty {
+  color: var(--muted);
+  font-size: 13px;
+}
 .source-code {
   display: grid;
   gap: 8px;

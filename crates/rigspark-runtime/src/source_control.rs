@@ -3,12 +3,22 @@
 //! every session sees its tools and every call goes through the same approval as MCP
 //! tools (reads ask once per session; creating a pull request or a commit asks each time).
 //!
-//! The GitHub token lives in `<home>/github-token` (owner-only), never in
-//! `connectors.json`, and is sent only to `https://api.github.com`. Commits use the
-//! same hooks as agents launched by `rigspark connect`, so they carry RigSpark's
-//! `Co-Authored-By` and `Signed-off-by` trailers.
+//! Access is on a need basis, at two levels:
+//! - On GitHub, people install the RigSpark Community GitHub App on the repositories
+//!   they choose, so its sign-in can never reach any other repository. The app's own
+//!   ceiling is Contents and Pull requests read and write, Issues and Metadata read.
+//! - In RigSpark, each of those repositories is set to read-only or read and write
+//!   (`RepoAccess`). Nothing is allowed until a repository is listed; pushing and opening
+//!   pull requests need read and write.
+//!
+//! The GitHub credentials live in `<home>/github-token` (owner-only), never in
+//! `connectors.json`, and are sent only to github.com. App sign-ins last 8 hours and are
+//! renewed with their refresh token, which device sign-ins may do without a client
+//! secret. Commits use the same hooks as agents launched by `rigspark connect`, so they
+//! carry RigSpark's `Co-Authored-By` and `Signed-off-by` trailers.
 
 use crate::mcp::{ClientFactory, Connection, Connector, McpError, Tool, ToolResult};
+use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use std::{
     path::{Path, PathBuf},
@@ -20,8 +30,92 @@ pub const GITHUB_ID: &str = "github";
 pub const GITHUB_API: &str = "https://api.github.com";
 const TOKEN_FILE: &str = "github-token";
 const MAX_RESPONSE: usize = 2 * 1024 * 1024;
+/// Renew a sign-in this long before it expires.
+const RENEW_EARLY_SECS: u64 = 300;
+const MAX_GRANTS: usize = 200;
 
-/// The GitHub token, kept in an owner-only file under the RigSpark home.
+/// What RigSpark may do in one GitHub repository.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Access {
+    /// List and read issues and pull requests.
+    Read,
+    /// Also push branches and open pull requests.
+    Write,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct RepoAccess {
+    pub repository: String,
+    pub access: Access,
+}
+
+/// At most 200 repositories, each `owner/name` and listed once (GitHub names are
+/// case-insensitive).
+pub fn validate_access(grants: &[RepoAccess]) -> Result<(), McpError> {
+    if grants.len() > MAX_GRANTS {
+        return Err(McpError::Invalid);
+    }
+    let mut seen = std::collections::BTreeSet::new();
+    for grant in grants {
+        if !valid_repository(&grant.repository) || !seen.insert(grant.repository.to_lowercase()) {
+            return Err(McpError::Invalid);
+        }
+    }
+    Ok(())
+}
+
+/// A GitHub sign-in: a token, and for GitHub App sign-ins how to renew it.
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Credentials {
+    pub access_token: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub refresh_token: Option<String>,
+    /// Unix seconds.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub expires_at: Option<u64>,
+}
+impl std::fmt::Debug for Credentials {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("Credentials")
+            .field("renewable", &self.refresh_token.is_some())
+            .field("expires_at", &self.expires_at)
+            .finish_non_exhaustive()
+    }
+}
+impl Credentials {
+    /// A token that does not expire, such as a fine-grained personal access token.
+    pub fn token(token: &str) -> Self {
+        Self {
+            access_token: token.trim().into(),
+            refresh_token: None,
+            expires_at: None,
+        }
+    }
+    fn valid(&self) -> bool {
+        valid_token(&self.access_token) && self.refresh_token.as_deref().is_none_or(valid_token)
+    }
+    /// Expires within five minutes (or already has).
+    pub fn expiring(&self, now: u64) -> bool {
+        self.expires_at
+            .is_some_and(|at| now.saturating_add(RENEW_EARLY_SECS) >= at)
+    }
+    /// A GitHub App sign-in, which only reaches repositories the app is installed on.
+    pub fn app_sign_in(&self) -> bool {
+        self.access_token.starts_with("ghu_")
+    }
+}
+
+pub fn now() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |elapsed| elapsed.as_secs())
+}
+
+/// The GitHub credentials, kept in an owner-only file under the RigSpark home.
 pub struct TokenStore {
     path: PathBuf,
 }
@@ -31,21 +125,28 @@ impl TokenStore {
             path: home.join(TOKEN_FILE),
         }
     }
-    pub fn load(&self) -> Option<String> {
-        crate::state::secure_read(&self.path, 4096, true)
-            .ok()
-            .map(|token| token.trim().to_owned())
-            .filter(|token| valid_token(token))
+    /// Reads a saved sign-in, or a bare token saved by an earlier version.
+    pub fn load(&self) -> Option<Credentials> {
+        let raw = crate::state::secure_read(&self.path, 4096, true).ok()?;
+        let raw = raw.trim();
+        let credentials = if raw.starts_with('{') {
+            serde_json::from_str(raw).ok()?
+        } else {
+            Credentials::token(raw)
+        };
+        credentials.valid().then_some(credentials)
     }
-    pub fn save(&self, token: &str) -> Result<(), McpError> {
-        let token = token.trim();
-        if !valid_token(token) {
+    pub fn save(&self, credentials: &Credentials) -> Result<(), McpError> {
+        let mut credentials = credentials.clone();
+        credentials.access_token = credentials.access_token.trim().into();
+        if !credentials.valid() {
             return Err(McpError::Invalid);
         }
+        let raw = serde_json::to_vec(&credentials).map_err(|_| McpError::Invalid)?;
         if let Some(parent) = self.path.parent() {
             crate::memory::owned_directory(parent).map_err(|_| McpError::Storage)?;
         }
-        crate::memory::atomic_file(&self.path, token.as_bytes()).map_err(|_| McpError::Storage)
+        crate::memory::atomic_file(&self.path, &raw).map_err(|_| McpError::Storage)
     }
     pub fn remove(&self) -> Result<(), McpError> {
         match std::fs::remove_file(&self.path) {
@@ -163,11 +264,13 @@ impl GithubHttp for ReqwestGithub {
     }
 }
 
-/// RigSpark Community's GitHub OAuth App (device flow, no client secret).
-pub const GITHUB_CLIENT_ID: &str = "Ov23liiNBR9qBdyloom2";
-/// Issues, pull requests and pushing branches, public and private.
-pub const GITHUB_SCOPE: &str = "repo";
+/// The RigSpark Community GitHub App (device flow; no client secret ships in the app).
+/// Its sign-ins reach only repositories the person installed it on.
+pub const GITHUB_CLIENT_ID: &str = "Iv23liaO72v1ZQNBqeq2";
+pub const GITHUB_APP_SLUG: &str = "rigspark-community";
 pub const DEVICE_PAGE: &str = "https://github.com/login/device";
+/// Where people choose which repositories the app may reach.
+pub const INSTALL_PAGE: &str = "https://github.com/apps/rigspark-community/installations/new";
 
 /// `RIGSPARK_GITHUB_CLIENT_ID` overrides the built-in client for forks and testing.
 pub fn client_id() -> String {
@@ -236,20 +339,35 @@ pub enum SignIn {
     Pending {
         interval: u64,
     },
-    Token(String),
+    Token(Credentials),
     Denied,
     Expired,
 }
 
+/// A token reply from `/login/oauth/access_token`, with its refresh token if any.
+fn credentials_from(body: &Value, now: u64) -> Result<Credentials, McpError> {
+    let token = body["access_token"].as_str().ok_or(McpError::Invalid)?;
+    let credentials = Credentials {
+        access_token: token.into(),
+        refresh_token: body["refresh_token"].as_str().map(String::from),
+        expires_at: body["expires_in"]
+            .as_u64()
+            .map(|seconds| now.saturating_add(seconds.clamp(60, 366 * 86_400))),
+    };
+    credentials
+        .valid()
+        .then_some(credentials)
+        .ok_or(McpError::Invalid)
+}
+
+/// The app has no permission scopes to ask for: what it may do is set on the app, and
+/// where, by the repositories it is installed on.
 pub async fn start_sign_in(
     http: &dyn GithubSignIn,
     client_id: &str,
 ) -> Result<DeviceCode, McpError> {
     let reply = http
-        .post_form(
-            "/login/device/code",
-            &[("client_id", client_id), ("scope", GITHUB_SCOPE)],
-        )
+        .post_form("/login/device/code", &[("client_id", client_id)])
         .await?;
     let body = &reply.body;
     let text = |key: &str| body[key].as_str().unwrap_or_default().to_owned();
@@ -302,12 +420,8 @@ pub async fn poll_sign_in(
             ],
         )
         .await?;
-    if let Some(token) = reply.body["access_token"].as_str() {
-        return if valid_token(token) {
-            Ok(SignIn::Token(token.into()))
-        } else {
-            Err(McpError::Invalid)
-        };
+    if reply.body.get("access_token").is_some() {
+        return credentials_from(&reply.body, now()).map(SignIn::Token);
     }
     match reply.body["error"].as_str() {
         Some("authorization_pending") => Ok(SignIn::Pending { interval: 5 }),
@@ -318,6 +432,183 @@ pub async fn poll_sign_in(
         Some("access_denied") => Ok(SignIn::Denied),
         _ => Err(McpError::Invalid),
     }
+}
+
+/// Renews an app sign-in. GitHub replaces the refresh token on every renewal.
+pub async fn renew_sign_in(
+    http: &dyn GithubSignIn,
+    client_id: &str,
+    refresh_token: &str,
+    now: u64,
+) -> Result<Credentials, McpError> {
+    if !valid_token(refresh_token) {
+        return Err(McpError::Invalid);
+    }
+    let reply = http
+        .post_form(
+            "/login/oauth/access_token",
+            &[
+                ("client_id", client_id),
+                ("grant_type", "refresh_token"),
+                ("refresh_token", refresh_token),
+            ],
+        )
+        .await?;
+    match reply.body["error"].as_str() {
+        // Revoked, expired after six months, or already used: sign in again.
+        Some(_) => Err(McpError::Approval),
+        None => credentials_from(&reply.body, now),
+    }
+}
+
+/// The saved sign-in, renewed (and saved again) when it is about to expire. `None` when
+/// nothing is saved; `Err(Approval)` when it expired and cannot be renewed.
+pub async fn fresh_credentials(
+    tokens: &TokenStore,
+    http: &dyn GithubSignIn,
+    client_id: &str,
+    now: u64,
+) -> Result<Option<Credentials>, McpError> {
+    let Some(credentials) = tokens.load() else {
+        return Ok(None);
+    };
+    if !credentials.expiring(now) {
+        return Ok(Some(credentials));
+    }
+    let Some(refresh_token) = credentials.refresh_token.as_deref() else {
+        return Err(McpError::Approval);
+    };
+    let renewed = renew_sign_in(http, client_id, refresh_token, now).await?;
+    tokens.save(&renewed)?;
+    Ok(Some(renewed))
+}
+
+/// A repository the sign-in can reach, and whether the person may push to it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GrantedRepository {
+    pub repository: String,
+    pub private: bool,
+    pub can_write: bool,
+}
+
+/// Repositories this sign-in can reach. For an app sign-in: those the app is installed
+/// on that the person can see. For a personal access token: those GitHub lists for it.
+pub async fn granted_repositories(
+    http: &dyn GithubHttp,
+    credentials: &Credentials,
+) -> Result<Vec<GrantedRepository>, McpError> {
+    const PAGES: u32 = 10;
+    let token = credentials.access_token.as_str();
+    let get = |path: String| async move {
+        let reply = http.send("GET", &path, token, None).await?;
+        match reply.status {
+            200 => Ok(reply.body),
+            401 | 403 => Err(McpError::Approval),
+            _ => Err(McpError::Invalid),
+        }
+    };
+    let mut pages = Vec::new();
+    if credentials.app_sign_in() {
+        let installations = get("/user/installations?per_page=100".into()).await?;
+        let ids: Vec<u64> = installations["installations"]
+            .as_array()
+            .map(Vec::as_slice)
+            .unwrap_or_default()
+            .iter()
+            .filter_map(|installation| installation["id"].as_u64())
+            .take(100)
+            .collect();
+        for id in ids {
+            for page in 1..=PAGES {
+                let body = get(format!(
+                    "/user/installations/{id}/repositories?per_page=100&page={page}"
+                ))
+                .await?;
+                let repositories = body["repositories"].as_array().cloned().unwrap_or_default();
+                let full = repositories.len() == 100;
+                pages.extend(repositories);
+                if !full {
+                    break;
+                }
+            }
+        }
+    } else {
+        for page in 1..=PAGES {
+            let body = get(format!("/user/repos?per_page=100&page={page}")).await?;
+            let repositories = body.as_array().cloned().unwrap_or_default();
+            let full = repositories.len() == 100;
+            pages.extend(repositories);
+            if !full {
+                break;
+            }
+        }
+    }
+    let mut granted: Vec<GrantedRepository> = pages
+        .iter()
+        .filter_map(|repository| {
+            let name = repository["full_name"].as_str()?;
+            valid_repository(name).then(|| GrantedRepository {
+                repository: name.into(),
+                private: repository["private"].as_bool().unwrap_or(true),
+                can_write: repository["permissions"]["push"].as_bool().unwrap_or(false),
+            })
+        })
+        .collect();
+    granted.sort_by_key(|entry| entry.repository.to_lowercase());
+    granted.dedup_by_key(|entry| entry.repository.to_lowercase());
+    Ok(granted)
+}
+
+/// Keeps the requested access only for repositories the sign-in can reach, and read and
+/// write only where the person may push. Returns the access to save and what was refused.
+pub fn settle_access(
+    requested: &[RepoAccess],
+    granted: &[GrantedRepository],
+) -> (Vec<RepoAccess>, Vec<String>) {
+    let mut kept = Vec::new();
+    let mut refused = Vec::new();
+    for want in requested {
+        match granted
+            .iter()
+            .find(|entry| entry.repository.eq_ignore_ascii_case(&want.repository))
+        {
+            Some(entry) if want.access == Access::Read || entry.can_write => {
+                kept.push(RepoAccess {
+                    repository: entry.repository.clone(),
+                    access: want.access,
+                })
+            }
+            _ => refused.push(want.repository.clone()),
+        }
+    }
+    kept.sort_by_key(|entry| entry.repository.to_lowercase());
+    kept.dedup_by_key(|entry| entry.repository.to_lowercase());
+    (kept, refused)
+}
+
+/// `owner/name` of a github.com remote URL (HTTPS or SSH), or `None` for anything else.
+pub fn github_remote(url: &str) -> Option<String> {
+    let url = url.trim();
+    let path = if let Some(rest) = url.strip_prefix("git@github.com:") {
+        rest
+    } else {
+        let parsed = url::Url::parse(url).ok()?;
+        if !matches!(parsed.scheme(), "https" | "ssh")
+            || parsed.host_str()? != "github.com"
+            || parsed.port().is_some()
+        {
+            return None;
+        }
+        return github_remote_path(parsed.path().trim_start_matches('/'));
+    };
+    github_remote_path(path)
+}
+
+fn github_remote_path(path: &str) -> Option<String> {
+    let path = path.trim_end_matches('/');
+    let path = path.strip_suffix(".git").unwrap_or(path);
+    valid_repository(path).then(|| path.to_owned())
 }
 
 /// Checks a token and returns the GitHub login it belongs to.
@@ -345,35 +636,117 @@ pub fn validate_repositories(repositories: &[String]) -> Result<(), McpError> {
     Ok(())
 }
 
+const MANAGE: &str = "Connectors > Source control > GitHub > Manage";
+
+/// Renews the connection's app sign-in before it expires.
+pub struct Renewal {
+    pub sign_in: Box<dyn GithubSignIn>,
+    pub client_id: String,
+}
+
 pub struct GithubConnection {
     home: PathBuf,
-    token: Option<String>,
+    credentials: Option<Credentials>,
     repositories: Vec<PathBuf>,
+    access: Vec<RepoAccess>,
     http: Box<dyn GithubHttp>,
+    renewal: Option<Renewal>,
 }
 
 impl GithubConnection {
+    /// `repositories` are local folders for commits; `access` the GitHub repositories
+    /// RigSpark may use, and how.
     pub fn new(
         home: &Path,
-        token: Option<String>,
+        credentials: Option<Credentials>,
         repositories: &[String],
+        access: &[RepoAccess],
         http: Box<dyn GithubHttp>,
     ) -> Self {
         Self {
             home: home.into(),
-            token,
+            credentials,
             repositories: repositories
                 .iter()
                 .filter_map(|folder| std::fs::canonicalize(folder).ok())
                 .collect(),
+            access: access.to_vec(),
             http,
+            renewal: None,
         }
     }
 
+    pub fn with_renewal(mut self, renewal: Renewal) -> Self {
+        self.renewal = Some(renewal);
+        self
+    }
+
     fn token(&self) -> Result<&str, ToolResult> {
-        self.token.as_deref().ok_or_else(|| {
-            error("GitHub isn't connected. Add a token under Connectors > Source control.")
-        })
+        self.credentials
+            .as_ref()
+            .map(|credentials| credentials.access_token.as_str())
+            .ok_or_else(|| {
+                error(&format!(
+                    "GitHub isn't connected. Connect it under {MANAGE}."
+                ))
+            })
+    }
+
+    /// Renews an expiring app sign-in and saves it, so later sessions get the new one.
+    async fn renew(&mut self) -> Result<(), ToolResult> {
+        let Some(credentials) = &self.credentials else {
+            return Ok(());
+        };
+        let now = now();
+        if !credentials.expiring(now) {
+            return Ok(());
+        }
+        let expired = || {
+            error(&format!(
+                "The GitHub sign-in expired. Sign in again under {MANAGE}."
+            ))
+        };
+        let (Some(renewal), Some(refresh)) = (&self.renewal, credentials.refresh_token.clone())
+        else {
+            return Err(expired());
+        };
+        let renewed = renew_sign_in(renewal.sign_in.as_ref(), &renewal.client_id, &refresh, now)
+            .await
+            .map_err(|_| expired())?;
+        TokenStore::new(&self.home)
+            .save(&renewed)
+            .map_err(|_| error("Could not save the renewed GitHub sign-in."))?;
+        self.credentials = Some(renewed);
+        Ok(())
+    }
+
+    fn level(&self, repository: &str) -> Option<Access> {
+        self.access
+            .iter()
+            .find(|grant| grant.repository.eq_ignore_ascii_case(repository))
+            .map(|grant| grant.access)
+    }
+
+    /// Refuses a repository RigSpark was not given, or one that is read-only when the
+    /// call needs to write.
+    fn require(&self, repository: &str, needed: Access) -> Result<(), ToolResult> {
+        match self.level(repository) {
+            None => Err(error(&format!(
+                "RigSpark has no access to {repository}. Add it under {MANAGE}."
+            ))),
+            Some(Access::Read) if needed == Access::Write => Err(error(&format!(
+                "{repository} is read-only in RigSpark. Set it to Read & write under {MANAGE} to push or open pull requests."
+            ))),
+            Some(_) => Ok(()),
+        }
+    }
+
+    fn granted(&self, needed: Access) -> Vec<String> {
+        self.access
+            .iter()
+            .filter(|grant| grant.access >= needed)
+            .map(|grant| grant.repository.clone())
+            .collect()
     }
 
     async fn github(
@@ -407,6 +780,7 @@ impl GithubConnection {
 
     async fn list_issues(&self, args: &Value) -> Result<String, ToolResult> {
         let repository = repository(args)?;
+        self.require(repository, Access::Read)?;
         let state = match args["state"].as_str().unwrap_or("open") {
             state @ ("open" | "closed" | "all") => state,
             _ => return Err(error("state must be open, closed or all")),
@@ -447,6 +821,7 @@ impl GithubConnection {
 
     async fn read_issue(&self, args: &Value) -> Result<String, ToolResult> {
         let repository = repository(args)?;
+        self.require(repository, Access::Read)?;
         let number = args["number"]
             .as_u64()
             .filter(|number| (1..=100_000_000).contains(number))
@@ -481,6 +856,7 @@ impl GithubConnection {
 
     async fn create_pull_request(&self, args: &Value) -> Result<String, ToolResult> {
         let repository = repository(args)?;
+        self.require(repository, Access::Write)?;
         let branch = |key: &str| {
             args[key]
                 .as_str()
@@ -557,8 +933,8 @@ impl GithubConnection {
             String::from_utf8_lossy(&output.stderr)
         );
         // Never echo the token back, whatever git prints.
-        let combined = match &self.token {
-            Some(token) => combined.replace(token.as_str(), "••••••"),
+        let combined = match &self.credentials {
+            Some(credentials) => combined.replace(credentials.access_token.as_str(), "••••••"),
             None => combined,
         };
         if output.status.success() {
@@ -633,7 +1009,27 @@ impl GithubConnection {
         }
         let mut env = crate::process_control::minimal_env();
         env.insert("GIT_TERMINAL_PROMPT".into(), "0".into());
-        if let Some(token) = &self.token {
+        let origin = self
+            .git(
+                &folder,
+                &env,
+                &["remote", "get-url", "origin"],
+                Duration::from_secs(10),
+                cancel,
+            )
+            .await?;
+        // A GitHub remote (HTTPS or SSH) must be a repository set to read and write, so
+        // the person's own SSH keys or saved logins can't reach past what they chose.
+        let github = github_remote(&origin);
+        if let Some(repository) = &github {
+            self.require(repository, Access::Write)?;
+        } else if origin.contains("github.com") {
+            return Err(error(
+                "The origin remote points at GitHub in a form RigSpark can't check. Use https://github.com/owner/name or git@github.com:owner/name.",
+            ));
+        }
+        if let (Some(_), Some(credentials)) = (&github, &self.credentials) {
+            let token = &credentials.access_token;
             // HTTPS remotes on github.com authenticate with the connected token; it goes
             // through the environment, never the command line.
             env.insert("GIT_CONFIG_COUNT".into(), "1".into());
@@ -687,10 +1083,12 @@ fn base64(bytes: &[u8]) -> String {
 #[async_trait::async_trait]
 impl Connection for GithubConnection {
     async fn tools(&mut self, _: &CancellationToken) -> Result<Vec<Tool>, McpError> {
-        let repository =
-            json!({"type":"string","description":"owner/name, for example rigspark/rigspark"});
         let mut tools = Vec::new();
-        if self.token.is_some() {
+        let readable = self.granted(Access::Read);
+        let writable = self.granted(Access::Write);
+        let choice = |names: &[String]| json!({"type":"string","enum": names,"description":"owner/name of a repository RigSpark may use"});
+        if self.credentials.is_some() && !readable.is_empty() {
+            let repository = choice(&readable);
             tools.push(Tool {
                 name: "github_list_issues".into(),
                 description: "List issues and pull requests in a GitHub repository (newest 30)."
@@ -708,6 +1106,9 @@ impl Connection for GithubConnection {
                     "number": {"type":"integer","minimum":1},
                 }}),
             });
+        }
+        if self.credentials.is_some() && !writable.is_empty() {
+            let repository = choice(&writable);
             tools.push(Tool {
                 name: "github_create_pull_request".into(),
                 description: "Create a pull request on GitHub from an existing pushed branch.".into(),
@@ -755,6 +1156,11 @@ impl Connection for GithubConnection {
         args: Value,
         cancel: &CancellationToken,
     ) -> Result<ToolResult, McpError> {
+        if (name.starts_with("github_") || name == "git_push")
+            && let Err(failure) = self.renew().await
+        {
+            return Ok(failure);
+        }
         let result = match name {
             "github_list_issues" => self.list_issues(&args).await,
             "github_read_issue" => self.read_issue(&args).await,
@@ -789,14 +1195,25 @@ impl ClientFactory for NativeFactory {
         cancel: &CancellationToken,
     ) -> Result<Box<dyn Connection>, McpError> {
         match connector {
-            Connector::Github { repositories, .. } => {
+            Connector::Github {
+                repositories,
+                access,
+                ..
+            } => {
                 connector.validate()?;
-                Ok(Box::new(GithubConnection::new(
-                    &self.home,
-                    TokenStore::new(&self.home).load(),
-                    repositories,
-                    Box::new(ReqwestGithub::new()?),
-                )))
+                Ok(Box::new(
+                    GithubConnection::new(
+                        &self.home,
+                        TokenStore::new(&self.home).load(),
+                        repositories,
+                        access,
+                        Box::new(ReqwestGithub::new()?),
+                    )
+                    .with_renewal(Renewal {
+                        sign_in: Box::new(ReqwestGithub::new()?),
+                        client_id: client_id(),
+                    }),
+                ))
             }
             _ => crate::mcp_sdk::SdkFactory.connect(connector, cancel).await,
         }

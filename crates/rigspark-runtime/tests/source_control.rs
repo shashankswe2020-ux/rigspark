@@ -1,7 +1,7 @@
 use rigspark_runtime::mcp::{Connection, Connector, ConnectorFile, Manager, McpError};
 use rigspark_runtime::source_control::{
-    GithubConnection, GithubHttp, HttpReply, TokenStore, valid_branch, valid_repository,
-    verify_token,
+    Access, Credentials, GithubConnection, GithubHttp, HttpReply, RepoAccess, TokenStore,
+    valid_branch, valid_repository, verify_token,
 };
 use rigspark_runtime::tool_policy::ToolRisk;
 use serde_json::{Value, json};
@@ -9,6 +9,8 @@ use std::sync::{Arc, Mutex};
 use tokio_util::sync::CancellationToken;
 
 const TOKEN: &str = "ghp_0123456789abcdefghijABCDEFGHIJ012345";
+const APP_TOKEN: &str = "ghu_0123456789abcdefghijABCDEFGHIJ012345";
+const REFRESH: &str = "ghr_0123456789abcdefghijABCDEFGHIJ012345abcdefghijABCDEFGHIJ0123456789";
 
 type Seen = Vec<(String, String, String, Option<Value>)>;
 
@@ -48,13 +50,27 @@ impl GithubHttp for Recorded {
     }
 }
 
+fn grant(repository: &str, access: Access) -> RepoAccess {
+    RepoAccess {
+        repository: repository.into(),
+        access,
+    }
+}
+
 fn connection(
     home: &std::path::Path,
     token: Option<&str>,
     folders: &[String],
+    access: &[RepoAccess],
     http: Recorded,
 ) -> GithubConnection {
-    GithubConnection::new(home, token.map(String::from), folders, Box::new(http))
+    GithubConnection::new(
+        home,
+        token.map(Credentials::token),
+        folders,
+        access,
+        Box::new(http),
+    )
 }
 
 #[test]
@@ -71,10 +87,31 @@ fn names_branches_and_tokens_are_checked() {
     let home = tempfile::tempdir().unwrap();
     let store = TokenStore::new(home.path());
     assert_eq!(store.load(), None);
-    assert!(store.save("short").is_err());
-    assert!(store.save("has space in it 0123456789").is_err());
-    store.save(&format!("  {TOKEN}\n")).unwrap();
-    assert_eq!(store.load().as_deref(), Some(TOKEN));
+    assert!(store.save(&Credentials::token("short")).is_err());
+    assert!(
+        store
+            .save(&Credentials::token("has space in it 0123456789"))
+            .is_err()
+    );
+    store
+        .save(&Credentials::token(&format!("  {TOKEN}\n")))
+        .unwrap();
+    assert_eq!(store.load(), Some(Credentials::token(TOKEN)));
+    // A bare token saved by an earlier version still loads.
+    std::fs::write(home.path().join("github-token"), format!("{TOKEN}\n")).unwrap();
+    assert_eq!(store.load(), Some(Credentials::token(TOKEN)));
+    // App sign-ins keep their refresh token and expiry, and never print them.
+    let app = Credentials {
+        access_token: APP_TOKEN.into(),
+        refresh_token: Some(REFRESH.into()),
+        expires_at: Some(1_000),
+    };
+    store.save(&app).unwrap();
+    assert_eq!(store.load(), Some(app.clone()));
+    assert!(!format!("{app:?}").contains("ghu_") && !format!("{app:?}").contains("ghr_"));
+    assert!(app.app_sign_in() && !Credentials::token(TOKEN).app_sign_in());
+    assert!(!app.expiring(600) && app.expiring(700) && app.expiring(2_000));
+    assert!(!Credentials::token(TOKEN).expiring(u64::MAX));
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
@@ -109,11 +146,57 @@ async fn tools_follow_what_is_connected() {
     let names = |tools: Vec<rigspark_runtime::mcp::Tool>| -> Vec<String> {
         tools.into_iter().map(|tool| tool.name).collect()
     };
-    let mut none = connection(home.path(), None, &[], Recorded::default());
+    let mut none = connection(home.path(), None, &[], &[], Recorded::default());
     assert!(none.tools(&cancel).await.unwrap().is_empty());
     let folder = home.path().display().to_string();
-    let mut both = connection(home.path(), Some(TOKEN), &[folder], Recorded::default());
+    // Signed in but no repository chosen: no GitHub tools at all.
+    let mut unchosen = connection(
+        home.path(),
+        Some(TOKEN),
+        std::slice::from_ref(&folder),
+        &[],
+        Recorded::default(),
+    );
+    assert_eq!(
+        names(unchosen.tools(&cancel).await.unwrap()),
+        ["git_commit", "git_push"]
+    );
+    // Read-only repositories can be read, not written.
+    let mut reader = connection(
+        home.path(),
+        Some(TOKEN),
+        &[],
+        &[grant("a/read", Access::Read)],
+        Recorded::default(),
+    );
+    let tools = reader.tools(&cancel).await.unwrap();
+    assert_eq!(
+        tools[0].input_schema["properties"]["repository"]["enum"],
+        json!(["a/read"])
+    );
+    assert_eq!(names(tools), ["github_list_issues", "github_read_issue"]);
+    let mut both = connection(
+        home.path(),
+        Some(TOKEN),
+        &[folder],
+        &[
+            grant("a/read", Access::Read),
+            grant("a/write", Access::Write),
+        ],
+        Recorded::default(),
+    );
     let tools = both.tools(&cancel).await.unwrap();
+    // Each tool offers only the repositories it may use.
+    let offered = |name: &str| {
+        tools
+            .iter()
+            .find(|tool| tool.name == name)
+            .unwrap()
+            .input_schema["properties"]["repository"]["enum"]
+            .clone()
+    };
+    assert_eq!(offered("github_list_issues"), json!(["a/read", "a/write"]));
+    assert_eq!(offered("github_create_pull_request"), json!(["a/write"]));
     // The existing approval rules: reads ask once per session, writes every time.
     for tool in &tools {
         let risk = rigspark_runtime::tool_policy::classify(&tool.name, &tool.description);
@@ -164,7 +247,13 @@ async fn issues_and_pull_requests_go_to_the_github_api() {
             201,
             json!({"number":12,"html_url":"https://github.com/rigspark/rigspark/pull/12"}),
         );
-    let mut github = connection(home.path(), Some(TOKEN), &[], http.clone());
+    let mut github = connection(
+        home.path(),
+        Some(TOKEN),
+        &[],
+        &[grant("Rigspark/Rigspark", Access::Write)],
+        http.clone(),
+    );
     let listed = github
         .call(
             "github_list_issues",
@@ -228,7 +317,13 @@ async fn bad_input_and_github_errors_come_back_as_tool_errors() {
             404,
             json!({"message":"Not Found"}),
         );
-    let mut github = connection(home.path(), Some(TOKEN), &[], http.clone());
+    let mut github = connection(
+        home.path(),
+        Some(TOKEN),
+        &[],
+        &[grant("a/b", Access::Write), grant("a/c", Access::Read)],
+        http.clone(),
+    );
     for (name, args) in [
         ("github_list_issues", json!({"repository":"../etc"})),
         (
@@ -263,7 +358,13 @@ async fn bad_input_and_github_errors_come_back_as_tool_errors() {
         .unwrap();
     assert!(missing.is_error && missing.content.contains("Not found"));
     assert!(github.call("unknown", json!({}), &cancel).await.is_err());
-    let mut offline = connection(home.path(), None, &[], Recorded::default());
+    let mut offline = connection(
+        home.path(),
+        None,
+        &[],
+        &[grant("a/b", Access::Write)],
+        Recorded::default(),
+    );
     let result = offline
         .call("github_list_issues", json!({"repository":"a/b"}), &cancel)
         .await
@@ -274,7 +375,8 @@ async fn bad_input_and_github_errors_come_back_as_tool_errors() {
 #[test]
 fn the_github_connector_is_validated_and_listed() {
     let file: ConnectorFile = serde_json::from_value(json!({"schemaVersion":1,"connectors":[
-        {"transport":"github","id":"github","name":"GitHub","repositories":["/tmp"]}
+        {"transport":"github","id":"github","name":"GitHub","repositories":["/tmp"],
+         "access":[{"repository":"a/b","access":"write"},{"repository":"a/c","access":"read"}]}
     ]}))
     .unwrap();
     file.validate().unwrap();
@@ -282,12 +384,25 @@ fn the_github_connector_is_validated_and_listed() {
     let view = &manager.list()[0];
     assert_eq!(
         (view.transport, view.target.as_str()),
-        ("github", "api.github.com · 1 folder(s)")
+        ("github", "api.github.com · 2 repo(s) · 1 folder(s)")
     );
+    // A file from before per-repository access still loads, with no access.
+    let old: Connector = serde_json::from_value(
+        json!({"transport":"github","id":"github","name":"GitHub","repositories":[]}),
+    )
+    .unwrap();
+    old.validate().unwrap();
+    assert!(!serde_json::to_string(&old).unwrap().contains("access"));
     for bad in [
         json!({"transport":"github","id":"other","name":"GitHub"}),
         json!({"transport":"github","id":"github","name":"GitHub","repositories":["relative"]}),
         json!({"transport":"github","id":"github","name":"GitHub","token":"x"}),
+        json!({"transport":"github","id":"github","name":"GitHub",
+               "access":[{"repository":"../x","access":"read"}]}),
+        json!({"transport":"github","id":"github","name":"GitHub",
+               "access":[{"repository":"a/b","access":"read"},{"repository":"A/B","access":"write"}]}),
+        json!({"transport":"github","id":"github","name":"GitHub",
+               "access":[{"repository":"a/b","access":"admin"}]}),
     ] {
         let parsed: Result<Connector, _> = serde_json::from_value(bad);
         assert!(parsed.map_or(true, |connector| connector.validate().is_err()));
@@ -332,6 +447,7 @@ mod commits {
             home.path(),
             None,
             std::slice::from_ref(&folder),
+            &[],
             Recorded::default(),
         );
         let refused = github
@@ -422,6 +538,7 @@ mod commits {
             home.path(),
             Some(TOKEN),
             std::slice::from_ref(&folder),
+            &[grant("a/read", Access::Read)],
             Recorded::default(),
         );
         let commit = github
@@ -466,14 +583,231 @@ mod commits {
             message.contains("Signed-off-by: Rigspark <noreply@rigspark.ai>"),
             "{message}"
         );
+        // A GitHub origin must be a repository set to read and write, over HTTPS or SSH,
+        // and the check runs before git contacts anything.
+        for (url, refusal) in [
+            ("https://github.com/a/read.git", "read-only"),
+            ("git@github.com:a/read.git", "read-only"),
+            ("https://github.com/other/repo", "no access"),
+            ("ssh://git@github.com/other/repo.git", "no access"),
+            ("https://github.com:8443/a/read", "can't check"),
+        ] {
+            git(repo.path(), &["remote", "set-url", "origin", url]);
+            let refused = github
+                .call(
+                    "git_push",
+                    json!({"folder": folder, "branch":"rigspark/hello"}),
+                    &cancel,
+                )
+                .await
+                .unwrap();
+            assert!(
+                refused.is_error && refused.content.contains(refusal),
+                "{url}: {}",
+                refused.content
+            );
+        }
+    }
+}
+
+mod access {
+    use super::*;
+    use rigspark_runtime::source_control::{
+        GrantedRepository, github_remote, granted_repositories, settle_access, validate_access,
+    };
+
+    #[tokio::test]
+    async fn github_tools_refuse_repositories_rigspark_was_not_given() {
+        let home = tempfile::tempdir().unwrap();
+        let cancel = CancellationToken::new();
+        let http = Recorded::default();
+        let mut github = connection(
+            home.path(),
+            Some(TOKEN),
+            &[],
+            &[grant("a/read", Access::Read)],
+            http.clone(),
+        );
+        for (name, args, refusal) in [
+            (
+                "github_list_issues",
+                json!({"repository":"a/other"}),
+                "no access to a/other",
+            ),
+            (
+                "github_read_issue",
+                json!({"repository":"b/read","number":1}),
+                "no access to b/read",
+            ),
+            (
+                "github_create_pull_request",
+                json!({"repository":"a/read","head":"x","base":"main","title":"t"}),
+                "a/read is read-only",
+            ),
+            (
+                "github_create_pull_request",
+                json!({"repository":"a/other","head":"x","base":"main","title":"t"}),
+                "no access to a/other",
+            ),
+        ] {
+            let result = github.call(name, args, &cancel).await.unwrap();
+            assert!(
+                result.is_error && result.content.contains(refusal),
+                "{name}: {}",
+                result.content
+            );
+        }
+        assert!(
+            http.seen.lock().unwrap().is_empty(),
+            "a refused repository never reaches GitHub"
+        );
+    }
+
+    #[test]
+    fn access_is_listed_once_per_repository() {
+        assert!(validate_access(&[grant("a/b", Access::Read)]).is_ok());
+        assert!(
+            validate_access(&[grant("a/b", Access::Read), grant("A/b", Access::Write)]).is_err()
+        );
+        assert!(validate_access(&[grant("nope", Access::Read)]).is_err());
+        let many: Vec<RepoAccess> = (0..201)
+            .map(|index| grant(&format!("a/r{index}"), Access::Read))
+            .collect();
+        assert!(validate_access(&many).is_err());
+    }
+
+    #[test]
+    fn only_reachable_repositories_keep_access_and_write_needs_push() {
+        let granted = [
+            GrantedRepository {
+                repository: "Owner/App".into(),
+                private: true,
+                can_write: true,
+            },
+            GrantedRepository {
+                repository: "owner/docs".into(),
+                private: false,
+                can_write: false,
+            },
+        ];
+        let (kept, refused) = settle_access(
+            &[
+                grant("owner/app", Access::Write),
+                grant("owner/docs", Access::Read),
+                grant("owner/docs", Access::Write),
+                grant("owner/gone", Access::Read),
+            ],
+            &granted,
+        );
+        assert_eq!(
+            kept,
+            [
+                grant("Owner/App", Access::Write),
+                grant("owner/docs", Access::Read)
+            ]
+        );
+        assert_eq!(refused, ["owner/docs", "owner/gone"]);
+    }
+
+    #[test]
+    fn remotes_are_read_as_github_repositories() {
+        for (url, expected) in [
+            ("https://github.com/a/b.git", Some("a/b")),
+            ("https://github.com/a/b", Some("a/b")),
+            ("https://github.com/a/b/", Some("a/b")),
+            ("https://user@github.com/a/b.git\n", Some("a/b")),
+            ("git@github.com:a/b.git", Some("a/b")),
+            ("ssh://git@github.com/a/b.git", Some("a/b")),
+            ("https://gitlab.com/a/b.git", None),
+            ("https://github.com.evil.example/a/b", None),
+            ("http://github.com/a/b", None),
+            ("https://github.com/a/b/c", None),
+            ("/srv/git/b.git", None),
+        ] {
+            assert_eq!(github_remote(url).as_deref(), expected, "{url}");
+        }
+    }
+
+    #[tokio::test]
+    async fn app_sign_ins_list_only_repositories_the_app_is_installed_on() {
+        let app = Credentials {
+            access_token: APP_TOKEN.into(),
+            refresh_token: Some(REFRESH.into()),
+            expires_at: None,
+        };
+        let full: Vec<Value> = (0..100)
+            .map(|index| {
+                json!({"full_name": format!("big/r{index:03}"), "private": true,
+                                "permissions": {"push": index % 2 == 0}})
+            })
+            .collect();
+        let http = Recorded::default()
+            .reply(
+                "/user/installations?per_page=100",
+                200,
+                json!({"installations":[{"id":11},{"id":12}]}),
+            )
+            .reply(
+                "/user/installations/11/repositories?per_page=100&page=1",
+                200,
+                json!({"repositories": full}),
+            )
+            .reply(
+                "/user/installations/11/repositories?per_page=100&page=2",
+                200,
+                json!({"repositories":[{"full_name":"big/last","private":false,"permissions":{"push":false}}]}),
+            )
+            .reply(
+                "/user/installations/12/repositories?per_page=100&page=1",
+                200,
+                json!({"repositories":[{"full_name":"Me/App","private":true,"permissions":{"push":true}},
+                                       {"full_name":"bad name"}]}),
+            );
+        let listed = granted_repositories(&http, &app).await.unwrap();
+        assert_eq!(listed.len(), 102);
+        assert_eq!(
+            listed.iter().find(|entry| entry.repository == "Me/App"),
+            Some(&GrantedRepository {
+                repository: "Me/App".into(),
+                private: true,
+                can_write: true
+            })
+        );
+        assert!(
+            listed
+                .iter()
+                .any(|entry| entry.repository == "big/last" && !entry.can_write)
+        );
+        assert!(
+            http.seen
+                .lock()
+                .unwrap()
+                .iter()
+                .all(|(_, _, token, _)| token == APP_TOKEN)
+        );
+        // A personal access token lists what GitHub shows for it.
+        let http = Recorded::default().reply(
+            "/user/repos?per_page=100&page=1",
+            200,
+            json!([{"full_name":"me/one","private":false,"permissions":{"push":true}}]),
+        );
+        let listed = granted_repositories(&http, &Credentials::token(TOKEN))
+            .await
+            .unwrap();
+        assert_eq!(listed[0].repository, "me/one");
+        let rejected = Recorded::default().reply("/user/repos?per_page=100&page=1", 401, json!({}));
+        assert!(matches!(
+            granted_repositories(&rejected, &Credentials::token(TOKEN)).await,
+            Err(McpError::Approval)
+        ));
     }
 }
 
 mod sign_in {
     use super::*;
     use rigspark_runtime::source_control::{
-        DEVICE_PAGE, GITHUB_CLIENT_ID, GITHUB_SCOPE, GithubSignIn, SignIn, client_id, poll_sign_in,
-        start_sign_in,
+        DEVICE_PAGE, GITHUB_APP_SLUG, GITHUB_CLIENT_ID, GithubSignIn, INSTALL_PAGE, Renewal,
+        SignIn, client_id, fresh_credentials, poll_sign_in, renew_sign_in, start_sign_in,
     };
 
     type Forms = Vec<(String, Vec<(String, String)>)>;
@@ -525,8 +859,13 @@ mod sign_in {
 
     #[test]
     fn the_built_in_client_is_rigspark_community() {
-        assert_eq!(GITHUB_CLIENT_ID, "Ov23liiNBR9qBdyloom2");
-        assert_eq!(GITHUB_SCOPE, "repo");
+        // The RigSpark Community GitHub App, not an OAuth app with a repo-wide scope.
+        assert_eq!(GITHUB_CLIENT_ID, "Iv23liaO72v1ZQNBqeq2");
+        assert_eq!(GITHUB_APP_SLUG, "rigspark-community");
+        assert_eq!(
+            INSTALL_PAGE,
+            "https://github.com/apps/rigspark-community/installations/new"
+        );
         if std::env::var_os("RIGSPARK_GITHUB_CLIENT_ID").is_none() {
             assert_eq!(client_id(), GITHUB_CLIENT_ID);
         }
@@ -541,13 +880,8 @@ mod sign_in {
         assert_eq!((code.interval, code.expires_in), (5, 900));
         let first = http.seen.lock().unwrap()[0].clone();
         assert_eq!(first.0, "/login/device/code");
-        assert_eq!(
-            first.1,
-            [
-                ("client_id".into(), GITHUB_CLIENT_ID.into()),
-                ("scope".into(), "repo".into())
-            ]
-        );
+        // No scope: what the app may do is fixed on the app, and where, by the person.
+        assert_eq!(first.1, [("client_id".into(), GITHUB_CLIENT_ID.into())]);
         // A response pointing anywhere but GitHub's device page is refused.
         for uri in [
             "https://evil.example/login/device",
@@ -575,7 +909,9 @@ mod sign_in {
             json!({"error":"slow_down","interval":10}),
             json!({"error":"expired_token"}),
             json!({"error":"access_denied"}),
-            json!({"access_token": TOKEN, "token_type":"bearer","scope":"repo"}),
+            json!({"access_token": APP_TOKEN, "token_type":"bearer","expires_in":28800,
+                   "refresh_token": REFRESH, "refresh_token_expires_in":15897600}),
+            json!({"access_token": TOKEN, "token_type":"bearer"}),
             json!({"access_token":"bad token"}),
             json!({"error":"incorrect_client_credentials"}),
         ]);
@@ -585,7 +921,18 @@ mod sign_in {
         assert_eq!(poll().await.unwrap(), SignIn::Pending { interval: 10 });
         assert_eq!(poll().await.unwrap(), SignIn::Expired);
         assert_eq!(poll().await.unwrap(), SignIn::Denied);
-        assert_eq!(poll().await.unwrap(), SignIn::Token(TOKEN.into()));
+        let before = rigspark_runtime::source_control::now();
+        let SignIn::Token(app) = poll().await.unwrap() else {
+            panic!("an app sign-in");
+        };
+        assert_eq!(app.access_token, APP_TOKEN);
+        assert_eq!(app.refresh_token.as_deref(), Some(REFRESH));
+        let expires = app.expires_at.unwrap();
+        assert!((before + 28_800..=before + 28_810).contains(&expires));
+        assert_eq!(
+            poll().await.unwrap(),
+            SignIn::Token(Credentials::token(TOKEN))
+        );
         assert!(poll().await.is_err());
         assert!(poll().await.is_err());
         let seen = http.seen.lock().unwrap().clone();
@@ -607,5 +954,112 @@ mod sign_in {
         );
         assert!(poll_sign_in(&http, GITHUB_CLIENT_ID, "").await.is_err());
         assert_eq!(http.seen.lock().unwrap().len(), before);
+    }
+
+    #[tokio::test]
+    async fn app_sign_ins_renew_before_they_expire() {
+        let renewed = json!({"access_token": "ghu_renewedrenewedrenewedrenewed01234",
+                             "expires_in": 28800, "refresh_token": "ghr_nextnextnextnextnextnextnext0123"});
+        let http = Recorded::with(vec![renewed.clone(), json!({"error":"bad_refresh_token"})]);
+        let fresh = renew_sign_in(&http, GITHUB_CLIENT_ID, REFRESH, 1_000)
+            .await
+            .unwrap();
+        assert_eq!(fresh.expires_at, Some(29_800));
+        assert_eq!(
+            fresh.refresh_token.as_deref(),
+            Some("ghr_nextnextnextnextnextnextnext0123")
+        );
+        let form = http.seen.lock().unwrap()[0].clone();
+        assert_eq!(form.0, "/login/oauth/access_token");
+        // No client secret: device sign-ins renew without one.
+        assert_eq!(
+            form.1,
+            [
+                ("client_id".into(), GITHUB_CLIENT_ID.into()),
+                ("grant_type".into(), "refresh_token".into()),
+                ("refresh_token".into(), REFRESH.into())
+            ]
+        );
+        assert!(matches!(
+            renew_sign_in(&http, GITHUB_CLIENT_ID, REFRESH, 1_000).await,
+            Err(McpError::Approval)
+        ));
+
+        // The saved sign-in is renewed only when it is about to expire, and saved again.
+        let home = tempfile::tempdir().unwrap();
+        let tokens = TokenStore::new(home.path());
+        assert_eq!(
+            fresh_credentials(&tokens, &Recorded::default(), GITHUB_CLIENT_ID, 0)
+                .await
+                .unwrap(),
+            None
+        );
+        let saved = Credentials {
+            access_token: APP_TOKEN.into(),
+            refresh_token: Some(REFRESH.into()),
+            expires_at: Some(10_000),
+        };
+        tokens.save(&saved).unwrap();
+        let quiet = Recorded::default();
+        assert_eq!(
+            fresh_credentials(&tokens, &quiet, GITHUB_CLIENT_ID, 9_000)
+                .await
+                .unwrap(),
+            Some(saved.clone())
+        );
+        assert!(quiet.seen.lock().unwrap().is_empty());
+        let http = Recorded::with(vec![renewed.clone()]);
+        let now = fresh_credentials(&tokens, &http, GITHUB_CLIENT_ID, 9_800)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(now.access_token, "ghu_renewedrenewedrenewedrenewed01234");
+        assert_eq!(tokens.load(), Some(now));
+
+        // A tool call renews an expired sign-in first and uses the new token.
+        tokens.save(&saved).unwrap();
+        let api = super::Recorded::default().reply(
+            "/repos/a/b/issues?state=open&per_page=30",
+            200,
+            json!([]),
+        );
+        let mut github = GithubConnection::new(
+            home.path(),
+            Some(saved.clone()),
+            &[],
+            &[grant("a/b", Access::Read)],
+            Box::new(api.clone()),
+        )
+        .with_renewal(Renewal {
+            sign_in: Box::new(Recorded::with(vec![renewed])),
+            client_id: GITHUB_CLIENT_ID.into(),
+        });
+        let cancel = CancellationToken::new();
+        let listed = github
+            .call("github_list_issues", json!({"repository":"a/b"}), &cancel)
+            .await
+            .unwrap();
+        assert!(!listed.is_error, "{}", listed.content);
+        assert_eq!(
+            api.seen.lock().unwrap()[0].2,
+            "ghu_renewedrenewedrenewedrenewed01234"
+        );
+        assert_eq!(
+            tokens.load().unwrap().access_token,
+            "ghu_renewedrenewedrenewedrenewed01234"
+        );
+        // Without a way to renew, an expired sign-in asks to sign in again.
+        let mut stale = GithubConnection::new(
+            home.path(),
+            Some(saved),
+            &[],
+            &[grant("a/b", Access::Read)],
+            Box::new(super::Recorded::default()),
+        );
+        let result = stale
+            .call("github_list_issues", json!({"repository":"a/b"}), &cancel)
+            .await
+            .unwrap();
+        assert!(result.is_error && result.content.contains("Sign in again"));
     }
 }

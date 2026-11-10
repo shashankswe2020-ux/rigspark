@@ -411,6 +411,15 @@
                     </div>
                     <div id="source-github-error" class="banner banner-error" hidden></div>
                     <form id="source-github-form" class="source-form" hidden>
+                      <div class="source-repos">
+                        <div class="source-repos-head">
+                          <b>Repositories</b>
+                          <button id="source-github-choose" class="ghost-btn" type="button">Choose on GitHub</button>
+                          <button id="source-github-reload" class="ghost-btn" type="button">Refresh</button>
+                        </div>
+                        <small class="section-note">Only repositories you share with the RigSpark Community app on GitHub show up here, and each starts with no access. Read & write is needed to push a branch or open a pull request.</small>
+                        <ul id="source-github-repo-list" class="source-repo-list" aria-label="GitHub repositories"></ul>
+                      </div>
                       <label>
                         Folders RigSpark may commit in (one per line)
                         <textarea id="source-github-folders" rows="3" spellcheck="false" placeholder="/Users/you/code/project"></textarea>
@@ -419,7 +428,7 @@
                       <div class="source-form-actions">
                         <button id="source-github-disconnect" class="ghost-btn" type="button">Disconnect</button>
                         <button id="source-github-sign-in" class="ghost-btn" type="button">Sign in again</button>
-                        <button id="source-github-save-folders" class="accent-btn" type="button">Save folders</button>
+                        <button id="source-github-save-folders" class="accent-btn" type="button">Save</button>
                       </div>
                       <details class="reveal source-token">
                         <summary>Use a token instead</summary>
@@ -428,7 +437,7 @@
                           <input id="source-github-token" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_…" />
                         </label>
                         <small class="section-note">
-                          A fine-grained token with Contents and Pull requests access to the repositories you want.
+                          A fine-grained token limited to the repositories you want, with Contents and Pull requests access.
                           Stored only on this computer and sent only to GitHub.
                         </small>
                         <div class="source-form-actions">

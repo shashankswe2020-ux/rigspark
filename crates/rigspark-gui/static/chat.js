@@ -2278,6 +2278,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   const GITHUB_DEVICE_PAGE = "https://github.com/login/device";
+  const GITHUB_INSTALL_PAGE = "https://github.com/apps/rigspark-community/installations/new";
   const SOURCE_GITHUB_IDLE = "Read issues, commit, push a branch and open pull requests, from any chat";
   const sourceGithub = {
     connect: document.querySelector("#source-github-connect"),
@@ -2295,9 +2296,15 @@ document.addEventListener("DOMContentLoaded", () => {
     copy: document.querySelector("#source-github-copy"),
     open: document.querySelector("#source-github-open"),
     wait: document.querySelector("#source-github-wait"),
+    choose: document.querySelector("#source-github-choose"),
+    reload: document.querySelector("#source-github-reload"),
+    repoList: document.querySelector("#source-github-repo-list"),
   };
   let sourceGithubPoll = null;
   let sourceGithubConfigured = false;
+  let sourceGithubToken = false;
+  /** Saved access, by lower-cased owner/name: "read" or "write". */
+  let sourceGithubAccess = new Map();
 
   function sourceGithubError(message) {
     if (sourceGithub.error) {
@@ -2323,6 +2330,96 @@ document.addEventListener("DOMContentLoaded", () => {
     return data;
   }
 
+  /** Where people pick the repositories the RigSpark Community GitHub App may reach. */
+  function openGithubRepositoryChoice() {
+    if (globalThis.llmupDesktop && typeof globalThis.llmupDesktop.openGitHubRepositoryChoice === "function") {
+      globalThis.llmupDesktop.openGitHubRepositoryChoice().catch(() => {
+        sourceGithubError(`Open ${GITHUB_INSTALL_PAGE} in your browser to choose repositories.`);
+      });
+    } else {
+      globalThis.open(GITHUB_INSTALL_PAGE, "_blank", "noopener,noreferrer");
+    }
+  }
+
+  function sourceGithubEmpty(text) {
+    sourceGithub.repoList.replaceChildren();
+    const note = document.createElement("li");
+    note.className = "source-repo-empty";
+    note.textContent = text;
+    sourceGithub.repoList.appendChild(note);
+  }
+
+  /** Lists the repositories this sign-in reaches, each with its RigSpark access. */
+  async function loadSourceGithubRepositories() {
+    if (!sourceGithub.repoList) {
+      return;
+    }
+    if (!sourceGithubToken) {
+      sourceGithubEmpty("Sign in with GitHub to choose repositories.");
+      return;
+    }
+    sourceGithubEmpty("Loading repositories…");
+    try {
+      const { repositories, appSignIn } = await sourceGithubRequest("GET", "/repositories");
+      if (!repositories.length) {
+        sourceGithubEmpty(
+          appSignIn
+            ? "No repositories shared yet. Use Choose on GitHub, pick Only select repositories, then Refresh."
+            : "This token can't see any repositories.",
+        );
+        return;
+      }
+      sourceGithub.repoList.replaceChildren();
+      for (const entry of repositories) {
+        const row = document.createElement("li");
+        const name = document.createElement("span");
+        name.className = "source-repo-name";
+        name.textContent = entry.repository;
+        row.appendChild(name);
+        if (entry.private) {
+          const badge = document.createElement("span");
+          badge.className = "source-repo-private";
+          badge.textContent = "private";
+          row.appendChild(badge);
+        }
+        const select = document.createElement("select");
+        select.dataset.repository = entry.repository;
+        select.setAttribute("aria-label", `Access to ${entry.repository}`);
+        for (const [value, label] of [
+          ["", "No access"],
+          ["read", "Read only"],
+          ["write", "Read & write"],
+        ]) {
+          const option = document.createElement("option");
+          option.value = value;
+          option.textContent = label;
+          if (value === "write" && !entry.canWrite) {
+            option.disabled = true;
+            option.textContent = "Read & write (you can't push here)";
+          }
+          select.appendChild(option);
+        }
+        const saved = sourceGithubAccess.get(entry.repository.toLowerCase()) || "";
+        select.value = saved === "write" && !entry.canWrite ? "read" : saved;
+        row.appendChild(select);
+        sourceGithub.repoList.appendChild(row);
+      }
+    } catch (error) {
+      sourceGithubEmpty(`Could not list repositories: ${error.message}`);
+    }
+  }
+
+  /** The chosen access, or null when the list isn't showing choices (keep what's saved). */
+  function sourceGithubChosenAccess() {
+    const selects = sourceGithub.repoList ? [...sourceGithub.repoList.querySelectorAll("select")] : [];
+    if (!selects.length) {
+      return null;
+    }
+    return selects
+      .filter((select) => select.value)
+      .map((select) => ({ repository: select.dataset.repository, access: select.value }));
+  }
+
   /** GitHub's device page opens in the default browser; the desktop window blocks other sites. */
   function openGithubDevicePage() {
     if (globalThis.llmupDesktop && typeof globalThis.llmupDesktop.openGitHubSignIn === "function") {
@@ -2344,11 +2441,15 @@ document.addEventListener("DOMContentLoaded", () => {
     sourceGithub.connect.disabled = false;
   }
 
-  async function finishSourceGithub() {
+  /** After signing in, Manage opens on the repository list so access is chosen next. */
+  async function finishSourceGithub(keepOpen) {
     stopSourceGithubSignIn();
     sourceGithub.token.value = "";
-    sourceGithub.form.hidden = true;
     await Promise.all([loadSourceControl(), loadConnectors()]);
+    sourceGithub.form.hidden = !keepOpen;
+    if (keepOpen) {
+      await loadSourceGithubRepositories();
+    }
   }
 
   async function startSourceGithubSignIn() {
@@ -2376,7 +2477,7 @@ document.addEventListener("DOMContentLoaded", () => {
             repositories: sourceGithubFolders(),
           });
           if (result.status === "connected") {
-            await finishSourceGithub();
+            await finishSourceGithub(true);
             return;
           }
           if (result.status === "denied" || result.status === "expired") {
@@ -2405,6 +2506,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const { github } = await sourceGithubRequest("GET");
       const folders = Array.isArray(github.repositories) ? github.repositories : [];
       sourceGithubConfigured = github.configured;
+      sourceGithubToken = Boolean(github.token);
+      const access = Array.isArray(github.access) ? github.access : [];
+      sourceGithubAccess = new Map(access.map((grant) => [grant.repository.toLowerCase(), grant.access]));
       sourceGithub.connect.textContent = github.configured ? "Manage" : "Connect";
       sourceGithub.signIn.textContent = github.token ? "Sign in again" : "Sign in with GitHub";
       if (sourceGithub.folders && !sourceGithub.form.contains(document.activeElement)) {
@@ -2412,6 +2516,9 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       if (github.configured) {
         const parts = [github.token ? github.name.replace(/^GitHub \((.*)\)$/, "Connected as $1") : "Local commits only"];
+        if (github.token) {
+          parts.push(access.length ? `${access.length} repo${access.length === 1 ? "" : "s"}` : "no repos chosen yet");
+        }
         if (folders.length) {
           parts.push(`${folders.length} folder${folders.length === 1 ? "" : "s"} for commits`);
         }
@@ -2427,8 +2534,13 @@ document.addEventListener("DOMContentLoaded", () => {
   async function saveSourceGithub(token) {
     sourceGithubError("");
     try {
-      await sourceGithubRequest("POST", "", { token: token || null, repositories: sourceGithubFolders() });
-      await finishSourceGithub();
+      const payload = { token: token || null, repositories: sourceGithubFolders() };
+      const access = token ? null : sourceGithubChosenAccess();
+      if (access) {
+        payload.access = access;
+      }
+      await sourceGithubRequest("POST", "", payload);
+      await finishSourceGithub(Boolean(token));
     } catch (error) {
       sourceGithubError(`Could not connect GitHub: ${error.message}`);
     }
@@ -2443,9 +2555,11 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       sourceGithub.form.hidden = !sourceGithub.form.hidden;
       if (!sourceGithub.form.hidden) {
-        sourceGithub.folders.focus();
+        loadSourceGithubRepositories();
       }
     });
+    sourceGithub.choose.addEventListener("click", openGithubRepositoryChoice);
+    sourceGithub.reload.addEventListener("click", loadSourceGithubRepositories);
     sourceGithub.signIn.addEventListener("click", startSourceGithubSignIn);
     sourceGithub.cancel.addEventListener("click", stopSourceGithubSignIn);
     sourceGithub.open.addEventListener("click", openGithubDevicePage);
