@@ -2277,6 +2277,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  const GITHUB_DEVICE_PAGE = "https://github.com/login/device";
+  const SOURCE_GITHUB_IDLE = "Read issues, commit, push a branch and open pull requests, from any chat";
   const sourceGithub = {
     connect: document.querySelector("#source-github-connect"),
     form: document.querySelector("#source-github-form"),
@@ -2285,7 +2287,16 @@ document.addEventListener("DOMContentLoaded", () => {
     status: document.querySelector("#source-github-status"),
     disconnect: document.querySelector("#source-github-disconnect"),
     error: document.querySelector("#source-github-error"),
+    signIn: document.querySelector("#source-github-sign-in"),
+    cancel: document.querySelector("#source-github-cancel"),
+    saveFolders: document.querySelector("#source-github-save-folders"),
+    code: document.querySelector("#source-github-code"),
+    userCode: document.querySelector("#source-github-user-code"),
+    copy: document.querySelector("#source-github-copy"),
+    open: document.querySelector("#source-github-open"),
+    wait: document.querySelector("#source-github-wait"),
   };
+  let sourceGithubPoll = null;
 
   function sourceGithubError(message) {
     if (sourceGithub.error) {
@@ -2294,8 +2305,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  async function sourceGithubRequest(method, payload) {
-    const response = await globalThis.fetch("/api/source-control/github", {
+  function sourceGithubFolders() {
+    return sourceGithub.folders.value.split("\n").map((line) => line.trim()).filter(Boolean);
+  }
+
+  async function sourceGithubRequest(method, path, payload) {
+    const response = await globalThis.fetch(`/api/source-control/github${path || ""}`, {
       method,
       headers: payload ? { "Content-Type": "application/json" } : undefined,
       body: payload ? JSON.stringify(payload) : undefined,
@@ -2307,6 +2322,80 @@ document.addEventListener("DOMContentLoaded", () => {
     return data;
   }
 
+  /** GitHub's device page opens in the default browser; the desktop window blocks other sites. */
+  function openGithubDevicePage() {
+    if (globalThis.llmupDesktop && typeof globalThis.llmupDesktop.openGitHubSignIn === "function") {
+      globalThis.llmupDesktop.openGitHubSignIn().catch(() => {
+        sourceGithubError(`Open ${GITHUB_DEVICE_PAGE} in your browser and enter the code.`);
+      });
+    } else {
+      globalThis.open(GITHUB_DEVICE_PAGE, "_blank", "noopener,noreferrer");
+    }
+  }
+
+  function stopSourceGithubSignIn() {
+    if (sourceGithubPoll) {
+      clearTimeout(sourceGithubPoll);
+      sourceGithubPoll = null;
+    }
+    sourceGithub.code.hidden = true;
+    sourceGithub.cancel.hidden = true;
+    sourceGithub.signIn.disabled = false;
+  }
+
+  async function finishSourceGithub() {
+    stopSourceGithubSignIn();
+    sourceGithub.token.value = "";
+    sourceGithub.form.hidden = true;
+    sourceGithub.connect.setAttribute("aria-expanded", "false");
+    await Promise.all([loadSourceControl(), loadConnectors()]);
+  }
+
+  async function startSourceGithubSignIn() {
+    sourceGithubError("");
+    stopSourceGithubSignIn();
+    sourceGithub.signIn.disabled = true;
+    try {
+      const { signIn } = await sourceGithubRequest("POST", "/sign-in");
+      sourceGithub.userCode.textContent = signIn.userCode;
+      sourceGithub.wait.textContent = "Waiting for you to approve on github.com…";
+      sourceGithub.code.hidden = false;
+      sourceGithub.cancel.hidden = false;
+      openGithubDevicePage();
+      const deadline = Date.now() + signIn.expiresIn * 1000;
+      const poll = async (interval) => {
+        if (Date.now() > deadline) {
+          stopSourceGithubSignIn();
+          sourceGithubError("The code expired. Sign in again.");
+          return;
+        }
+        try {
+          const result = await sourceGithubRequest("POST", "/sign-in/poll", {
+            deviceCode: signIn.deviceCode,
+            repositories: sourceGithubFolders(),
+          });
+          if (result.status === "connected") {
+            await finishSourceGithub();
+            return;
+          }
+          if (result.status === "denied" || result.status === "expired") {
+            stopSourceGithubSignIn();
+            sourceGithubError(result.status === "denied" ? "Sign-in was cancelled on GitHub." : "The code expired. Sign in again.");
+            return;
+          }
+          sourceGithubPoll = setTimeout(() => poll(result.interval || interval), (result.interval || interval) * 1000);
+        } catch (error) {
+          stopSourceGithubSignIn();
+          sourceGithubError(`Could not connect GitHub: ${error.message}`);
+        }
+      };
+      sourceGithubPoll = setTimeout(() => poll(signIn.interval), signIn.interval * 1000);
+    } catch (error) {
+      stopSourceGithubSignIn();
+      sourceGithubError(`Could not start GitHub sign-in: ${error.message}`);
+    }
+  }
+
   async function loadSourceControl() {
     if (!sourceGithub.connect) {
       return;
@@ -2316,6 +2405,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const folders = Array.isArray(github.repositories) ? github.repositories : [];
       sourceGithub.connect.textContent = github.configured ? "Manage" : "Connect";
       sourceGithub.disconnect.hidden = !github.configured;
+      sourceGithub.saveFolders.hidden = !github.configured;
+      sourceGithub.signIn.textContent = github.token ? "Sign in again" : "Sign in with GitHub";
       if (sourceGithub.folders && !sourceGithub.form.contains(document.activeElement)) {
         sourceGithub.folders.value = folders.join("\n");
       }
@@ -2325,9 +2416,21 @@ document.addEventListener("DOMContentLoaded", () => {
           parts.push(`${folders.length} folder${folders.length === 1 ? "" : "s"} for commits`);
         }
         sourceGithub.status.textContent = parts.join(" · ");
+      } else {
+        sourceGithub.status.textContent = SOURCE_GITHUB_IDLE;
       }
     } catch (error) {
       sourceGithub.status.textContent = `Could not load: ${error.message}`;
+    }
+  }
+
+  async function saveSourceGithub(token) {
+    sourceGithubError("");
+    try {
+      await sourceGithubRequest("POST", "", { token: token || null, repositories: sourceGithubFolders() });
+      await finishSourceGithub();
+    } catch (error) {
+      sourceGithubError(`Could not connect GitHub: ${error.message}`);
     }
   }
 
@@ -2336,36 +2439,35 @@ document.addEventListener("DOMContentLoaded", () => {
       const open = sourceGithub.form.hidden;
       sourceGithub.form.hidden = !open;
       sourceGithub.connect.setAttribute("aria-expanded", String(open));
-      if (open) {
-        sourceGithub.token.focus();
+      if (!open) {
+        stopSourceGithubSignIn();
       }
     });
-    sourceGithub.form.addEventListener("submit", async (event) => {
-      event.preventDefault();
-      sourceGithubError("");
-      const save = sourceGithub.form.querySelector("[type=submit]");
-      save.disabled = true;
+    sourceGithub.signIn.addEventListener("click", startSourceGithubSignIn);
+    sourceGithub.cancel.addEventListener("click", stopSourceGithubSignIn);
+    sourceGithub.open.addEventListener("click", openGithubDevicePage);
+    sourceGithub.copy.addEventListener("click", async () => {
       try {
-        await sourceGithubRequest("POST", {
-          token: sourceGithub.token.value.trim() || null,
-          repositories: sourceGithub.folders.value.split("\n").map((line) => line.trim()).filter(Boolean),
-        });
-        sourceGithub.token.value = "";
-        sourceGithub.form.hidden = true;
-        sourceGithub.connect.setAttribute("aria-expanded", "false");
-        await Promise.all([loadSourceControl(), loadConnectors()]);
-      } catch (error) {
-        sourceGithubError(`Could not connect GitHub: ${error.message}`);
-      } finally {
-        save.disabled = false;
+        await globalThis.navigator.clipboard.writeText(sourceGithub.userCode.textContent);
+        sourceGithub.copy.textContent = "Copied";
+        setTimeout(() => {
+          sourceGithub.copy.textContent = "Copy";
+        }, 1500);
+      } catch {
+        sourceGithub.copy.textContent = "Select and copy";
       }
+    });
+    sourceGithub.saveFolders.addEventListener("click", () => saveSourceGithub(null));
+    sourceGithub.form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      saveSourceGithub(sourceGithub.token.value.trim());
     });
     sourceGithub.disconnect.addEventListener("click", async () => {
       sourceGithubError("");
+      stopSourceGithubSignIn();
       try {
         await sourceGithubRequest("DELETE");
         sourceGithub.form.hidden = true;
-        sourceGithub.status.textContent = "Read issues, commit, push a branch and open pull requests, from any chat";
         await Promise.all([loadSourceControl(), loadConnectors()]);
       } catch (error) {
         sourceGithubError(`Could not disconnect: ${error.message}`);

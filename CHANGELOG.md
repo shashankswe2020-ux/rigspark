@@ -4,8 +4,8 @@
 
 ### Changes
 
-- **Source control in Connectors: GitHub.** Connect GitHub with a personal access
-  token and every chat session can list and read issues and open pull requests;
+- **Source control in Connectors: GitHub.** Click **Sign in with GitHub**, enter
+  the code RigSpark shows on github.com (it opens for you), and every chat session can list and read issues and open pull requests;
   add local repository folders and it can commit there, and push a new branch
   (never `main` or `master`) so it can open a pull request. RigSpark talks to
   `api.github.com` itself (no MCP server to install). The token is kept in an

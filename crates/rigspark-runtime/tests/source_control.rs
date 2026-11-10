@@ -472,3 +472,144 @@ mod commits {
         );
     }
 }
+
+mod sign_in {
+    use super::*;
+    use rigspark_runtime::source_control::{
+        DEVICE_PAGE, GITHUB_CLIENT_ID, GITHUB_SCOPE, GithubSignIn, SignIn, client_id, poll_sign_in,
+        start_sign_in,
+    };
+
+    type Forms = Vec<(String, Vec<(String, String)>)>;
+
+    #[derive(Default)]
+    struct Recorded {
+        replies: Mutex<Vec<HttpReply>>,
+        seen: Mutex<Forms>,
+    }
+    impl Recorded {
+        fn with(replies: Vec<Value>) -> Self {
+            Self {
+                replies: Mutex::new(
+                    replies
+                        .into_iter()
+                        .rev()
+                        .map(|body| HttpReply { status: 200, body })
+                        .collect(),
+                ),
+                seen: Mutex::default(),
+            }
+        }
+    }
+    #[async_trait::async_trait]
+    impl GithubSignIn for Recorded {
+        async fn post_form(
+            &self,
+            path: &str,
+            form: &[(&str, &str)],
+        ) -> Result<HttpReply, McpError> {
+            self.seen.lock().unwrap().push((
+                path.into(),
+                form.iter()
+                    .map(|(k, v)| (k.to_string(), v.to_string()))
+                    .collect(),
+            ));
+            self.replies
+                .lock()
+                .unwrap()
+                .pop()
+                .ok_or(McpError::Transport)
+        }
+    }
+
+    fn device(uri: &str) -> Value {
+        json!({"device_code":"3584d83530557fdd1f46af8289938c8ef79f9dc5","user_code":"WDJB-MJHT",
+               "verification_uri":uri,"expires_in":900,"interval":5})
+    }
+
+    #[test]
+    fn the_built_in_client_is_rigspark_community() {
+        assert_eq!(GITHUB_CLIENT_ID, "Ov23liiNBR9qBdyloom2");
+        assert_eq!(GITHUB_SCOPE, "repo");
+        if std::env::var_os("RIGSPARK_GITHUB_CLIENT_ID").is_none() {
+            assert_eq!(client_id(), GITHUB_CLIENT_ID);
+        }
+    }
+
+    #[tokio::test]
+    async fn sign_in_starts_with_a_code_for_githubs_own_device_page() {
+        let http = Recorded::with(vec![device(DEVICE_PAGE)]);
+        let code = start_sign_in(&http, GITHUB_CLIENT_ID).await.unwrap();
+        assert_eq!(code.user_code, "WDJB-MJHT");
+        assert_eq!(code.verification_uri, "https://github.com/login/device");
+        assert_eq!((code.interval, code.expires_in), (5, 900));
+        let first = http.seen.lock().unwrap()[0].clone();
+        assert_eq!(first.0, "/login/device/code");
+        assert_eq!(
+            first.1,
+            [
+                ("client_id".into(), GITHUB_CLIENT_ID.into()),
+                ("scope".into(), "repo".into())
+            ]
+        );
+        // A response pointing anywhere but GitHub's device page is refused.
+        for uri in [
+            "https://evil.example/login/device",
+            "http://github.com/login/device",
+        ] {
+            let http = Recorded::with(vec![device(uri)]);
+            assert!(
+                start_sign_in(&http, GITHUB_CLIENT_ID).await.is_err(),
+                "{uri}"
+            );
+        }
+        let mut odd = device(DEVICE_PAGE);
+        odd["user_code"] = json!("<script>");
+        assert!(
+            start_sign_in(&Recorded::with(vec![odd]), GITHUB_CLIENT_ID)
+                .await
+                .is_err()
+        );
+    }
+
+    #[tokio::test]
+    async fn polling_maps_every_github_answer() {
+        let http = Recorded::with(vec![
+            json!({"error":"authorization_pending"}),
+            json!({"error":"slow_down","interval":10}),
+            json!({"error":"expired_token"}),
+            json!({"error":"access_denied"}),
+            json!({"access_token": TOKEN, "token_type":"bearer","scope":"repo"}),
+            json!({"access_token":"bad token"}),
+            json!({"error":"incorrect_client_credentials"}),
+        ]);
+        let code = "3584d83530557fdd1f46af8289938c8ef79f9dc5";
+        let poll = || poll_sign_in(&http, GITHUB_CLIENT_ID, code);
+        assert_eq!(poll().await.unwrap(), SignIn::Pending { interval: 5 });
+        assert_eq!(poll().await.unwrap(), SignIn::Pending { interval: 10 });
+        assert_eq!(poll().await.unwrap(), SignIn::Expired);
+        assert_eq!(poll().await.unwrap(), SignIn::Denied);
+        assert_eq!(poll().await.unwrap(), SignIn::Token(TOKEN.into()));
+        assert!(poll().await.is_err());
+        assert!(poll().await.is_err());
+        let seen = http.seen.lock().unwrap().clone();
+        assert!(
+            seen.iter()
+                .all(|(path, form)| path == "/login/oauth/access_token"
+                    && form.contains(&(
+                        "grant_type".into(),
+                        "urn:ietf:params:oauth:grant-type:device_code".into()
+                    ))
+                    && form.contains(&("device_code".into(), code.into())))
+        );
+        // A malformed device code never reaches GitHub.
+        let before = http.seen.lock().unwrap().len();
+        assert!(
+            poll_sign_in(&http, GITHUB_CLIENT_ID, "a&b=c")
+                .await
+                .is_err()
+        );
+        assert!(poll_sign_in(&http, GITHUB_CLIENT_ID, "").await.is_err());
+        assert_eq!(http.seen.lock().unwrap().len(), before);
+    }
+}
