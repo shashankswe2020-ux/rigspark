@@ -5840,3 +5840,77 @@ input.switch.switch-sm:checked::after {
 .voice-attach[open] > summary::before {
   transform: rotate(90deg);
 }
+
+/* Source control (Connectors) */
+.source-control {
+  margin: 24px 0;
+}
+.source-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+  margin-top: 10px;
+  align-items: start;
+}
+.source-card {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px;
+  background: var(--raised);
+  color: var(--text);
+}
+.source-card-soon {
+  opacity: 0.6;
+}
+.source-card-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.source-logo {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+}
+.source-logo .icon {
+  width: 20px;
+  height: 20px;
+}
+.source-logo-text {
+  font-weight: 600;
+  font-size: 13px;
+}
+.source-card-text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+.source-card-text small {
+  color: var(--muted);
+}
+.source-form {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+.source-form label {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+}
+.source-form input,
+.source-form textarea {
+  font: inherit;
+  width: 100%;
+  box-sizing: border-box;
+}
+.source-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}

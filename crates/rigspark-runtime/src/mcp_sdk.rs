@@ -100,6 +100,8 @@ impl ClientFactory for SdkFactory {
                 );
                 tokio::select! {biased;_=cancel.cancelled()=>return Err(McpError::Cancelled),result=tokio::time::timeout(Duration::from_secs(15),().serve(transport))=>result.map_err(|_|McpError::Transport)?.map_err(|_|McpError::Transport)?}
             }
+            // Native connectors run in-process; see `source_control::NativeFactory`.
+            Connector::Github { .. } => return Err(McpError::Unavailable),
             Connector::Http { url, .. } => {
                 let url = loopback_url(url)?;
                 let addresses = [

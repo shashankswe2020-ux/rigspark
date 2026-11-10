@@ -2701,7 +2701,7 @@ async fn run_bench(args: &Args) -> Result<u8, Box<dyn std::error::Error>> {
 
 /// Starts a coding agent against the active server, or prints how to configure it.
 fn run_connect(args: &Args) -> Result<u8, Box<dyn std::error::Error>> {
-    use rigspark_runtime::connect::{Agent, ConnectPlan, plan};
+    use rigspark_runtime::connect::{Agent, ConnectPlan, attributed, plan};
     let name = args
         .model
         .as_deref()
@@ -2713,7 +2713,9 @@ fn run_connect(args: &Args) -> Result<u8, Box<dyn std::error::Error>> {
             Agent::NAMES.join(", ")
         )
     })?;
-    let store = rigspark_runtime::state::StateStore::new(rigspark_runtime::state::Config::load()?);
+    let config = rigspark_runtime::state::Config::load()?;
+    let home = config.home.clone();
+    let store = rigspark_runtime::state::StateStore::new(config);
     let Some(active) = store.read()?.active else {
         return Err("no active server to connect; run up first".into());
     };
@@ -2721,7 +2723,22 @@ fn run_connect(args: &Args) -> Result<u8, Box<dyn std::error::Error>> {
         .runtime_model_id
         .clone()
         .unwrap_or_else(|| active.model_id.clone());
-    match plan(agent, &active.endpoint, &active.backend, &model)? {
+    let launch = plan(agent, &active.endpoint, &active.backend, &model)?;
+    let launch = if matches!(launch, ConnectPlan::Launch { .. }) {
+        // Every commit the agent makes carries RigSpark's trailers; refuse to launch
+        // without them rather than make unattributed commits.
+        let installed = rigspark_runtime::commit_attribution::install(&home).map_err(|error| {
+            format!(
+                "cannot set up commit attribution in {}: {error}",
+                home.display()
+            )
+        })?;
+        let inherited = std::env::var("GIT_CONFIG_COUNT").ok();
+        attributed(launch, agent, &model, &installed, inherited.as_deref())
+    } else {
+        launch
+    };
+    match launch {
         ConnectPlan::Instructions { text } if args.json => {
             println!(
                 "{}",

@@ -155,6 +155,7 @@ impl StartupOptions {
         let runner = NativeOpenCodeRunner {
             binary: runtime.binary("opencode"),
             env: env.clone(),
+            commit_home: Some(home.to_path_buf()),
         };
         let registry = HarnessRegistry::builtins(
             LocalHarness {

@@ -441,6 +441,131 @@ pub async fn dispatch(host: Arc<Host>, request: Request) -> ApiResult {
             ));
         }
     }
+    if path == "/api/source-control/github" {
+        use rigspark_runtime::source_control::{
+            GITHUB_ID, NativeFactory, ReqwestGithub, TokenStore, verify_token,
+        };
+        let store = ConnectorStore::new(&host.home);
+        let tokens = TokenStore::new(&host.home);
+        if method != "GET" {
+            host.cancel_chat();
+            host.grants.lock().await.clear();
+        }
+        let mut manager = host.connectors.lock().await;
+        let current = manager.snapshot();
+        let existing = current
+            .connectors
+            .iter()
+            .find_map(|connector| match connector {
+                Connector::Github {
+                    name, repositories, ..
+                } => Some((name.clone(), repositories.clone())),
+                _ => None,
+            });
+        match method.as_str() {
+            "GET" => {
+                let (name, repositories) = existing.unwrap_or_default();
+                return Ok(json_response(json!({"github":{
+                    "configured": !name.is_empty(),
+                    "name": name,
+                    "token": tokens.load().is_some(),
+                    "repositories": repositories,
+                    "connector": manager.list().into_iter().find(|entry| entry.id == GITHUB_ID),
+                }})));
+            }
+            "POST" => {
+                #[derive(serde::Deserialize)]
+                #[serde(deny_unknown_fields)]
+                struct Input {
+                    #[serde(default)]
+                    token: Option<String>,
+                    #[serde(default)]
+                    repositories: Vec<String>,
+                }
+                let input: Input = body(request, MAX_REQUEST_BYTES).await?;
+                let mut repositories = Vec::new();
+                for folder in &input.repositories {
+                    let folder = folder.trim();
+                    if folder.is_empty() {
+                        continue;
+                    }
+                    let resolved = std::fs::canonicalize(folder)
+                        .ok()
+                        .filter(|path| path.is_dir())
+                        .ok_or(ApiError(StatusCode::BAD_REQUEST, "a folder does not exist"))?;
+                    if !resolved.join(".git").exists() {
+                        return Err(ApiError(
+                            StatusCode::BAD_REQUEST,
+                            "a folder is not a git repository",
+                        ));
+                    }
+                    let resolved = resolved.display().to_string();
+                    if !repositories.contains(&resolved) {
+                        repositories.push(resolved);
+                    }
+                }
+                let token = input
+                    .token
+                    .as_deref()
+                    .map(str::trim)
+                    .filter(|token| !token.is_empty());
+                let mut name = existing.map(|(name, _)| name).unwrap_or_default();
+                if let Some(token) = token {
+                    let http = checked(ReqwestGithub::new())?;
+                    let login = verify_token(&http, token)
+                        .await
+                        .map_err(|error| match error {
+                            rigspark_runtime::mcp::McpError::Approval => {
+                                ApiError(StatusCode::BAD_REQUEST, "GitHub rejected the token")
+                            }
+                            rigspark_runtime::mcp::McpError::Invalid => ApiError(
+                                StatusCode::BAD_REQUEST,
+                                "that does not look like a GitHub token",
+                            ),
+                            _ => ApiError(StatusCode::BAD_GATEWAY, "GitHub could not be reached"),
+                        })?;
+                    checked(tokens.save(token))?;
+                    name = format!("GitHub ({login})");
+                } else if tokens.load().is_none() {
+                    name = "GitHub (local commits)".into();
+                }
+                if name.is_empty() {
+                    name = "GitHub".into();
+                }
+                let mut file = current.clone();
+                file.connectors
+                    .retain(|connector| connector.id() != GITHUB_ID);
+                file.connectors.push(Connector::Github {
+                    id: GITHUB_ID.into(),
+                    name,
+                    repositories,
+                });
+                checked(manager.replace(file, &store).await)?;
+                checked(
+                    manager
+                        .connect(
+                            GITHUB_ID,
+                            &NativeFactory {
+                                home: host.home.clone(),
+                            },
+                            &host.shutdown,
+                        )
+                        .await,
+                )?;
+                return Ok(json_response(json!({
+                    "connector": manager.list().into_iter().find(|entry| entry.id == GITHUB_ID),
+                })));
+            }
+            "DELETE" => {
+                if existing.is_some() {
+                    checked(manager.remove(GITHUB_ID, &store).await)?;
+                }
+                checked(tokens.remove())?;
+                return Ok(json_response(json!({"removed": GITHUB_ID})));
+            }
+            _ => return Err(missing()),
+        }
+    }
     if path.starts_with("/api/connectors") {
         let store = ConnectorStore::new(&host.home);
         if method != "GET" {
@@ -513,7 +638,13 @@ pub async fn dispatch(host: Arc<Host>, request: Request) -> ApiResult {
                 match segments.get(4).copied() {
                     Some("connect") => checked(
                         manager
-                            .connect(id, &rigspark_runtime::mcp_sdk::SdkFactory, &host.shutdown)
+                            .connect(
+                                id,
+                                &rigspark_runtime::source_control::NativeFactory {
+                                    home: host.home.clone(),
+                                },
+                                &host.shutdown,
+                            )
                             .await,
                     )?,
                     Some("disconnect") => checked(manager.disconnect(id).await)?,

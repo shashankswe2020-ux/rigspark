@@ -183,3 +183,29 @@ pub fn plan(
         },
     })
 }
+
+/// Adds RigSpark's commit trailers to a launch: git hooks for every agent, and Claude
+/// Code's own commit attribution so it writes the same lines instead of its default.
+pub fn attributed(
+    plan: ConnectPlan,
+    agent: Agent,
+    model: &str,
+    installed: &crate::commit_attribution::Installed,
+    inherited_git_config_count: Option<&str>,
+) -> ConnectPlan {
+    match plan {
+        ConnectPlan::Launch {
+            binary,
+            mut args,
+            mut env,
+        } => {
+            if agent == Agent::ClaudeCode {
+                args.push("--settings".into());
+                args.push(installed.claude_settings(model));
+            }
+            env.extend(installed.env(model, inherited_git_config_count));
+            ConnectPlan::Launch { binary, args, env }
+        }
+        instructions => instructions,
+    }
+}

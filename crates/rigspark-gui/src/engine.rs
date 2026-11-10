@@ -94,6 +94,7 @@ impl Engine for NativeEngine {
         let runner = NativeOpenCodeRunner {
             binary: runtime.binary("opencode"),
             env: env.clone(),
+            commit_home: Some(self.home.clone()),
         };
         let harnesses = HarnessRegistry::builtins(
             LocalHarness {

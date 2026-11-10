@@ -1,5 +1,28 @@
 # Changelog
 
+## Unreleased
+
+### Changes
+
+- **Source control in Connectors: GitHub.** Connect GitHub with a personal access
+  token and every chat session can list and read issues and open pull requests;
+  add local repository folders and it can commit there, and push a new branch
+  (never `main` or `master`) so it can open a pull request. RigSpark talks to
+  `api.github.com` itself (no MCP server to install). The token is kept in an
+  owner-only file and sent only to GitHub. Reads ask once per session; pull
+  requests, commits and pushes ask every time, and commits carry RigSpark's trailers.
+  GitLab, Bitbucket and Azure DevOps are listed as coming soon.
+
+- **Commits made through RigSpark are marked.** Coding agents started with
+  `rigspark connect` (Claude Code, Codex, OpenCode) and the OpenCode chat harness
+  add two trailers to every commit:
+  `Co-Authored-By: rigspark-community-<model> <<id>+rigspark[bot]@users.noreply.github.com>`
+  and `Signed-off-by: Rigspark <noreply@rigspark.ai>`. The id comes from a random
+  salt kept in the RigSpark home. Git's hooks path is set for the agent process
+  only; the repository's own hooks still run first, and no git config is edited.
+  `git commit --no-verify` skips hooks and so skips the trailers. Agents set up by
+  hand (Pi, Hermes, OpenClaw, Cline) are not covered.
+
 ## 3.1.3 (2026-11-10)
 
 ### Fixes
