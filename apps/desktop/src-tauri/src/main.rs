@@ -7,16 +7,20 @@ use tauri_plugin_updater::UpdaterExt as _;
 #[cfg(not(test))]
 const BACKGROUND_ARG: &str = "--background";
 /// Commands the launch document may invoke; each re-checks window and URL.
-const DESKTOP_COMMANDS: [&str; 6] = [
+const DESKTOP_COMMANDS: [&str; 7] = [
     "allow-select-workspace-directory",
     "allow-desktop-status",
     "allow-set-launch-at-login",
     "allow-check-for-update",
     "allow-install-update",
     "allow-open-github-sign-in",
+    "allow-open-github-repository-choice",
 ];
 /// The only page `open_github_sign_in` opens: GitHub's device-flow code entry.
 const GITHUB_DEVICE_PAGE: &str = "https://github.com/login/device";
+/// The only page `open_github_repository_choice` opens: where people choose the
+/// repositories the RigSpark Community GitHub App may reach.
+const GITHUB_INSTALL_PAGE: &str = rigspark_runtime::source_control::INSTALL_PAGE;
 
 struct HostState(Arc<rigspark_gui::Host>);
 enum DirectoryPicker {
@@ -113,6 +117,19 @@ async fn open_github_sign_in<R: tauri::Runtime>(
     state: tauri::State<'_, HostState>,
 ) -> Result<(), String> {
     authorize(&window, &state)?;
+    open_in_browser(GITHUB_DEVICE_PAGE)
+}
+/// Opens the page where people pick the repositories the GitHub App may reach. Like
+/// sign-in, it takes no argument, so it opens only that one fixed page.
+#[tauri::command]
+async fn open_github_repository_choice<R: tauri::Runtime>(
+    window: tauri::WebviewWindow<R>,
+    state: tauri::State<'_, HostState>,
+) -> Result<(), String> {
+    authorize(&window, &state)?;
+    open_in_browser(GITHUB_INSTALL_PAGE)
+}
+fn open_in_browser(page: &'static str) -> Result<(), String> {
     #[cfg(target_os = "macos")]
     let mut command = std::process::Command::new("/usr/bin/open");
     #[cfg(target_os = "windows")]
@@ -124,7 +141,7 @@ async fn open_github_sign_in<R: tauri::Runtime>(
     #[cfg(not(any(target_os = "macos", target_os = "windows")))]
     let mut command = std::process::Command::new("xdg-open");
     command
-        .arg(GITHUB_DEVICE_PAGE)
+        .arg(page)
         .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::null())
@@ -302,7 +319,8 @@ fn main() {
             set_launch_at_login,
             check_for_update,
             install_update,
-            open_github_sign_in
+            open_github_sign_in,
+            open_github_repository_choice
         ])
         .setup(move |app| {
             if !smoke
@@ -313,7 +331,7 @@ fn main() {
                 let _ = app.autolaunch().enable();
             }
             app.add_capability(desktop_capability(&entry))?;
-            let script = format!("if(window===window.top && location.origin==={} && location.pathname==='/'){{const invoke=(command,args)=>window.__TAURI_INTERNALS__.invoke(command,args);Object.defineProperty(window,'llmupDesktop',{{value:Object.freeze({{selectWorkspaceDirectory:()=>invoke('select_workspace_directory'),status:()=>invoke('desktop_status'),setLaunchAtLogin:(enabled)=>invoke('set_launch_at_login',{{enabled:enabled===true}}),checkForUpdate:()=>invoke('check_for_update'),installUpdate:()=>invoke('install_update'),openGitHubSignIn:()=>invoke('open_github_sign_in')}}),writable:false,configurable:false}});}}",serde_json::to_string(&origin)?);
+            let script = format!("if(window===window.top && location.origin==={} && location.pathname==='/'){{const invoke=(command,args)=>window.__TAURI_INTERNALS__.invoke(command,args);Object.defineProperty(window,'llmupDesktop',{{value:Object.freeze({{selectWorkspaceDirectory:()=>invoke('select_workspace_directory'),status:()=>invoke('desktop_status'),setLaunchAtLogin:(enabled)=>invoke('set_launch_at_login',{{enabled:enabled===true}}),checkForUpdate:()=>invoke('check_for_update'),installUpdate:()=>invoke('install_update'),openGitHubSignIn:()=>invoke('open_github_sign_in'),openGitHubRepositoryChoice:()=>invoke('open_github_repository_choice')}}),writable:false,configurable:false}});}}",serde_json::to_string(&origin)?);
             let allowed = origin.clone();
             let navigation_app=app.handle().clone();
             let smoke_app=app.handle().clone();
@@ -335,7 +353,7 @@ fn main() {
                 })
                 .on_page_load(move |window,payload| {
                     if smoke && matches!(payload.event(),tauri::webview::PageLoadEvent::Finished) {
-                        let _=window.eval(if dialog_smoke { include_str!("dialog-smoke.js") } else { "location.href='/__native_smoke/'+(document.title==='RigSpark' && document.querySelector('main') && document.querySelector('textarea') && typeof window.llmupDesktop?.selectWorkspaceDirectory==='function' && ['status','setLaunchAtLogin','checkForUpdate','installUpdate','openGitHubSignIn'].every((name)=>typeof window.llmupDesktop?.[name]==='function') && !document.querySelector('#desktop-settings')?.hidden && typeof window.__TAURI_INTERNALS__?.invoke==='function' ? 'pass':'fail')" });
+                        let _=window.eval(if dialog_smoke { include_str!("dialog-smoke.js") } else { "location.href='/__native_smoke/'+(document.title==='RigSpark' && document.querySelector('main') && document.querySelector('textarea') && typeof window.llmupDesktop?.selectWorkspaceDirectory==='function' && ['status','setLaunchAtLogin','checkForUpdate','installUpdate','openGitHubSignIn','openGitHubRepositoryChoice'].every((name)=>typeof window.llmupDesktop?.[name]==='function') && !document.querySelector('#desktop-settings')?.hidden && typeof window.__TAURI_INTERNALS__?.invoke==='function' ? 'pass':'fail')" });
                     }
                 })
                 .on_new_window(|_,_|tauri::webview::NewWindowResponse::Deny)
@@ -416,7 +434,8 @@ mod tests {
                 set_launch_at_login,
                 check_for_update,
                 install_update,
-                open_github_sign_in
+                open_github_sign_in,
+                open_github_repository_choice
             ])
             .build(tauri::generate_context!())
             .unwrap();
@@ -500,16 +519,24 @@ mod tests {
         )
         .build()
         .unwrap();
-        for (webview, page_url) in [
-            (&main, "http://127.0.0.1:43210/api/images/preview.svg"),
-            (&main, "http://127.0.0.1:43211/"),
-            (&main, "https://example.com/"),
-            (&artifact, entry.as_str()),
-        ] {
+        for (webview, page_url, command) in [
+            "open_github_sign_in",
+            "open_github_repository_choice",
+        ]
+        .into_iter()
+        .flat_map(|command| {
+            [
+                (&main, "http://127.0.0.1:43210/api/images/preview.svg"),
+                (&main, "http://127.0.0.1:43211/"),
+                (&main, "https://example.com/"),
+                (&artifact, entry.as_str()),
+            ]
+            .map(|(webview, page_url)| (webview, page_url, command))
+        }) {
             let result = tauri::test::get_ipc_response(
                 webview,
                 tauri::webview::InvokeRequest {
-                    cmd: "open_github_sign_in".into(),
+                    cmd: command.into(),
                     callback: tauri::ipc::CallbackFn(0),
                     error: tauri::ipc::CallbackFn(1),
                     url: page_url.parse().unwrap(),
@@ -518,9 +545,13 @@ mod tests {
                     invoke_key: tauri::test::INVOKE_KEY.into(),
                 },
             );
-            assert!(result.is_err(), "sign-in must reject {page_url}");
+            assert!(result.is_err(), "{command} must reject {page_url}");
         }
         assert_eq!(GITHUB_DEVICE_PAGE, "https://github.com/login/device");
+        assert_eq!(
+            GITHUB_INSTALL_PAGE,
+            "https://github.com/apps/rigspark-community/installations/new"
+        );
     }
     #[test]
     fn only_launch_root_can_navigate_or_invoke_picker() {

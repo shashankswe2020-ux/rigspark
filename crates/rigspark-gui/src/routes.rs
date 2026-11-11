@@ -449,12 +449,45 @@ pub async fn dispatch(host: Arc<Host>, request: Request) -> ApiResult {
             .map_err(|_| ApiError(StatusCode::BAD_GATEWAY, "GitHub sign-in could not start"))?;
         return Ok(json_response(json!({"signIn": code})));
     }
+    if path == "/api/source-control/github/repositories" && method == "GET" {
+        use rigspark_runtime::source_control::{
+            INSTALL_PAGE, ReqwestGithub, TokenStore, client_id, fresh_credentials,
+            granted_repositories, now,
+        };
+        let http = checked(ReqwestGithub::new())?;
+        let expired = || {
+            ApiError(
+                StatusCode::CONFLICT,
+                "GitHub sign-in expired; sign in again",
+            )
+        };
+        let credentials =
+            fresh_credentials(&TokenStore::new(&host.home), &http, &client_id(), now())
+                .await
+                .map_err(|error| match error {
+                    rigspark_runtime::mcp::McpError::Approval => expired(),
+                    _ => ApiError(StatusCode::BAD_GATEWAY, "GitHub could not be reached"),
+                })?
+                .ok_or(ApiError(StatusCode::CONFLICT, "GitHub isn't connected"))?;
+        let repositories = granted_repositories(&http, &credentials)
+            .await
+            .map_err(|error| match error {
+                rigspark_runtime::mcp::McpError::Approval => expired(),
+                _ => ApiError(StatusCode::BAD_GATEWAY, "GitHub could not be reached"),
+            })?;
+        return Ok(json_response(json!({
+            "repositories": repositories,
+            "appSignIn": credentials.app_sign_in(),
+            "installUrl": INSTALL_PAGE,
+        })));
+    }
     if path == "/api/source-control/github"
         || (path == "/api/source-control/github/sign-in/poll" && method == "POST")
     {
         use rigspark_runtime::source_control::{
-            GITHUB_ID, NativeFactory, ReqwestGithub, SignIn, TokenStore, client_id, poll_sign_in,
-            verify_token,
+            Credentials, GITHUB_ID, INSTALL_PAGE, NativeFactory, RepoAccess, ReqwestGithub, SignIn,
+            TokenStore, client_id, granted_repositories, poll_sign_in, settle_access,
+            validate_access, verify_token,
         };
         #[derive(serde::Deserialize, Default)]
         #[serde(deny_unknown_fields, rename_all = "camelCase")]
@@ -465,6 +498,9 @@ pub async fn dispatch(host: Arc<Host>, request: Request) -> ApiResult {
             device_code: Option<String>,
             #[serde(default)]
             repositories: Vec<String>,
+            /// GitHub repositories RigSpark may use; `None` keeps what was saved.
+            #[serde(default)]
+            access: Option<Vec<RepoAccess>>,
         }
         let store = ConnectorStore::new(&host.home);
         let tokens = TokenStore::new(&host.home);
@@ -488,7 +524,7 @@ pub async fn dispatch(host: Arc<Host>, request: Request) -> ApiResult {
                 }
                 SignIn::Denied => return Ok(json_response(json!({"status":"denied"}))),
                 SignIn::Expired => return Ok(json_response(json!({"status":"expired"}))),
-                SignIn::Token(token) => signed_in = Some(token),
+                SignIn::Token(credentials) => signed_in = Some(credentials),
             }
         } else if input.device_code.is_some() {
             return Err(bad());
@@ -504,18 +540,25 @@ pub async fn dispatch(host: Arc<Host>, request: Request) -> ApiResult {
             .iter()
             .find_map(|connector| match connector {
                 Connector::Github {
-                    name, repositories, ..
-                } => Some((name.clone(), repositories.clone())),
+                    name,
+                    repositories,
+                    access,
+                    ..
+                } => Some((name.clone(), repositories.clone(), access.clone())),
                 _ => None,
             });
         match method.as_str() {
             "GET" => {
-                let (name, repositories) = existing.unwrap_or_default();
+                let (name, repositories, access) = existing.unwrap_or_default();
+                let saved = tokens.load();
                 return Ok(json_response(json!({"github":{
                     "configured": !name.is_empty(),
                     "name": name,
-                    "token": tokens.load().is_some(),
+                    "token": saved.is_some(),
+                    "appSignIn": saved.as_ref().is_some_and(Credentials::app_sign_in),
                     "repositories": repositories,
+                    "access": access,
+                    "installUrl": INSTALL_PAGE,
                     "connector": manager.list().into_iter().find(|entry| entry.id == GITHUB_ID),
                 }})));
             }
@@ -541,18 +584,21 @@ pub async fn dispatch(host: Arc<Host>, request: Request) -> ApiResult {
                         repositories.push(resolved);
                     }
                 }
-                let token = signed_in.or_else(|| {
+                let credentials = signed_in.or_else(|| {
                     input
                         .token
                         .as_deref()
                         .map(str::trim)
                         .filter(|token| !token.is_empty())
-                        .map(String::from)
+                        .map(Credentials::token)
                 });
-                let mut name = existing.map(|(name, _)| name).unwrap_or_default();
-                if let Some(token) = token.as_deref() {
+                let new_sign_in = credentials.is_some();
+                let (mut name, mut access) = existing
+                    .map(|(name, _, access)| (name, access))
+                    .unwrap_or_default();
+                if let Some(credentials) = credentials.as_ref() {
                     let http = checked(ReqwestGithub::new())?;
-                    let login = verify_token(&http, token)
+                    let login = verify_token(&http, &credentials.access_token)
                         .await
                         .map_err(|error| match error {
                             rigspark_runtime::mcp::McpError::Approval => {
@@ -564,13 +610,40 @@ pub async fn dispatch(host: Arc<Host>, request: Request) -> ApiResult {
                             ),
                             _ => ApiError(StatusCode::BAD_GATEWAY, "GitHub could not be reached"),
                         })?;
-                    checked(tokens.save(token))?;
+                    checked(tokens.save(credentials))?;
                     name = format!("GitHub ({login})");
                 } else if tokens.load().is_none() {
                     name = "GitHub (local commits)".into();
                 }
                 if name.is_empty() {
                     name = "GitHub".into();
+                }
+                // Access is kept only for repositories this sign-in reaches, and read and
+                // write only where the person may push. A new sign-in rechecks what was saved.
+                let requested = input.access.clone();
+                if requested.is_some() || new_sign_in {
+                    let requested = requested.unwrap_or_else(|| access.clone());
+                    checked(validate_access(&requested))?;
+                    access = if requested.is_empty() {
+                        Vec::new()
+                    } else {
+                        let saved = tokens.load().ok_or(ApiError(
+                            StatusCode::BAD_REQUEST,
+                            "sign in to GitHub before choosing repositories",
+                        ))?;
+                        let http = checked(ReqwestGithub::new())?;
+                        let granted = granted_repositories(&http, &saved).await.map_err(|_| {
+                            ApiError(StatusCode::BAD_GATEWAY, "GitHub could not be reached")
+                        })?;
+                        let (kept, refused) = settle_access(&requested, &granted);
+                        if input.access.is_some() && !refused.is_empty() {
+                            return Err(ApiError(
+                                StatusCode::BAD_REQUEST,
+                                "a repository isn't shared with RigSpark on GitHub, or you can't push to it",
+                            ));
+                        }
+                        kept
+                    };
                 }
                 let mut file = current.clone();
                 file.connectors
@@ -579,6 +652,7 @@ pub async fn dispatch(host: Arc<Host>, request: Request) -> ApiResult {
                     id: GITHUB_ID.into(),
                     name,
                     repositories,
+                    access,
                 });
                 checked(manager.replace(file, &store).await)?;
                 checked(

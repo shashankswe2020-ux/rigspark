@@ -7,6 +7,7 @@ fn main() {
             "check_for_update",
             "install_update",
             "open_github_sign_in",
+            "open_github_repository_choice",
         ]),
     ))
     .expect("Tauri build configuration");

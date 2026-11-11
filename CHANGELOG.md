@@ -14,14 +14,26 @@
 
 ### Changes
 
-- **Source control in Connectors: GitHub.** Click **Sign in with GitHub**, enter
-  the code RigSpark shows on github.com (it opens for you), and every chat session can list and read issues and open pull requests;
-  add local repository folders and it can commit there, and push a new branch
+- **Source control in Connectors: GitHub.** Click **Connect**, enter the code
+  RigSpark shows on github.com (it opens for you), then choose what RigSpark may
+  use. Access is given per repository, only as needed:
+  - On GitHub, you install the **RigSpark Community** app on **only the
+    repositories you select** (**Choose on GitHub**). The most it can ever do is
+    read and write code and pull requests, and read issues: no admin, workflow
+    or secrets access.
+  - In RigSpark, each of those repositories starts with **No access**; set it to
+    **Read only** (list and read issues) or **Read & write** (also push a branch
+    and open a pull request). Read & write is offered only where you can push.
+    Chats see only the repositories you chose, and a push to any other GitHub
+    remote, over HTTPS or SSH, is refused before git runs.
+
+  Add local repository folders and it can commit there, and push a new branch
   (never `main` or `master`) so it can open a pull request. RigSpark talks to
-  `api.github.com` itself (no MCP server to install). The token is kept in an
-  owner-only file and sent only to GitHub. Reads ask once per session; pull
-  requests, commits and pushes ask every time, and commits carry RigSpark's trailers.
-  GitLab, Bitbucket and Azure DevOps are listed as coming soon.
+  GitHub itself (no MCP server to install). Sign-ins last 8 hours and renew on
+  their own; they are kept in an owner-only file and sent only to GitHub. A
+  fine-grained personal access token still works instead. Reads ask once per
+  session; pull requests, commits and pushes ask every time, and commits carry
+  RigSpark's trailers. GitLab, Bitbucket and Azure DevOps are listed as coming soon.
 
 - **Commits made through RigSpark are marked.** Coding agents started with
   `rigspark connect` (Claude Code, Codex, OpenCode) and the OpenCode chat harness

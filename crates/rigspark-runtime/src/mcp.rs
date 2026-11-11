@@ -42,12 +42,15 @@ pub enum Connector {
         url: String,
     },
     /// RigSpark's native GitHub integration (see `source_control`). The token is kept
-    /// outside this file; `repositories` are local folders the user allowed for commits.
+    /// outside this file; `repositories` are local folders the user allowed for commits,
+    /// and `access` the GitHub repositories RigSpark may use (none until chosen).
     Github {
         id: String,
         name: String,
         #[serde(default)]
         repositories: Vec<String>,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        access: Vec<crate::source_control::RepoAccess>,
     },
 }
 impl std::fmt::Debug for Connector {
@@ -106,12 +109,16 @@ impl Connector {
                 loopback_url(url)?;
             }
             Self::Github {
-                id, repositories, ..
+                id,
+                repositories,
+                access,
+                ..
             } => {
                 if id != crate::source_control::GITHUB_ID {
                     return Err(McpError::Invalid);
                 }
                 crate::source_control::validate_repositories(repositories)?;
+                crate::source_control::validate_access(access)?;
             }
             Self::Stdio {
                 command, args, env, ..
@@ -318,13 +325,17 @@ impl Manager {
                 let (transport, target) = match connector {
                     Connector::Stdio { command, .. } => ("stdio", command.clone()),
                     Connector::Http { url, .. } => ("http", url.clone()),
-                    Connector::Github { repositories, .. } => (
+                    Connector::Github {
+                        repositories,
+                        access,
+                        ..
+                    } => (
                         "github",
-                        if repositories.is_empty() {
-                            "api.github.com".into()
-                        } else {
-                            format!("api.github.com · {} folder(s)", repositories.len())
-                        },
+                        format!(
+                            "api.github.com · {} repo(s) · {} folder(s)",
+                            access.len(),
+                            repositories.len()
+                        ),
                     ),
                 };
                 ConnectorView {
