@@ -127,6 +127,8 @@ model requests and pull requests are welcome:
   [good first issues](https://github.com/rigspark/rigspark/labels/good%20first%20issue)
 - [Changelog](CHANGELOG.md) · [Terms of Use](TERMS.md) · [MIT License](LICENSE)
 
+© 2026 RigSpark, Inc.
+
 If RigSpark saved you a download that would never have run, you can
 [buy me a coffee ☕](https://buymeacoffee.com/shashanksw9).
 
