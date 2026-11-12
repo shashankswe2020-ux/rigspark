@@ -261,6 +261,14 @@ jobs:
           test -x "$app/Contents/MacOS/llama-server"
           case "${{ matrix.arch }}" in aarch64) want=arm64 ;; *) want=x86_64 ;; esac
           test "$(lipo -archs "$app/Contents/MacOS/llama-server")" = "$want"
+          # Launch the bundle that ships, not a debug build: a signed app that panics before
+          # its window opens passes every codesign check above. Intel builds run via Rosetta.
+          if [ "$(uname -m)" = "$want" ] || arch -x86_64 /usr/bin/true 2>/dev/null; then
+            smoke_home="$(mktemp -d)"
+            RIGSPARK_HOME="$smoke_home" "$app/Contents/MacOS/rigspark-desktop" --smoke-test
+          else
+            echo "::warning::Rosetta is unavailable; skipped launching the ${{ matrix.arch }} app."
+          fi
           dmg="$(ls "$out"/dmg/*.dmg)"
           if [ "$SIGNING_IDENTITY" != "-" ]; then
             codesign --display --verbose=2 "$app/Contents/MacOS/llama-server" 2>&1 | grep -q "Authority=Developer ID Application"
