@@ -287,18 +287,19 @@ fn main() {
         let _ = rigspark_runtime::process_control::register_bundled_runtime_dir(dir);
     }
     let runtime = tokio::runtime::Runtime::new().expect("native async runtime");
-    let config = rigspark_runtime::state::Config::load().expect("native configuration");
-    let listener = runtime
-        .block_on(tokio::net::TcpListener::bind((
-            std::net::Ipv4Addr::LOCALHOST,
-            0,
-        )))
-        .expect("loopback listener");
-    let host = rigspark_gui::Host::new(
-        &config.home,
-        listener.local_addr().expect("listener address").port(),
-    )
-    .expect("native GUI host");
+    // A failure here used to panic before any window existed, so the app bounced in the
+    // Dock and vanished. Now it is logged and shown, and a left-behind lock can be cleared.
+    let (listener, host) = loop {
+        match start_host(&runtime) {
+            Ok(started) => break started,
+            Err(failure) => {
+                log_startup_failure(&failure);
+                if smoke || background || !offer_recovery(&failure) {
+                    std::process::exit(1);
+                }
+            }
+        }
+    };
     host.desktop
         .store(true, std::sync::atomic::Ordering::Relaxed);
     let serving = runtime.spawn(rigspark_gui::serve(listener, host.clone()));
@@ -376,7 +377,19 @@ fn main() {
             }
             Ok(())
         })
-        .build(tauri::generate_context!()).expect("Tauri application");
+        .build(tauri::generate_context!())
+        .unwrap_or_else(|cause| {
+            let failure = StartupFailure {
+                stage: "open the RigSpark window",
+                detail: cause.to_string(),
+                lock: None,
+            };
+            log_startup_failure(&failure);
+            if !smoke && !background {
+                offer_recovery(&failure);
+            }
+            std::process::exit(1)
+        });
     app.run(move |handle, event| match event {
         tauri::RunEvent::Exit => host.shutdown.cancel(),
         #[cfg(target_os = "macos")]
@@ -388,6 +401,167 @@ fn main() {
     let _ = runtime.block_on(async {
         tokio::time::timeout(std::time::Duration::from_secs(10), serving).await
     });
+}
+
+/// Why the desktop could not start, in words a person can act on.
+#[derive(Debug)]
+struct StartupFailure {
+    stage: &'static str,
+    detail: String,
+    /// Set when another process holds, or a crashed one left, the state lock.
+    lock: Option<std::path::PathBuf>,
+}
+impl StartupFailure {
+    #[cfg(not(test))]
+    fn new(stage: &'static str, cause: impl std::fmt::Display) -> Self {
+        Self {
+            stage,
+            detail: cause.to_string(),
+            lock: None,
+        }
+    }
+    fn message(&self) -> String {
+        let mut text = format!("RigSpark could not {}.\n\n{}", self.stage, self.detail);
+        if let Some(lock) = &self.lock {
+            text.push_str(&format!(
+                "\n\nThe state lock {} is held by another RigSpark process, or was left behind \
+                 when one quit unexpectedly. If `rigspark` or `llmup` is running in a terminal, \
+                 let it finish or quit it, then try again. Otherwise you can clear the lock.",
+                lock.display()
+            ));
+        }
+        text.push_str(&format!(
+            "\n\nDetails are saved in {}.",
+            startup_log_path().display()
+        ));
+        text
+    }
+}
+#[cfg(not(test))]
+type Started = (tokio::net::TcpListener, std::sync::Arc<rigspark_gui::Host>);
+#[cfg(not(test))]
+fn start_host(runtime: &tokio::runtime::Runtime) -> Result<Started, StartupFailure> {
+    let config = rigspark_runtime::state::Config::load()
+        .map_err(|cause| StartupFailure::new("find its data folder", cause))?;
+    let listener = runtime
+        .block_on(tokio::net::TcpListener::bind((
+            std::net::Ipv4Addr::LOCALHOST,
+            0,
+        )))
+        .map_err(|cause| StartupFailure::new("open a local port on 127.0.0.1", cause))?;
+    let port = listener
+        .local_addr()
+        .map_err(|cause| StartupFailure::new("open a local port on 127.0.0.1", cause))?
+        .port();
+    let host = rigspark_gui::Host::new(&config.home, port)
+        .map_err(|cause| host_failure(cause.as_ref(), &config))?;
+    Ok((listener, host))
+}
+/// Names the data folder in the message, and marks a lock failure so it can be cleared.
+fn host_failure(
+    cause: &(dyn std::error::Error + 'static),
+    config: &rigspark_runtime::state::Config,
+) -> StartupFailure {
+    let locked = cause
+        .downcast_ref::<rigspark_runtime::state::StateError>()
+        .is_some_and(|error| error.kind == "locked");
+    StartupFailure {
+        stage: "open its data folder",
+        detail: format!("{} ({})", cause, config.home.display()),
+        lock: locked.then(|| config.lock.clone()),
+    }
+}
+/// `~/Library/Logs/RigSpark/startup.log` on macOS (Console.app shows it), else the temp dir.
+fn startup_log_path() -> std::path::PathBuf {
+    #[cfg(target_os = "macos")]
+    if let Some(home) = std::env::var_os("HOME") {
+        return std::path::PathBuf::from(home).join("Library/Logs/RigSpark/startup.log");
+    }
+    std::env::temp_dir().join("rigspark-startup.log")
+}
+#[cfg(not(test))]
+fn log_startup_failure(failure: &StartupFailure) {
+    eprintln!("RigSpark startup failed: {failure:?}");
+    let path = startup_log_path();
+    if let Some(dir) = path.parent() {
+        let _ = std::fs::create_dir_all(dir);
+    }
+    let stamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|elapsed| elapsed.as_secs())
+        .unwrap_or_default();
+    let line = format!(
+        "{stamp} v{} could not {}: {}{}\n",
+        env!("CARGO_PKG_VERSION"),
+        failure.stage,
+        failure.detail,
+        failure
+            .lock
+            .as_ref()
+            .map(|lock| format!(" [lock {}]", lock.display()))
+            .unwrap_or_default()
+    );
+    use std::io::Write as _;
+    if let Ok(mut file) = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&path)
+    {
+        let _ = file.write_all(line.as_bytes());
+    }
+}
+/// Removes the state lock and its mutation guard so the next start can take them.
+/// Only ever run after the person chose to, as the lock's rules require.
+fn clear_state_lock(lock: &std::path::Path) -> std::io::Result<()> {
+    let mut guard = lock.as_os_str().to_owned();
+    guard.push(".guard");
+    for result in [
+        std::fs::remove_file(lock),
+        std::fs::remove_dir(std::path::PathBuf::from(guard)),
+    ] {
+        match result {
+            Err(cause) if cause.kind() != std::io::ErrorKind::NotFound => return Err(cause),
+            _ => {}
+        }
+    }
+    Ok(())
+}
+/// Shows the failure. Returns true when the person cleared the lock and wants a retry.
+#[cfg(not(test))]
+fn offer_recovery(failure: &StartupFailure) -> bool {
+    const CLEAR: &str = "Clear Lock and Retry";
+    const QUIT: &str = "Quit";
+    let dialog = rfd::MessageDialog::new()
+        .set_level(rfd::MessageLevel::Error)
+        .set_title("RigSpark could not start")
+        .set_description(failure.message());
+    let Some(lock) = &failure.lock else {
+        dialog.set_buttons(rfd::MessageButtons::Ok).show();
+        return false;
+    };
+    let choice = dialog
+        .set_buttons(rfd::MessageButtons::OkCancelCustom(
+            CLEAR.into(),
+            QUIT.into(),
+        ))
+        .show();
+    let clear = matches!(&choice, rfd::MessageDialogResult::Custom(label) if label == CLEAR)
+        || matches!(choice, rfd::MessageDialogResult::Ok);
+    if !clear {
+        return false;
+    }
+    match clear_state_lock(lock) {
+        Ok(()) => true,
+        Err(cause) => {
+            rfd::MessageDialog::new()
+                .set_level(rfd::MessageLevel::Error)
+                .set_title("RigSpark could not clear the lock")
+                .set_description(format!("{}: {cause}", lock.display()))
+                .set_buttons(rfd::MessageButtons::Ok)
+                .show();
+            false
+        }
+    }
 }
 
 #[cfg(not(test))]
@@ -519,20 +693,18 @@ mod tests {
         )
         .build()
         .unwrap();
-        for (webview, page_url, command) in [
-            "open_github_sign_in",
-            "open_github_repository_choice",
-        ]
-        .into_iter()
-        .flat_map(|command| {
-            [
-                (&main, "http://127.0.0.1:43210/api/images/preview.svg"),
-                (&main, "http://127.0.0.1:43211/"),
-                (&main, "https://example.com/"),
-                (&artifact, entry.as_str()),
-            ]
-            .map(|(webview, page_url)| (webview, page_url, command))
-        }) {
+        for (webview, page_url, command) in ["open_github_sign_in", "open_github_repository_choice"]
+            .into_iter()
+            .flat_map(|command| {
+                [
+                    (&main, "http://127.0.0.1:43210/api/images/preview.svg"),
+                    (&main, "http://127.0.0.1:43211/"),
+                    (&main, "https://example.com/"),
+                    (&artifact, entry.as_str()),
+                ]
+                .map(|(webview, page_url)| (webview, page_url, command))
+            })
+        {
             let result = tauri::test::get_ipc_response(
                 webview,
                 tauri::webview::InvokeRequest {
@@ -597,6 +769,48 @@ mod tests {
             result.unwrap().deserialize::<Option<String>>().unwrap(),
             None
         );
+    }
+    #[test]
+    fn a_held_state_lock_is_reported_as_clearable_and_other_failures_are_not() {
+        let home = tempfile::tempdir().unwrap();
+        let config = rigspark_runtime::state::Config::from_home(home.path()).unwrap();
+        let store = rigspark_runtime::state::StateStore::new(config.clone());
+        // Our own live PID: the lock cannot be taken over, exactly like a wedged start.
+        std::fs::write(&config.lock, format!("{}\n", std::process::id())).unwrap();
+        let cause = rigspark_gui::Host::new(home.path(), 43210)
+            .err()
+            .expect("a held lock stops the host");
+        let failure = host_failure(cause.as_ref(), &config);
+        assert_eq!(failure.lock.as_deref(), Some(config.lock.as_path()));
+        let message = failure.message();
+        assert!(message.contains(&config.lock.display().to_string()));
+        assert!(message.contains(&startup_log_path().display().to_string()));
+
+        clear_state_lock(&config.lock).unwrap();
+        // Clearing twice, or with no guard directory, is not an error.
+        clear_state_lock(&config.lock).unwrap();
+        store
+            .lock(std::time::Duration::from_millis(100))
+            .unwrap()
+            .release()
+            .unwrap();
+
+        let other = std::io::Error::other("disk full");
+        assert!(host_failure(&other, &config).lock.is_none());
+    }
+    #[test]
+    fn clearing_the_lock_removes_an_abandoned_guard_but_not_a_busy_one() {
+        let home = tempfile::tempdir().unwrap();
+        let lock = home.path().join("lock");
+        let guard = home.path().join("lock.guard");
+        std::fs::write(&lock, "12345\n").unwrap();
+        std::fs::create_dir(&guard).unwrap();
+        clear_state_lock(&lock).unwrap();
+        assert!(!lock.exists() && !guard.exists());
+        // A guard with contents is not ours to remove; report it instead.
+        std::fs::create_dir(&guard).unwrap();
+        std::fs::write(guard.join("other"), "").unwrap();
+        assert!(clear_state_lock(&lock).is_err());
     }
     #[test]
     fn first_run_is_true_once_and_survives_restarts() {
