@@ -12,7 +12,19 @@
   … start it again to resume"; Ollama keeps what it already has), with a
   12-hour upper bound.
 
+- **Clearer Windows install help while the installer is unsigned.** The README
+  and release notes now say how to get past SmartScreen, how to check the
+  download against its `.sha256`, and that Smart App Control can't be bypassed
+  for unsigned apps.
+
 ### Changes
+
+- **Windows installer signing is ready for SignPath.** Once SignPath Foundation
+  approves the project and `SIGNPATH_PROJECT_SLUG` is set, releases sign
+  `RigSpark_x64-setup.exe` with origin verification, check the Authenticode
+  signature, install the signed file, and re-sign the in-app update over the
+  signed bytes before attaching it. Until then nothing changes. See
+  [docs/references/windows-signing.md](docs/references/windows-signing.md).
 
 - **Source control in Connectors: GitHub.** Click **Connect**, enter the code
   RigSpark shows on github.com (it opens for you), then choose what RigSpark may
