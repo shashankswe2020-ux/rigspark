@@ -19,18 +19,22 @@ const PULL_STALL_POLL: Duration = Duration::from_secs(15);
 /// Upper bound for one pull, however slow: 12 hours.
 pub const PULL_HARD_LIMIT: Duration = Duration::from_secs(12 * 3600);
 
-/// Bytes under `dir` (one level: Ollama keeps blobs and their partial files flat).
-fn directory_bytes(dir: &Path) -> u64 {
+/// Total size and newest modification time of the files in `dir` (one level: Ollama
+/// keeps blobs and their partial files flat). Ollama sizes a `-partial` file to the
+/// whole blob before writing into it, so the size alone does not move while it
+/// downloads; the modification time does.
+fn directory_progress(dir: &Path) -> (u64, Option<std::time::SystemTime>) {
     std::fs::read_dir(dir)
         .map(|entries| {
             entries
                 .filter_map(Result::ok)
                 .filter_map(|entry| entry.metadata().ok())
                 .filter(std::fs::Metadata::is_file)
-                .map(|metadata| metadata.len())
-                .sum()
+                .fold((0, None), |(bytes, newest), metadata| {
+                    (bytes + metadata.len(), newest.max(metadata.modified().ok()))
+                })
         })
-        .unwrap_or(0)
+        .unwrap_or((0, None))
 }
 
 /// Resolves once `dir` has not grown for `limit` (checked every `poll`), or never if `cancel` fires.
@@ -40,7 +44,7 @@ pub async fn stall_guard(
     poll: Duration,
     cancel: &CancellationToken,
 ) {
-    let mut last = directory_bytes(&dir);
+    let mut last = directory_progress(&dir);
     let mut quiet = Duration::ZERO;
     loop {
         tokio::select! {
@@ -50,7 +54,7 @@ pub async fn stall_guard(
         }
         let now = tokio::task::spawn_blocking({
             let dir = dir.clone();
-            move || directory_bytes(&dir)
+            move || directory_progress(&dir)
         })
         .await
         .unwrap_or(last);

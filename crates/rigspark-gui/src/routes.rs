@@ -486,8 +486,8 @@ pub async fn dispatch(host: Arc<Host>, request: Request) -> ApiResult {
     {
         use rigspark_runtime::source_control::{
             Credentials, GITHUB_ID, INSTALL_PAGE, NativeFactory, RepoAccess, ReqwestGithub, SignIn,
-            TokenStore, client_id, granted_repositories, poll_sign_in, settle_access,
-            validate_access, verify_token,
+            TokenStore, client_id, fresh_credentials, granted_repositories, now, poll_sign_in,
+            settle_access, validate_access, verify_token,
         };
         #[derive(serde::Deserialize, Default)]
         #[serde(deny_unknown_fields, rename_all = "camelCase")]
@@ -627,14 +627,25 @@ pub async fn dispatch(host: Arc<Host>, request: Request) -> ApiResult {
                     access = if requested.is_empty() {
                         Vec::new()
                     } else {
-                        let saved = tokens.load().ok_or(ApiError(
-                            StatusCode::BAD_REQUEST,
-                            "sign in to GitHub before choosing repositories",
-                        ))?;
                         let http = checked(ReqwestGithub::new())?;
-                        let granted = granted_repositories(&http, &saved).await.map_err(|_| {
-                            ApiError(StatusCode::BAD_GATEWAY, "GitHub could not be reached")
-                        })?;
+                        let unavailable = |error| match error {
+                            rigspark_runtime::mcp::McpError::Approval => ApiError(
+                                StatusCode::CONFLICT,
+                                "GitHub sign-in expired; sign in again",
+                            ),
+                            _ => ApiError(StatusCode::BAD_GATEWAY, "GitHub could not be reached"),
+                        };
+                        // App sign-ins last 8 hours: renew one first, as the listing does.
+                        let saved = fresh_credentials(&tokens, &http, &client_id(), now())
+                            .await
+                            .map_err(unavailable)?
+                            .ok_or(ApiError(
+                                StatusCode::BAD_REQUEST,
+                                "sign in to GitHub before choosing repositories",
+                            ))?;
+                        let granted = granted_repositories(&http, &saved)
+                            .await
+                            .map_err(unavailable)?;
                         let (kept, refused) = settle_access(&requested, &granted);
                         if input.access.is_some() && !refused.is_empty() {
                             return Err(ApiError(

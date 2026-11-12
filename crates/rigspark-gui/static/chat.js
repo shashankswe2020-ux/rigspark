@@ -2301,6 +2301,8 @@ document.addEventListener("DOMContentLoaded", () => {
     repoList: document.querySelector("#source-github-repo-list"),
   };
   let sourceGithubPoll = null;
+  /** Bumped on every start or stop, so a poll answering late can't revive a cancelled sign-in. */
+  let sourceGithubAttempt = 0;
   let sourceGithubConfigured = false;
   let sourceGithubToken = false;
   /** Saved access, by lower-cased owner/name: "read" or "write". */
@@ -2432,6 +2434,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function stopSourceGithubSignIn() {
+    sourceGithubAttempt += 1;
     if (sourceGithubPoll) {
       clearTimeout(sourceGithubPoll);
       sourceGithubPoll = null;
@@ -2458,8 +2461,12 @@ document.addEventListener("DOMContentLoaded", () => {
     sourceGithub.form.hidden = true;
     sourceGithub.signIn.disabled = true;
     sourceGithub.connect.disabled = true;
+    const attempt = sourceGithubAttempt;
     try {
       const { signIn } = await sourceGithubRequest("POST", "/sign-in");
+      if (attempt !== sourceGithubAttempt) {
+        return;
+      }
       sourceGithub.userCode.textContent = signIn.userCode;
       sourceGithub.wait.textContent = "Waiting for you to approve on github.com…";
       sourceGithub.code.hidden = false;
@@ -2476,6 +2483,9 @@ document.addEventListener("DOMContentLoaded", () => {
             deviceCode: signIn.deviceCode,
             repositories: sourceGithubFolders(),
           });
+          if (attempt !== sourceGithubAttempt) {
+            return;
+          }
           if (result.status === "connected") {
             await finishSourceGithub(true);
             return;
@@ -2487,6 +2497,9 @@ document.addEventListener("DOMContentLoaded", () => {
           }
           sourceGithubPoll = setTimeout(() => poll(result.interval || interval), (result.interval || interval) * 1000);
         } catch (error) {
+          if (attempt !== sourceGithubAttempt) {
+            return;
+          }
           stopSourceGithubSignIn();
           sourceGithubError(`Could not connect GitHub: ${error.message}`);
         }

@@ -997,9 +997,11 @@ impl GithubConnection {
 
     async fn push(&self, args: &Value, cancel: &CancellationToken) -> Result<String, ToolResult> {
         let folder = self.allowed_folder(args)?;
+        // `owner:branch` is only for a pull request's head; in a push a colon would be
+        // read as part of the refspec, and git refuses it in branch names anyway.
         let branch = args["branch"]
             .as_str()
-            .filter(|branch| valid_branch(branch))
+            .filter(|branch| valid_branch(branch) && !branch.contains(':'))
             .ok_or_else(|| error("branch must be a branch name"))?;
         // Changes reach the default branch through a pull request, never a direct push.
         if ["main", "master", "HEAD"].contains(&branch) {
@@ -1009,26 +1011,31 @@ impl GithubConnection {
         }
         let mut env = crate::process_control::minimal_env();
         env.insert("GIT_TERMINAL_PROMPT".into(), "0".into());
-        let origin = self
+        // Where git will actually push: every push URL (`pushurl` wins over `url`), with
+        // `insteadOf` and `pushInsteadOf` rewrites applied.
+        let destinations = self
             .git(
                 &folder,
                 &env,
-                &["remote", "get-url", "origin"],
+                &["remote", "get-url", "--push", "--all", "origin"],
                 Duration::from_secs(10),
                 cancel,
             )
             .await?;
         // A GitHub remote (HTTPS or SSH) must be a repository set to read and write, so
         // the person's own SSH keys or saved logins can't reach past what they chose.
-        let github = github_remote(&origin);
-        if let Some(repository) = &github {
-            self.require(repository, Access::Write)?;
-        } else if origin.contains("github.com") {
-            return Err(error(
-                "The origin remote points at GitHub in a form RigSpark can't check. Use https://github.com/owner/name or git@github.com:owner/name.",
-            ));
+        let mut github = false;
+        for url in destinations.lines().filter(|url| !url.trim().is_empty()) {
+            if let Some(repository) = github_remote(url) {
+                self.require(&repository, Access::Write)?;
+                github = true;
+            } else if url.contains("github.com") {
+                return Err(error(
+                    "The origin remote points at GitHub in a form RigSpark can't check. Use https://github.com/owner/name or git@github.com:owner/name.",
+                ));
+            }
         }
-        if let (Some(_), Some(credentials)) = (&github, &self.credentials) {
+        if let (true, Some(credentials)) = (github, &self.credentials) {
             let token = &credentials.access_token;
             // HTTPS remotes on github.com authenticate with the connected token; it goes
             // through the environment, never the command line.
