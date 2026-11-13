@@ -39,8 +39,15 @@ model shows its download size and memory need before you start.
 ## Get started
 
 1. **Download and open the app.** The Mac app is signed and notarized by Apple.
-   The Windows installer needs no admin rights; it isn't code-signed yet, so if
-   SmartScreen warns, choose **More info → Run anyway**.
+   The Windows installer needs no admin rights. It isn't code-signed yet
+   (signing is [pending review](#code-signing-policy)), so Windows may warn:
+   - **SmartScreen** ("Windows protected your PC"): choose **More info → Run
+     anyway**. To check the file first, run
+     `(Get-FileHash .\RigSpark_x64-setup.exe).Hash.ToLower()` in PowerShell and
+     compare it with `RigSpark_x64-setup.exe.sha256` from the same release.
+   - **Smart App Control** ("part of this app has been blocked"): Windows has no
+     per-app override for unsigned apps, so this installer can't run there until
+     the signed one ships.
 2. **Click Download & start.** RigSpark picks a starter model that fits your
    computer, verifies the file, and starts it. Nothing else to install for chat.
 3. **Chat, or press + to switch to Image, Video or Voice.** The first time you
@@ -135,7 +142,7 @@ If RigSpark saved you a download that would never have run, you can
 
 ## Code signing policy
 
-Windows releases are being set up for free code signing provided by [SignPath.io](https://about.signpath.io/), with a certificate by [SignPath Foundation](https://signpath.org/) (application under review).
+Windows releases are being set up for free code signing provided by [SignPath.io](https://about.signpath.io/), with a certificate by [SignPath Foundation](https://signpath.org/) (application under review). The release workflow is ready to sign the installer as soon as it is approved; see [docs/references/windows-signing.md](docs/references/windows-signing.md).
 
 Committers and reviewers: [Shashank Mishra](https://github.com/shashankswe2020-ux). Approvers: [Shashank Mishra](https://github.com/shashankswe2020-ux).
 

@@ -1,4 +1,4 @@
-use rigspark_cli::retirement::check_file;
+use rigspark_cli::retirement::{RELEASE_SIGNING_ACTIONS, check_file};
 
 #[test]
 fn root_src_must_be_empty_even_when_files_are_not_typescript() {
@@ -123,14 +123,51 @@ fn rejects_node_backed_actions_even_without_node_commands() {
 }
 
 #[test]
+fn release_signing_actions_are_allowed_only_pinned_and_only_in_the_release() {
+    for action in RELEASE_SIGNING_ACTIONS {
+        let source = format!("steps:\n  - uses: {action}\n");
+        assert!(check_file(".github/workflows/release.yml", &source).is_empty());
+        assert!(
+            !check_file(".github/workflows/ci.yml", &source).is_empty(),
+            "{action}"
+        );
+    }
+    for moved in [
+        "actions/upload-artifact@v7",
+        "actions/upload-artifact@0000000000000000000000000000000000000000",
+        "actions/download-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9",
+        "signpath/github-action-submit-signing-request@v3",
+    ] {
+        let source = format!("steps:\n  - uses: {moved}\n");
+        assert!(
+            !check_file(".github/workflows/release.yml", &source).is_empty(),
+            "{moved}"
+        );
+    }
+}
+
+#[test]
 fn release_publishes_only_verified_tagged_archives_without_node() {
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     assert!(!root.join(".github/workflows/npm-publish.yml").exists());
     let workflow = std::fs::read_to_string(root.join(".github/workflows/release.yml")).unwrap();
     assert!(check_file(".github/workflows/release.yml", &workflow).is_empty());
-    for forbidden in ["uses:", "packages: write", "--force", "npm "] {
+    for forbidden in ["packages: write", "--force", "npm "] {
         assert!(!workflow.contains(forbidden), "{forbidden}");
     }
+    let actions: Vec<&str> = workflow
+        .lines()
+        .filter(|line| line.contains("uses:"))
+        .map(str::trim)
+        .collect();
+    let expected: Vec<String> = RELEASE_SIGNING_ACTIONS
+        .iter()
+        .map(|action| format!("uses: {action}"))
+        .collect();
+    assert_eq!(
+        actions, expected,
+        "the release runs no actions except the two pinned for SignPath signing"
+    );
     let (header, jobs) = workflow.split_once("\njobs:\n").unwrap();
     assert!(header.contains("tags:\n      - \"v*\""));
     assert!(header.contains("permissions:\n  contents: read\n"));
@@ -221,10 +258,46 @@ fn release_publishes_only_verified_tagged_archives_without_node() {
         "the installer is installed and its bundled runtime checked before upload"
     );
     assert!(windows.contains("RigSpark_x64-setup.exe"));
+    assert!(windows.contains(RELEASE_SIGNING_ACTIONS[0]));
+    assert!(
+        windows.contains("if: vars.SIGNPATH_PROJECT_SLUG != ''")
+            && windows.contains(
+                "if: startsWith(github.ref, 'refs/tags/v') && vars.SIGNPATH_PROJECT_SLUG == ''"
+            ),
+        "the unsigned installer is attached only while SignPath is not configured"
+    );
+    let signing = job("sign-windows");
+    assert!(signing.contains("needs: desktop-windows"));
+    assert!(signing.contains("if: vars.SIGNPATH_PROJECT_SLUG != ''"));
+    assert!(signing.contains(RELEASE_SIGNING_ACTIONS[1]));
+    for required in [
+        "secrets.SIGNPATH_API_TOKEN",
+        "github-artifact-id: ${{ needs.desktop-windows.outputs.unsigned-artifact-id }}",
+        "Get-AuthenticodeSignature",
+        "SignPath Foundation",
+        "TimeStamperCertificate",
+        "-ArgumentList \"/S\"",
+        "cargo tauri signer sign RigSpark_x64-setup.exe",
+        "sha256sum RigSpark_x64-setup.exe",
+    ] {
+        assert!(signing.contains(required), "sign-windows: {required}");
+    }
+    let verified = signing.find("Get-AuthenticodeSignature").unwrap();
+    let updater = signing.find("cargo tauri signer sign").unwrap();
+    let attached = signing.find("gh release upload").unwrap();
+    assert!(
+        verified < updater && updater < attached,
+        "the updater signs the Authenticode-signed bytes, and only verified files are attached"
+    );
     assert!(desktop.contains("secrets.TAURI_SIGNING_PRIVATE_KEY"));
     assert!(desktop.contains("if: startsWith(github.ref, 'refs/tags/v')"));
     let publish = job("publish");
-    assert!(publish.contains("needs: [build, desktop-macos, desktop-windows]"));
+    assert!(publish.contains("needs: [build, desktop-macos, desktop-windows, sign-windows]"));
+    assert!(
+        publish
+            .contains("needs.sign-windows.result == 'skipped' && vars.SIGNPATH_PROJECT_SLUG == ''"),
+        "a failed or skipped signing run never publishes once SignPath is configured"
+    );
     assert!(publish.contains("windows-x86_64"));
     assert!(
         publish.contains("--pattern 'rigspark-*.tar.gz*'"),
@@ -235,7 +308,7 @@ fn release_publishes_only_verified_tagged_archives_without_node() {
         manifest < published_marker(&publish),
         "the update manifest is attached before publication"
     );
-    assert!(publish.contains("if: startsWith(github.ref, 'refs/tags/v')"));
+    assert!(publish.contains("always() && startsWith(github.ref, 'refs/tags/v')"));
     assert!(publish.contains("test \"$(ls *.tar.gz | wc -l)\" -eq 5"));
     assert!(publish.contains("sha256sum -c SHA256SUMS"));
     assert!(publish.contains("cargo native-dist formula"));
@@ -245,7 +318,7 @@ fn release_publishes_only_verified_tagged_archives_without_node() {
         checked < published,
         "checksums must be verified before publication"
     );
-    for step in [verify, build, desktop, windows, publish] {
+    for step in [verify, build, desktop, windows, signing, publish] {
         assert!(step.contains("git rev-parse HEAD") && step.contains("$GITHUB_SHA"));
     }
 }

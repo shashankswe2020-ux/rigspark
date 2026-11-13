@@ -349,6 +349,8 @@ jobs:
     timeout-minutes: 75
     permissions:
       contents: write
+    outputs:
+      unsigned-artifact-id: ${{ steps.unsigned.outputs.artifact-id }}
     defaults:
       run:
         shell: bash
@@ -411,8 +413,22 @@ jobs:
           if (-not (Test-Path $server)) { throw "llama-server.exe was not installed" }
           $version = & $server --version 2>&1 | Out-String
           if ($version -notmatch "version: ") { throw "installed llama-server did not run: $version" }
+      # SignPath Foundation signs only with origin verification, which accepts nothing
+      # but a workflow artifact made by actions/upload-artifact. This and the SignPath
+      # step in sign-windows are the only actions in this workflow, both SHA-pinned
+      # (upload-artifact v7.0.2, submit-signing-request v3.0),
+      # and both run only once SIGNPATH_PROJECT_SLUG is set (docs/references/windows-signing.md).
+      - name: Stage the unsigned installer for Authenticode signing
+        id: unsigned
+        if: vars.SIGNPATH_PROJECT_SLUG != ''
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: windows-installer-unsigned
+          path: desktop-dist/RigSpark_x64-setup.exe
+          if-no-files-found: error
+          retention-days: 3
       - name: Attach to draft release
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/tags/v') && vars.SIGNPATH_PROJECT_SLUG == ''
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -424,10 +440,131 @@ jobs:
           fi
           gh release upload "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --clobber desktop-dist/*
 
+  sign-windows:
+    name: Sign the Windows installer (SignPath)
+    needs: desktop-windows
+    if: vars.SIGNPATH_PROJECT_SLUG != ''
+    runs-on: windows-2022
+    timeout-minutes: 45
+    permissions:
+      contents: write
+      actions: read
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Fetch exact revision without an action runtime
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git init .
+          git remote add origin "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git"
+          AUTH=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\r\n')
+          export GIT_CONFIG_COUNT=1
+          export GIT_CONFIG_KEY_0="http.${GITHUB_SERVER_URL}/.extraheader"
+          export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $AUTH"
+          git fetch --no-tags --depth=1 origin "$GITHUB_SHA"
+          unset AUTH GIT_CONFIG_COUNT GIT_CONFIG_KEY_0 GIT_CONFIG_VALUE_0 GH_TOKEN
+          git checkout --detach FETCH_HEAD
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+      - name: Check SignPath configuration
+        env:
+          SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
+          SIGNPATH_ORGANIZATION_ID: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          ARTIFACT_ID: ${{ needs.desktop-windows.outputs.unsigned-artifact-id }}
+        run: |
+          set -euo pipefail
+          missing=()
+          [ -n "$SIGNPATH_API_TOKEN" ] || missing+=("secret SIGNPATH_API_TOKEN")
+          [ -n "$SIGNPATH_ORGANIZATION_ID" ] || missing+=("variable SIGNPATH_ORGANIZATION_ID")
+          [ -n "$ARTIFACT_ID" ] || missing+=("the unsigned installer artifact")
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::SIGNPATH_PROJECT_SLUG is set, so the Windows installer must be signed, but these are missing: ${missing[*]}."
+            exit 1
+          fi
+      - name: Sign with SignPath (origin verified)
+        id: signpath
+        uses: signpath/github-action-submit-signing-request@f6d04783b4569d051e0c80105fe66e82819d0092
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG || 'release-signing' }}
+          artifact-configuration-slug: ${{ vars.SIGNPATH_ARTIFACT_CONFIGURATION_SLUG }}
+          github-artifact-id: ${{ needs.desktop-windows.outputs.unsigned-artifact-id }}
+          wait-for-completion: true
+          wait-for-completion-timeout-in-seconds: 1800
+          output-artifact-directory: desktop-dist
+      - name: Verify the Authenticode signature
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $setup = "desktop-dist\RigSpark_x64-setup.exe"
+          if (-not (Test-Path $setup)) { throw "SignPath returned no RigSpark_x64-setup.exe" }
+          $signature = Get-AuthenticodeSignature $setup
+          $signature | Format-List Status, StatusMessage, SignerCertificate, TimeStamperCertificate
+          if ($signature.Status -ne "Valid") { throw "installer signature is $($signature.Status): $($signature.StatusMessage)" }
+          if ($signature.SignerCertificate.Subject -notmatch "SignPath Foundation") { throw "unexpected signer: $($signature.SignerCertificate.Subject)" }
+          if (-not $signature.TimeStamperCertificate) { throw "signature has no timestamp, so it would expire with the certificate" }
+      - name: Install the signed installer silently and check the bundled runtime
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $setup = Start-Process -FilePath desktop-dist\RigSpark_x64-setup.exe -ArgumentList "/S" -Wait -PassThru
+          if ($setup.ExitCode -ne 0) { throw "signed installer exited with $($setup.ExitCode)" }
+          $dir = Join-Path $env:LOCALAPPDATA "RigSpark"
+          if (-not (Test-Path (Join-Path $dir "rigspark-desktop.exe"))) { throw "rigspark-desktop.exe was not installed" }
+          $server = Join-Path $dir "llama-server.exe"
+          if (-not (Test-Path $server)) { throw "llama-server.exe was not installed" }
+          $version = & $server --version 2>&1 | Out-String
+          if ($version -notmatch "version: ") { throw "installed llama-server did not run: $version" }
+      - name: Sign the update and write checksums for the signed installer
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          cd desktop-dist
+          # Authenticode changed the file, so the updater signature from the build no
+          # longer matches; sign the bytes users actually download.
+          rm -f RigSpark_x64-setup.exe.sig RigSpark_x64-setup.exe.sha256
+          if [ -n "$TAURI_SIGNING_PRIVATE_KEY" ]; then
+            cargo install tauri-cli --version 2.12.4 --locked
+            cargo tauri signer sign RigSpark_x64-setup.exe
+            test -s RigSpark_x64-setup.exe.sig
+          else
+            echo "::notice::TAURI_SIGNING_PRIVATE_KEY is not set; building without in-app update artifacts."
+          fi
+          sha256sum RigSpark_x64-setup.exe > RigSpark_x64-setup.exe.sha256
+          ls -la
+      - name: Attach to draft release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if ! gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --draft --verify-tag \
+              --title "rigspark $GITHUB_REF_NAME" --notes "Release notes are added when all archives are verified." \
+              || gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null
+          fi
+          gh release upload "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --clobber \
+            desktop-dist/RigSpark_x64-setup.exe desktop-dist/RigSpark_x64-setup.exe.sha256
+          if [ -f desktop-dist/RigSpark_x64-setup.exe.sig ]; then
+            gh release upload "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --clobber desktop-dist/RigSpark_x64-setup.exe.sig
+          fi
+
   publish:
     name: Checksums, formula and publication
-    needs: [build, desktop-macos, desktop-windows]
-    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build, desktop-macos, desktop-windows, sign-windows]
+    # sign-windows is skipped until SignPath is configured; any other outcome blocks publication.
+    if: >-
+      always() && startsWith(github.ref, 'refs/tags/v')
+      && needs.build.result == 'success'
+      && needs.desktop-macos.result == 'success'
+      && needs.desktop-windows.result == 'success'
+      && (needs.sign-windows.result == 'success' || (needs.sign-windows.result == 'skipped' && vars.SIGNPATH_PROJECT_SLUG == ''))
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
@@ -498,6 +635,7 @@ jobs:
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
+          WINDOWS_SIGNED: ${{ needs.sign-windows.result == 'success' }}
         run: |
           set -euo pipefail
           version="${GITHUB_REF_NAME#v}"
@@ -506,6 +644,11 @@ jobs:
           {
             printf '\n## Install\n\n```bash\nbrew install shashankswe2020-ux/tap/rigspark\ncargo binstall rigspark-cli rigspark-gui\ncargo install rigspark-cli --locked --bin llmup --bin rigspark && cargo install rigspark-gui --locked\n```\n\n'
             printf 'Desktop: download `RigSpark_aarch64.dmg` (Apple Silicon), `RigSpark_x86_64.dmg` (Intel Mac) or `RigSpark_x64-setup.exe` (Windows). The Mac app is signed with a Developer ID and notarized by Apple, so it opens like any other app.\n\n'
+            if [ "$WINDOWS_SIGNED" = "true" ]; then
+              printf 'The Windows installer is code-signed. Free code signing provided by [SignPath.io](https://about.signpath.io/), certificate by [SignPath Foundation](https://signpath.org/).\n\n'
+            else
+              printf 'The Windows installer is not code-signed yet (SignPath Foundation review is pending). If SmartScreen warns, choose **More info → Run anyway**; check the download first with `Get-FileHash RigSpark_x64-setup.exe` against `RigSpark_x64-setup.exe.sha256`.\n\n'
+            fi
             printf 'Archives are unsigned. Verify downloads against `SHA256SUMS` and each `.sha256` file.\n'
           } >> release-notes.md
           gh release upload "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --clobber release-assets/SHA256SUMS release-assets/rigspark.rb

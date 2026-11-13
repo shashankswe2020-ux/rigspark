@@ -35,6 +35,15 @@ fn imports_node_api(text: &str) -> bool {
     })
 }
 
+/// The only Node-backed actions allowed anywhere: SignPath Foundation signs Windows
+/// releases only with origin verification, which takes nothing but a workflow
+/// artifact uploaded by `actions/upload-artifact`. Both stay pinned to these exact
+/// commits and only in the release workflow.
+pub const RELEASE_SIGNING_ACTIONS: &[&str] = &[
+    "actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9",
+    "signpath/github-action-submit-signing-request@f6d04783b4569d051e0c80105fe66e82819d0092",
+];
+
 pub fn check_file(path: &str, text: &str) -> Vec<&'static str> {
     let name = path.rsplit('/').next().unwrap_or(path);
     let extension = name.rsplit('.').next().unwrap_or("");
@@ -80,7 +89,12 @@ pub fn check_file(path: &str, text: &str) -> Vec<&'static str> {
         || ["Makefile", "justfile"].contains(&name)
         || path == "apps/desktop/src-tauri/tauri.conf.json";
     if executable_config {
-        let lower = text.to_ascii_lowercase();
+        let mut lower = text.to_ascii_lowercase();
+        if path == ".github/workflows/release.yml" {
+            for action in RELEASE_SIGNING_ACTIONS {
+                lower = lower.replace(&format!("uses: {action}\n"), "\n");
+            }
+        }
         if path.starts_with(".github/workflows/")
             && [
                 "actions/checkout@",
@@ -93,6 +107,7 @@ pub fn check_file(path: &str, text: &str) -> Vec<&'static str> {
                 "actions/cache@",
                 "actions/github-script@",
                 "softprops/action-gh-release@",
+                "signpath/github-action-submit-signing-request@",
             ]
             .iter()
             .any(|action| lower.contains(action))
