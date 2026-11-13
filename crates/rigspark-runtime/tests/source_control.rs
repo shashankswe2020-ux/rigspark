@@ -550,7 +550,15 @@ mod commits {
             .await
             .unwrap();
         assert!(!commit.is_error, "{}", commit.content);
-        for branch in ["main", "master", "HEAD", "a b", "-x"] {
+        for branch in [
+            "main",
+            "master",
+            "HEAD",
+            "a b",
+            "-x",
+            "x:main",
+            "x:refs/heads/main",
+        ] {
             let refused = github
                 .call(
                     "git_push",
@@ -607,6 +615,53 @@ mod commits {
                 refused.content
             );
         }
+        // The push URL is checked, not just the fetch URL: a `pushurl` or a
+        // `pushInsteadOf` rewrite can't send the push to a repository RigSpark wasn't given.
+        let local = origin.path().display().to_string();
+        git(repo.path(), &["remote", "set-url", "origin", &local]);
+        git(
+            repo.path(),
+            &[
+                "config",
+                "remote.origin.pushurl",
+                "https://github.com/other/repo",
+            ],
+        );
+        let refused = github
+            .call(
+                "git_push",
+                json!({"folder": folder, "branch":"rigspark/hello"}),
+                &cancel,
+            )
+            .await
+            .unwrap();
+        assert!(
+            refused.is_error && refused.content.contains("no access"),
+            "{}",
+            refused.content
+        );
+        git(repo.path(), &["config", "--unset", "remote.origin.pushurl"]);
+        git(
+            repo.path(),
+            &[
+                "config",
+                "url.https://github.com/other/.pushInsteadOf",
+                &format!("{}/", origin.path().parent().unwrap().display()),
+            ],
+        );
+        let refused = github
+            .call(
+                "git_push",
+                json!({"folder": folder, "branch":"rigspark/hello"}),
+                &cancel,
+            )
+            .await
+            .unwrap();
+        assert!(
+            refused.is_error && refused.content.contains("no access"),
+            "{}",
+            refused.content
+        );
     }
 }
 

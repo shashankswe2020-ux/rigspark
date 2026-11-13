@@ -271,3 +271,28 @@ async fn recency_window_only_narrows_recommendations_and_rejects_bad_values() {
         assert!(day >= cutoff.as_str(), "{}: {day}", model["id"]);
     }
 }
+
+#[tokio::test]
+async fn saving_github_access_renews_the_sign_in_first() {
+    use rigspark_runtime::source_control::{Credentials, TokenStore};
+    let home = tempfile::tempdir().unwrap();
+    let host = Host::new(home.path(), 43210).unwrap();
+    // An app sign-in that expired and has no refresh token can't be renewed: saving
+    // access says so (409) before anything reaches GitHub.
+    TokenStore::new(&host.home)
+        .save(&Credentials {
+            access_token: "ghu_expiredexpiredexpired".into(),
+            refresh_token: None,
+            expires_at: Some(1),
+        })
+        .unwrap();
+    let (status, body) = call(
+        &host,
+        "POST",
+        "/api/source-control/github",
+        json!({"access":[{"repository":"a/b","access":"read"}]}),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CONFLICT, "{body}");
+    assert!(body.to_string().contains("expired"), "{body}");
+}

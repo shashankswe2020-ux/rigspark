@@ -591,6 +591,84 @@ async fn stall_guard_fires_only_when_the_download_stops_growing() {
 }
 
 #[tokio::test]
+async fn stall_guard_sees_writes_into_a_presized_partial_file() {
+    // Ollama truncates `<blob>-partial` to the full blob size first, then writes into it
+    // at offsets: the size never changes while it downloads.
+    use rigspark_runtime::pull::stall_guard;
+    use std::io::{Seek, SeekFrom, Write};
+    let dir = tempfile::tempdir().unwrap();
+    let partial = dir.path().join("sha256-abc-partial");
+    std::fs::File::create(&partial)
+        .unwrap()
+        .set_len(1 << 20)
+        .unwrap();
+    let cancel = CancellationToken::new();
+    let writer = {
+        let partial = partial.clone();
+        tokio::spawn(async move {
+            for i in 0..10u64 {
+                tokio::time::sleep(Duration::from_millis(50)).await;
+                let mut file = std::fs::OpenOptions::new()
+                    .write(true)
+                    .open(&partial)
+                    .unwrap();
+                file.seek(SeekFrom::Start(i * 4096)).unwrap();
+                file.write_all(&[1; 4096]).unwrap();
+                let modified = std::time::SystemTime::now() + Duration::from_secs(i + 1);
+                file.set_modified(modified).unwrap();
+            }
+        })
+    };
+    let guard = stall_guard(
+        dir.path().to_path_buf(),
+        Duration::from_millis(200),
+        Duration::from_millis(20),
+        &cancel,
+    );
+    let early = tokio::time::timeout(Duration::from_millis(450), guard).await;
+    assert!(
+        early.is_err(),
+        "fired while a pre-sized file was being written"
+    );
+    writer.await.unwrap();
+}
+
+#[tokio::test]
+async fn stall_guard_sees_growth_when_the_newest_time_does_not_change() {
+    // A file whose time is older than the newest one still counts when it grows.
+    use rigspark_runtime::pull::stall_guard;
+    let dir = tempfile::tempdir().unwrap();
+    let newest = std::fs::File::create(dir.path().join("newest")).unwrap();
+    newest.set_len(64).unwrap();
+    newest
+        .set_modified(std::time::SystemTime::now() + Duration::from_secs(3600))
+        .unwrap();
+    let growing = dir.path().join("growing");
+    std::fs::write(&growing, [0; 64]).unwrap();
+    let cancel = CancellationToken::new();
+    let writer = tokio::spawn(async move {
+        for i in 2..12usize {
+            tokio::time::sleep(Duration::from_millis(50)).await;
+            let file = std::fs::OpenOptions::new()
+                .write(true)
+                .open(&growing)
+                .unwrap();
+            file.set_len((i * 64) as u64).unwrap();
+            file.set_modified(std::time::UNIX_EPOCH).unwrap();
+        }
+    });
+    let guard = stall_guard(
+        dir.path().to_path_buf(),
+        Duration::from_millis(200),
+        Duration::from_millis(20),
+        &cancel,
+    );
+    let early = tokio::time::timeout(Duration::from_millis(450), guard).await;
+    assert!(early.is_err(), "fired while a file was still growing");
+    writer.await.unwrap();
+}
+
+#[tokio::test]
 async fn stall_guard_never_fires_once_the_pull_is_cancelled() {
     use rigspark_runtime::pull::stall_guard;
     let dir = tempfile::tempdir().unwrap();

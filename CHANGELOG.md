@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.1.4 (2026-11-13)
 
 ### Fixes
 
@@ -10,7 +10,24 @@
   hour) was stopped partway through. The pull now runs until it finishes and
   only gives up if Ollama writes nothing new for 10 minutes ("download stalled
   … start it again to resume"; Ollama keeps what it already has), with a
-  12-hour upper bound.
+  12-hour upper bound. Progress is read from the download files' modification
+  times as well as their sizes, because Ollama sizes a partial download to the
+  whole model before filling it in.
+- **The desktop app reports startup failures instead of vanishing.** A failure
+  before the window opened (data folder, local port, a held state lock) made the
+  icon bounce and disappear. It is now shown in a dialog and logged
+  (`~/Library/Logs/RigSpark/startup.log` on macOS); a held or stale state lock
+  offers **Clear Lock and Retry**. Releases now launch the signed Mac app before
+  notarizing it.
+- **`git_push` checks where git will actually push.** The repository check read
+  the `origin` fetch URL, so a `pushurl` or `pushInsteadOf` rewrite could send a
+  push to a GitHub repository RigSpark wasn't given. Every push URL is now
+  checked, and branch names containing `:` are refused.
+- **Changing repository access renews an expired GitHub sign-in** first, as
+  listing repositories already did, instead of reporting "GitHub could not be
+  reached".
+- **Cancelling GitHub sign-in stops it.** A check already on its way could
+  restart polling, and finish the sign-in, after **Cancel**.
 
 - **Clearer Windows install help while the installer is unsigned.** The README
   and release notes now say how to get past SmartScreen, how to check the
